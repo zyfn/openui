@@ -46,6 +46,7 @@ through `openui create --example <name>`.
 | [React Native](./app-frameworks/react-native) | An Expo client rendering native OpenUI components from a Next.js backend stream |
 | [Svelte](./app-frameworks/svelte)             | OpenUI Lang parsing and rendering in SvelteKit                                  |
 | [Vue](./app-frameworks/vue)                   | OpenUI Lang parsing and rendering in Nuxt and Vue                               |
+| [SwiftUI macOS](./app-frameworks/swiftui-macos) | Native SwiftUI rendering, incremental source playback, and a local Query backend |
 
 ### Cookbooks
 
@@ -134,3 +135,7 @@ Every retained example should:
 Cookbooks also link to their companion docs tutorial. Keep each runnable app in `examples/cookbooks/<name>/` and its walkthrough in `docs/content/docs/cookbooks/<name>.mdx`, with links in both directions. Update code and tutorial together in the same pull request.
 
 Delete examples that duplicate an authoritative CLI template, are maintained elsewhere, substantially overlap a stronger example, or no longer justify their maintenance cost.
+
+### Native Swift example
+
+[`app-frameworks/swiftui-macos`](./app-frameworks/swiftui-macos) is an independent SwiftPM executable, verified with `./verify.sh` from its directory. It requires macOS 13+ and a Swift 6 toolchain, and deliberately uses the two sibling Swift packages by local path while the native integration is experimental. It has no `package.json`, npm dependencies, or model credentials, and is outside the JavaScript install/verify/release contracts above. Application components and the mock tool provider stay in the example rather than in either library.

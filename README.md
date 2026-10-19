@@ -106,6 +106,8 @@ Try it yourself in the [Playground](https://www.openui.com/playground): generate
 | [`@openuidev/observability-cloud`](./packages/observability-cloud)                                         | Hosted observability in the Thesys console       | Cloud sink that batches OpenUI events and ships them to OpenUI Gateway                                       |
 | [`@openuidev/cli`](./packages/openui-cli)                                                                  | Project scaffolding and prompt generation        | CLI for creating new apps and generating system prompts or JSON schema from a library definition             |
 | [`@openuidev/openclaw-os-plugin`](https://github.com/thesysdev/openclaw-os/tree/main/packages/claw-plugin) | OpenClaw workspaces                              | OpenClaw OS plugin for serving OpenUI-powered OpenClaw workspaces                                            |
+| [`OpenUILang`](./packages/openui-lang) | Native Swift language runtime | Foundation-only parsing, streaming, evaluation, and runtime utilities |
+| [`OpenUISwiftUI`](./packages/openui-swiftui) | Native SwiftUI rendering | Main-actor UI state and app-defined component rendering; depends on `OpenUILang` |
 
 Common starting points:
 
@@ -127,6 +129,27 @@ npm install @openuidev/angular-lang
 # A2UI protocol with OpenUI Lang component payloads
 npm install @openuidev/a2ui zod
 ```
+
+## Native Swift (experimental)
+
+The Swift implementation uses two independent SwiftPM packages. `OpenUILang` owns language and runtime semantics and has no SwiftUI dependency. `OpenUISwiftUI` depends on it for rendering and UI state; component views, themes, navigation, and tool backends are provided by the consuming app. These packages do not participate in the pnpm build or npm release pipeline.
+
+From a checkout with a Swift 6 toolchain:
+
+```sh
+# Foundation-only runtime; Linux and macOS
+swift test --package-path packages/openui-lang
+
+# SwiftUI rendering; macOS
+swift test --package-path packages/openui-swiftui
+
+# Independent macOS playground; no credentials or network required
+cd examples/app-frameworks/swiftui-macos
+./verify.sh
+open '.build/OpenUI Demo.app'
+```
+
+Language tests reuse [`spec/fixtures/1.0`](./spec/fixtures/1.0) without duplicating fixtures. The current harness covers parse/evaluate, streaming, and validation, but does not exercise editing or action interactions end to end. Query fetching is explicit after streaming completes. See the [language package](./packages/openui-lang), [renderer package](./packages/openui-swiftui), and [macOS example](./examples/app-frameworks/swiftui-macos) for API details and limitations. The manifests currently support local path dependencies; a repository-root SwiftPM manifest or separate distribution repositories would be needed for remote SwiftPM consumption.
 
 ## Why OpenUI Lang
 
