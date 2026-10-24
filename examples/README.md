@@ -44,6 +44,7 @@ through `openui create --example <name>`.
 | [Angular](./app-frameworks/angular)           | An NG-ZORRO X chat interface with the Angular OpenUI renderer                   |
 | [FastAPI](./app-frameworks/fastapi)           | A Python FastAPI streaming backend with a React OpenUI client                   |
 | [React Native](./app-frameworks/react-native) | An Expo client rendering native OpenUI components from a Next.js backend stream |
+| [SwiftUI macOS](./app-frameworks/swiftui-macos) | Native SwiftUI editor, incremental parsing and local mock tools using the Swift packages |
 | [Svelte](./app-frameworks/svelte)             | OpenUI Lang parsing and rendering in SvelteKit                                  |
 | [Vue](./app-frameworks/vue)                   | OpenUI Lang parsing and rendering in Nuxt and Vue                               |
 

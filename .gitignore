@@ -66,3 +66,6 @@ draft/
 
 # Accidental CLI template checkouts
 packages/openui-cli/src/templates/
+
+# Local native review output
+/work/

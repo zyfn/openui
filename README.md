@@ -100,6 +100,8 @@ Try it yourself in the [Playground](https://www.openui.com/playground): generate
 | [`@openuidev/vue-lang`](./packages/vue-lang)                                                               | Vue integrations                                 | Vue 3 bindings for defining model-renderable components and rendering streamed OpenUI Lang                   |
 | [`@openuidev/svelte-lang`](./packages/svelte-lang)                                                         | Svelte integrations                              | Svelte 5 bindings for defining model-renderable components and rendering streamed OpenUI Lang                |
 | [`@openuidev/angular-lang`](./packages/angular-lang)                                                       | Angular integrations                             | Angular bindings for defining component libraries and rendering streamed OpenUI Lang                         |
+| [`OpenUILang`](./packages/swift-lang) | Native Apple language bindings | SwiftPM interfaces to the shared parser, runtime, schema and prompt generator through JavaScriptCore |
+| [`OpenUISwiftUI`](./packages/swift-ui) | Native SwiftUI rendering | SwiftUI renderer, standard component registrations and optional native extensions |
 | [`@openuidev/browser-bundle`](./packages/browser-bundle)                                                   | CDN, iframe, and no-build embeds                 | Prebuilt browser bundle that ships the renderer, UI library, React, and styles as script + stylesheet assets |
 | [`@openuidev/a2ui`](./packages/a2ui)                                                                       | A2UI with OpenUI Lang component payloads         | Framework-agnostic A2UI v1.0 protocol client with an optional React renderer                                 |
 | [`@openuidev/server`](./packages/server)                                                                   | Server side utilities                            | Server utilities for OpenUI and OpenUI Gateway                                                               |
@@ -169,6 +171,8 @@ openui/
 │   ├── react-email/      # React Email component library for generated emails
 │   ├── assistant-ui/     # assistant-ui Tool UI renderers for OpenUI Lang
 │   ├── lang-core/        # Framework-agnostic parser, prompt, and runtime layer
+│   ├── swift-lang/       # Apple-platform bindings to lang-core (OpenUILang)
+│   ├── swift-ui/         # Native SwiftUI renderer and component library
 │   ├── langchain/        # LangChain/LangGraph streaming integration
 │   ├── vue-lang/         # Vue runtime bindings for OpenUI Lang
 │   ├── svelte-lang/      # Svelte runtime bindings for OpenUI Lang
