@@ -2,3 +2,6 @@
 # merge result of package.json files. After merging, run `pnpm install` to
 # reconcile the lockfile.
 pnpm-lock.yaml merge=binary
+
+# Keep the pinned third-party regex sources byte-for-byte for hash verification.
+packages/swift-lang/Sources/COpenUIRegExp/vendor/** -whitespace
