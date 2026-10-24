@@ -1,0 +1,16 @@
+$count=0
+root=Stack([
+  TextContent("Table cell boundary regression","small-heavy"),
+  Table([
+    Col("Case",["Direct","Nested","Form","Detail"]),
+    Col("Content",[
+      [TextContent("Visible direct"),Input("direct","Blocked direct input","text",null,"blocked"),Button("Blocked direct submit",@ToAssistant("blocked"))],
+      Stack([TextContent("Visible nested"),[Input("nested","Blocked nested input","text",null,"blocked"),Button("Blocked nested submit",@ToAssistant("blocked"))]],"column","xs"),
+      Form("blockedForm",Buttons([Button("Blocked form submit",@ToAssistant("blocked"))]),[FormControl("Blocked field",Input("formField",null,"text",null,"blocked"))]),
+      Popover(Icon("info"),Stack([TextContent("Allowed explanation"),Input("popover","Blocked popover input","text",null,"blocked"),Button("Blocked popover submit",@ToAssistant("blocked"))],"column","s"),"Open table detail")
+    ])
+  ]),
+  Input("outside","Outside input","text",null,"Ready"),
+  Button("Outside action",@Set($count,$count+1),"secondary"),
+  TextContent("Outside "+$count)
+],"column","s")

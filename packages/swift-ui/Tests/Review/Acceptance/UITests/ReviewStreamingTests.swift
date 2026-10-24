@@ -1,0 +1,144 @@
+import UIKit
+import XCTest
+
+final class ReviewStreamingTests: ReviewTestCase {
+  private func stream(_ mode: String) -> XCUIApplication {
+    continueAfterFailure = false
+    let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
+    app.launchArguments = ["--stream-case", mode, "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+    app.launch()
+    XCTAssertTrue(app.buttons["stream.next"].waitForExistence(timeout: 10))
+    let errors = app.staticTexts["review.errors"]
+    XCTAssertFalse(errors.exists, errors.exists ? errors.label : "")
+    return app
+  }
+
+  func testSavedOriginalStreamsWithoutSwitchingTabOrChangingNavigationType() throws {
+    guard Bundle(for: Self.self).url(forResource: "StreamProgram", withExtension: "openui") != nil else {
+      throw XCTSkip("Supply --stream-program for the original-source streaming replay")
+    }
+    let app = stream("original")
+    let next = app.buttons["stream.next"]
+    var sawFirst = false
+    while next.isEnabled {
+      next.tap()
+      let first = app.buttons["openui.tab.a"]
+      if first.exists {
+        sawFirst = true
+        XCTAssertTrue(first.isSelected, "Later panels must not replace the first visible panel")
+        XCTAssertFalse(first.isEnabled, "An incomplete program stays read-only")
+        XCTAssertEqual(app.pickers.count, 0, "Tabs must never turn into a menu Picker")
+      }
+      let errors = app.staticTexts["stream.pending-diagnostics"]
+      if errors.exists {
+        let details = XCTAttachment(string: "offset=\(app.staticTexts["stream.offset"].label) diagnostics=\(errors.label)\n" + app.debugDescription)
+        details.name = "stream-prefix-diagnostics"
+        details.lifetime = .keepAlways
+        add(details)
+      }
+    }
+    XCTAssertTrue(sawFirst)
+    capture(app, name: "stream-original-partial-first-tab")
+    app.buttons["stream.complete"].tap()
+    XCTAssertFalse(app.staticTexts["review.errors"].exists, "The unmodified complete source must validate without pending-field errors")
+    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected)
+    XCTAssertTrue(app.buttons["openui.tab.a"].isEnabled,
+      "A complete stream must refresh interaction eligibility even when tab props are unchanged")
+    let navigation = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "openui.tabs.")).firstMatch
+    let third = app.buttons["openui.tab.c"]
+    for _ in 0..<4 where !third.isHittable { navigation.swipeLeft() }
+    XCTAssertTrue(third.isHittable, "Long Chinese labels remain reachable by horizontal scrolling")
+    third.tap()
+    XCTAssertTrue(third.isSelected)
+    let content = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "自然占比最高")).firstMatch
+    XCTAssertTrue(content.exists)
+    capture(app, name: "stream-original-long-label-horizontal-navigation")
+    app.buttons["stream.replace"].tap()
+    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected, "History re-open has deterministic initial selection")
+    XCTAssertFalse(app.buttons["openui.tab.c"].isSelected)
+    capture(app, name: "stream-original-history-initial-selection")
+    app.terminate()
+  }
+
+  func testAppendAndConditionalContentKeepTabsDisclosureAndCarouselPage() {
+    let app = stream("state")
+    let second = app.buttons["openui.tab.b"]
+    let navigation = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "openui.tabs.")).firstMatch
+    for _ in 0..<3 where !second.isHittable { navigation.swipeLeft() }
+    second.tap()
+    XCTAssertTrue(second.isSelected)
+    let disclosure = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Stable details")).firstMatch
+    reveal(disclosure, in: app)
+    XCTAssertTrue(app.staticTexts["Detail one content"].exists)
+    disclosure.tap()
+    XCTAssertFalse(app.staticTexts["Detail one content"].exists)
+    let next = app.buttons["openui.carousel.next"]
+    reveal(next, in: app); next.tap()
+    XCTAssertTrue(app.staticTexts["Page B"].exists)
+    XCTAssertEqual(app.staticTexts["openui.carousel.page"].label, "2 / 2")
+    let show = app.buttons["Show prefix"]
+    reveal(show, in: app); show.tap()
+    XCTAssertTrue(second.isSelected, "Filling an earlier null slot must not remount Tabs")
+    let apply = app.buttons["Add two"]
+    reveal(apply, in: app); apply.tap()
+    XCTAssertTrue(app.staticTexts["Count: 12"].waitForExistence(timeout: 3))
+    XCTAssertEqual(app.staticTexts["review.state-update-count"].label, "2", "Prefix and arithmetic each write once")
+    app.buttons["stream.append"].tap()
+    XCTAssertTrue(second.isSelected)
+    XCTAssertFalse(app.staticTexts["Detail one content"].exists)
+    XCTAssertFalse(app.staticTexts["Detail two content"].exists)
+    XCTAssertTrue(app.staticTexts["Page B"].exists)
+    XCTAssertEqual(app.staticTexts["openui.carousel.page"].label, "2 / 3", "Appending a page must retain the current page")
+    XCTAssertTrue(app.staticTexts["Count: 12"].exists)
+    capture(app, name: "stream-append-retains-native-selection-and-state")
+    app.buttons["stream.replace"].tap()
+    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected)
+    XCTAssertEqual(app.staticTexts["openui.carousel.page"].label, "1 / 2")
+    XCTAssertTrue(app.staticTexts["Count: 10"].exists)
+    app.terminate()
+  }
+
+  func testTablePageClampsOnRemovalAndDoesNotReboundWhenRowsReturn() {
+    let app = stream("state")
+    let next = app.buttons["openui.table.next"]
+    reveal(next, in: app); next.tap()
+    XCTAssertEqual(app.staticTexts["openui.table.page"].label, "2 / 2")
+    app.buttons["stream.append"].tap()
+    XCTAssertEqual(app.staticTexts["openui.table.page"].label, "2 / 4")
+    app.buttons["stream.append"].tap()
+    XCTAssertFalse(app.staticTexts["openui.table.page"].exists)
+    app.buttons["stream.append"].tap()
+    XCTAssertEqual(app.staticTexts["openui.table.page"].label, "1 / 4", "Removed page state must not reappear on later appends")
+    capture(app, name: "stream-table-removal-and-regrowth")
+    app.terminate()
+  }
+
+  func testGalleryFirstMountAppendAndReopenNeedNoRetryAndKeepLoadedPhotos() {
+    let app = stream("gallery")
+    let first = app.buttons["openui.gallery.image.0"]
+    let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: first)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+    let initialLoads = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Images: 2"), object: app.staticTexts["review.images"])
+    XCTAssertEqual(XCTWaiter.wait(for: [initialLoads], timeout: 8), .completed)
+    XCTAssertEqual(app.staticTexts["review.images"].label, "Images: 2")
+    XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "openui.gallery.unavailable").firstMatch.exists)
+    let second = app.buttons["openui.gallery.image.1"]
+    second.tap()
+    XCTAssertTrue(app.staticTexts["Photo B"].waitForExistence(timeout: 5))
+    app.buttons["openui.gallery.close"].tap()
+    app.buttons["stream.append"].tap()
+    let loaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Images: 3"), object: app.staticTexts["review.images"])
+    XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 8), .completed)
+    XCTAssertEqual(app.staticTexts["review.images"].label, "Images: 3", "Appending one photo must not reload the two existing resources")
+    second.tap()
+    XCTAssertTrue(app.staticTexts["2 / 3"].waitForExistence(timeout: 5))
+    app.buttons["openui.gallery.close"].tap()
+    capture(app, name: "stream-gallery-append-keeps-resources")
+    app.buttons["stream.replace"].tap()
+    let reopened = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: first)
+    XCTAssertEqual(XCTWaiter.wait(for: [reopened], timeout: 10), .completed)
+    XCTAssertFalse(app.buttons["openui.gallery.retry"].exists)
+    capture(app, name: "stream-gallery-history-fresh-first-load")
+    app.terminate()
+  }
+}
