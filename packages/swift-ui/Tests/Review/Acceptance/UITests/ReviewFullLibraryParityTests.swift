@@ -60,14 +60,17 @@ final class ReviewFullLibraryParityTests: ReviewTestCase {
 
   func testSliderSupportsTypedValuesAndDiscreteChoices() {
     let app = launch("complete-input-controls", inspect: true, language: "en")
-    let lower = app.textFields.matching(NSPredicate(format: "identifier == %@ OR label == %@", "openui.slider.input.range.0", "Range")).firstMatch
+    // The native form container supplies the accessibility field identity;
+    // this fixture has exactly two numeric text fields, in range order.
+    XCTAssertEqual(app.textFields.count, 2, app.debugDescription)
+    let lower = app.textFields.element(boundBy: 0)
     reveal(lower, in: app)
     lower.tap()
     let old = lower.value as? String ?? ""
     lower.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count) + "45")
     waitForSlider("range", values: [45, 80], in: app)
     if app.keyboards.buttons["Return"].exists { app.keyboards.buttons["Return"].tap() }
-    let choice = app.buttons.matching(NSPredicate(format: "identifier == %@ OR identifier == %@", "openui.slider.choice.steps.0", "openui.field.steps")).firstMatch
+    let choice = app.buttons.matching(NSPredicate(format: "identifier == %@ OR identifier == %@ OR label BEGINSWITH %@", "openui.slider.choice.steps.0", "openui.field.steps", "30")).firstMatch
     reveal(choice, in: app)
     choice.tap()
     let option = app.buttons["openui.slider.option.60"]
