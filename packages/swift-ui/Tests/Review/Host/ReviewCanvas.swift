@@ -10,6 +10,7 @@ struct ReviewCanvas: View {
   let programID: String
   let display: ReviewDisplayOptions
   let inspector: Bool
+  var sources: [CardSource] = []
 
   // Preview-only host surface, matching ChatResultTheme.assistant and the
   // client's bubble insets. It remains independent of the SDK visual theme.
@@ -22,10 +23,16 @@ struct ReviewCanvas: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
         VStack(alignment: .leading, spacing: 0) {
-          ReviewRenderedProgram(library: library, state: state, programID: programID)
+          CardSourceProvider(sources: sources) {
+            ReviewRenderedProgram(library: library, state: state, programID: programID)
+          }
             .openUITableCellPolicy(.readOnly)
             .openUITheme(display.theme.sdkTheme)
             .openUIResourceContext(OpenUIResourceContext(baseURL: URL(string: "https://sdk-fixture.invalid/")))
+            .environment(\.openURL, OpenURLAction { url in
+              if inspector { evidence.openedURL = url.absoluteString; return .handled }
+              return .systemAction(url)
+            })
         }
         .padding(.horizontal, display.clientBubble ? 16 : 0)
         .padding(.vertical, display.clientBubble ? 12 : 0)

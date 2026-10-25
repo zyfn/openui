@@ -23,6 +23,7 @@ struct NativeRemoteImage: View {
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
   @State private var attempt = 0
   @State private var phase: AsyncImagePhase = .empty
+  @State private var imageSize: CGSize?
   @State private var loadedRequest: NativeResourceRequestID?
   @Environment(\.openUIResourceContext) private var resources
   @Environment(\.openUITheme) private var theme
@@ -52,7 +53,7 @@ struct NativeRemoteImage: View {
   @MainActor private func load() async {
     let id = requestID
     guard let request = id.request else { return }
-    loadedRequest = id; phase = .empty
+    loadedRequest = id; phase = .empty; imageSize = nil
     do {
       let data = try await resources.loader.data(for: request)
       try Task.checkCancellation()
@@ -64,6 +65,7 @@ struct NativeRemoteImage: View {
       let result = Image(nsImage: image)
       #endif
       guard id == requestID else { return }
+      imageSize = image.size
       phase = .success(result)
     } catch {
       guard !Task.isCancelled, id == requestID else { return }
@@ -73,7 +75,7 @@ struct NativeRemoteImage: View {
   private func picture(_ image: Image) -> some View {
     Group {
       if case .intrinsic = layout {
-        image.resizable().scaledToFit().frame(maxWidth: .infinity)
+        canvas { image.resizable().scaledToFit() }
       } else {
         canvas {
           if case .fit = layout { image.resizable().scaledToFit() }
@@ -115,13 +117,19 @@ struct NativeRemoteImage: View {
       NativeMediaUnavailable(alt: alt, src: src, allowsActions: !cardIsAction) { attempt += 1 }
     }
   }
+  // Source proportions determine ordinary image height. Only unusually tall
+  // previews are contained in a portrait-shaped region; fit preserves all pixels.
+  // This is a native visual default, not a Lang field or a web CSS requirement.
+  private var previewAspectRatio: CGFloat {
+    NativeMediaPreview.aspectRatio(sourceSize: imageSize)
+  }
   @ViewBuilder private func canvas<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
     let surface = Color.clear.overlay { content().accessibilityHidden(true) }.clipped().contentShape(Rectangle())
     switch layout {
     case .aspect(let ratio): surface.aspectRatio(ratio, contentMode: .fit)
     case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
     case .fit: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
-    case .intrinsic: surface.aspectRatio(4 / 3, contentMode: .fit)
+    case .intrinsic: surface.aspectRatio(previewAspectRatio, contentMode: .fit)
     }
   }
 }

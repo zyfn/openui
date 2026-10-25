@@ -96,6 +96,27 @@ class ReviewTestCase: XCTestCase {
     XCTAssertGreaterThanOrEqual((size.height * 1000).rounded() / 1000, 44, file: file, line: line)
   }
 
+  /// Paste inside the same app that copied the code. Reading the shared
+  /// pasteboard from the test runner would trigger a cross-app privacy prompt.
+  func assertCopiedCode(_ expected: String, in app: XCUIApplication) {
+    app.buttons["review.editor"].tap()
+    let editor = app.textViews["review.lang-input"]
+    XCTAssertTrue(editor.waitForExistence(timeout: 3))
+    app.buttons["review.editor-clear"].tap()
+    editor.tap()
+    editor.press(forDuration: 1)
+    let paste = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Paste", "粘贴"]))
+    let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      paste.allElementsBoundByIndex.contains { $0.isHittable }
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 4), .completed)
+    paste.allElementsBoundByIndex.first(where: { $0.isHittable })?.tap()
+    XCTAssertEqual(editor.value as? String, expected)
+    app.buttons["review.editor-cancel"].tap()
+    let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: editor)
+    XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 4), .completed)
+  }
+
   func capture(_ app: XCUIApplication, name: String) {
     // Capture only pixels actually visible on the native screen. Asking for
     // an offscreen ScrollView content element can produce padded black areas.

@@ -11,6 +11,7 @@ final class ReviewEvidence: ObservableObject {
   }
 
   @Published private(set) var events = 0
+  @Published var openedURL = ""
   @Published private(set) var lastAction = ""
   @Published private(set) var snapshot = ""
   @Published private(set) var stateHistory: [StateUpdate] = []
@@ -22,7 +23,7 @@ final class ReviewEvidence: ObservableObject {
   private var previousSnapshot = ""
 
   func reset() {
-    events = 0; lastAction = ""; snapshot = ""
+    events = 0; lastAction = ""; snapshot = ""; openedURL = ""
     stateHistory.removeAll(); stateUpdateCount = 0
     executedSource = ""; executionRevision = 0; previousSnapshot = ""
     evaluations = []
@@ -143,6 +144,7 @@ struct ReviewEvidenceFooter: View {
       Text("Images: \(images.loaded)").accessibilityIdentifier("review.images")
       Text("Events: \(evidence.events)").accessibilityIdentifier("review.events")
       Text(evidence.lastAction).accessibilityIdentifier("review.lastAction")
+      Text(evidence.openedURL).accessibilityIdentifier("review.opened-url")
       Text(ReviewProjection.lastRowLabels(state.root)).accessibilityIdentifier("review.tableLastRow")
       Text(evidence.snapshot).font(.caption.monospaced()).accessibilityIdentifier("review.state")
       debugValue("review.state-current", ReviewEvidence.serialize(state.snapshotState()))

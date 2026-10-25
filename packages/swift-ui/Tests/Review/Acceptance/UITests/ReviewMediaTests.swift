@@ -56,7 +56,7 @@ final class ReviewMediaTests: ReviewTestCase {
 
   func testNativeMediaUnavailableCollapsesAndPreservesContent() {
     let app = launch("media-states", inspect: true, media: "unavailable")
-    let summary = app.staticTexts["9 images unavailable"]
+    let summary = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["9 images unavailable", "9 张图片暂不可用"])).firstMatch
     XCTAssertTrue(summary.waitForExistence(timeout: 8))
     let gallery = app.descendants(matching: .any).matching(identifier: "openui.gallery").firstMatch
     reveal(gallery, in: app)
@@ -91,7 +91,7 @@ final class ReviewMediaTests: ReviewTestCase {
     first.tap()
     let close = app.buttons["openui.gallery.close"]
     XCTAssertTrue(close.waitForExistence(timeout: 5))
-    XCTAssertTrue(app.staticTexts["All photos"].exists)
+    XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["All photos", "全部图片"])).firstMatch.exists)
     let second = app.buttons["openui.gallery.thumbnail.1"]
     XCTAssertTrue(second.exists)
     second.tap()
@@ -124,7 +124,7 @@ final class ReviewMediaTests: ReviewTestCase {
     let gallery = app.descendants(matching: .any).matching(identifier: "openui.gallery").firstMatch
     XCTAssertLessThan(gallery.frame.height, app.windows.firstMatch.frame.height * 0.4)
     XCTAssertFalse(app.buttons["openui.gallery.image.0"].isEnabled)
-    XCTAssertFalse(app.staticTexts["9 images unavailable"].exists)
+    XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["9 images unavailable", "9 张图片暂不可用"])).firstMatch.exists)
     capture(app, name: "media-loading-gallery")
     app.terminate()
   }

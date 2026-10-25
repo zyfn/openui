@@ -53,8 +53,7 @@ and declares their CRS.
 
 ## Optional web and contextual content
 
-`OpenUISwiftUI` contains no WebKit import. Add the optional SwiftPM product
-`OpenUIWeb` only when SVG or web content is required:
+Add the optional SwiftPM product `OpenUIWeb` when SVG or web content is required:
 
 ```swift
 import OpenUIWeb
@@ -65,6 +64,26 @@ let installed = try OpenUIWebComponents.install(into: native)
 Popover is a pure SwiftUI extension. SVG and WebView use WebKit in the separate
 target; page JavaScript is disabled by default and can be enabled by host policy.
 All native media use `OpenUIResourceContext`; WebKit owns its document subresources.
+The base product also uses a private WebKit renderer for offline mathematical
+equations. It does not register a general web component.
+
+## Rich text and source citations
+
+`TextContent` uses the upstream Markdown extensions for tables, line breaks,
+citations and mathematics. `MarkDownRenderer` retains its basic Markdown mode.
+Text and media captions use the upstream inline Markdown rules. Paragraphs,
+tables, links and code blocks are native SwiftUI views; fenced code shares the
+standard `CodeBlock` renderer and copy action.
+
+Provide citation metadata with `CardSourceProvider(sources: [...]) { ... }`,
+using `CardSource(url:title:sourceName:)`. This is a typed host context rather
+than another language component. Valid numbered citations open a native source
+list and route links through the host's `openURL` environment.
+
+Remark and KaTeX are bundled as static JavaScript resources and run in
+JavaScriptCore. Only equation layout is rasterized by a message-owned,
+nonpersistent WebKit view. Fonts are embedded and no external equation resource
+is loaded. Consumers do not need Node.js or npm to build or run the Swift package.
 
 ## Responsive composition
 
@@ -205,6 +224,18 @@ For Xcode GUI builds, open `Package.swift` or an application that consumes the p
 The repository's `Build Swift` workflow configures package suites and the iOS Simulator compile on macOS, using the bundled shared core. The JavaScriptCore adapter targets Apple platforms. This is independent of pnpm/npm packaging. A local consumer can use `.package(path: "../openui/packages/swift-ui")` and select the `OpenUISwiftUI` product.
 
 Native value and ToolProvider interfaces are documented in the language package. Package identities are `swift-lang` and `swift-ui`; products are `OpenUILang`, `OpenUISwiftUI` and the optional `OpenUIWeb`.
+
+Maintainers rebuilding the rich-text resources use Node.js at development time:
+
+```sh
+cd packages/swift-ui/scripts/rich-text
+npm ci --ignore-scripts
+npm run build
+```
+
+Commit the generated resources, dependency lockfile and license notices together.
+`rich-text-manifest.json` records the pinned upstream sources, dependency versions,
+resource hashes and embedded font count. npm is not invoked by SwiftPM or the app.
 
 
 ## Scoped resources and embedded content

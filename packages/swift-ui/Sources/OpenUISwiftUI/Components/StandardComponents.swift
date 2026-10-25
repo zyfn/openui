@@ -11,10 +11,8 @@ public enum OpenUIStandardComponents {
             + OpenUIChartComponents.components + [
             OpenUIReference.component("Stack") { OpenUIStack(context: $0) },
             OpenUIReference.component("TextContent") { context in
-                NativeInlineMarkdown.text(context.string("text") ?? "")
-                    .font(textFont(context.string("size"), typography: context.theme.typography)).textSelection(.enabled)
-                    .foregroundStyle(context.string("size") == "small" ? context.theme.secondary : context.theme.foreground)
-                    .fixedSize(horizontal: false, vertical: true)
+                NativeMarkdownText(text: context.string("text") ?? "", mode: .textContent,
+                    style: .textContent(context.string("size"), theme: context.theme))
             },
             OpenUIReference.component("Image") { NativeContentImage(context: $0) },
             OpenUIReference.component("Button") { OpenUINativeButton(context: $0) },
@@ -29,15 +27,7 @@ public enum OpenUIStandardComponents {
             return component
         }
     }
-    private static func textFont(_ size: String?, typography: OpenUITypography) -> Font {
-        switch size {
-        case "small": return typography.detail
-        case "small-heavy": return typography.detail.weight(.semibold)
-        case "large": return typography.title.weight(.regular)
-        case "large-heavy": return typography.display
-        default: return typography.body
-        }
-    }
+
 }
 
 struct OpenUICardSurface: ViewModifier {
@@ -140,7 +130,7 @@ private struct OpenUIStack: View {
 private struct NativeContentImage: View {
     let context: OpenUIComponentContext
     var body: some View {
-        NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "", layout: .aspect(3.0 / 2.0))
+        NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "", layout: .intrinsic)
             // Flexible containers need a useful ideal size even before the
             // bitmap loads. The actual parent proposal still controls size.
             .frame(idealWidth: context.theme.minimumCompactCardWidth)

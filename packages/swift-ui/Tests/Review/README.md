@@ -37,7 +37,7 @@ replays retain their exact source. The language choice is remembered by the host
 
 The width indicator shows **Full**, **320**, or **240** beside preview conditions.
 The default fills the available content area with the host's 20pt reading margins.
-The finite native matrix deliberately alternates width constraints. Its narrow
+The opt-in full stress matrix alternates width constraints. Its narrow
 stress captures should not be presented as the default full-width appearance.
 
 The source editor retains an in-memory draft separately from executed source.
@@ -90,6 +90,15 @@ The host accepts `--case`, `--language zh-Hans|en`, `--theme default|accent`, `-
 `--width available|standard|narrow`, `--appearance light|dark` and `--large-text`.
 These flags affect the review host only. External-source methods explicitly skip
 when their optional input is absent; report these skips with the acceptance scope.
+
+## Default acceptance scope
+
+The default suite is `--suite adaptive`: an iPhone at its available container
+width, normal text and the SDK theme, with representative combinations and key
+interactions. It does not exercise language switching, bubble variants, theme
+switching or fixed-width variants. These controls remain available in the manual
+review host. Older stress cases are opt-in through `--suite full` or
+`--only-testing`; they are not part of the default acceptance gate.
 
 ## Assertions and evidence
 

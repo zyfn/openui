@@ -15,7 +15,9 @@ struct ComponentVisualHostApp: App {
   var body: some Scene {
     WindowGroup {
       Group {
-        if let mode = configuration.streamingCase {
+        if configuration.streamingCase == "queries" {
+          ReviewQueryWorkspace(library: library)
+        } else if let mode = configuration.streamingCase {
           ReviewStreamingWorkspace(library: library, mode: mode, language: configuration.display.language)
         } else if configuration.audit {
           ReviewEngineAuditView(library: library)

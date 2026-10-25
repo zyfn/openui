@@ -3,6 +3,17 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class NativeResponsiveMediaTests: XCTestCase {
+    func testPreviewGeometryRetainsNormalPhotosAndContainsVeryTallSources() {
+        for size in [CGSize(width: 1600, height: 900), CGSize(width: 1200, height: 1600), CGSize(width: 1200, height: 1800)] {
+            XCTAssertEqual(NativeMediaPreview.aspectRatio(sourceSize: size), size.width / size.height, accuracy: 0.0001)
+        }
+        let tall = NativeMediaPreview.aspectRatio(sourceSize: CGSize(width: 1200, height: 12000))
+        XCTAssertLessThanOrEqual(360 / tall, 360 * 1.5)
+        for size: CGSize? in [nil, .zero, CGSize(width: CGFloat.infinity, height: 100)] {
+            XCTAssertTrue(NativeMediaPreview.aspectRatio(sourceSize: size).isFinite)
+        }
+    }
+
     private func text(advance: CGFloat, lineHeight: CGFloat = 20) -> (CGFloat) -> CGSize {
         { width in CGSize(width: min(width, advance), height: ceil(advance / max(1, width)) * lineHeight) }
     }

@@ -179,7 +179,8 @@ final class ReviewLayoutTests: ReviewTestCase {
     accessible.terminate()
   }
 
-  @objc func testNativeCardChildrenReflowWhenLayoutAndCopyChange() {
+  @objc func testNativeCardChildrenReflowWhenLayoutAndCopyChange() throws {
+    let referenceSize = try fixtureImageSize("detail")
     let app = launch("adaptive-card", inspect: true)
     let loaded = XCTNSPredicateExpectation(
       predicate: NSPredicate { _, _ in
@@ -194,7 +195,9 @@ final class ReviewLayoutTests: ReviewTestCase {
     XCTAssertTrue(title.exists)
     XCTAssertLessThanOrEqual(image.frame.maxX + 10, title.frame.minX)
     XCTAssertGreaterThan(image.frame.width, 44)
-    XCTAssertEqual(image.frame.width / image.frame.height, 1.5, accuracy: 0.03, "Image retains the pinned upstream default aspect")
+    XCTAssertEqual(image.frame.width / image.frame.height,
+      referenceSize.width / referenceSize.height, accuracy: 0.03,
+      "Ordinary content images preserve source proportions instead of a web renderer's default ratio")
     capture(app, name: "card-row-short-copy")
 
     app.buttons["展开说明"].tap()

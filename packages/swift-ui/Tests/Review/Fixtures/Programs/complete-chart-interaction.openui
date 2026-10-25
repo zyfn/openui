@@ -1,0 +1,7 @@
+root=Stack([
+  TextContent("One dataset, several perspectives","large-heavy"),
+  BarChart(["Mon","Tue"],[Series("Alpha",[1000,1200]),Series("Beta",[500,600])]),
+  PieChart(["Small","Large","Mid"],[1,10,5],"donut"),
+  RadialChart(["Short","Long","Medium"],[15,80,45]),
+  SingleStackedBarChart(["Reading","Writing","Planning"],[9,5,2])
+],"column","m")

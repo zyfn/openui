@@ -2,6 +2,13 @@ import Foundation
 
 /// Finite feed/lifecycle fixtures, kept outside the 25 composition variants.
 enum ReviewStreamingPrograms {
+  static let modal = """
+    $open=true
+    root=Stack([
+      TextContent("Streamed presentation"),
+      Modal("Streaming details",$open,[TextContent("The stream is still receiving content.")])
+    ])
+    """
   static let tabs = """
     root=Tabs([
       TabItem("a","First",[TextContent("The first pane arrives before the other panes.")]),

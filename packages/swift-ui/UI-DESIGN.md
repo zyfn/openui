@@ -35,7 +35,11 @@ compact action density by default; an explicitly declared size still takes prior
 Do not enlarge a local action merely to fill a row or add a separate action below a
 whole-card button. A clickable card label must not contain another button.
 
-Images retain their declared sizing contract and source ratio. Resource state,
+Images retain explicit sizing contracts; ordinary content images measure from
+their source proportions instead of inheriting a fixed web aspect ratio. Very tall
+sources fit completely inside a portrait preview region derived from the current
+container width. Thumbnail and gallery slots retain their visual roles. These are
+native visual defaults, not additional language rules. Resource state,
 retry and previews share `OpenUIResourceContext`. A missing or failed image must
 not erase adjacent text or actions. Do not assume every horizontal composition has
 one image and one fixed-width text column.

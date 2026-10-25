@@ -1,10 +1,12 @@
 import Foundation
 import OpenUILang
+import OpenUISwiftUI
 
 struct ReviewProgram: Identifiable, Codable {
   let id: String
   let title: String
   let source: String
+  var sources: [CardSource]? = nil
 }
 
 struct ReviewScenario: Identifiable {

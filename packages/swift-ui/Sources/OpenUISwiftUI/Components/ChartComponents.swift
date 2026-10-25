@@ -30,10 +30,11 @@ struct NativeChartData {
     let name: String
     let points: [Point]
   }
-  let labels: [String]
-  let series: [Series]
-  let slices: [Double]
-  let scatter: [Scatter]
+  var labels: [String]
+  var series: [Series]
+  var slices: [Double]
+  var scatter: [Scatter]
+  var colorIndices: [Int] = []
   init(context: OpenUIComponentContext) {
     labels = NativeValue.array(context.value("labels")).map { value in
       if case .string(let s) = value { return s.displayString }
@@ -44,11 +45,38 @@ struct NativeChartData {
         name: NativeValue.string(value, "category") ?? "",
         values: Self.numbers(NativeValue.prop(value, "values")))
     }
+    let rawRows = NativeValue.array(context.value("series"))
+    if case .array = rawRows.first {
+      let names = Array(labels.dropFirst())
+      let rows = rawRows.map { NativeValue.array($0) }
+      labels = rows.map { row in
+        guard let value = row.first, !value.isNullish else { return "" }
+        return toString(value).displayString
+      }
+      series = names.enumerated().map { index, name in
+        Series(name: name, values: rows.map { row in
+          let value = row.indices.contains(index + 1) ? toNumber(row[index + 1]) : 0
+          return value.isFinite ? value : 0
+        })
+      }
+    }
+    // buildChartData creates JavaScript object properties: duplicate series
+    // replace values, and integer property names keep ECMAScript key ordering.
+    let keyed = OpenUIObject(series.map { ObjectField(key: $0.name, value: .array($0.values.map(Value.number))) })
+    series = keyed.map { Series(name: $0.key.displayString, values: Self.numbers($0.value)) }
     let values = Self.numbers(context.value("values"))
     slices =
       values.isEmpty
-      ? NativeValue.array(context.value("labels")).map { NativeValue.number($0, "value") ?? 0 }
+      ? NativeValue.array(context.value("labels")).compactMap { NativeValue.number($0, "value") }
       : values
+    if values.isEmpty, ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(context.element.typeName) {
+      let valid = NativeValue.array(context.value("labels")).compactMap { value -> (String, Double)? in
+        guard let number = NativeValue.number(value, "value") else { return nil }
+        return (NativeValue.string(value, "category") ?? "", number)
+      }
+      labels = valid.map(\.0)
+      slices = valid.map(\.1)
+    }
     scatter = NativeValue.array(context.value("datasets")).map { value in
       Scatter(
         name: NativeValue.string(value, "name") ?? "",
@@ -61,8 +89,9 @@ struct NativeChartData {
   }
   static func numbers(_ value: Value?) -> [Double] {
     NativeValue.array(value).map {
-      if case .number(let n) = $0, n.isFinite { return n }
-      return 0
+      if case .number(let value) = $0 { return value.isFinite ? value : 0 }
+      let number = toNumber($0)
+      return number.isFinite ? number : 0
     }
   }
   func value(_ seriesIndex: Int, _ labelIndex: Int) -> Double {
@@ -92,21 +121,21 @@ struct NativeChartData {
 /// complete VoiceOver data, including negative and degenerate domains.
 struct NativeChart: View {
   let context: OpenUIComponentContext
+  @Environment(\.locale) private var locale
+  @State private var visibility = NativeChartVisibility()
   @State private var inspected: Int?
   @State private var inspectionLocation = CGPoint.zero
   @State private var pinnedInspection = false
   @State private var axisMeasurements = NativeChartAxisMeasurements()
   @ScaledMetric(relativeTo: .caption) private var axisScale: CGFloat = 1
   @Namespace private var measurementScope
-  private var data: NativeChartData { NativeChartData(context: context) }
   private var name: String { context.element.typeName }
+  private var allData: NativeChartData { NativeChartData(context: context).prepared(for: name) }
+  private var data: NativeChartData { allData.excluding(visibility.hidden, for: name) }
   private var palette: [Color] {
     context.theme.dataColors.isEmpty ? [context.theme.accent] : context.theme.dataColors
   }
-  private var legend: [String] {
-    if name == "ScatterChart" { return data.scatter.map(\.name) }
-    return data.series.isEmpty ? data.labels : data.series.map(\.name)
-  }
+  private var legend: [String] { allData.legendNames(for: name) }
   private var drawing: NativeChartDrawing {
     NativeChartDrawing(
       data: data, name: name, variant: context.string("variant"),
@@ -134,7 +163,15 @@ struct NativeChart: View {
   }
   /// Touch scrolling remains native until a deliberate press activates
   /// inspection. Desktop pointer dragging has no competing touch-scroll intent.
-  var body: some View {
+  @ViewBuilder var body: some View {
+    if allData.hasContent(for: name) {
+      chartBody
+    } else if name == "PieChart", context.isQueryLoading {
+      NativePieSkeleton(donut: context.string("variant") == "donut", semi: context.string("appearance") == "semiCircular")
+    }
+  }
+
+  private var chartBody: some View {
     VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
       GeometryReader { geometry in
         Canvas { canvas, size in
@@ -160,7 +197,7 @@ struct NativeChart: View {
         }
         .overlay(alignment: .topLeading) {
           if let inspected, data.accessibilityRows.indices.contains(inspected) {
-            NativeChartTooltip(text: data.accessibilityRows[inspected],
+            NativeChartTooltip(text: data.inspectionRows(locale: locale)[inspected],
               anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
           }
         }
@@ -171,13 +208,17 @@ struct NativeChart: View {
             max(100, context.number("height") ?? (name == "SingleStackedBarChart" ? 100 : 250)))))
       NativeWrappingRow(gap: 16) {
         ForEach(Array(legend.enumerated()), id: \.offset) { index, title in
-          HStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-              .fill(palette[index % palette.count]).frame(width: 8, height: 8)
-              .accessibilityHidden(true)
-            Text(title).font(context.theme.typography.caption)
-              .foregroundStyle(context.theme.secondary)
-          }.accessibilityElement(children: .combine)
+          if name == "SingleStackedBarChart" {
+            legendLabel(index: index, title: title).accessibilityElement(children: .combine)
+          } else {
+            Button { visibility.toggle(title, current: legend) } label: { legendLabel(index: index, title: title) }
+              .buttonStyle(.plain)
+              .opacity(visibility.hidden.contains(OpenUIString(title)) ? 0.3 : 1)
+              .accessibilityLabel(title)
+              .accessibilityValue(visibility.hidden.contains(OpenUIString(title))
+                ? Text("Hidden", bundle: NativeControlResources.bundle) : Text("Visible", bundle: NativeControlResources.bundle))
+              .accessibilityIdentifier("openui.chart.legend." + title)
+          }
         }
       }
     }.frame(maxWidth: .infinity, alignment: .leading)
@@ -188,6 +229,21 @@ struct NativeChart: View {
       }
       .onChange(of: data.accessibilityRows) { _ in inspected = nil; pinnedInspection = false }
   }
+  private func legendLabel(index: Int, title: String) -> some View {
+    HStack(spacing: 6) {
+      RoundedRectangle(cornerRadius: 2, style: .continuous)
+        .fill(palette[index % palette.count]).frame(width: 8, height: 8).accessibilityHidden(true)
+      Text(title).font(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
+      if ["PieChart", "RadialChart"].contains(name), allData.slices.indices.contains(index) {
+        Text(NativeChartNumber.tooltip(allData.slices[index], locale: locale))
+          .font(context.theme.typography.caption.weight(.semibold)).monospacedDigit()
+      } else if name == "SingleStackedBarChart", allData.slices.indices.contains(index) {
+        Text(NativeChartNumber.percentage(allData.slices[index], total: allData.slices.reduce(0, +)))
+          .font(context.theme.typography.caption).monospacedDigit()
+      }
+    }.padding(.vertical, 6).contentShape(Rectangle())
+  }
+
 }
 
 private struct NativeChartTooltip: View {
@@ -350,7 +406,8 @@ struct NativeChartDrawing {
   private var gridColorValue: Color { gridColor ?? border }
   private var axisColorValue: Color { axisColor ?? secondary }
   private func color(_ index: Int) -> Color {
-    palette.isEmpty ? secondary : palette[index % palette.count]
+    let slot = data.colorIndices.indices.contains(index) ? data.colorIndices[index] : index
+    return palette.isEmpty ? secondary : palette[slot % palette.count]
   }
   /// Inspection and drawing share the projection, including negative domains
   /// and bubble sizes. A scatter chart does not have categorical labels.
@@ -359,6 +416,18 @@ struct NativeChartDrawing {
       return NativeScatterProjection(data: data, layout: layout(size)).nearestIndex(to: location)
     }
     guard !data.labels.isEmpty else { return nil }
+    if ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name) {
+      return NativePolarInspection.index(at: location, size: size, values: data.slices, name: name,
+        donut: variant == "donut", semi: semi)
+    }
+    if name == "RadarChart" {
+      let center = CGPoint(x: size.width / 2, y: size.height / 2)
+      let radius = max(1, min(size.width / 2 - 48, size.height / 2 - 24))
+      guard hypot(location.x - center.x, location.y - center.y) <= radius else { return nil }
+      let angle = (atan2(location.y - center.y, location.x - center.x) + .pi / 2 + 2 * .pi)
+        .truncatingRemainder(dividingBy: 2 * .pi)
+      return Int((angle / (2 * .pi) * Double(data.labels.count)).rounded()) % data.labels.count
+    }
     let rect = layout(size).rect
     if ["BarChart", "HorizontalBarChart", "LineChart", "AreaChart"].contains(name),
       !rect.contains(location) { return nil }
@@ -404,7 +473,7 @@ struct NativeChartDrawing {
       canvas.draw(label, at: point, anchor: anchor)
     }
   }
-  private func number(_ value: Double) -> String { String(format: "%.3g", value) }
+  private func number(_ value: Double) -> String { NativeChartNumber.tick(value) }
   func layout(_ size: CGSize) -> NativeChartLayout {
     NativeChartLayout(size: size, scale: axisScale, measurements: axisMeasurements)
   }

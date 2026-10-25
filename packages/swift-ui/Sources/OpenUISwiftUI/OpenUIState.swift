@@ -19,6 +19,12 @@ public final class OpenUIState: ObservableObject {
     @Published public private(set) var isComplete = false
     @Published public private(set) var queryStates: [String: QueryState] = [:]
     @Published public private(set) var mutationStates: [String: MutationState] = [:]
+    /// Matches the reference context's loading signal, including declared
+    /// Queries waiting for their streamed program to become executable.
+    public var isQueryLoading: Bool {
+        queryStates.values.contains { $0.status == .loading }
+            || (!isComplete && !(latestResult?.queryStatements.isEmpty ?? true))
+    }
     public var onAction: ((ActionEvent) -> Void)?
     public var onParseResult: ((ParseResult) -> Void)?
     public var onError: (([OpenUIError]) -> Void)?
@@ -162,8 +168,10 @@ public final class OpenUIState: ObservableObject {
         return value ?? fallback
     }
 
-    public func setFieldValue(form: OpenUIString?, name: OpenUIString, value: Value, componentType: String = "input") {
-        let wrapped = Value.object([ObjectField(key: "value", value: value), ObjectField(key: "componentType", value: .string(componentType))])
+    public func setFieldValue(form: OpenUIString?, name: OpenUIString, value: Value, componentType: String? = "input") {
+        var properties = [ObjectField(key: "value", value: value)]
+        if let componentType { properties.append(ObjectField(key: "componentType", value: .string(componentType))) }
+        let wrapped = Value.object(properties)
         if let form {
             var fields: [ObjectField] = []
             if case .object(let current) = store.get(form) { fields = Array(current) }

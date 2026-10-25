@@ -1,0 +1,5 @@
+root=Stack([
+  TextContent("# A complete answer\n\nA **clear summary**, a [regular link](https://sdk-fixture.invalid/regular), and a source [1][2].\n\n- First observation\n- Second observation\n\n| Option | Value |\n| --- | ---: |\n| Alpha | 12 |\n| Beta | 24 |\n\nPrice remains literal: $25. Inline equation: $$x^2+y^2=z^2$$.\n\n$$\n\\frac{a+b}{2}=\\sqrt{c}\n$$\n\n```swift\nlet answer = 42\nprint(answer)\n```"),
+  EntityList([{left:"A cited **detail** [1]",right:"`42`"}]),
+  MarkDownRenderer("## Markdown component\n\n```json\n{\"answer\":42}\n```","clear")
+],"column","m")

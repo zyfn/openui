@@ -46,7 +46,7 @@ enum ReviewLanguage: String, CaseIterable {
       }
       source = english
     } else { source = original.source }
-    return ReviewProgram(id: original.id, title: text(original.title), source: source)
+    return ReviewProgram(id: original.id, title: text(original.title), source: source, sources: original.sources)
   }
 }
 

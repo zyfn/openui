@@ -3,7 +3,7 @@ import XCTest
 
 final class ReviewMapTests: ReviewTestCase {
   func testDefaultPlaceCardsUseSuppliedFactsAndSynchronizeWithIconMarkers() {
-    let app = launch("map-places", inspect: true, bubble: true)
+    let app = launch("map-places", inspect: true)
     let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
     let pager = app.descendants(matching: .any).matching(identifier: "openui.map.pager").firstMatch
     XCTAssertTrue(map.waitForExistence(timeout: 5))
@@ -50,10 +50,10 @@ final class ReviewMapTests: ReviewTestCase {
     XCTAssertTrue(app.staticTexts["地点二详情"].waitForExistence(timeout: 5))
     XCTAssertTrue(app.staticTexts["review.state"].label.contains("second"))
     capture(app, name: "map-selected")
-    let expand = app.buttons["Expand map"]
+    let expand = app.buttons.matching(NSPredicate(format: "label IN %@", ["Expand map", "展开地图"])).firstMatch
     XCTAssertTrue(expand.exists)
     expand.tap()
-    let close = app.buttons["Close"]
+    let close = app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "关闭"])).firstMatch
     XCTAssertTrue(close.waitForExistence(timeout: 5))
     let expanded = app.descendants(matching: .any).matching(identifier: "openui.map.expanded").firstMatch
     XCTAssertTrue(expanded.staticTexts["地点二详情"].exists)
@@ -79,13 +79,13 @@ final class ReviewMapTests: ReviewTestCase {
     XCTAssertTrue(first.waitForExistence(timeout: 5))
     let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
     let inlineY = map.frame.minY
-    app.buttons["Expand map"].tap()
-    XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 5))
+    app.buttons.matching(NSPredicate(format: "label IN %@", ["Expand map", "展开地图"])).firstMatch.tap()
+    XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "关闭"])).firstMatch.waitForExistence(timeout: 5))
     let expanded = app.descendants(matching: .any).matching(identifier: "openui.map.expanded").firstMatch
     expanded.descendants(matching: .any).matching(identifier: "openui.map.pager").firstMatch.swipeLeft()
     XCTAssertTrue(expanded.staticTexts["地点二详情"].waitForExistence(timeout: 5))
     capture(app, name: "map-composed-content-fullscreen")
-    app.buttons["Close"].tap()
+    app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "关闭"])).firstMatch.tap()
     XCTAssertTrue(second.waitForExistence(timeout: 5))
     XCTAssertEqual(map.frame.minY, inlineY, accuracy: 3)
     capture(app, name: "map-composed-content-inline")

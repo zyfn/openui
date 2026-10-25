@@ -21,7 +21,7 @@ let prepareOnly = args.contains("--prepare-only")
 let buildStamp = String(Int(Date().timeIntervalSince1970))
 guard prepareOnly || option("--simulator") != nil else {
   print(
-    "Usage: swift packages/swift-ui/scripts/visual-tests.swift --simulator <UDID> [--output <directory>] [--suite quick|full] [--only-testing <Class/method>] [--review-program <file.openui>] [--review-examples <file.json>]\nUse --prepare-only to generate a project for Xcode or XcodeBuildMCP."
+    "Usage: swift packages/swift-ui/scripts/visual-tests.swift --simulator <UDID> [--output <directory>] [--suite adaptive|quick|full] [--only-testing <Class/method>] [--review-program <file.openui>] [--review-examples <file.json>]\nUse --prepare-only to generate a project for Xcode or XcodeBuildMCP."
   )
   exit(2)
 }
@@ -126,18 +126,23 @@ if let path = option("--review-program") {
   reviewResources.append(object("review-program-build", "isa = PBXBuildFile; fileRef = \(reference);"))
 }
 // Boundary programs are test resources, outside the finite design catalog.
-var additionalPrograms: [[String: String]] = []
+var additionalPrograms: [[String: Any]] = []
 let boundaryPrograms = review.appendingPathComponent("Fixtures/Programs")
 if files.fileExists(atPath: boundaryPrograms.path) {
   for source in try files.contentsOfDirectory(at: boundaryPrograms, includingPropertiesForKeys: nil)
     .filter({ $0.pathExtension == "openui" }).sorted(by: { $0.path < $1.path }) {
     let id = source.deletingPathExtension().lastPathComponent
-    additionalPrograms.append(["id": id, "title": id.replacingOccurrences(of: "-", with: " "),
-      "source": try String(contentsOf: source, encoding: .utf8)])
+    var example: [String: Any] = ["id": id, "title": id.replacingOccurrences(of: "-", with: " "),
+      "source": try String(contentsOf: source, encoding: .utf8)]
+    let sources = source.deletingPathExtension().appendingPathExtension("sources.json")
+    if files.fileExists(atPath: sources.path) {
+      example["sources"] = try JSONSerialization.jsonObject(with: Data(contentsOf: sources))
+    }
+    additionalPrograms.append(example)
   }
 }
 if let path = option("--review-examples") {
-  let supplied = try JSONDecoder().decode([[String: String]].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+  let supplied = try JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: path))) as! [[String: Any]]
   additionalPrograms += supplied
 }
 if !additionalPrograms.isEmpty {
@@ -350,10 +355,21 @@ if args.contains("--phone-only") {
   }
 }
 var requestedTests = option("--only-testing")
-if let suite = option("--suite") {
-  guard requestedTests == nil, ["quick", "full"].contains(suite) else {
-    print("Use --suite quick|full or --only-testing, not both")
+if let suite = option("--suite") ?? (requestedTests == nil ? "adaptive" : nil) {
+  guard requestedTests == nil, ["adaptive", "quick", "full"].contains(suite) else {
+    print("Use --suite adaptive|quick|full or --only-testing, not both")
     exit(2)
+  }
+  if suite == "adaptive" {
+    requestedTests = [
+      "ReviewAdaptiveLayoutTests",
+      "ReviewFullLibraryParityTests",
+      "ReviewStandardPresentationTests",
+      "ReviewLayoutTests/testNativeCardChildrenReflowWhenLayoutAndCopyChange",
+      "ReviewMapTests/testDefaultPlaceCardsUseSuppliedFactsAndSynchronizeWithIconMarkers",
+      "ReviewMapTests/testNativeMapMarkerSelectionAndExpansion",
+      "ReviewResourceAndEmbeddedTests/testSVGAndWebContentRenderInTheExistingMediaComposition",
+    ].joined(separator: ",")
   }
   if suite == "quick" {
     requestedTests = [

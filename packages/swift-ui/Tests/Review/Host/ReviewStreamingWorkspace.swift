@@ -19,9 +19,10 @@ import SwiftUI
     if mode == "original", let url = Bundle.main.url(forResource: "StreamProgram", withExtension: "openui"),
       let text = try? String(contentsOf: url, encoding: .utf8) { source = text }
     else if mode == "tabs" { source = ReviewStreamingPrograms.tabs }
+    else if mode == "modal" { source = ReviewStreamingPrograms.modal }
     else { source = mode == "gallery" ? ReviewStreamingPrograms.gallery : ReviewStreamingPrograms.lifecycle(language: language) }
     let state = OpenUIState(schema: library.library.toSchema())
-    if !["original", "tabs"].contains(mode) { state.setSource(source) }
+    if !["original", "tabs"].contains(mode) { state.setSource(source, streaming: mode == "modal") }
     _state = StateObject(wrappedValue: state)
     _offset = State(initialValue: ["original", "tabs"].contains(mode) ? 0 : source.count)
   }

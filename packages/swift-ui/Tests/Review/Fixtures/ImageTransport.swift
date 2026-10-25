@@ -18,6 +18,8 @@ final class ReviewImageProtocol: URLProtocol, @unchecked Sendable {
   ]
   override class func canInit(with request: URLRequest) -> Bool {
     request.url?.host == "sdk-fixture.invalid" || sourceImages[request.url?.absoluteString ?? ""] != nil
+      || (request.url?.host == "www.google.com" && request.url?.path == "/s2/favicons"
+          && request.url?.query?.contains("domain=sdk-fixture.invalid") == true)
   }
   override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
   override func startLoading() {

@@ -114,9 +114,10 @@ final class ChartInspectionTests: XCTestCase {
     }
     XCTAssertNil(drawing.inspectionIndex(at: CGPoint(x: 44, y: 82), size: size),
       "The regular-size coordinate must not remain an invisible touch target")
-    let scientific = try chart(
+    let abbreviated = try chart(
       "root=BarChart([\"A\"],[Series(\"Count\",[-100000])])", name: "BarChart")
-    XCTAssertTrue(scientific.axisLabels.left.contains("-1e+05"))
+    XCTAssertTrue(abbreviated.axisLabels.left.contains("-100K"),
+      "Upstream numberTickFormatter abbreviates thousands with K, including negative values")
   }
 
 

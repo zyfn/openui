@@ -1,6 +1,31 @@
 // Ordered native data and AST codecs. No language execution or UI dependency.
 import Foundation
 
+/// Native presentation adapters use the ECMAScript primitive rather than a
+/// second floating-point rounding implementation.
+@_spi(RuntimeInspection) public func jsNumberToFixed(_ value: Double, digits: Int) -> String {
+    precondition((0...100).contains(digits))
+    let core = SharedCore.shared
+    return core.sync {
+        let result = core.encode(.number(value)).invokeMethod("toFixed", withArguments: [digits])!
+        return core.string(result).displayString
+    }
+}
+
+@_spi(RuntimeInspection) public func jsNumberLocalized(_ value: Double, locale: String) -> String {
+    let core = SharedCore.shared
+    return core.sync {
+        let tag = locale.split(separator: "@").first.map(String.init)?.replacingOccurrences(of: "_", with: "-") ?? "en"
+        let number = core.encode(.number(value))
+        let formatted = number.invokeMethod("toLocaleString", withArguments: [tag])
+        if core.context.exception != nil {
+            core.context.exception = nil
+            return core.string(number.invokeMethod("toLocaleString", withArguments: [])!).displayString
+        }
+        return core.string(formatted!).displayString
+    }
+}
+
 extension Value {
     public var isNullish: Bool {
         switch self { case .null, .undefined: return true; default: return false }

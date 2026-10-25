@@ -167,7 +167,14 @@ private struct NativeDataTable: View {
         let start = safePage * pageSize
         return start..<min(start + pageSize, rowCount)
     }
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if context.isQueryLoading && rowCount == 0 {
+            NativeTableSkeleton(columns: columns.count)
+        } else if !columns.isEmpty {
+            loadedTable
+        }
+    }
+    private var loadedTable: some View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal) { tableContent }
             if pageCount > 1 {

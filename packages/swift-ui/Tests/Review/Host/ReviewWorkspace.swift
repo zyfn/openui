@@ -21,7 +21,7 @@ struct ReviewWorkspace: View {
   private var sample: ReviewProgram? { programs.first { $0.id == selected } }
   private var program: ReviewProgram? {
     if let manualSource {
-      return ReviewProgram(id: "manual-\(manualRun)", title: "手动 Lang", source: manualSource)
+      return ReviewProgram(id: "manual-\(manualRun)", title: "手动 Lang", source: manualSource, sources: sample?.sources)
     }
     return sample.map { display.language.program($0) }
   }
@@ -70,7 +70,8 @@ struct ReviewWorkspace: View {
           restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
-          programID: program?.id ?? selected, display: display, inspector: configuration.inspector)
+          programID: program?.id ?? selected, display: display, inspector: configuration.inspector,
+          sources: program?.sources ?? [])
       }
     }
     .background(Color(uiColor: .systemBackground))

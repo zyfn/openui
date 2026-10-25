@@ -56,6 +56,11 @@ The native renderer implements these standard presentation contracts:
 | EntityList | Inline Markdown in both cells, text/number variants, default header/footer and compact rows |
 | Tag / TagBlock | Distinct small, medium and large metrics; shared icon and semantic color presentation |
 | IconText | Semantic icon badges including inverted, with upstream filled/soft normalization |
+| TextContent | Block Markdown, GFM tables, shared fenced-code rendering, numbered source citations and offline KaTeX equations |
+| Charts | Upstream tick/tooltip number formats, stable polar sorting/colors and interactive legend visibility; SingleStackedBar keeps input order and its static legend |
+| Slider | Typed numeric values, discrete choices, multiple range handles and coalesced state commits |
+| Modal | Presentation-field binding, including dismissal during streaming; callbacks from a replaced source cannot update the new response |
+| Table / PieChart | Empty-data loading skeletons driven by query state; refetch retains existing data |
 
 CodeBlock bundles `refractor@5.0.0`, the grammar library used by the pinned
 `react-syntax-highlighter@16.1.1`. Tokens are produced in a private JavaScriptCore
@@ -63,6 +68,16 @@ worker and drawn with SwiftUI Text; model code is never evaluated. Its resource
 is separate from lang-core, carries dependency licenses and requires no runtime
 downloads. Rebuild it with `npm ci --ignore-scripts` then `npm run build` in
 `scripts/code-highlighting`. SwiftPM consumers use the checked-in resource.
+
+Rich text similarly bundles the pinned Remark/KaTeX dependencies. Native blocks
+remain SwiftUI; a private nonpersistent WebKit view rasterizes equations using
+embedded fonts. General SVG/WebView components still require the optional
+OpenUIWeb product. Citation metadata is supplied by `CardSourceProvider`, using
+the upstream source fields rather than extending the language syntax.
+
+`OpenUIState.isQueryLoading` and `ComponentContext.isQueryLoading` expose the
+shared loading condition to native renderers. Empty charts omit a fixed canvas;
+loaded values remain visible during refetch.
 
 Layout fallbacks on iOS 15/macOS 12 are documented in [the visual contract](UI-DESIGN.md).
 Hosts needing different appearance can override a renderer through the existing

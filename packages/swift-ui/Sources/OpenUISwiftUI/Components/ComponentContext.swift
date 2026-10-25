@@ -95,6 +95,7 @@ public struct OpenUIComponentContext {
     /// views when the stream ends even if their evaluated props are unchanged.
     /// Action dispatch still checks the live runtime through canInteract.
     public let isStreaming: Bool
+    public let isQueryLoading: Bool
     // A one-level native layout proposal. Component hosts consume it so a
     // stretched row item cannot accidentally stretch all nested descendants.
     var stretchesVertically = false
@@ -109,9 +110,25 @@ public struct OpenUIComponentContext {
         self.exactFormName = exactFormName ?? formName.map { OpenUIString($0) }
         self.sourceRevision = state.sourceRevision
         self.isStreaming = !state.isComplete
+        self.isQueryLoading = state.isQueryLoading
     }
 
-    @MainActor public var canInteract: Bool { state.isComplete && state.sourceRevision == sourceRevision }
+    @MainActor public var canInteract: Bool { state.isComplete && isCurrentPresentation }
+    @MainActor var isCurrentPresentation: Bool { state.sourceRevision == sourceRevision }
+    var presentationSourceRevision: Int { sourceRevision }
+    /// Local presentation controls such as Modal close can update their value
+    /// while streaming. Epoch checks still reject callbacks from replaced UI.
+    @MainActor func presentationBinding(_ name: String) -> Binding<Value>? {
+        guard let binding = state.binding(for: element, prop: name) else { return nil }
+        return Binding(get: { binding.wrappedValue }, set: { if isCurrentPresentation { binding.wrappedValue = $0 } })
+    }
+    @MainActor func presentationFieldValue(_ name: OpenUIString, fallback: Value) -> Value {
+        state.fieldValue(form: exactFormName, name: name, fallback: fallback)
+    }
+    @MainActor func setPresentationFieldValue(_ name: OpenUIString, value: Value) {
+        guard isCurrentPresentation else { return }
+        state.setFieldValue(form: exactFormName, name: name, value: value, componentType: nil)
+    }
     public func value(_ name: String) -> Value? { element.props.last(where: { $0.0 == name })?.1 }
     /// Native display text. Use codeUnitString/value for semantic action data.
     public func string(_ name: String) -> String? { codeUnitString(name)?.displayString }

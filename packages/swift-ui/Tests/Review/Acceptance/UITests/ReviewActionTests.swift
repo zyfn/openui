@@ -35,7 +35,7 @@ final class ReviewActionTests: ReviewTestCase {
     reader.tap()
     XCTAssertTrue(app.staticTexts["更完整的阅读空间"].waitForExistence(timeout: 3))
     capture(app, name: "progressive-reader")
-    app.buttons["Close"].tap()
+    app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "关闭"])).firstMatch.tap()
     XCTAssertFalse(app.staticTexts["更完整的阅读空间"].exists)
     XCTAssertEqual(reader.frame.minY, before, accuracy: 3)
     XCTAssertTrue(app.staticTexts["已标记"].exists)

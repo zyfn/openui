@@ -171,24 +171,18 @@ enum NativeInlineMarkdown {
 struct NativeInlineText: View {
   let context: OpenUIComponentContext
   let bold: Bool
-  private var font: Font {
+  private var style: NativeRichTextStyle {
     let size = context.string("size") ?? "sm"
-    let typography = context.theme.typography
-    let base: Font = size == "xs" ? typography.caption
-      : size == "lg" ? typography.title : size == "md" ? typography.body : typography.detail
-    return base.weight(bold ? .semibold : .regular)
+    return .init(scale: size == "xs" ? 12 / 17 : size == "lg" ? 20 / 17 : size == "md" ? 1 : 15 / 17,
+      weight: bold ? .semibold : .regular, numeric: context.string("variant") == "number")
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
-      primary.font(font)
+      NativeMarkdownText(text: context.string("value") ?? "", mode: .inline, style: style)
       if let sub = context.string("subtext") {
-        NativeInlineMarkdown.text(sub).font(context.theme.typography.detail).foregroundStyle(subtextColor(sub))
+        NativeMarkdownText(text: sub, mode: .inline, style: .init(scale: 15 / 17, color: subtextColor(sub)))
       }
     }.fixedSize(horizontal: false, vertical: true)
-  }
-  private var primary: Text {
-    let text = NativeInlineMarkdown.text(context.string("value") ?? "")
-    return context.string("variant") == "number" ? text.monospacedDigit() : text
   }
   private func subtextColor(_ value: String) -> Color {
     guard context.string("subtextVariant") == "metric" else { return context.theme.secondary }
@@ -240,11 +234,10 @@ struct NativeMediaText: View {
   }
   private var words: some View {
     VStack(alignment: .leading, spacing: 4) {
-      NativeInlineMarkdown.text(context.string("title") ?? "")
-        .font(context.flag("bold") == true
-          ? context.theme.typography.heading : context.theme.typography.body)
+      NativeMarkdownText(text: context.string("title") ?? "", mode: .inline,
+        style: .init(weight: context.flag("bold") == true ? .semibold : .regular))
       if let sub = context.string("subtitle") {
-        NativeInlineMarkdown.text(sub).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+        NativeMarkdownText(text: sub, mode: .inline, style: .init(scale: 15 / 17, color: context.theme.secondary))
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -327,19 +320,17 @@ struct NativeEntityList: View {
   private func row(_ value: Value, kind: RowKind) -> some View {
     let small = context.string("size") == "small"
     let numeric = NativeValue.string(value, "rightVariant") == "number"
-    let bodyFont = small ? context.theme.typography.detail : context.theme.typography.body
-    let rightFont = kind == .footer ? context.theme.typography.title : bodyFont.weight(.semibold)
-    let right = NativeInlineMarkdown.text(NativeValue.string(value, "right") ?? "").font(rightFont)
+    let scale: CGFloat = small ? 15 / 17 : 1
+    let color = kind == .header ? context.theme.secondary : context.theme.foreground
     return HStack(alignment: .top, spacing: context.theme.spacing("m")) {
-      NativeInlineMarkdown.text(NativeValue.string(value, "left") ?? "")
-        .font(bodyFont).fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-      Group {
-        if numeric { right.monospacedDigit() } else { right }
-      }.multilineTextAlignment(.trailing).fixedSize(horizontal: false, vertical: true)
+      NativeMarkdownText(text: NativeValue.string(value, "left") ?? "", mode: .inline,
+        style: .init(scale: scale, color: color))
+        .fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+      NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
+        style: .init(scale: kind == .footer ? 20 / 17 : scale, weight: .semibold, numeric: numeric, color: color))
+        .multilineTextAlignment(.trailing).fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
-    .foregroundStyle(kind == .header ? context.theme.secondary : context.theme.foreground)
     .padding(.vertical, small ? 8 : 16).textSelection(.enabled)
     .accessibilityIdentifier("openui.entity-list.row")
   }
@@ -464,29 +455,27 @@ struct NativeCarousel: View {
 }
 struct NativeModal: View {
   let context: OpenUIComponentContext
-  @State private var localOpen: Bool?
   @EnvironmentObject private var state: OpenUIState
   private var presented: Binding<Bool> {
     Binding(
       get: {
-        if let binding = context.binding("open") {
+        if let binding = context.presentationBinding("open") {
           return binding.wrappedValue == .boolean(true) || binding.wrappedValue == .string("true")
         }
-        return localOpen
-          ?? (context.value("open") == .boolean(true) || context.value("open") == .string("true"))
+        let value = context.presentationFieldValue("open", fallback: context.value("open") ?? .undefined)
+        return value == .boolean(true) || value == .string("true")
       },
       set: { open in
-        guard context.canInteract else { return }
-        if let binding = context.binding("open") {
+        guard context.isCurrentPresentation else { return }
+        if let binding = context.presentationBinding("open") {
           binding.wrappedValue = .boolean(open)
         } else {
-          localOpen = open
+          context.setPresentationFieldValue("open", value: .boolean(open))
         }
       })
   }
   var body: some View {
     Color.clear.frame(width: 0, height: 0)
-      .onChange(of: context.value("open")) { _ in localOpen = nil }
       .sheet(isPresented: presented) {
         VStack(alignment: .leading, spacing: 16) {
           HStack {
@@ -498,14 +487,13 @@ struct NativeModal: View {
               Image(systemName: "xmark")
             }
             .buttonStyle(.plain).keyboardShortcut(.cancelAction)
-            .accessibilityLabel(Text("Close", bundle: NativeControlResources.bundle)).disabled(
-              !context.canInteract)
+            .accessibilityLabel(Text("Close", bundle: NativeControlResources.bundle))
           }
           ScrollView { context.slot().frame(maxWidth: .infinity, alignment: .leading) }
         }.padding(context.theme.cardPadding).frame(
           idealWidth: context.string("size") == "lg"
             ? 720 : context.string("size") == "sm" ? 360 : 520, idealHeight: 420
-        ).interactiveDismissDisabled(!context.canInteract)
+        )
       }
   }
 }
@@ -555,7 +543,7 @@ struct NativeCardItem: View {
         context.slot("bottom")
       case "Context":
         context.slot("title")
-        if let body = context.string("body") { NativeMarkdownText(text: body) }
+        if let body = context.string("body") { NativeMarkdownText(text: body, mode: .inline, style: .init(weight: .semibold)) }
       case "Visual":
         context.slot("tag")
         HStack(alignment: .top, spacing: 8) {
