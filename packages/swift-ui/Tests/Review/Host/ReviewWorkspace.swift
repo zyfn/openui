@@ -71,8 +71,10 @@ struct ReviewWorkspace: View {
           restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
-          programID: program?.id ?? selected, display: display, inspector: configuration.inspector,
-          sources: program?.sources ?? [])
+          programID: program?.id ?? selected, source: program?.source ?? "",
+          display: display, inspector: configuration.inspector,
+          sources: program?.sources ?? [], request: program?.request,
+          exportFull: configuration.exportFull)
       }
     }
     .background(Color(uiColor: .systemBackground))

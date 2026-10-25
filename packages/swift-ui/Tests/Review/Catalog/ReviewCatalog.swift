@@ -7,6 +7,7 @@ struct ReviewProgram: Identifiable, Codable {
   let title: String
   let source: String
   var sources: [CardSource]? = nil
+  var request: String? = nil
 }
 
 struct ReviewScenario: Identifiable {

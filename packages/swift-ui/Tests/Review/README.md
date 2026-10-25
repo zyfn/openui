@@ -16,8 +16,8 @@ explicitly illustrative. Stay choices update the two-day total;
 camera choices update the remaining budget; venue choices update the gathering
 total and per-person cost. Product candidates use the official
 `CompositeCardBlock` / `CompositeCardItem` structure: an image header,
-descriptive body and price/button footer. Cameras use carousel presentation;
-hotel and venue candidates use responsive grids. A single offer uses `Card`
+descriptive body and price/button footer. Cameras and hotels use peeking
+carousels; venue candidates use a responsive grid. A single offer uses `Card`
 rather than duplicating an item to satisfy a CardBlock's two-item minimum.
 Simple itinerary rows retain `ListBlock` / `ListItem`. The one-day itinerary is
 a fixed authored plan without the former walk/cruise switch. Outbound and
@@ -131,6 +131,14 @@ The host accepts `--case`, `--language zh-Hans|en`, `--theme default|accent`, `-
 `--width available|standard|narrow`, `--appearance light|dark` and `--large-text`.
 These flags affect the review host only. External-source methods explicitly skip
 when their optional input is absent; report these skips with the acceptance scope.
+
+Each authored task includes its corresponding user request above the response.
+Launch the host with `--case <scene-id> --language en --export-full` to export
+the complete default state to its Documents/Exports directory. The export keeps
+the source, user request, original native window captures and an offset manifest,
+then joins the visible content strips into `full-content.png`. It does not resize
+SDK layouts or retouch pixels. Other tab/carousel selections require separate
+captures. These authored examples are not live Agent acceptance evidence.
 
 ## Default acceptance scope
 

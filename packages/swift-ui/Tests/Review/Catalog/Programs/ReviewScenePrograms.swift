@@ -13,11 +13,13 @@ enum ReviewScenePrograms {
       return String(String(data: data, encoding: .utf8)!.dropFirst().dropLast())
     }
     let title: String
+    let request: String
     let source: String
     let sources: [CardSource]
     switch id {
     case "scene-day-trip":
       title = t("规划一次一日游", "A day in Paris")
+      request = t("11 月 5 日我们两个人在巴黎玩一天。想轻松一点，看看艺术、逛街区，也帮我安排吃饭、交通和预算。", "We have one day in Paris on 5 November. Plan an unhurried day for two adults with art, a neighborhood walk, places to eat, transport and a clear budget.")
       source = """
         $place="louvre"
         activity=60
@@ -80,6 +82,7 @@ enum ReviewScenePrograms {
       ]
     case "scene-two-day-trip":
       title = t("规划一次两日游", "Two days, one night")
+      request = t("帮两位成人安排 11 月 5 日从伦敦出发、6 日返回的巴黎两天一晚。包含机票、酒店对比、每天的行程和总预算。", "Plan two days and one night in Paris for two adults, leaving London on 5 November and returning on 6 November. Include flights, a hotel comparison, a daily itinerary and a total budget.")
       source = """
         $stay="central"
         hotel=$stay=="central"?220:160
@@ -232,6 +235,7 @@ enum ReviewScenePrograms {
       ]
     case "scene-shopping":
       title = t("选购一台旅行相机", "Choose a travel camera")
+      request = t("想买一台轻便的旅行相机，主要拍街景和人像。总预算 7500 元，包含必要配件，帮我比较取舍并推荐。", "Help me choose a lightweight camera for travel, street photography and portraits. My total budget is ¥7,500, including the essentials. Compare the trade-offs and recommend a kit.")
       source = """
         $kit="light"
         camera=$kit=="light"?5200:6800
@@ -287,6 +291,7 @@ enum ReviewScenePrograms {
       ]
     case "scene-spending":
       title = t("分析消费与预算", "Understand spending")
+      request = t("帮我分析这份 8–10 月示例账单：住房每月 3000；餐饮分别 1500、1500、1800；交通 500、400、600；其他 600、900、1200。解释变化，再给下个月安排一份 6000 元预算。", "Review this sample spending ledger for August, September and October. Housing was ¥3,000 each month; food ¥1,500, ¥1,500, ¥1,800; transport ¥500, ¥400, ¥600; other spending ¥600, ¥900, ¥1,200. Explain the changes and propose a ¥6,000 budget for next month.")
       source = """
         $period="october"
         food=$period=="quarter"?4800:1800
@@ -382,6 +387,7 @@ enum ReviewScenePrograms {
       ]
     case "scene-gathering":
       title = t("组织一次朋友聚会", "Plan an evening with friends")
+      request = t("11 月 7 日周六 17:00–21:00 想组织六个朋友聚会。比较一下场地，安排共享晚餐和晚上的活动，人均控制在 260 元以内。", "Organize a relaxed gathering for six friends on Saturday 7 November, from 17:00 to 21:00. Compare places, arrange a shared dinner and an evening plan, and keep the cost within ¥260 per person.")
       source = """
         $venue="studio"
         space=$venue=="studio"?480:720
@@ -445,6 +451,7 @@ enum ReviewScenePrograms {
       ]
     case "scene-learning":
       title = t("图文学习一段历史", "Learn through objects")
+      request = t("从玉琮和玉璧给我讲讲良渚历史，结合图片和馆藏资料，区分能观察到的证据与尚不能确定的解释，并给出出处。", "Teach me about Liangzhu history through jade cong and bi. Use images and collection records, explain what we can observe and what remains uncertain, and include sources.")
       source = """
         root=Stack([
           TextContent(\(q("一块玉，为什么能讲出一个时代？", "What can a piece of jade tell us?")),"large-heavy"),
@@ -504,6 +511,6 @@ enum ReviewScenePrograms {
       ]
     default: return nil
     }
-    return ReviewProgram(id: id, title: title, source: source, sources: sources)
+    return ReviewProgram(id: id, title: title, source: source, sources: sources, request: request)
   }
 }

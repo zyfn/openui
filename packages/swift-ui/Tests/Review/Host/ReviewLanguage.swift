@@ -50,8 +50,9 @@ enum ReviewLanguage: String, CaseIterable {
       }
       source = english
     } else { source = original.source }
-    let title = ReviewScenePrograms.program(original.id, english: self == .english)?.title ?? text(original.title)
-    return ReviewProgram(id: original.id, title: title, source: source, sources: original.sources)
+    let localized = ReviewScenePrograms.program(original.id, english: true)
+    return ReviewProgram(id: original.id, title: localized?.title ?? text(original.title), source: source,
+      sources: localized?.sources ?? original.sources, request: localized?.request ?? original.request)
   }
 }
 
