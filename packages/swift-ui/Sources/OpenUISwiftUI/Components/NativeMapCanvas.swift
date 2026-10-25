@@ -193,15 +193,20 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
     var bounds = MKMapRect.null
     for annotation in view.annotations.compactMap({ $0 as? NativeMapAnnotation }) {
       let point = MKMapPoint(annotation.coordinate)
-      let lat = max(-85, min(85, annotation.coordinate.latitude))
-      let radius = MKMapPointsPerMeterAtLatitude(lat) * 500
-      bounds = bounds.union(
-        MKMapRect(
-          x: point.x - radius, y: point.y - radius,
-          width: radius * 2, height: radius * 2))
+      bounds = bounds.union(MKMapRect(x: point.x, y: point.y, width: 1, height: 1))
     }
     for overlay in view.overlays { bounds = bounds.union(overlay.boundingMapRect) }
     if !bounds.isNull {
+      // Fit groups to their actual extent. Giving every point a 500-metre
+      // envelope unnecessarily zooms dense groups out until markers overlap.
+      // A lone location still needs a useful initial neighbourhood scale.
+      if bounds.width <= 1, bounds.height <= 1 {
+        let center = MKMapPoint(x: bounds.midX, y: bounds.midY)
+        let lat = max(-85, min(85, center.coordinate.latitude))
+        let radius = MKMapPointsPerMeterAtLatitude(lat) * 500
+        bounds = MKMapRect(x: center.x - radius, y: center.y - radius,
+                          width: radius * 2, height: radius * 2)
+      }
       #if os(iOS)
         view.setVisibleMapRect(
           bounds,
@@ -322,12 +327,6 @@ private final class NativeMapMarkerView: MKAnnotationView {
     redraw()
   }
   #if os(iOS)
-  override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-    // The marker is circular. Transparent corners of an overlapping marker's
-    // square bounds must not intercept a tap on its neighbour's visible badge.
-    UIBezierPath(ovalIn: bounds).contains(point)
-  }
-
   override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
     super.traitCollectionDidChange(previousTraitCollection)
     if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) { redraw() }
