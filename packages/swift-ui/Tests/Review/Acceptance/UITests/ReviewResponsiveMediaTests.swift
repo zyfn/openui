@@ -8,9 +8,10 @@ final class ReviewResponsiveMediaTests: ReviewTestCase {
     reveal(first, in: app)
     let narrowWidth = first.frame.width
     XCTAssertLessThanOrEqual(narrowWidth, canvas(in: app).frame.width)
-    let next = app.buttons["openui.card-block.visual.next"]
-    reveal(next, in: app)
-    next.tap()
+    let carousel = app.descendants(matching: .any)
+      .matching(identifier: "openui.card-block.visual.pager").firstMatch
+    reveal(carousel, in: app)
+    carousel.swipeLeft()
     let selected = app.buttons["器物与纹理"]
     XCTAssertTrue(selected.waitForExistence(timeout: 5))
 
@@ -22,7 +23,8 @@ final class ReviewResponsiveMediaTests: ReviewTestCase {
     XCTAssertGreaterThan(selected.frame.width, narrowWidth + 20,
       "A CardBlock page must follow the new viewport instead of retaining a private fixed width")
     XCTAssertLessThanOrEqual(selected.frame.width, canvas(in: app).frame.width)
-    XCTAssertEqual(app.staticTexts["openui.card-block.visual.page"].label, "2 / 2")
+    XCTAssertFalse(app.staticTexts["openui.card-block.visual.page"].exists)
+    XCTAssertFalse(app.buttons["openui.card-block.visual.next"].exists)
     capture(app, name: "responsive-card-block-selected-page")
     selected.tap()
     let events = app.staticTexts["review.events"]
@@ -61,15 +63,14 @@ final class ReviewResponsiveMediaTests: ReviewTestCase {
     app.terminate()
   }
 
-  func testLargeMediaUsesItsNaturalRatioAtTwoContainerWidths() throws {
-    let referenceSize = try fixtureImageSize("detail")
+  func testLargeMediaUsesTheSharedCoverRatioAtTwoContainerWidths() {
     let app = launch("media-text", width: "narrow")
     let image = app.images["横幅石刻照片"]
     XCTAssertTrue(image.waitForExistence(timeout: 8))
     reveal(image, in: app)
     let narrow = image.frame.size
-    XCTAssertEqual(narrow.width / narrow.height, referenceSize.width / referenceSize.height, accuracy: 0.03,
-      "ImageTextLarge must retain the bundled asset's natural ratio without an explicit height field")
+    XCTAssertEqual(narrow.width / narrow.height, 1.5, accuracy: 0.03,
+      "ImageTextLarge uses the native cover role without adding a language field")
     app.buttons["review.conditions-menu"].tap()
     app.segmentedControls["review.width-picker"].buttons["320"].tap()
     app.buttons["review.panel-done"].tap()

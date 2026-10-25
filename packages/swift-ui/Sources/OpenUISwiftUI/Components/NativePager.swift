@@ -10,6 +10,9 @@ struct NativePager<ID: Hashable, Content: View>: View {
   let identifier: String
   var showsControls = true
   var maximumHeight: CGFloat? = nil
+  var maximumPageWidth: CGFloat? = nil
+  var trailingPeek: CGFloat = 0
+  var pageSpacing: CGFloat = 0
   @ViewBuilder let content: (ID) -> Content
   @Namespace private var measurementScope
   @State private var width: CGFloat = 0
@@ -18,7 +21,15 @@ struct NativePager<ID: Hashable, Content: View>: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.openUITheme) private var theme
   private var index: Int { ids.firstIndex(of: selection) ?? 0 }
-  private var height: CGFloat? { heights[selection] ?? heights.values.max() }
+  private var isCarousel: Bool { maximumPageWidth != nil }
+  private var pageWidth: CGFloat {
+    guard let maximumPageWidth else { return width }
+    let peek = min(max(0, trailingPeek), max(0, width - theme.minimumCardWidth - pageSpacing))
+    let reservation = peek > 0 ? peek + pageSpacing : 0
+    return min(max(1, maximumPageWidth), max(1, width - reservation))
+  }
+  private var stride: CGFloat { pageWidth + pageSpacing }
+  private var height: CGFloat? { isCarousel ? heights.values.max() : heights[selection] ?? heights.values.max() }
   private var visibleHeight: CGFloat? { height.map { min($0, maximumHeight ?? $0) } }
   private var position: Binding<ID?> {
     Binding(get: { selection }, set: { if let id = $0, enabled, ids.contains(id) { selection = id } })
@@ -80,28 +91,29 @@ struct NativePager<ID: Hashable, Content: View>: View {
   private var pages: some View {
     ForEach(ids, id: \.self) { id in
       content(id)
-        .frame(width: width, alignment: .leading)
+        .frame(width: pageWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
         .background(GeometryReader { geometry in
           Color.clear.preference(key: NativePagerHeights<ID>.self,
             value: [measurementScope: [id: geometry.size.height]])
         })
         .id(id)
-        .accessibilityHidden(id != selection)
+        .accessibilityHidden(!isCarousel && id != selection)
     }
   }
 
   @ViewBuilder private var viewport: some View {
     if #available(iOS 17, macOS 14, *) {
-      ScrollView(.horizontal, showsIndicators: false) {
-        HStack(alignment: .top, spacing: 0) { pages }.scrollTargetLayout()
+      let scroll = ScrollView(.horizontal, showsIndicators: false) {
+        HStack(alignment: .top, spacing: pageSpacing) { pages }.scrollTargetLayout()
       }
-      .scrollTargetBehavior(.paging)
       .scrollPosition(id: position, anchor: .leading)
       .scrollDisabled(!enabled)
+      if isCarousel { scroll.scrollTargetBehavior(.viewAligned) }
+      else { scroll.scrollTargetBehavior(.paging) }
     } else {
-      HStack(alignment: .top, spacing: 0) { pages }
-        .offset(x: -CGFloat(index) * width + translation)
+      HStack(alignment: .top, spacing: pageSpacing) { pages }
+        .offset(x: -CGFloat(index) * stride + translation)
         .frame(width: width, alignment: .leading)
         .clipped()
         .contentShape(Rectangle())
@@ -114,7 +126,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
             }
             .onEnded { value in
               guard abs(value.translation.width) > abs(value.translation.height),
-                abs(value.predictedEndTranslation.width) > max(24, width * 0.2) else { return }
+                abs(value.predictedEndTranslation.width) > max(24, stride * 0.2) else { return }
               select(index + (value.predictedEndTranslation.width < 0 ? 1 : -1))
             })
     }

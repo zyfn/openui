@@ -22,6 +22,9 @@ public struct OpenUITheme {
     public var compactThumbnailSize: CGFloat = 80
     public var inlineThumbnailSize: CGFloat = 40
     public var minimumTextColumnWidth: CGFloat = 160
+    public var coverAspectRatio: CGFloat = 3 / 2
+    public var maximumCarouselCardWidth: CGFloat = 320
+    public var carouselPeek: CGFloat = 32
     public var cardBorderWidth: CGFloat = 0.5
     public var cardShadowOpacity: Double = 0
     public var cardShadowRadius: CGFloat = 0

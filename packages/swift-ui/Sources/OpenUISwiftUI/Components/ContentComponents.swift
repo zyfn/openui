@@ -126,7 +126,8 @@ struct NativeCallout: View {
 struct NativeImageBlock: View {
   let context: OpenUIComponentContext
   var body: some View {
-    NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "", layout: .intrinsic)
+    NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "",
+      layout: .aspect(context.theme.coverAspectRatio))
       .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
   }
 }
@@ -206,7 +207,8 @@ struct NativeMediaText: View {
       if media == .banner {
         VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
           NativeRemoteImage(
-            src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "", layout: .intrinsic)
+            src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
+            layout: .aspect(context.theme.coverAspectRatio))
             .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
           words
         }.frame(maxWidth: .infinity, alignment: .leading)
@@ -705,10 +707,11 @@ struct NativeCardBlock: View {
         EmptyView()
       } else if context.string("layout") == "carousel" {
         NativePager(ids: children.map(\.id), selection: selection, enabled: true,
-          identifier: "openui.card-block.\(kind.lowercased())") { id in
+          identifier: "openui.card-block.\(kind.lowercased())", showsControls: false,
+          maximumPageWidth: context.theme.maximumCarouselCardWidth,
+          trailingPeek: context.theme.carouselPeek, pageSpacing: gap) { id in
           if let index = children.firstIndex(where: { $0.id == id }) {
             item(children[index], index: index)
-              .padding(.horizontal, gap / 2)
           }
         }
       } else {

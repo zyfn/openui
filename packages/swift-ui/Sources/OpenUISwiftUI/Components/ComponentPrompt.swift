@@ -35,7 +35,11 @@ public enum OpenUINativePrompt {
             rules.append("Image uses source proportions in ordinary flow. In a nonwrapping horizontal parent with align=\"stretch\", it fills the row height with proportional cropping. Put all accompanying details and actions in a sibling content column when they belong beside the image; let that content grow naturally rather than setting a fixed card height.")
         }
         if names.contains("ImageBlock") {
-            rules.append("ImageBlock is standalone media displayed at its source proportions: a tall source creates a tall block. Use it when the full image deserves that reading space. Place a short caption near the image and keep source information separate from unsupported image claims.")
+            let completeImage = names.contains("Image") ? " Use Image when the complete source must remain visible." : ""
+            rules.append("ImageBlock is a framed media preview; native presentation fits it into the theme's cover shape with proportional cropping. Choose source imagery whose subject remains clear in a preview. Keep captions brief and source information factual." + completeImage)
+        }
+        if names.contains("ImageTextLarge") {
+            rules.append("ImageTextLarge is an image-first card header with a cover preview above its title and subtitle. The preview uses the shared native cover shape, rather than letting a portrait source make the card arbitrarily tall.")
         }
         if names.contains("ListBlock"), names.contains("ListItem") {
             rules.append("ListBlock with variant=\"image\" uses a consistent thumbnail column for its items; size=\"small\" selects the compact list. The list adapts its shared image column to the available width and reflows as a whole if side-by-side content cannot fit. Put each item's copy in its title and subtitle. Copy length only changes row height, not individual thumbnail sizes or directions.")
