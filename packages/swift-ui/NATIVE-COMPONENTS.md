@@ -93,6 +93,11 @@ Compact overview/snippet cards measure their content rather than expanding to a
 parent's available height. Neutral IconText uses an inline glyph and label;
 status/inverted variants retain their semantic badge surfaces.
 
+Visual and Context cards interpret `bgImageSrc` as a background rather than a
+separate image above the content. The native surface preserves readable text
+contrast over the artwork; missing artwork retains the ordinary card surface.
+These are component presentation semantics, not travel-specific layouts.
+
 ## SDK and review boundaries
 
 Scene catalogs, authored sample programs, language switching, bubble simulation,

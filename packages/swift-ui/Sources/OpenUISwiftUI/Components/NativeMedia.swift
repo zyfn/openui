@@ -9,7 +9,7 @@ import AppKit
 
 enum NativeMediaStatus: Equatable { case loading, loaded, unavailable }
 enum NativeMediaLayout {
-  case aspect(CGFloat), thumbnail(CGSize), fit, intrinsic
+  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic
 }
 
 /// Shared native resource presentation. Network failures stay outside language
@@ -128,7 +128,7 @@ struct NativeRemoteImage: View {
     switch layout {
     case .aspect(let ratio): surface.aspectRatio(ratio, contentMode: .fit)
     case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
-    case .fit: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
+    case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
     case .intrinsic: surface.aspectRatio(previewAspectRatio, contentMode: .fit)
     }
   }

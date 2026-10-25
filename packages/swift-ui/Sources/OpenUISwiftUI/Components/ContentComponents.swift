@@ -419,21 +419,22 @@ struct NativeListItem: View {
     }
   }
   private var words: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      Text(context.string("title") ?? "").font(context.theme.typography.heading)
-      if let detail = context.string("subtitle") {
-        Text(detail).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
-      }
+    HStack(alignment: .center, spacing: context.theme.contentSpacing) {
+      VStack(alignment: .leading, spacing: 6) {
+        Text(context.string("title") ?? "").font(context.theme.typography.heading)
+        if let detail = context.string("subtitle") {
+          Text(detail).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+        }
+        if hasAction, let label = context.string("actionLabel"), !label.isEmpty {
+          Text(label).font(context.theme.typography.actionCompact)
+            .foregroundStyle(context.theme.secondary).padding(.top, 2).accessibilityHidden(true)
+        }
+      }.frame(maxWidth: .infinity, alignment: .leading)
       if hasAction {
-        HStack(spacing: 4) {
-          if let label = context.string("actionLabel") {
-            Text(label).font(context.theme.typography.actionCompact)
-          }
-          Image(systemName: "chevron.right").font(context.theme.typography.caption.weight(.semibold))
-        }.foregroundStyle(context.theme.foreground).padding(.top, 2).accessibilityHidden(true)
+        Image(systemName: "chevron.right").font(context.theme.typography.caption.weight(.semibold))
+          .foregroundStyle(context.theme.secondary).accessibilityHidden(true)
       }
-    }.frame(maxWidth: .infinity, alignment: .leading)
-      .fixedSize(horizontal: false, vertical: true)
+    }.fixedSize(horizontal: false, vertical: true)
   }
 }
 struct NativeSteps: View {
@@ -525,18 +526,29 @@ struct NativeCardItem: View {
   let context: OpenUIComponentContext
   let kind: String
   @Environment(\.openUICardIsAction) private var isAction
+  private var artworkSource: String? {
+    guard ["Visual", "Context"].contains(kind), let source = context.string("bgImageSrc"),
+      !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+    return source
+  }
+  private var contentTheme: OpenUITheme {
+    var theme = context.theme
+    if artworkSource != nil {
+      theme.foreground = .white
+      theme.secondary = .white.opacity(0.86)
+      theme.surface = .black.opacity(0.55)
+      theme.canvas = .black
+    }
+    return theme
+  }
   @ViewBuilder private var actionIndicator: some View {
     if isAction {
       Image(systemName: "chevron.right").font(context.theme.typography.actionCompact)
-        .foregroundStyle(context.theme.secondary).accessibilityHidden(true)
+        .foregroundStyle(contentTheme.secondary).accessibilityHidden(true)
     }
   }
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.contentSpacing * (["Overview", "Snippet"].contains(kind) ? 2 / 3 : 1)) {
-      if let src = context.string(kind == "Visual" || kind == "Context" ? "bgImageSrc" : "__none") {
-        NativeRemoteImage(src: src, alt: context.string("bgImageAlt") ?? "", layout: .aspect(16 / 9))
-          .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
-      }
       switch kind {
       case "Snippet":
         HStack(alignment: .top, spacing: 12) {
@@ -555,10 +567,15 @@ struct NativeCardItem: View {
         }
         context.slot("bottom")
       case "Context":
-        context.slot("title")
-        if let body = context.string("body") { NativeMarkdownText(text: body, mode: .inline, style: .init(weight: .semibold)) }
+        context.slot("title").font(context.theme.typography.caption)
+          .foregroundStyle(contentTheme.secondary)
+        if artworkSource != nil { Spacer(minLength: context.theme.contentSpacing) }
+        if let body = context.string("body") {
+          NativeMarkdownText(text: body, mode: .inline, style: .init(scale: 15 / 17, weight: .semibold))
+        }
       case "Visual":
         context.slot("tag")
+        if artworkSource != nil { Spacer(minLength: context.theme.contentSpacing) }
         HStack(alignment: .top, spacing: 8) {
           context.slot("body")
           if isAction {
@@ -573,13 +590,29 @@ struct NativeCardItem: View {
           NativeCompositeFooter(context: context, footer: footer)
         }
       }
-    }.padding(context.theme.cardPadding)
+    }
+      .environment(\.openUITheme, contentTheme)
+      .foregroundStyle(contentTheme.foreground)
+      .padding(context.theme.cardPadding)
       .frame(maxWidth: .infinity, alignment: .topLeading)
+      .frame(minHeight: artworkSource == nil ? nil
+        : kind == "Visual" ? context.theme.minimumCardWidth : context.theme.contentSpacing * 8,
+        alignment: .topLeading)
+      .background {
+        if let source = artworkSource {
+          ZStack {
+            Color.black
+            NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .fill, compactStates: true)
+            LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)], startPoint: .top, endPoint: .bottom)
+          }.allowsHitTesting(false)
+        }
+      }
+      .clipShape(RoundedRectangle(cornerRadius: context.theme.cornerRadius))
     .modifier(NativeCardSurface(
       theme: context.theme,
       fill: kind == "Overview" ? context.theme.metricSurface
         : context.string("bgColor") == "gray" ? context.theme.surface : nil,
-      bordered: kind != "Overview"))
+      bordered: artworkSource == nil && kind != "Overview" && context.string("bgColor") != "gray"))
     .environment(\.openUIActionDensity, .compact)
   }
 }
