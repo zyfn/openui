@@ -38,7 +38,7 @@ public enum OpenUINativePrompt {
             rules.append("ImageBlock is standalone media displayed at its source proportions: a tall source creates a tall block. Use it when the full image deserves that reading space. Place a short caption near the image and keep source information separate from unsupported image claims.")
         }
         if names.contains("ListBlock"), names.contains("ListItem") {
-            rules.append("ListBlock with variant=\"image\" uses a consistent thumbnail column for its items; size=\"small\" selects the compact list. Put each item's copy in its title and subtitle. Longer copy grows the row without resizing the thumbnail or changing that item's direction.")
+            rules.append("ListBlock with variant=\"image\" uses a consistent thumbnail column for its items; size=\"small\" selects the compact list. The list adapts its shared image column to the available width and reflows as a whole if side-by-side content cannot fit. Put each item's copy in its title and subtitle. Copy length only changes row height, not individual thumbnail sizes or directions.")
         }
         if names.contains("Table") {
             rules.append("Table keeps column relationships, including component-valued cells. A wide table scrolls horizontally; it does not become cards. Choose it for shared comparison axes, not unrelated narratives.")

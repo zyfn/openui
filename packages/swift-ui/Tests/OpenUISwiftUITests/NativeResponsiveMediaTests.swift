@@ -17,6 +17,25 @@ final class NativeResponsiveMediaTests: XCTestCase {
         { width in CGSize(width: min(width, advance), height: ceil(advance / max(1, width)) * lineHeight) }
     }
 
+    func testListMediaColumnAdaptsToContainerBeforeReflowingTheWholeList() {
+        func layout(_ width: CGFloat, preferred: CGFloat = 112) -> NativeListMediaLayout {
+            NativeListMediaLayout(width: width, preferredImageWidth: preferred,
+                minimumImageWidth: 40, textWidth: 160, gap: 12)
+        }
+        XCTAssertEqual(layout(360).imageWidth, 112)
+        XCTAssertEqual(layout(240).imageWidth, 68)
+        XCTAssertEqual(layout(212).imageWidth, 40)
+        XCTAssertEqual(layout(360, preferred: 80).imageWidth, 80)
+        for width in [CGFloat(360), 240, 212] {
+            XCTAssertTrue(layout(width).axis == .horizontal)
+            XCTAssertGreaterThanOrEqual(width - layout(width).imageWidth - 12, 160)
+        }
+        for width in [CGFloat(211), 120, 80] {
+            XCTAssertTrue(layout(width).axis == .vertical)
+            XCTAssertLessThanOrEqual(layout(width).imageWidth, width)
+        }
+    }
+
     func testLongCopyWrapsBesideHorizontalMediaWithoutCreatingWidthOverflow() {
         let result = NativeMediaRowPlacement.measure(width: 320, media: CGSize(width: 80, height: 80),
             gap: 12, axis: .horizontal, centered: true,

@@ -351,6 +351,7 @@ struct NativeEntityList: View {
 private struct NativeListPresentation {
   var imageWidth: CGFloat?
   var compact = false
+  var axis = NativeMediaRowAxis.horizontal
 }
 private struct NativeListPresentationKey: EnvironmentKey {
   static let defaultValue = NativeListPresentation()
@@ -365,8 +366,18 @@ extension EnvironmentValues {
 struct NativeListBlock: View {
   let context: OpenUIComponentContext
   @Environment(\.displayScale) private var displayScale
+  @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
+  @Namespace private var scope
+  @State private var containerWidth: CGFloat?
   private var imageList: Bool { context.string("variant") == "image" }
   private var compact: Bool { context.string("size") == "small" }
+  private var mediaLayout: NativeListMediaLayout {
+    NativeListMediaLayout(width: containerWidth,
+      preferredImageWidth: compact ? context.theme.compactThumbnailSize : context.theme.thumbnailSize,
+      minimumImageWidth: context.theme.inlineThumbnailSize,
+      textWidth: context.theme.minimumTextColumnWidth * textScale,
+      gap: context.theme.contentSpacing)
+  }
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       ForEach(Array(context.children("items").enumerated()), id: \.element.id) { index, item in
@@ -384,9 +395,23 @@ struct NativeListBlock: View {
         }
       }
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(GeometryReader { geometry in
+      Color.clear.preference(key: NativeListContainerWidths.self, value: [scope: geometry.size.width])
+    })
+    .onPreferenceChange(NativeListContainerWidths.self) { values in
+      guard let width = values[scope], width.isFinite, width > 0 else { return }
+      if containerWidth.map({ abs($0 - width) > 0.5 }) ?? true { containerWidth = width }
+    }
     .environment(\.openUIListPresentation, NativeListPresentation(
-      imageWidth: imageList ? (compact ? context.theme.compactThumbnailSize : context.theme.thumbnailSize) : 0,
-      compact: compact))
+      imageWidth: imageList ? mediaLayout.imageWidth : 0,
+      compact: compact, axis: mediaLayout.axis))
+  }
+}
+private struct NativeListContainerWidths: PreferenceKey {
+  static let defaultValue: [Namespace.ID: CGFloat] = [:]
+  static func reduce(value: inout [Namespace.ID: CGFloat], nextValue: () -> [Namespace.ID: CGFloat]) {
+    value.merge(nextValue(), uniquingKeysWith: { _, next in next })
   }
 }
 struct NativeListItem: View {
@@ -413,7 +438,7 @@ struct NativeListItem: View {
   @ViewBuilder private var content: some View {
     Group {
       if hasImage {
-        NativeMediaRow(axis: .horizontal, gap: context.theme.contentSpacing,
+        NativeMediaRow(axis: presentation.axis, gap: context.theme.contentSpacing,
           media: { photo }, copy: { words })
       } else { words }
     }.fixedSize(horizontal: false, vertical: true).contentShape(Rectangle())

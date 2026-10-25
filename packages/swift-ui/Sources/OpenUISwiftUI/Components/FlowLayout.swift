@@ -129,6 +129,31 @@ struct OpenUIFlexLayout: Layout {
 
 enum NativeMediaRowAxis { case horizontal, vertical }
 
+/// Resolve once for a list, so every item keeps the same media column and axis.
+/// Thresholds are visual roles supplied by the theme, not device breakpoints.
+struct NativeListMediaLayout {
+    let imageWidth: CGFloat
+    let axis: NativeMediaRowAxis
+
+    init(width: CGFloat?, preferredImageWidth: CGFloat, minimumImageWidth: CGFloat,
+         textWidth: CGFloat, gap: CGFloat) {
+        let preferred = max(0, preferredImageWidth)
+        guard let width, width.isFinite, width > 0 else {
+            imageWidth = preferred; axis = .horizontal
+            return
+        }
+        let minimum = min(preferred, max(0, minimumImageWidth))
+        let roomForImage = max(0, width - max(0, textWidth) - max(0, gap))
+        if roomForImage >= minimum {
+            imageWidth = min(preferred, roomForImage)
+            axis = .horizontal
+        } else {
+            imageWidth = min(preferred, width)
+            axis = .vertical
+        }
+    }
+}
+
 /// Media keeps its declared dimensions; copy wraps in the remaining space.
 /// Direction is explicit rather than inferred from the length of the copy.
 enum NativeMediaRowPlacement {
