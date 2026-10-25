@@ -348,9 +348,11 @@ for file in testFiles {
   }
 }
 var expectedTests = discoveredTests
+var skippedTests = Set<String>()
 if args.contains("--phone-only") {
   for test in ["ReviewMapTests/testNativeMapAccessibleTextKeepsMarkersVisible", "ReviewLayoutTests/testAccessibleTextRemainsScrollable"] {
     expectedTests.remove(test)
+    skippedTests.insert(test)
     command.append("-skip-testing:ComponentVisualUITests/" + test)
   }
 }
@@ -401,6 +403,7 @@ if let only = requestedTests {
     command.append("-only-testing:ComponentVisualUITests/" + selection)
   }
 }
+expectedTests.subtract(skippedTests)
 print("Expected native tests: \(expectedTests.sorted().joined(separator: ", "))")
 // Stable system chrome on the selected test simulator. This is simulator
 // configuration, not modification of captured pixels.
