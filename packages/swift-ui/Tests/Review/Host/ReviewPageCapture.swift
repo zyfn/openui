@@ -10,7 +10,7 @@ final class ReviewPageCapture: ObservableObject {
   weak var scrollView: UIScrollView?
   private var exporting = false
 
-  func export(programID: String, language: String, source: String, request: String?) async {
+  func export(programID: String, language: String, source: String, request: String?, diagnostics: [String]) async {
     guard !exporting else { return }
     exporting = true
     defer { exporting = false }
@@ -96,6 +96,7 @@ final class ReviewPageCapture: ObservableObject {
       let manifest: [String: Any] = [
         "kind": programID.hasPrefix("scene-") ? "authored-sdk-demo" : "saved-program-review",
         "program": programID, "language": language,
+        "languageDiagnostics": diagnostics,
         "sourceSHA256": SHA256.hash(data: Data(source.utf8)).map { String(format: "%02x", $0) }.joined(),
         "method": "Native visible-window captures joined at recorded content offsets; no layout resizing or image retouching",
         "scale": format.scale, "width": viewport.width, "height": height,

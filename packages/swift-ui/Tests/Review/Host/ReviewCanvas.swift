@@ -76,7 +76,7 @@ struct ReviewCanvas: View {
     .task(id: programID) {
       if exportFull {
         await capture.export(programID: programID, language: display.language.rawValue,
-          source: source, request: request)
+          source: source, request: request, diagnostics: state.errors.map(\.message))
       }
     }
   }

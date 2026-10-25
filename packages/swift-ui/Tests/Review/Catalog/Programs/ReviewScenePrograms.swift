@@ -18,7 +18,7 @@ enum ReviewScenePrograms {
     let sources: [CardSource]
     switch id {
     case "scene-day-trip":
-      title = t("规划一次一日游", "A day in Paris")
+      title = t("规划一次一日游", "One day in Paris")
       request = t("11 月 5 日我们两个人在巴黎玩一天。想轻松一点，看看艺术、逛街区，也帮我安排吃饭、交通和预算。", "We have one day in Paris on 5 November. Plan an unhurried day for two adults with art, a neighborhood walk, places to eat, transport and a clear budget.")
       source = """
         $place="louvre"
@@ -36,7 +36,7 @@ enum ReviewScenePrograms {
             ListItem(\(q("16:30 · 河岸散步", "16:30 · A riverbank walk")),\(q("傍晚留给河岸与城市天际线，不再增加远处景点。", "Save the evening for the river and skyline, without a distant detour.")),{src:"/paris-eiffel.jpg",alt:\(q("塞纳河与铁塔景观示意", "The Seine and tower, an illustrative view"))})
           ],"image"),
           Card([
-            ImageBlock("/paris-louvre.jpg",\(q("博物馆与河岸体验", "Museum and riverside experience"))),
+            ImageBlock("/paris-eiffel.jpg",\(q("博物馆与河岸体验", "Museum and riverside experience"))),
             TextContent(\(q("博物馆与河岸体验", "Museum and riverside experience")),"small-heavy"),
             TagBlock([\(q("预约入场时段", "Timed entry")), \(q("示例体验方案", "Illustrative offer"))],"sm"),
             TextContent(\(q("11 月 5 日 · 2 位成人 · 博物馆参观", "5 November · 2 adults · museum visit"))),
@@ -69,7 +69,7 @@ enum ReviewScenePrograms {
             {left:\(q("参观与体验", "Visits and activities")),right:"€"+activity,rightVariant:"number"},
             {left:\(q("机动余量", "Flexibility")),right:"€40",rightVariant:"number"}
           ],"small"),
-          TextContent(\(q("体验、价格与时段为演示安排，不是实时报价；预算不含住宿和往返巴黎交通。地图标示地点，不代表实时导航。", "Offers, prices and timings are illustrative, not live quotes. Excludes accommodation and travel to Paris. Map markers do not represent live navigation.")),"small"),
+          TextContent(\(q("体验、价格与时段为演示安排，不是实时报价；预算不含住宿和往返巴黎交通。地图标示地点，不代表实时导航。", "Illustrative plan and prices. Excludes accommodation and travel to Paris. Confirm ticket times and transport before booking.")),"small"),
           ListBlock([
             ListItem(\(q("卢浮宫 · 官方参观与预约", "Louvre · official visiting and booking")),\(q("www.louvre.fr", "www.louvre.fr")),null,null,@OpenUrl("https://www.louvre.fr/en/visit")),
             ListItem(\(q("左岸 · 街区步行指南", "Left Bank · neighborhood walking guide")),\(q("parisjetaime.com", "parisjetaime.com")),null,null,@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"))
@@ -81,7 +81,7 @@ enum ReviewScenePrograms {
         .init(url: "https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925", title: t("左岸步行指南", "Left Bank walking guide"), sourceName: "Paris je t’aime"),
       ]
     case "scene-two-day-trip":
-      title = t("规划一次两日游", "Two days, one night")
+      title = t("规划一次两日游", "Two days in Paris")
       request = t("帮两位成人安排 11 月 5 日从伦敦出发、6 日返回的巴黎两天一晚。包含机票、酒店对比、每天的行程和总预算。", "Plan two days and one night in Paris for two adults, leaving London on 5 November and returning on 6 November. Include flights, a hotel comparison, a daily itinerary and a total budget.")
       source = """
         $stay="central"
@@ -111,7 +111,7 @@ enum ReviewScenePrograms {
               TextCallout("neutral",\(q("18:30 返程，下午留出机场时间", "18:30 return: keep the afternoon clear")),\(q("市区接驳、值机与安检都要计入。示例时间不替代实时路况与航班确认。", "Allow for transfers, check-in and security. Suggested timings do not replace live traffic or flight confirmation.")))
             ])
           ]),
-          InlineHeader(\(q("往返航班", "Your return flights"))),
+          InlineHeader(\(q("往返航班", "Flights, both ways"))),
           Card([
             Stack([
               TextContent(\(q("去程 · 伦敦 → 巴黎", "Outbound · London → Paris")),"small-heavy"),
@@ -234,7 +234,7 @@ enum ReviewScenePrograms {
         .init(url: "https://www.toureiffel.paris/en", title: t("铁塔官方信息", "Eiffel Tower information"), sourceName: "Tour Eiffel"),
       ]
     case "scene-shopping":
-      title = t("选购一台旅行相机", "Choose a travel camera")
+      title = t("选购一台旅行相机", "Choose a camera")
       request = t("想买一台轻便的旅行相机，主要拍街景和人像。总预算 7500 元，包含必要配件，帮我比较取舍并推荐。", "Help me choose a lightweight camera for travel, street photography and portraits. My total budget is ¥7,500, including the essentials. Compare the trade-offs and recommend a kit.")
       source = """
         $kit="light"
@@ -243,7 +243,7 @@ enum ReviewScenePrograms {
         total=camera+extras
         root=Stack([
           TextContent(\(q("把预算花在愿意带出门的相机上", "A camera worth taking with you")),"large-heavy"),
-          TextContent(\(q("¥7,500 预算，主要拍街景、人像与旅行日常。我会先选轻量套装：少一点负担，才更可能随身带着。", "With ¥7,500 for streets, portraits and travel, I would begin with the lighter kit. Less to carry means more chances to use it."))),
+          TextContent(\(q("¥7,500 预算，主要拍街景、人像与旅行日常。我会先选轻量套装：少一点负担，才更可能随身带着。", "Start with the lighter kit: a standard zoom covers everyday travel and leaves room for the essentials."))),
           CompositeCardBlock([
             CompositeCardItem("light",
               ImageTextLarge("/camera-light.jpg",\(q("A · 轻装出发套装", "A · travel-light kit")),\(q("A · 轻装出发套装", "A · travel-light kit")),null,true),
@@ -256,7 +256,7 @@ enum ReviewScenePrograms {
               {price:BoldText("number","¥6,800",null,"text","lg"),button:Button(\(q("购买", "Buy")),Action([@Set($kit,"portrait"),@ToAssistant(\(q("预览购买：人像进阶相机套装", "Preview purchase: Portrait camera kit")),{reviewPurchase:true,item:\(q("人像进阶相机套装", "Portrait camera kit")),price:"¥6,800"})]),"primary",null,"small")}
             )
           ],"carousel",true),
-          InlineHeader(\(q("不用比较每个参数，先看取舍", "Compare the trade-off, not every specification"))),
+          InlineHeader(\(q("不用比较每个参数，先看取舍", "Compare the trade-offs"))),
           Table([
             Col(\(q("你更在意", "Your priority")),[
               \(q("轻装与便利", "Lightness and convenience")),
@@ -284,13 +284,13 @@ enum ReviewScenePrograms {
             {left:\(q("电池与存储卡预留", "Battery and storage allowance")),right:"¥"+extras,rightVariant:"number"}
           ],"small"),
           TextCallout("neutral",\(q("选 A，把余量留给出门拍摄", "Choose A and leave room to get out and shoot")),\(q("只有当你明确更常拍人像，并接受额外重量时，再选择 B。购买前亲手试握，核对镜头兼容与保修。", "Choose B when portraits are a clear priority and you accept the extra weight. Before buying, check handling, lens compatibility and warranty."))),
-          TextContent(\(q("两套商品、规格与价格为虚构演示。器材照片仅作示意，不表示照片中的真实品牌或型号具有上述规格。配件为预算预留，不是独立报价。", "Kits, specifications and prices are fictional. Photos illustrate camera equipment; depicted brands and models are not claimed to match these specifications. Accessories are an allowance, not a separate quote.")),"small")
+          TextContent(\(q("两套商品、规格与价格为虚构演示。器材照片仅作示意，不表示照片中的真实品牌或型号具有上述规格。配件为预算预留，不是独立报价。", "Fictional kits and prices. Stock photos do not identify the described models. Confirm lens compatibility, warranty and actual bundle contents.")),"small")
         ],"column","l")
         """
       sources = [
       ]
     case "scene-spending":
-      title = t("分析消费与预算", "Understand spending")
+      title = t("分析消费与预算", "Spending review")
       request = t("帮我分析这份 8–10 月示例账单：住房每月 3000；餐饮分别 1500、1500、1800；交通 500、400、600；其他 600、900、1200。解释变化，再给下个月安排一份 6000 元预算。", "Review this sample spending ledger for August, September and October. Housing was ¥3,000 each month; food ¥1,500, ¥1,500, ¥1,800; transport ¥500, ¥400, ¥600; other spending ¥600, ¥900, ¥1,200. Explain the changes and propose a ¥6,000 budget for next month.")
       source = """
         $period="october"
@@ -339,25 +339,6 @@ enum ReviewScenePrograms {
               other
             ])
           ]),
-          InlineHeader(\(q("把变化落实到记录", "A closer look at the ledger"))),
-          Table([
-            Col(\(q("日期", "Date")),[
-              "10-08",
-              "10-12",
-              "10-19"
-            ]),
-            Col(\(q("记录", "Record")),[
-              \(q("朋友聚餐", "Dinner with friends")),
-              \(q("出行打车", "Taxi journey")),
-              \(q("家居用品", "Home supplies"))
-            ]),
-            Col(\(q("金额 ¥", "CNY")),[
-              280,
-              86,
-              320
-            ])
-          ]),
-          TextContent(\(q("以上为 10 月记录节选，不等于当月全部交易；切换范围不会改变原始记录。", "These are selected October transactions, not a full-month reconciliation. Range selection does not change the underlying records.")),"small"),
           InlineHeader(\(q("11 月，先试一份 ¥6,000 的计划", "Try a ¥6,000 plan for November"))),
           Table([
             Col(\(q("分类", "Category")),[
@@ -386,7 +367,7 @@ enum ReviewScenePrograms {
       sources = [
       ]
     case "scene-gathering":
-      title = t("组织一次朋友聚会", "Plan an evening with friends")
+      title = t("组织一次朋友聚会", "An evening together")
       request = t("11 月 7 日周六 17:00–21:00 想组织六个朋友聚会。比较一下场地，安排共享晚餐和晚上的活动，人均控制在 260 元以内。", "Organize a relaxed gathering for six friends on Saturday 7 November, from 17:00 to 21:00. Compare places, arrange a shared dinner and an evening plan, and keep the cost within ¥260 per person.")
       source = """
         $venue="studio"
@@ -450,7 +431,7 @@ enum ReviewScenePrograms {
       sources = [
       ]
     case "scene-learning":
-      title = t("图文学习一段历史", "Learn through objects")
+      title = t("图文学习一段历史", "Liangzhu history")
       request = t("从玉琮和玉璧给我讲讲良渚历史，结合图片和馆藏资料，区分能观察到的证据与尚不能确定的解释，并给出出处。", "Teach me about Liangzhu history through jade cong and bi. Use images and collection records, explain what we can observe and what remains uncertain, and include sources.")
       source = """
         root=Stack([
@@ -458,7 +439,7 @@ enum ReviewScenePrograms {
           TextContent(\(q("从良渚玉琮开始，看形制、工艺与社会，再分清我们知道什么、还有什么不能确定。", "Begin with a Liangzhu cong: its form, workmanship and social setting, then separate evidence from what remains uncertain."))),
           Image(\(q("良渚文化玉琮，约公元前 2400 年；大都会艺术博物馆，2004.52", "Liangzhu jade cong, about 2400 BCE; The Met, 2004.52")),"/liangzhu-cong.jpg"),
           TextContent(\(q("图 1 · 这件玉琮属于新石器时代良渚文化。器身外方内圆，转角处有抽象面纹。[1]", "Fig. 1 · A Neolithic Liangzhu cong. Its squared exterior encloses a round tube; abstract masks mark the corners.[1]")),"small"),
-          InlineHeader(\(q("先看形状，再问用途", "Look at the form, then ask about its use"))),
+          InlineHeader(\(q("先看形状，再问用途", "Form, craft and use"))),
           TextContent(\(q("把目光沿着转角向下移动：重复的纹饰让器物有了节奏。钻孔、打磨与抛光都需要投入工时，这种投入帮助我们理解它为什么珍贵。", "Follow the corners down the object and notice the repeated motifs. Boring, grinding and polishing required substantial labor: part of the reason such objects mattered."))),
           ListBlock([
             ListItem(\(q("轮廓：外方内圆", "Form: squared outside, round within")),\(q("先辨认器形；不要仅凭这个形状，就断言史前人有某套确定的宇宙观。", "Identify the form before attaching a definite prehistoric cosmology to it.")),null,null,null),
@@ -500,7 +481,7 @@ enum ReviewScenePrograms {
             ListItem(\(q("[3] 良渚文化 · 研究介绍", "[3] The Liangzhu culture · research introduction")),\(q("asia-archive.si.edu", "asia-archive.si.edu")),null,null,@OpenUrl("https://asia-archive.si.edu/learn/ancient-chinese-jades/the-liangzhu-culture/")),
             ListItem(\(q("[4] 清代仿古玉琮 · 馆藏记录", "[4] Qing archaistic cong · collection record")),\(q("www.metmuseum.org", "www.metmuseum.org")),null,null,@OpenUrl("https://www.metmuseum.org/art/collection/search/42751"))
           ]),
-          TextContent(\(q("根据馆方网页整理的固定讲解范例，不是现场搜索结果。图片为馆方开放获取资料；精确来源见记录。", "An authored explanation based on museum webpages, not a live search response. Images are museum Open Access assets; precise sources are recorded.")),"small")
+          TextContent(\(q("根据馆方网页整理的固定讲解范例，不是现场搜索结果。图片为馆方开放获取资料；精确来源见记录。", "Authored from museum records, not a live search. Images are museum Open Access assets; sources are linked above.")),"small")
         ],"column","l")
         """
       sources = [
