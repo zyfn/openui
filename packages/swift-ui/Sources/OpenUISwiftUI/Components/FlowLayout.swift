@@ -53,6 +53,7 @@ struct OpenUIFlexLayout: Layout {
     var justify: String
     var wrap: Bool
     var fillsHeight = false
+    var wrapJustifyBetweenAsStart = false
 
     private func finite(_ value: CGFloat?) -> CGFloat? {
         value.flatMap { $0.isFinite ? max(0, $0) : nil }
@@ -106,7 +107,8 @@ struct OpenUIFlexLayout: Layout {
             }
         }
         return OpenUIFlowPlacement.frames(sizes: dimensions.map { CGSize(width: $0.width, height: $0.height) },
-            width: width, gap: gap, align: align, justify: wrap && justify == "between" ? "start" : justify,
+            width: width, gap: gap, align: align,
+            justify: wrap && wrapJustifyBetweenAsStart && justify == "between" ? "start" : justify,
             wrap: wrap, baselines: dimensions.map { $0[.firstTextBaseline] }, crossExtent: finite(proposal.height))
     }
 
@@ -170,7 +172,6 @@ enum NativeMediaRowPlacement {
         // Scrolling then reveals that readable paragraph without a private
         // minimum width, smaller font, or automatic direction change.
         let overflows = remaining <= 0 || beside.width > remaining + 0.5
-            || beside.height > full.height + media.height + gap
         let measured = overflows ? full : beside
         let height = max(media.height, measured.height)
         let mediaY = centered ? (height - media.height) / 2 : 0

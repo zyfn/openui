@@ -36,9 +36,8 @@ Do not enlarge a local action merely to fill a row or add a separate action belo
 whole-card button. A clickable card label must not contain another button.
 
 Images retain explicit sizing contracts; ordinary content images measure from
-their source proportions instead of inheriting a fixed web aspect ratio. Very tall
-sources fit completely inside a portrait preview region derived from the current
-container width. Thumbnail and gallery slots retain their visual roles. These are
+their source proportions instead of inheriting a fixed web aspect ratio.
+Thumbnail and gallery slots retain their visual roles. These are
 native visual defaults, not additional language rules. Resource state,
 retry and previews share `OpenUIResourceContext`. A missing or failed image must
 not erase adjacent text or actions. Do not assume every horizontal composition has

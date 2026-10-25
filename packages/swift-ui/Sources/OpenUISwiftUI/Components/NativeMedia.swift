@@ -117,9 +117,8 @@ struct NativeRemoteImage: View {
       NativeMediaUnavailable(alt: alt, src: src, allowsActions: !cardIsAction) { attempt += 1 }
     }
   }
-  // Source proportions determine ordinary image height. Only unusually tall
-  // previews are contained in a portrait-shaped region; fit preserves all pixels.
-  // This is a native visual default, not a Lang field or a web CSS requirement.
+  // Source proportions determine ordinary image height. Explicitly stretched
+  // images receive their bounds from the parent instead.
   private var previewAspectRatio: CGFloat {
     NativeMediaPreview.aspectRatio(sourceSize: imageSize)
   }

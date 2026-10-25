@@ -3,12 +3,11 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class NativeResponsiveMediaTests: XCTestCase {
-    func testPreviewGeometryRetainsNormalPhotosAndContainsVeryTallSources() {
-        for size in [CGSize(width: 1600, height: 900), CGSize(width: 1200, height: 1600), CGSize(width: 1200, height: 1800)] {
+    func testPreviewGeometryRetainsEveryValidSourceAspectRatio() {
+        for size in [CGSize(width: 1600, height: 900), CGSize(width: 1200, height: 1600),
+                     CGSize(width: 1200, height: 1800), CGSize(width: 1200, height: 12000)] {
             XCTAssertEqual(NativeMediaPreview.aspectRatio(sourceSize: size), size.width / size.height, accuracy: 0.0001)
         }
-        let tall = NativeMediaPreview.aspectRatio(sourceSize: CGSize(width: 1200, height: 12000))
-        XCTAssertLessThanOrEqual(360 / tall, 360 * 1.5)
         for size: CGSize? in [nil, .zero, CGSize(width: CGFloat.infinity, height: 100)] {
             XCTAssertTrue(NativeMediaPreview.aspectRatio(sourceSize: size).isFinite)
         }
@@ -16,6 +15,16 @@ final class NativeResponsiveMediaTests: XCTestCase {
 
     private func text(advance: CGFloat, lineHeight: CGFloat = 20) -> (CGFloat) -> CGSize {
         { width in CGSize(width: min(width, advance), height: ceil(advance / max(1, width)) * lineHeight) }
+    }
+
+    func testLongCopyWrapsBesideHorizontalMediaWithoutCreatingWidthOverflow() {
+        let result = NativeMediaRowPlacement.measure(width: 320, media: CGSize(width: 80, height: 80),
+            gap: 12, axis: .horizontal, resizesMedia: false, minimumMediaSide: 44, centered: true,
+            text: text(advance: 12000))
+        XCTAssertFalse(result.stacked)
+        XCTAssertEqual(result.text.width, 228)
+        XCTAssertEqual(result.size.width, 320)
+        XCTAssertGreaterThan(result.size.height, 80)
     }
 
     func testExplicitHorizontalMediaKeepsItsDimensionsAndOverflowIsReachable() {

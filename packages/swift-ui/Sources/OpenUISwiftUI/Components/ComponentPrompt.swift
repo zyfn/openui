@@ -8,12 +8,16 @@ public enum OpenUINativePrompt {
         tableCellPolicy: OpenUITableCellPolicy = .unrestricted
     ) -> PromptOptions {
         let names = Set(spec.components.map(\.name))
-        guard names.contains("Stack"), names.contains("TextContent") else { return original }
+        let reference = OpenUIReference.catalog.field("spec")?.field("components")
+        guard ["Stack", "TextContent"].allSatisfy({ name in
+            guard let component = spec.components.first(where: { $0.name == name }) else { return false }
+            return component.signature == reference?.field(name)?.field("signature")?.stringValue
+        }) else { return original }
         var options = original
         var rules = [
-            "Compose an answer with a takeaway, useful comparisons or local exploration, not a component tour. Give each fact one main presentation; omit unavailable media and never copy example facts.",
+            "Organize content around the user's task and the relationships between its objects. Give each fact one main presentation, use supplied facts, and omit unavailable media. Examples illustrate composition rather than facts to repeat.",
             "Design for the parent container's available width and text size, not a phone model. Prefer an open vertical reading flow; reserve large-heavy for the main heading and normal text for explanations.",
-            "For flexible peers: Stack(items,\"row\") is a non-wrapping row; prefer Stack(items,\"row\",\"m\",\"start\",\"start\",true). Text wrapping alone does not wrap the row. Do not invent column ratios."
+            "Stack(items,\"row\") keeps its children in one row; wrap=true allows independent peers to flow onto another row. Text wrapping alone does not wrap the row. Keep related details in one child column when they should stay together beside another object. Choose direction, alignment and wrapping from that relationship, without inventing width or height fields."
         ]
         if names.contains("Card") {
             rules.append("Use Card for an independent object or meaningful group, not every paragraph. Avoid nested card shells, fixed content heights and oversized local actions.")
@@ -25,7 +29,13 @@ public enum OpenUINativePrompt {
             rules.append("Use Buttons for related actions; row can fall back to column when constrained. Keep primary emphasis for the main task and secondary/tertiary for local alternatives; explicit direction and size still matter.")
         }
         if names.contains("ImageText") {
-            rules.append("ImageText with horizontal layout stays horizontal; it does not automatically turn vertical. Use it for a thumbnail and short text, or choose a vertical composition for media with long explanations.")
+            rules.append("ImageText with horizontal layout stays horizontal; it does not automatically turn vertical. Its thumbnail keeps the declared size while text wraps in the remaining width. Use its title and subtitle for that image's copy; unrelated body or footer slots do not become part of that text column.")
+        }
+        if names.contains("Image") {
+            rules.append("Image uses source proportions in ordinary flow. In a nonwrapping horizontal parent with align=\"stretch\", it fills the row height with proportional cropping. Put all accompanying details and actions in a sibling content column when they belong beside the image; let that content grow naturally rather than setting a fixed card height.")
+        }
+        if names.contains("ImageBlock") {
+            rules.append("ImageBlock is standalone media displayed at its source proportions: a tall source creates a tall block. Use it when the full image deserves that reading space. Place a short caption near the image and keep source information separate from unsupported image claims.")
         }
         if names.contains("Table") {
             rules.append("Table keeps column relationships, including component-valued cells. A wide table scrolls horizontally; it does not become cards. Choose it for shared comparison axes, not unrelated narratives.")
@@ -89,6 +99,19 @@ public enum OpenUINativePrompt {
           Table([Col("Focus",[TextContent("Scope"),TextContent("Evidence")]),Col("Status",[Tag("Ready"),Tag("Review")])]),
           Buttons([Button($detail?"Hide context":"Show context",@Set($detail,!$detail),"tertiary")],"row"),
           $detail?TextContent("Scope is agreed; the evidence still needs review."):null
+        ],"column","m")
+        """),
+        Example(purpose: "Optional image beside a single content column", source: """
+        entry={title:"An option",tags:["Available"],description:"Relevant context for this option.",imageUrl:null}
+        root=Stack([
+          Card([
+            entry.imageUrl?Image(entry.title,entry.imageUrl):null,
+            Stack([
+              TextContent(entry.title,"small-heavy"),
+              TagBlock(entry.tags,"sm"),
+              TextContent(entry.description)
+            ],"column","s")
+          ],"card",entry.imageUrl?"row":"column","m","stretch","start",false)
         ],"column","m")
         """),
     ]

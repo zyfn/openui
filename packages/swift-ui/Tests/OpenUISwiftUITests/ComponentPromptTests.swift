@@ -45,7 +45,7 @@ final class ComponentPromptTests: XCTestCase {
 
     @MainActor func testAllNativePromptExamplesParseAndEvaluate() throws {
         let library = try OpenUIStandardComponents.library()
-        XCTAssertEqual(OpenUINativePrompt.examples.count, 3)
+        XCTAssertEqual(OpenUINativePrompt.examples.count, 4)
         for example in OpenUINativePrompt.examples {
             let state = OpenUIState(schema: library.library.toSchema())
             state.setSource(example.source)

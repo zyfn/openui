@@ -9,7 +9,7 @@ public enum OpenUIStandardComponents {
         let implementations = OpenUISelectionComponents.components + OpenUIFormComponents.components
             + OpenUIDisplayComponents.components + OpenUIContentComponents.components
             + OpenUIChartComponents.components + [
-            OpenUIReference.component("Stack") { OpenUIStack(context: $0) },
+            OpenUIReference.component("Stack") { OpenUIStack(context: $0, wrapJustifyBetweenAsStart: true) },
             OpenUIReference.component("TextContent") { context in
                 NativeMarkdownText(text: context.string("text") ?? "", mode: .textContent,
                     style: .textContent(context.string("size"), theme: context.theme))
@@ -54,6 +54,8 @@ extension EnvironmentValues {
 
 private struct OpenUIStack: View {
     let context: OpenUIComponentContext
+    // Upstream Stack normalizes wrapped space-between; upstream Card does not.
+    var wrapJustifyBetweenAsStart = false
     private var gap: CGFloat { context.theme.spacing(context.string("gap")) }
     private var children: [OpenUIRenderChild] { context.children() }
 
@@ -61,7 +63,8 @@ private struct OpenUIStack: View {
         if #available(iOS 16, macOS 13, *) {
             OpenUIFlexLayout(direction: context.string("direction") ?? "column", gap: gap,
                 align: context.string("align") ?? "stretch", justify: context.string("justify") ?? "start",
-                wrap: context.flag("wrap") == true, fillsHeight: context.stretchesVertically) {
+                wrap: context.flag("wrap") == true, fillsHeight: context.stretchesVertically,
+                wrapJustifyBetweenAsStart: wrapJustifyBetweenAsStart) {
                 ForEach(children) { child in
                     context.render(child.value)
                         .environment(\.openUIStretchHeight, context.string("direction") == "row" && stretches)
