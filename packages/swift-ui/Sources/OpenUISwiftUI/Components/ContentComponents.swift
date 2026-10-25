@@ -404,7 +404,7 @@ struct NativeListItem: View {
   @ViewBuilder private var content: some View {
     Group {
       if hasImage {
-        NativeMediaRow(axis: .adaptive, gap: context.theme.contentSpacing, resizesMedia: true,
+        NativeMediaRow(axis: .horizontal, gap: context.theme.contentSpacing,
           media: { photo }, copy: { words })
       } else { words }
     }.fixedSize(horizontal: false, vertical: true).contentShape(Rectangle())
@@ -412,9 +412,10 @@ struct NativeListItem: View {
   @ViewBuilder private var photo: some View {
     if let image = context.value("image"), image != .null {
       NativeRemoteImage(
-        src: NativeValue.string(image, "src"), alt: NativeValue.string(image, "alt") ?? "", layout: .aspect(1)
+        src: NativeValue.string(image, "src"), alt: NativeValue.string(image, "alt") ?? "",
+        layout: .thumbnail(CGSize(width: imageWidth, height: imageWidth))
       )
-      .frame(idealWidth: imageWidth, idealHeight: imageWidth)
+      .frame(width: imageWidth, height: imageWidth)
       .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
     }
   }

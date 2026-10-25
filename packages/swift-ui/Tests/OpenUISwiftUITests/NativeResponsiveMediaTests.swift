@@ -19,7 +19,7 @@ final class NativeResponsiveMediaTests: XCTestCase {
 
     func testLongCopyWrapsBesideHorizontalMediaWithoutCreatingWidthOverflow() {
         let result = NativeMediaRowPlacement.measure(width: 320, media: CGSize(width: 80, height: 80),
-            gap: 12, axis: .horizontal, resizesMedia: false, minimumMediaSide: 44, centered: true,
+            gap: 12, axis: .horizontal, centered: true,
             text: text(advance: 12000))
         XCTAssertFalse(result.stacked)
         XCTAssertEqual(result.text.width, 228)
@@ -29,7 +29,7 @@ final class NativeResponsiveMediaTests: XCTestCase {
 
     func testExplicitHorizontalMediaKeepsItsDimensionsAndOverflowIsReachable() {
         let result = NativeMediaRowPlacement.measure(width: 120, media: CGSize(width: 180, height: 180),
-            gap: 12, axis: .horizontal, resizesMedia: false, minimumMediaSide: 44, centered: true,
+            gap: 12, axis: .horizontal, centered: true,
             text: text(advance: 600))
         XCTAssertFalse(result.stacked)
         XCTAssertEqual(result.media.size, CGSize(width: 180, height: 180))
@@ -40,41 +40,26 @@ final class NativeResponsiveMediaTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(result.size.height, result.text.maxY)
     }
 
-    func testFlexibleThumbnailGrowsAndShrinksWithTheRenderedCopy() {
-        func layout(_ advance: CGFloat) -> NativeMediaRowPlacement.Result {
-            NativeMediaRowPlacement.measure(width: 320, media: CGSize(width: 112, height: 112),
-                gap: 12, axis: .adaptive, resizesMedia: true, minimumMediaSide: 44, centered: false,
-                text: text(advance: advance))
+    func testThumbnailAndTextColumnStayConsistentWhenCopyLengthChanges() {
+        for width in [CGFloat(240), CGFloat(320)] {
+            let results = [CGFloat(40), CGFloat(1200), CGFloat(12000)].map { advance in
+                NativeMediaRowPlacement.measure(width: width, media: CGSize(width: 112, height: 112),
+                    gap: 12, axis: .horizontal, centered: false, text: text(advance: advance))
+            }
+            for result in results {
+                XCTAssertEqual(result.media.size, CGSize(width: 112, height: 112))
+                XCTAssertEqual(result.text.minX, 124)
+                XCTAssertEqual(result.text.width, width - 124)
+                XCTAssertEqual(result.size.width, width)
+                XCTAssertFalse(result.stacked)
+            }
+            XCTAssertGreaterThan(results[2].size.height, results[0].size.height)
         }
-        let short = layout(40)
-        let long = layout(1200)
-        XCTAssertGreaterThan(long.media.height, short.media.height)
-        XCTAssertEqual(short.media.width, short.media.height)
-        XCTAssertEqual(long.media.width, long.media.height)
-        XCTAssertLessThanOrEqual(long.media.width, 112)
-        XCTAssertFalse(short.stacked)
-        XCTAssertFalse(long.stacked)
-        XCTAssertEqual(layout(40).media, short.media)
-    }
-
-    func testAdaptiveDirectionDependsOnMeasuredContentAtTheSameWidth() {
-        func layout(_ advance: CGFloat) -> NativeMediaRowPlacement.Result {
-            NativeMediaRowPlacement.measure(width: 240, media: CGSize(width: 112, height: 112),
-                gap: 12, axis: .adaptive, resizesMedia: true, minimumMediaSide: 44, centered: false,
-                text: text(advance: advance))
-        }
-        let short = layout(40)
-        let long = layout(12000)
-        XCTAssertFalse(short.stacked)
-        XCTAssertTrue(long.stacked, "Content measurements, not a 240-point breakpoint, determine reflow")
-        XCTAssertGreaterThanOrEqual(long.text.minY, long.media.maxY + 12)
-        XCTAssertEqual(long.text.width, 240)
-        XCTAssertEqual(long.size.width, 240)
     }
 
     func testExplicitVerticalMediaDoesNotSilentlyShrinkToTheViewport() {
         let result = NativeMediaRowPlacement.measure(width: 120, media: CGSize(width: 180, height: 180),
-            gap: 12, axis: .vertical, resizesMedia: false, minimumMediaSide: 44, centered: false,
+            gap: 12, axis: .vertical, centered: false,
             text: text(advance: 300))
         XCTAssertTrue(result.stacked)
         XCTAssertEqual(result.media.size, CGSize(width: 180, height: 180))

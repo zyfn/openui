@@ -127,10 +127,10 @@ struct OpenUIFlexLayout: Layout {
     }
 }
 
-enum NativeMediaRowAxis { case horizontal, vertical, adaptive }
+enum NativeMediaRowAxis { case horizontal, vertical }
 
-/// Media and copy are measured together. The decision uses rendered geometry,
-/// not a screen breakpoint, character count, or a content-specific width ratio.
+/// Media keeps its declared dimensions; copy wraps in the remaining space.
+/// Direction is explicit rather than inferred from the length of the copy.
 enum NativeMediaRowPlacement {
     struct Result {
         var media: CGRect
@@ -140,7 +140,7 @@ enum NativeMediaRowPlacement {
     }
 
     static func measure(width: CGFloat, media idealMedia: CGSize, gap: CGFloat,
-                        axis: NativeMediaRowAxis, resizesMedia: Bool, minimumMediaSide: CGFloat,
+                        axis: NativeMediaRowAxis,
                         centered: Bool, text: (CGFloat) -> CGSize) -> Result {
         let width = width.isFinite ? max(1, width) : 1
         func finite(_ value: CGFloat) -> CGFloat { value.isFinite ? max(0, value) : 0 }
@@ -149,19 +149,11 @@ enum NativeMediaRowPlacement {
             return CGSize(width: max(max(1, proposed), finite(measured.width)), height: finite(measured.height))
         }
         let full = copy(width)
-        var media = CGSize(width: finite(idealMedia.width), height: finite(idealMedia.height))
-        if resizesMedia {
-            let side = min(width, min(media.width, max(minimumMediaSide, full.height)))
-            media = CGSize(width: side, height: side)
-        }
+        let media = CGSize(width: finite(idealMedia.width), height: finite(idealMedia.height))
         let gap = media.width > 0 && media.height > 0 ? max(0, gap) : 0
         let remaining = max(0, width - media.width - gap)
         let beside = copy(remaining)
-        // A free-flowing row can stack when wrapping alongside the media costs
-        // more vertical space than putting that media above the full-width text.
-        let stack = axis == .vertical || (axis == .adaptive
-            && (remaining <= 0 || beside.width > remaining + 0.5 || beside.height > full.height + media.height + gap))
-        if stack {
+        if axis == .vertical {
             let textFrame = CGRect(x: 0, y: media.height + gap, width: full.width, height: full.height)
             return Result(media: CGRect(origin: .zero, size: media), text: textFrame,
                           size: CGSize(width: max(width, max(media.width, full.width)), height: textFrame.maxY), stacked: true)
@@ -187,11 +179,9 @@ enum NativeMediaRowPlacement {
 struct NativeMediaRow<Media: View, Copy: View>: View {
     var axis: NativeMediaRowAxis
     var gap: CGFloat
-    var resizesMedia = false
     var centered = false
     @ViewBuilder var media: Media
     @ViewBuilder var copy: Copy
-    @ScaledMetric(relativeTo: .body) private var minimumMediaSide: CGFloat = 44
     @Environment(\.openUITheme) private var theme
     @Namespace private var scope
     @State private var width: CGFloat = 0
@@ -226,8 +216,7 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
 
     @ViewBuilder private var row: some View {
         if #available(iOS 16, macOS 13, *) {
-            NativeMediaRowLayout(width: width, gap: gap, axis: axis,
-                resizesMedia: resizesMedia, minimumMediaSide: minimumMediaSide, centered: centered) {
+            NativeMediaRowLayout(width: width, gap: gap, axis: axis, centered: centered) {
                 media
                 copy
             }
@@ -240,8 +229,7 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
                 copy.frame(width: width, alignment: .leading)
             }.frame(minWidth: width, alignment: .leading)
         } else {
-            // Adaptive list rows choose the safe vertical fallback here;
-            // this is usable but not identical to the measured modern layout.
+            // An explicit vertical declaration stays vertical on older systems.
             VStack(alignment: .leading, spacing: gap) {
                 media
                 copy.frame(width: width, alignment: .leading)
@@ -255,8 +243,6 @@ private struct NativeMediaRowLayout: Layout {
     let width: CGFloat
     let gap: CGFloat
     let axis: NativeMediaRowAxis
-    let resizesMedia: Bool
-    let minimumMediaSide: CGFloat
     let centered: Bool
 
     private func measured(_ subviews: Subviews) -> NativeMediaRowPlacement.Result {
@@ -265,8 +251,7 @@ private struct NativeMediaRowLayout: Layout {
             return .init(media: .zero, text: CGRect(origin: .zero, size: size), size: size, stacked: true)
         }
         return NativeMediaRowPlacement.measure(width: width, media: subviews[0].sizeThatFits(.unspecified),
-            gap: gap, axis: axis, resizesMedia: resizesMedia, minimumMediaSide: minimumMediaSide,
-            centered: centered) { subviews[1].sizeThatFits(ProposedViewSize(width: $0, height: nil)) }
+            gap: gap, axis: axis, centered: centered) { subviews[1].sizeThatFits(ProposedViewSize(width: $0, height: nil)) }
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
