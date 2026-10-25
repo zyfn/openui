@@ -14,11 +14,13 @@ a gathering for six and an illustrated introduction to Liangzhu jades.
 Travel times, flights, accommodation, products, gathering venues and prices are
 explicitly illustrative. Stay choices update the two-day total;
 camera choices update the remaining budget; venue choices update the gathering
-total and per-person cost. Offers use standard `ListBlock` / `ListItem` fields:
-photo, title, descriptive attributes and a price/action label. Candidates in the
-same group share one list, including its media column and separators. There are
-no additional product fields or enclosing card shells. The whole actionable row
-opens the purchase preview. Outbound and return flights are separate entries in
+total and per-person cost. Camera recommendations use the official
+`CompositeCardBlock` carousel with image headers, descriptive bodies and
+price/button footers. Rich vertical offers use `Stack`, `Image`, `TextContent`,
+`TagBlock`, `Buttons` and `Separator`, preserving independent purchase actions
+without enclosing card shells or additional product fields. Simple itinerary
+rows retain `ListBlock` / `ListItem`. The one-day itinerary is a fixed authored
+plan without the former walk/cruise switch. Outbound and return flights are separate entries in
 a number list, with dates, local times and one-way prices for two.
 The two one-way prices sum to the flight allocation in the trip budget.
 Their standard `ToAssistant` action is intercepted only
@@ -31,8 +33,8 @@ sources. It distinguishes a Neolithic cong from a Qing archaistic object;
 it is an authored example of organizing researched material, not a live search.
 Photograph provenance is in `Fixtures/Images/paris-sources.json` and
 `Fixtures/Images/learning-sources.json`; commercial-offer illustrations are
-documented in `Fixtures/Images/task-photos.json`. Offer rows use image lists;
-flight rows use routes and local departure/arrival times without a photo. Travel budgets
+documented in `Fixtures/Images/task-photos.json`. Flight rows use routes and local
+departure/arrival times without a photo. Travel budgets
 combine interactive charts with a short breakdown. Each page combines SDK components and has no
 secondary example picker. The header contains scene navigation and the source
 editor; language, theme, bubble and diagnostics controls are in the tools menu.
