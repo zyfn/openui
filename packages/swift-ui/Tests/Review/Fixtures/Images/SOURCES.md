@@ -21,3 +21,17 @@ URLs and two legacy external URLs used by saved prompt examples. Those requests
 receive these licensed fixture bytes without accessing the original sites. Saved
 program text and requested URLs remain unchanged; this replay does not claim to
 reproduce the original remote photographs. Production resource loading is unaffected.
+
+
+## Paris scene photographs
+
+Offline photos for the review app only. Files are the original JPEG responses
+from the listed image delivery URLs; they are not retouched or composited.
+
+- `paris-eiffel.jpg` — Chris Karidis. [Photo](https://unsplash.com/photos/eiffel-tower-paris-france-nnzkZNYWHaU); [license](https://unsplash.com/license).
+- `paris-cafe.jpg` — Evan Buchholz. [Photo](https://unsplash.com/photos/a-street-corner-with-tables-and-chairs-under-an-awning-gp3y7I-RZb0); [license](https://unsplash.com/license).
+- `paris-breakfast.jpg` — Esra Nur Kalay. [Photo](https://www.pexels.com/photo/croissants-and-latte-on-top-of-a-marble-table-11764603/); [license](https://www.pexels.com/license/).
+- `paris-louvre.jpg` — Arda Can Yıldız. [Photo](https://unsplash.com/photos/a-large-glass-pyramid-sitting-in-the-middle-of-a-body-of-water-P3ozLoE4U8c); [license](https://unsplash.com/license).
+
+Breakfast imagery illustrates food, not a claim about a named restaurant.
+Exact download URLs and SHA-256 hashes are recorded in `paris-sources.json`.

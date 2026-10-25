@@ -6,8 +6,12 @@ not maintain another component schema, parser or business-specific renderer.
 
 ## Six task scenes
 
-The scene directory contains six complete pages: explore, itinerary, comparison,
-preferences, reading and budget. Each page combines SDK components and has no
+The scene directory contains six complete Paris examples: city overview,
+a two-day itinerary, neighborhood comparison, travel preferences, a Louvre
+reading guide and a two-person budget. Places and official links are factual;
+itinerary timings and budget allocations are clearly authored planning examples,
+not live quotations or model responses. Licensed photographs and their provenance
+are in `Fixtures/Images/paris-sources.json`. Each page combines SDK components and has no
 secondary example picker. The header contains scene navigation and the source
 editor; language, theme, bubble and diagnostics controls are in the tools menu.
 The original 25 fixtures remain available to targeted regressions and component

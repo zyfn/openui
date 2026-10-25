@@ -7,7 +7,7 @@ final class ReviewImageMonitor: ObservableObject {
   @Published var loaded = 0
 }
 
-/// Test-only transport for AsyncImage. The standard SDK renderer is unchanged.
+/// Review-app-only transport for offline image resources. The SDK renderer is unchanged.
 final class ReviewImageProtocol: URLProtocol, @unchecked Sendable {
   private static let lock = NSLock()
   private static var attempts: [String: Int] = [:]
