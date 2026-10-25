@@ -62,7 +62,10 @@ struct OpenUIFlexLayout: Layout {
         if direction == "column" {
             let measured = subviews.map { $0.sizeThatFits(ProposedViewSize(width: finite(proposal.width), height: nil)) }
             let width = finite(proposal.width) ?? measured.map(\.width).max() ?? 0
-            let height = finite(proposal.height) ?? measured.reduce(0) { $0 + $1.height } + gap * CGFloat(subviews.count - 1)
+            let contentHeight = measured.reduce(0) { $0 + $1.height } + gap * CGFloat(subviews.count - 1)
+            // A minimum-size probe must not collapse readable column content.
+            // Stretch can add space, but does not compress text into zero height.
+            let height = max(contentHeight, finite(proposal.height) ?? contentHeight)
             // A column's main axis is vertical; the same spacing math applies.
             return OpenUIFlowPlacement.frames(sizes: measured.map { CGSize(width: $0.height, height: $0.width) },
                 width: height, gap: gap, align: align == "baseline" ? "start" : align, justify: justify,
@@ -84,8 +87,23 @@ struct OpenUIFlexLayout: Layout {
                 remaining = max(0, remaining - subviews[index].sizeThatFits(ProposedViewSize(width: offered, height: nil)).width)
             }
         }
-        let dimensions = subviews.indices.map {
+        var dimensions = subviews.indices.map {
             subviews[$0].dimensions(in: ProposedViewSize(width: proposals[$0], height: nil))
+        }
+        if align == "stretch", !wrap {
+            // Resolve the cross axis from minimum content requirements first.
+            // Flexible children accept that height rather than enlarging the
+            // row using their unconstrained ideal size. If every child can
+            // collapse, keep natural sizing (for example an image-only row).
+            let minimumHeight = subviews.indices.map {
+                subviews[$0].sizeThatFits(ProposedViewSize(width: proposals[$0], height: 0)).height
+            }.max() ?? 0
+            if minimumHeight > 0 {
+                let height = max(minimumHeight, finite(proposal.height) ?? 0)
+                dimensions = subviews.indices.map {
+                    subviews[$0].dimensions(in: ProposedViewSize(width: proposals[$0], height: height))
+                }
+            }
         }
         return OpenUIFlowPlacement.frames(sizes: dimensions.map { CGSize(width: $0.width, height: $0.height) },
             width: width, gap: gap, align: align, justify: wrap && justify == "between" ? "start" : justify,

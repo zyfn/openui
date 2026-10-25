@@ -45,8 +45,11 @@ not erase adjacent text or actions. Do not assume every horizontal composition h
 one image and one fixed-width text column.
 
 On platforms using SwiftUI Layout (iOS 16+/macOS 13+), an `Image` directly inside
-a horizontal `Stack` or `Card` with `align="stretch"` retains its natural height
-during measurement, then fills the final row height with proportional cropping.
+a nonwrapping horizontal `Stack` or `Card` with `align="stretch"` fills the final
+row height with proportional cropping. The row measures its children's minimum
+content heights, allowing readable text and controls to determine the height
+instead of a flexible image's original aspect ratio. An image-only row keeps its
+natural measurement so it cannot collapse to zero height.
 This honors the declared cross-axis alignment without a fixed media/content ratio.
 Other alignments and standalone images retain their source-proportional preview.
 The older layout fallback retains the source-proportional preview.

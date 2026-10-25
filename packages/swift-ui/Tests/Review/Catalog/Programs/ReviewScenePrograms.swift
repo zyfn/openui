@@ -485,8 +485,8 @@ enum ReviewScenePrograms {
             Stack([
               TextContent(\(q("A · 明亮长桌空间", "A · daylight table space")),"small-heavy"),
               TagBlock([
-                \(q("更省预算", "Lower venue cost")),
-                \(q("演示场地", "Illustrative venue"))
+                \(q("自然采光", "Natural light")),
+                \(q("共享长桌", "Shared table"))
               ],"sm"),
               TextContent(\(q("六人共享长桌，可自带餐食。", "A shared table for six; bring your own food.")),"small"),
               Stack([
@@ -502,8 +502,8 @@ enum ReviewScenePrograms {
             Stack([
               TextContent(\(q("B · 独立用餐空间", "B · private dining space")),"small-heavy"),
               TagBlock([
-                \(q("多 ¥40 / 人", "¥40 more per person")),
-                \(q("演示场地", "Illustrative venue"))
+                \(q("独立包间", "Private room")),
+                \(q("安静私密", "Quiet and private"))
               ],"sm"),
               TextContent(\(q("六人独立空间，适合安静聊天。", "A private space for six, with room to talk.")),"small"),
               Stack([
@@ -520,8 +520,8 @@ enum ReviewScenePrograms {
             Stack([
               TextContent(\(q("六人共享餐食", "Shared dinner for six")),"small-heavy"),
               TagBlock([
-                \(q("¥120 / 人", "¥120 per person")),
-                \(q("示例菜单", "Illustrative menu"))
+                \(q("共享菜单", "Sharing menu")),
+                \(q("含饮品", "Drinks included"))
               ],"sm"),
               TextContent(\(q("主食、蔬菜与饮品，六个人一起分享。", "Mains, vegetables and drinks to share between six.")),"small"),
               Stack([
