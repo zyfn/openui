@@ -10,6 +10,14 @@ class ReviewTestCase: XCTestCase {
     #endif
   }
   var textSizes: [Bool] { acceptsLargeText ? [false, true] : [false] }
+  func fixtureImageSize(_ name: String) throws -> CGSize {
+    let url = try XCTUnwrap(Bundle(for: ReviewTestCase.self).url(
+      forResource: name, withExtension: "jpg", subdirectory: "Images"))
+    let image = try XCTUnwrap(UIImage(contentsOfFile: url.path))
+    XCTAssertGreaterThan(image.size.width, 0)
+    XCTAssertGreaterThan(image.size.height, 0)
+    return image.size
+  }
   func launch(
     _ name: String, dark: Bool = false, large: Bool = false, inspect: Bool = false, media: String? = nil,
     width: String = "available", theme: String = "default", bubble: Bool = false

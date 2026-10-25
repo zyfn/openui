@@ -108,6 +108,7 @@ let images = object(
   "isa = PBXFileReference; lastKnownFileType = folder; path = \(quote(imageDirectory.path)); sourceTree = \"<absolute>\";"
 )
 let imageBuild = object("image-build", "isa = PBXBuildFile; fileRef = \(images);")
+let testImageBuild = object("test-image-build", "isa = PBXBuildFile; fileRef = \(images);")
 // Replay a saved program without committing conversation data to the SDK.
 var reviewResources: [String] = []
 var reviewReferences: [String] = []
@@ -194,7 +195,7 @@ let frameworkPhase = object(
 )
 let resourcePhase = object(
   "test-resources",
-  "isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = \(array([baselineBuild] + reviewResources)); runOnlyForDeploymentPostprocessing = 0;"
+  "isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = \(array([baselineBuild, testImageBuild] + reviewResources)); runOnlyForDeploymentPostprocessing = 0;"
 )
 let hostResources = object(
   "host-resources",

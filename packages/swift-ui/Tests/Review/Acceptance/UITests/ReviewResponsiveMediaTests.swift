@@ -61,14 +61,15 @@ final class ReviewResponsiveMediaTests: ReviewTestCase {
     app.terminate()
   }
 
-  func testLargeMediaUsesItsNaturalRatioAtTwoContainerWidths() {
+  func testLargeMediaUsesItsNaturalRatioAtTwoContainerWidths() throws {
+    let referenceSize = try fixtureImageSize("detail")
     let app = launch("media-text", width: "narrow")
     let image = app.images["横幅石刻照片"]
     XCTAssertTrue(image.waitForExistence(timeout: 8))
     reveal(image, in: app)
     let narrow = image.frame.size
-    XCTAssertEqual(narrow.width / narrow.height, 640.0 / 480.0, accuracy: 0.03,
-      "The bundled image's natural ratio is known; ImageTextLarge has no explicit height field")
+    XCTAssertEqual(narrow.width / narrow.height, referenceSize.width / referenceSize.height, accuracy: 0.03,
+      "ImageTextLarge must retain the bundled asset's natural ratio without an explicit height field")
     app.buttons["review.conditions-menu"].tap()
     app.segmentedControls["review.width-picker"].buttons["320"].tap()
     app.buttons["review.panel-done"].tap()

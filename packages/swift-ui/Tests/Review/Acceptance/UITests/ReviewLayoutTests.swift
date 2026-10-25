@@ -26,15 +26,17 @@ final class ReviewLayoutTests: ReviewTestCase {
     }
   }
 
-  func testMediaTextBannerAndInlineFormatting() {
+  func testMediaTextBannerAndInlineFormatting() throws {
+    let referenceSize = try fixtureImageSize("detail")
     for large in textSizes {
       let app = launch("media-text", large: large, inspect: true)
       let image = app.images["横幅石刻照片"]
       XCTAssertTrue(image.waitForExistence(timeout: 5))
       XCTAssertGreaterThan(image.frame.width, app.windows.firstMatch.frame.width * 0.7)
-      // The curated detail.jpg is 640 × 480. Its natural ratio must survive
-      // a changed container width instead of retaining a fixed banner height.
-      XCTAssertEqual(image.frame.height / image.frame.width, 480.0 / 640.0, accuracy: 0.02)
+      // Compare with the original bundled asset, independent of its orientation
+      // or replacement with another licensed photograph.
+      XCTAssertEqual(image.frame.height / image.frame.width,
+        referenceSize.height / referenceSize.width, accuracy: 0.02)
       let title = app.staticTexts["从一处细节，读懂一件作品及其背后的故事"]
       XCTAssertGreaterThanOrEqual(title.frame.minY, image.frame.maxY + 8)
       XCTAssertEqual(title.frame.minX, image.frame.minX, accuracy: 2)
