@@ -75,6 +75,12 @@ embedded fonts. General SVG/WebView components still require the optional
 OpenUIWeb product. Citation metadata is supplied by `CardSourceProvider`, using
 the upstream source fields rather than extending the language syntax.
 
+Chart inspection uses a shared native detail panel: the selected category is a
+heading, followed by color markers, series names and right-aligned values. Colors
+retain their series association after legend filtering. Scatter inspection shows
+the selected dataset and coordinates; polar charts show the selected slice value.
+This replaces the former single-string tooltip without adding language fields.
+
 `OpenUIState.isQueryLoading` and `ComponentContext.isQueryLoading` expose the
 shared loading condition to native renderers. Empty charts omit a fixed canvas;
 loaded values remain visible during refetch.

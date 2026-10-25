@@ -36,16 +36,50 @@ struct NativeChartVisibility {
   }
 }
 
+struct NativeChartInspection {
+  struct Row: Identifiable {
+    let id: OpenUIString
+    let label: String?
+    let value: String
+    let colorIndex: Int?
+  }
+  let title: String
+  var colorIndex: Int? = nil
+  let rows: [Row]
+}
+
 extension NativeChartData {
-  func inspectionRows(locale: Locale) -> [String] {
+  func inspection(at index: Int, locale: Locale) -> NativeChartInspection? {
+    guard index >= 0 else { return nil }
     func number(_ value: Double) -> String { NativeChartNumber.tooltip(value, locale: locale) }
+    func colorIndex(_ index: Int) -> Int {
+      colorIndices.indices.contains(index) ? colorIndices[index] : index
+    }
     if !scatter.isEmpty {
-      return scatter.flatMap { s in s.points.map { "\(s.name): x \(number($0.x)), y \(number($0.y))" + ($0.z.map { ", z \(number($0))" } ?? "") } }
+      var remaining = index
+      for (seriesIndex, series) in scatter.enumerated() {
+        guard remaining < series.points.count else { remaining -= series.points.count; continue }
+        let point = series.points[remaining]
+        var rows: [NativeChartInspection.Row] = [
+          .init(id: "x", label: "x", value: number(point.x), colorIndex: nil),
+          .init(id: "y", label: "y", value: number(point.y), colorIndex: nil),
+        ]
+        if let z = point.z { rows.append(.init(id: "z", label: "z", value: number(z), colorIndex: nil)) }
+        return .init(title: series.name, colorIndex: colorIndex(seriesIndex), rows: rows)
+      }
+      return nil
     }
+    guard labels.indices.contains(index) else { return nil }
     if !series.isEmpty {
-      return labels.indices.map { i in labels[i] + ": " + series.indices.map { "\(series[$0].name) \(number(value($0, i)))" }.joined(separator: ", ") }
+      return .init(title: labels[index], rows: series.enumerated().map { seriesIndex, series in
+        .init(id: OpenUIString(series.name), label: series.name,
+          value: number(value(seriesIndex, index)), colorIndex: colorIndex(seriesIndex))
+      })
     }
-    return labels.indices.map { "\(labels[$0]): \(number(slices.indices.contains($0) ? slices[$0] : 0))" }
+    return .init(title: labels[index], rows: [
+      .init(id: "value", label: nil, value: number(slices.indices.contains(index) ? slices[index] : 0),
+        colorIndex: colorIndex(index)),
+    ])
   }
   func prepared(for name: String) -> Self {
     var result = self

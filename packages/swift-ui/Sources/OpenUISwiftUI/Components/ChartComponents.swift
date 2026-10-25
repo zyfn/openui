@@ -196,8 +196,8 @@ struct NativeChart: View {
           ForEach(Array(data.accessibilityRows.enumerated()), id: \.offset) { _, row in Text(row) }
         }
         .overlay(alignment: .topLeading) {
-          if let inspected, data.accessibilityRows.indices.contains(inspected) {
-            NativeChartTooltip(text: data.inspectionRows(locale: locale)[inspected],
+          if let inspected, let details = data.inspection(at: inspected, locale: locale) {
+            NativeChartTooltip(details: details, palette: palette,
               anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
           }
         }
@@ -247,10 +247,13 @@ struct NativeChart: View {
 }
 
 private struct NativeChartTooltip: View {
-  let text: String
+  let details: NativeChartInspection
+  let palette: [Color]
   let anchor: CGPoint
   let bounds: CGSize
   let theme: OpenUITheme
+  @Environment(\.displayScale) private var displayScale
+  @ScaledMetric(relativeTo: .subheadline) private var markerSize: CGFloat = 9
   var body: some View {
     if #available(iOS 16, macOS 13, *) {
       NativeChartTooltipLayout(anchor: anchor, bounds: bounds) { label }
@@ -261,13 +264,43 @@ private struct NativeChartTooltip: View {
     }
   }
   private var label: some View {
-    Text(text).font(theme.typography.caption).monospacedDigit()
-      .foregroundStyle(theme.foreground).fixedSize(horizontal: false, vertical: true)
-      .padding(.horizontal, 10).padding(.vertical, 8)
-      .background(theme.controlSurface, in: RoundedRectangle(cornerRadius: theme.controlCornerRadius))
-      .overlay(RoundedRectangle(cornerRadius: theme.controlCornerRadius).strokeBorder(theme.border, lineWidth: 0.5))
+    VStack(alignment: .leading, spacing: 10) {
+      if !details.title.isEmpty {
+        HStack(spacing: 8) {
+          if let index = details.colorIndex { marker(index) }
+          Text(details.title).font(theme.typography.detail.weight(.semibold))
+            .foregroundStyle(theme.foreground).fixedSize(horizontal: false, vertical: true)
+        }
+        Rectangle().fill(theme.border).frame(height: 1 / displayScale)
+      }
+      VStack(alignment: .leading, spacing: 8) {
+        ForEach(details.rows) { row in
+          HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if let index = row.colorIndex { marker(index) }
+            Group {
+              if let label = row.label { Text(label) }
+              else { Text("Value", bundle: NativeControlResources.bundle) }
+            }.foregroundStyle(theme.secondary)
+              .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Text(row.value).monospacedDigit().foregroundStyle(theme.foreground)
+              .multilineTextAlignment(.trailing).layoutPriority(1)
+          }.accessibilityElement(children: .combine)
+        }
+      }.font(theme.typography.detail)
+    }
+      .padding(12)
+      .background(theme.controlSurface, in: RoundedRectangle(cornerRadius: theme.cornerRadius))
+      .overlay(RoundedRectangle(cornerRadius: theme.cornerRadius).strokeBorder(theme.border, lineWidth: 1 / displayScale))
       .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+      .accessibilityElement(children: .contain)
       .accessibilityIdentifier("openui-chart-inspection")
+  }
+  private func marker(_ index: Int) -> some View {
+    RoundedRectangle(cornerRadius: 2)
+      .fill(palette.isEmpty ? theme.accent : palette[max(0, index) % palette.count])
+      .frame(width: markerSize, height: markerSize)
+      .accessibilityHidden(true)
   }
 }
 
