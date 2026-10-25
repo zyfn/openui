@@ -6,6 +6,29 @@
     @testable import OpenUISwiftUI
 
     final class NativeRenderingTests: XCTestCase {
+        @MainActor func testNumberListIgnoresOptionalItemImages() throws {
+            _ = NSApplication.shared
+            guard #available(macOS 13, *) else { throw XCTSkip("ImageRenderer requires macOS 13") }
+            let library = try OpenUIStandardComponents.library()
+            func pixels(imageArgument: String) throws -> Data {
+                let state = OpenUIState(schema: library.library.toSchema())
+                state.setSource("root=ListBlock([ListItem(\"An item\",\"Supporting text\",\(imageArgument))],\"number\")")
+                XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+                let renderer = ImageRenderer(content:
+                    OpenUIRenderer(state: state, registry: library.registry)
+                        .environment(\.locale, Locale(identifier: "en_US"))
+                        .preferredColorScheme(.light).background(Color.white))
+                renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
+                renderer.scale = 1
+                let image = try XCTUnwrap(renderer.cgImage)
+                return try XCTUnwrap(image.dataProvider?.data) as Data
+            }
+            XCTAssertEqual(
+                try pixels(imageArgument: "null"),
+                try pixels(imageArgument: "{src:\"https://example.invalid/unused.jpg\",alt:\"Unused image\"}"),
+                "Number indicators must not turn into image rows when optional image data is present")
+        }
+
         @MainActor func testCompactCardDoesNotFillAnUnrequestedParentHeight() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()

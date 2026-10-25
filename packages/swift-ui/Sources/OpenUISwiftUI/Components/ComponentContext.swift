@@ -18,6 +18,9 @@ public struct OpenUITheme {
     public var typography = OpenUITypography()
     public var motion = OpenUIMotion()
     public var mediaCornerRadius: CGFloat = 10
+    public var thumbnailSize: CGFloat = 112
+    public var compactThumbnailSize: CGFloat = 80
+    public var inlineThumbnailSize: CGFloat = 40
     public var cardBorderWidth: CGFloat = 0.5
     public var cardShadowOpacity: Double = 0
     public var cardShadowRadius: CGFloat = 0

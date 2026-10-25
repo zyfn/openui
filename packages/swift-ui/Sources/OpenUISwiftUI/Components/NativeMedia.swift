@@ -237,25 +237,25 @@ struct NativeImageGallery: View {
   private var visible: [NativeGalleryImage] { Array(images.filter { phases[$0.key] != .unavailable }.prefix(previewLimit)) }
   private var failed: [NativeGalleryImage] { images.filter { phases[$0.key] == .unavailable } }
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
+    VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
       if !visible.isEmpty {
         LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())]
-          : [GridItem(.adaptive(minimum: context.theme.minimumCompactCardWidth), spacing: 12)],
-          alignment: .leading, spacing: 12) {
+          : [GridItem(.adaptive(minimum: context.theme.minimumCompactCardWidth), spacing: context.theme.contentSpacing)],
+          alignment: .leading, spacing: context.theme.contentSpacing) {
           ForEach(visible) { image in
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
               Button {
                 selected = image.key; preview = true
               } label: {
                 NativeRemoteImage(src: image.src, alt: image.alt, layout: .aspect(4 / 3), compactStates: true,
                   cachedImage: pictures[image.key], onStatus: { record($0, image: $1, for: image.key) })
-                  .clipShape(RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
+                  .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius))
               }
               .buttonStyle(.plain).disabled(!context.canInteract || pictures[image.key] == nil)
               .accessibilityLabel(image.alt.isEmpty ? Text("View image", bundle: NativeControlResources.bundle) : Text(image.alt))
               .accessibilityValue(pictures[image.key] == nil ? Text("Loading image", bundle: NativeControlResources.bundle) : Text(""))
               .accessibilityIdentifier("openui.gallery.image.\(image.index)")
-              if let details = image.details { Text(details).font(.caption).foregroundStyle(context.theme.secondary) }
+              if let details = image.details { Text(details).font(context.theme.typography.caption).foregroundStyle(context.theme.secondary) }
             }
           }
         }
@@ -324,11 +324,11 @@ private struct NativeGalleryPreview: View {
   @Environment(\.openUITheme) private var theme
   private var image: NativeGalleryImage? { images.first { $0.key == selected } }
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: theme.spacing("m")) {
       HStack {
-        Text("All photos", bundle: NativeControlResources.bundle).font(.headline)
+        Text("All photos", bundle: NativeControlResources.bundle).font(theme.typography.heading)
         Spacer()
-        if let image { Text("\(image.index + 1) / \(images.count)").font(.subheadline).foregroundStyle(theme.secondary) }
+        if let image { Text("\(image.index + 1) / \(images.count)").font(theme.typography.detail).foregroundStyle(theme.secondary) }
         Button { dismiss() } label: { Image(systemName: "xmark") }
           .buttonStyle(.plain).frame(minWidth: 44, minHeight: 44).disabled(false)
           .keyboardShortcut(.cancelAction).accessibilityLabel(Text("Close gallery", bundle: NativeControlResources.bundle))
@@ -339,17 +339,18 @@ private struct NativeGalleryPreview: View {
           NativeRemoteImage(src: image.src, alt: image.alt, layout: .fit,
             cachedImage: pictures[image.key], onStatus: { record($0, $1, image.key) })
         }.accessibilityIdentifier("openui.gallery.preview.image")
-        if !image.alt.isEmpty { Text(image.alt).font(.subheadline) }
-        if let details = image.details { Text(details).font(.caption).foregroundStyle(theme.secondary) }
+        if !image.alt.isEmpty { Text(image.alt).font(theme.typography.detail) }
+        if let details = image.details { Text(details).font(theme.typography.caption).foregroundStyle(theme.secondary) }
       }
       ScrollView(.horizontal) {
-        HStack(spacing: 10) {
+        HStack(spacing: theme.contentSpacing) {
           ForEach(images) { image in
             Button { selected = image.key } label: {
-              NativeRemoteImage(src: image.src, alt: image.alt, layout: .thumbnail(CGSize(width: 80, height: 60)),
+              NativeRemoteImage(src: image.src, alt: image.alt,
+                layout: .thumbnail(CGSize(width: theme.compactThumbnailSize, height: theme.compactThumbnailSize * 3 / 4)),
                 cachedImage: pictures[image.key], onStatus: { record($0, $1, image.key) })
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(selected == image.key ? theme.accent : .clear, lineWidth: 2))
+                .clipShape(RoundedRectangle(cornerRadius: theme.mediaCornerRadius))
+                .overlay(RoundedRectangle(cornerRadius: theme.mediaCornerRadius).strokeBorder(selected == image.key ? theme.accent : .clear, lineWidth: 2))
             }.buttonStyle(.plain).disabled(phases[image.key] == .unavailable)
               .accessibilityLabel(image.alt.isEmpty ? Text("View image", bundle: NativeControlResources.bundle) : Text(image.alt))
               .accessibilityIdentifier("openui.gallery.thumbnail.\(image.index)")

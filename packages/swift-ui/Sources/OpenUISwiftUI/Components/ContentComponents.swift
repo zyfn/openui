@@ -243,7 +243,7 @@ struct NativeMediaText: View {
     // The reference CSS has a default thumbnail in either orientation;
     // an explicit imageSize overrides it without native-only bounds.
     if let size = context.number("imageSize"), size.isFinite, size > 0 { return CGFloat(size) }
-    return 40
+    return context.theme.inlineThumbnailSize
   }
   private var words: some View {
     VStack(alignment: .leading, spacing: 4) {
@@ -348,13 +348,17 @@ struct NativeEntityList: View {
     .accessibilityIdentifier("openui.entity-list.row")
   }
 }
-private struct NativeListImageWidthKey: EnvironmentKey {
-  static let defaultValue: CGFloat = 48
+private struct NativeListPresentation {
+  var imageWidth: CGFloat?
+  var compact = false
+}
+private struct NativeListPresentationKey: EnvironmentKey {
+  static let defaultValue = NativeListPresentation()
 }
 extension EnvironmentValues {
-  fileprivate var openUIListImageWidth: CGFloat {
-    get { self[NativeListImageWidthKey.self] }
-    set { self[NativeListImageWidthKey.self] = newValue }
+  fileprivate var openUIListPresentation: NativeListPresentation {
+    get { self[NativeListPresentationKey.self] }
+    set { self[NativeListPresentationKey.self] = newValue }
   }
 }
 
@@ -368,9 +372,9 @@ struct NativeListBlock: View {
       ForEach(Array(context.children("items").enumerated()), id: \.element.id) { index, item in
         if index > 0 {
           Rectangle().fill(context.theme.border).frame(height: 1 / displayScale)
-            .padding(.vertical, compact ? 12 : 20)
+            .padding(.vertical, context.theme.spacing(compact ? "s" : "m"))
         }
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: context.theme.contentSpacing) {
           if !imageList {
             Text("\(index + 1)").font(context.theme.typography.detail.monospacedDigit()).foregroundStyle(
               context.theme.secondary
@@ -380,13 +384,18 @@ struct NativeListBlock: View {
         }
       }
     }
-    .environment(\.openUIListImageWidth, imageList ? (compact ? 80 : 112) : 48)
+    .environment(\.openUIListPresentation, NativeListPresentation(
+      imageWidth: imageList ? (compact ? context.theme.compactThumbnailSize : context.theme.thumbnailSize) : 0,
+      compact: compact))
   }
 }
 struct NativeListItem: View {
   let context: OpenUIComponentContext
-  @Environment(\.openUIListImageWidth) private var imageWidth
-  private var hasImage: Bool { context.value("image") != nil && context.value("image") != .null }
+  @Environment(\.openUIListPresentation) private var presentation
+  private var imageWidth: CGFloat { presentation.imageWidth ?? context.theme.inlineThumbnailSize }
+  private var hasImage: Bool {
+    imageWidth > 0 && context.value("image") != nil && context.value("image") != .null
+  }
   private var hasAction: Bool {
     context.value("action") != nil && context.value("action") != .null
   }
@@ -421,8 +430,9 @@ struct NativeListItem: View {
   }
   private var words: some View {
     HStack(alignment: .center, spacing: context.theme.contentSpacing) {
-      VStack(alignment: .leading, spacing: 6) {
-        Text(context.string("title") ?? "").font(context.theme.typography.heading)
+      VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
+        Text(context.string("title") ?? "").font(presentation.compact
+          ? context.theme.typography.detail.weight(.semibold) : context.theme.typography.heading)
         if let detail = context.string("subtitle") {
           Text(detail).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
         }
