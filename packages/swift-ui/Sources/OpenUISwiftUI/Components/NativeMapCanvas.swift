@@ -322,6 +322,12 @@ private final class NativeMapMarkerView: MKAnnotationView {
     redraw()
   }
   #if os(iOS)
+  override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+    // The marker is circular. Transparent corners of an overlapping marker's
+    // square bounds must not intercept a tap on its neighbour's visible badge.
+    UIBezierPath(ovalIn: bounds).contains(point)
+  }
+
   override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
     super.traitCollectionDidChange(previousTraitCollection)
     if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) { redraw() }
