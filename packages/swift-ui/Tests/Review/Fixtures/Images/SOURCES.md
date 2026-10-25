@@ -35,3 +35,14 @@ from the listed image delivery URLs; they are not retouched or composited.
 
 Breakfast imagery illustrates food, not a claim about a named restaurant.
 Exact download URLs and SHA-256 hashes are recorded in `paris-sources.json`.
+
+## Learning through Liangzhu jades
+
+- `liangzhu-cong.jpg` — [Ritual object (cong), ca. 2400 BCE](https://www.metmuseum.org/art/collection/search/72376), The Met, accession 2004.52.
+- `liangzhu-bi.jpg` — [Annular disk (bi), mid-third millennium BCE](https://www.metmuseum.org/art/collection/search/49371), The Met, accession 17.118.43.
+
+Both object records mark the images as public domain. Downloads use the museum's
+Open Access image URLs without pixel editing. Exact delivery URLs, dates,
+accession object IDs and SHA-256 hashes are in `learning-sources.json`.
+`object.jpg` is separately identified as a Qing archaistic cong in the learning
+page; it must not be captioned as a Neolithic Liangzhu object.

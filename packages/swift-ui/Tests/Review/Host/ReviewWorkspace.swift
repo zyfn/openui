@@ -17,6 +17,7 @@ struct ReviewWorkspace: View {
   @State private var drafts: [String: String] = [:]
   @State private var manualSource: String?
   @State private var manualRun = 0
+  @State private var purchasePreview: ReviewPurchasePreview?
 
   private var sample: ReviewProgram? { programs.first { $0.id == selected } }
   private var program: ReviewProgram? {
@@ -45,7 +46,7 @@ struct ReviewWorkspace: View {
     }
     self.programs = programs
     self.coverage = ReviewCoverage(spec: library.toSpec(), programs: programs)
-    let requestedID = configuration.programID.flatMap { $0.isEmpty ? nil : $0 } ?? "scene-explore"
+    let requestedID = configuration.programID.flatMap { $0.isEmpty ? nil : $0 } ?? "scene-day-trip"
     guard let selected = programs.first(where: { $0.id == requestedID }) else {
       preconditionFailure("Unknown review program: \(requestedID). Prepare optional replay resources before selecting them.")
     }
@@ -106,6 +107,12 @@ struct ReviewWorkspace: View {
     }
     .onAppear(perform: connectEvidence)
     .onChange(of: display.language) { _ in reloadLocalizedSample() }
+    .alert(item: $purchasePreview) { preview in
+      Alert(title: Text(display.language.text("下单预览")),
+        message: Text(preview.item + "\n" + preview.price + "\n\n"
+          + display.language.text("仅演示购买动作，未创建订单，也不会扣款。")),
+        dismissButton: .default(Text(display.language.text("完成"))))
+    }
   }
 
   @ViewBuilder private func panelContent(_ item: ReviewPanel) -> some View {
@@ -140,6 +147,7 @@ struct ReviewWorkspace: View {
     // Explicit Run starts a fresh execution of this source. Opening, editing,
     // cancelling or changing preview conditions never reaches this path.
     evidence.reset()
+    purchasePreview = nil
     state.reset()
     state.setSource(source)
     evidence.beginExecution(source: source, values: state.snapshotState(),
@@ -162,6 +170,7 @@ struct ReviewWorkspace: View {
   }
   private func load(_ item: ReviewProgram) {
     evidence.reset()
+    purchasePreview = nil
     state.reset()
     state.setSource(item.source)
     evidence.beginExecution(source: item.source, values: state.snapshotState(),
@@ -176,7 +185,30 @@ struct ReviewWorkspace: View {
     evidence.beginExecution(source: program?.source ?? "", values: state.snapshotState(),
       revision: state.sourceRevision, inspect: configuration.inspector)
     state.onStateUpdate = { [evidence] in evidence.capture($0) }
-    state.onAction = { [evidence] in evidence.record($0) }
+    state.onAction = { event in
+      evidence.record(event)
+      // The ordinary ToAssistant action terminates at this review host. There
+      // is no checkout provider, order API, or purchase behavior in the SDK.
+      purchasePreview = ReviewPurchasePreview(event: event)
+    }
     state.onActionEvaluation = configuration.inspector ? { [evidence] in evidence.recordEvaluation($0) } : nil
+  }
+}
+
+private struct ReviewPurchasePreview: Identifiable {
+  let item: String
+  let price: String
+  var id: String { item + price }
+
+  init?(event: ActionEvent) {
+    guard event.type == "continue_conversation",
+      let context = event.params.first(where: { $0.0 == "context" })?.1,
+      case .object(let fields) = context,
+      fields.first(where: { $0.key == "reviewPurchase" })?.value == .boolean(true),
+      case .string(let item)? = fields.first(where: { $0.key == "item" })?.value,
+      case .string(let price)? = fields.first(where: { $0.key == "price" })?.value
+    else { return nil }
+    self.item = item.displayString
+    self.price = price.displayString
   }
 }

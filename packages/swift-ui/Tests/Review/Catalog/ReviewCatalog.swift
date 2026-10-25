@@ -21,12 +21,12 @@ enum ReviewPrograms {}
 /// One owning tree: programs belong to scenarios, with no parallel ID registry.
 enum ReviewCatalog {
   static let scenarios: [ReviewScenario] = [
-    .init(id: "explore", title: "探索一座城市", purpose: "图文、地点与地图", variants: [ReviewScenePrograms.program("scene-explore")!]),
-    .init(id: "itinerary", title: "安排一天行程", purpose: "概览、步骤与路线", variants: [ReviewScenePrograms.program("scene-itinerary")!]),
-    .init(id: "compare", title: "比较几个方案", purpose: "表格、图表与选择", variants: [ReviewScenePrograms.program("scene-compare")!]),
-    .init(id: "preferences", title: "设置偏好与条件", purpose: "输入、筛选与反馈", variants: [ReviewScenePrograms.program("scene-preferences")!]),
-    .init(id: "reading", title: "阅读一份资料", purpose: "图文、图库与来源", variants: [ReviewScenePrograms.program("scene-reading")!]),
-    .init(id: "budget", title: "查看预算与数据", purpose: "指标、构成与明细", variants: [ReviewScenePrograms.program("scene-budget")!]),
+    .init(id: "day-trip", title: "规划一次一日游", purpose: "路线、餐饮、体验与当天预算", variants: [ReviewScenePrograms.program("scene-day-trip")!]),
+    .init(id: "two-day-trip", title: "规划一次两日游", purpose: "两天行程、机票、一晚住宿与总预算", variants: [ReviewScenePrograms.program("scene-two-day-trip")!]),
+    .init(id: "shopping", title: "选购一台旅行相机", purpose: "需求取舍、商品比较与购买预览", variants: [ReviewScenePrograms.program("scene-shopping")!]),
+    .init(id: "spending", title: "分析消费与预算", purpose: "三个月账单、变化原因与下月计划", variants: [ReviewScenePrograms.program("scene-spending")!]),
+    .init(id: "gathering", title: "组织一次朋友聚会", purpose: "场地、晚餐、流程与费用分摊", variants: [ReviewScenePrograms.program("scene-gathering")!]),
+    .init(id: "learning", title: "图文学习一段历史", purpose: "器物、图像、证据与延伸阅读", variants: [ReviewScenePrograms.program("scene-learning")!]),
   ]
   // Existing fixtures remain addressable for focused regression runs and the
   // component browser. They are not additional choices in the scene directory.

@@ -20,34 +20,33 @@ final class ReviewCatalogTests: ReviewTestCase {
   }
 
   func testScenarioNavigationAndVariants() {
-    let app = launch("adaptive-card")
+    let app = launch("scene-day-trip")
     app.buttons["review.scenarios"].tap()
-    XCTAssertTrue(app.buttons["review.scenario.layout"].exists)
+    XCTAssertTrue(app.buttons["review.scenario.day-trip"].exists)
     capture(app, name: "workspace-scenario-directory")
     let panel = app.descendants(matching: .any).matching(identifier: "review.panel").firstMatch
-    panel.buttons["review.scenario.layout"].tap()
+    panel.buttons["review.scenario.day-trip"].tap()
     waitForPanelToClose(in: app)
     let title = app.staticTexts["review.scene-title"]
-    XCTAssertEqual(title.label, "卡片动态布局")
-    XCTAssertTrue(app.staticTexts["review.scene-position"].label.hasPrefix("1 / 8"))
-    app.buttons["review.variants"].tap()
-    app.buttons["review.variant.composition"].tap()
-    XCTAssertEqual(title.label, "发现内容与图文阅读")
+    XCTAssertEqual(title.label, "规划一次一日游")
+    XCTAssertTrue(app.staticTexts["review.scene-position"].label.hasPrefix("1 / 6"))
+    XCTAssertFalse(app.buttons["review.variants"].exists,
+      "Each showcase is one complete task without a second variant picker")
     let next = app.buttons["review.next"]
     let previous = app.buttons["review.previous"]
     app.scrollViews["review.surface"].swipeUp()
     XCTAssertTrue(next.isHittable)
     XCTAssertTrue(previous.isHittable)
     next.tap()
-    XCTAssertEqual(title.label, "摘要、展开与来源")
-    XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "石刻的结构与光影")).firstMatch.isHittable,
-                  "A new scene starts at its top, including its actionable summary row")
+    XCTAssertEqual(title.label, "规划一次两日游")
+    XCTAssertTrue(app.staticTexts["巴黎，两天一晚"].isHittable,
+      "A new task starts at the top of its content")
     previous.tap()
-    XCTAssertEqual(title.label, "卡片动态布局")
+    XCTAssertEqual(title.label, "规划一次一日游")
     previous.tap()
-    XCTAssertEqual(title.label, "地图与地点选择", "Wrap to the last showcase, not a boundary fixture")
+    XCTAssertEqual(title.label, "图文学习一段历史", "Wrap to the last task")
     next.tap()
-    XCTAssertEqual(title.label, "卡片动态布局")
+    XCTAssertEqual(title.label, "规划一次一日游")
     capture(app, name: "scene-navigation-content")
     app.terminate()
   }
