@@ -14,9 +14,15 @@ a gathering for six and an illustrated introduction to Liangzhu jades.
 Travel times, flights, accommodation, products, gathering venues and prices are
 explicitly illustrative. Stay choices update the two-day total;
 camera choices update the remaining budget; venue choices update the gathering
-total and per-person cost. Purchase cards use ordinary `CompositeCardBlock` / `CompositeCardItem`,
-`ImageText`, `TagBlock`, `BoldText` and `Button`; the flight card uses `Card`
-and layout primitives. Their standard `ToAssistant` action is intercepted only
+total and per-person cost. Purchase cards use a horizontal, nonwrapping `Card`:
+an `Image` occupies the left column and one nested `Stack` owns the title, tags,
+description, price and button on the right. This keeps the content relationship
+explicit without adding a hotel or product component, changing `ImageText`, or
+moving unrelated CompositeCard body/footer slots into its header.
+Outbound and return flights are separate `Card` compositions with dates, local
+departure/arrival times, duration, a one-way price for two and their own buttons.
+The two one-way prices sum to the flight allocation in the trip budget.
+Their standard `ToAssistant` action is intercepted only
 by the review host to show a preview alert. Selecting a stay, camera or venue
 also updates the ordinary Lang state used by its budget. No order is created and no commerce
 component, action dialect or scenario-specific renderer is added to the SDK.
