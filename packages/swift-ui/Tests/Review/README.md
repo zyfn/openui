@@ -12,18 +12,24 @@ trip with one hotel night, a camera purchase decision, a spending review,
 a gathering for six and an illustrated introduction to Liangzhu jades.
 
 Travel times, flights, accommodation, products, gathering venues and prices are
-explicitly illustrative. Flight and stay choices update the two-day total;
+explicitly illustrative. Stay choices update the two-day total;
 camera choices update the remaining budget; venue choices update the gathering
-total and per-person cost. Purchase cards are ordinary `Card` + `Buttons` +
-`Button` compositions. Their standard `ToAssistant` action is intercepted only
-by the review host to show a preview alert. No order is created and no commerce
+total and per-person cost. Purchase cards use ordinary `CompositeCardBlock` / `CompositeCardItem`,
+`ImageText`, `TagBlock`, `BoldText` and `Button`; the flight card uses `Card`
+and layout primitives. Their standard `ToAssistant` action is intercepted only
+by the review host to show a preview alert. Selecting a stay, camera or venue
+also updates the ordinary Lang state used by its budget. No order is created and no commerce
 component, action dialect or scenario-specific renderer is added to the SDK.
 
 The history explanation uses museum records, labeled photographs and linked
 sources. It distinguishes a Neolithic cong from a Qing archaistic object;
 it is an authored example of organizing researched material, not a live search.
 Photograph provenance is in `Fixtures/Images/paris-sources.json` and
-`Fixtures/Images/learning-sources.json`. Each page combines SDK components and has no
+`Fixtures/Images/learning-sources.json`; commercial-offer illustrations are
+documented in `Fixtures/Images/task-photos.json`. Product cards contain a photo,
+title, tags, brief description, price and purchase-preview button. Flight cards
+use routes and local departure/arrival times instead of a photo. Travel budgets
+combine interactive charts with a short breakdown. Each page combines SDK components and has no
 secondary example picker. The header contains scene navigation and the source
 editor; language, theme, bubble and diagnostics controls are in the tools menu.
 The original 25 fixtures remain available to targeted regressions and component

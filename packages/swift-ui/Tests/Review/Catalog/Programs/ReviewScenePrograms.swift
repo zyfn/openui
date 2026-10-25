@@ -24,59 +24,62 @@ enum ReviewScenePrograms {
         activity=$afternoon=="cruise"?90:60
         total=80+20+40+activity
         root=Stack([
-          TextContent(\(q("巴黎，把一天过得刚刚好", "Paris, a day with room to breathe")),"large-heavy"),
-          TextContent(\(q("上午看艺术，下午走进左岸，傍晚回到塞纳河。两个人，不赶场。", "Art in the morning, the Left Bank after lunch and the Seine toward evening. A day for two, without rushing."))),
-          ContextCardBlock([
-            ContextCardItem("feature",\(q("从卢浮宫开始", "Begin at the Louvre")),\(q("先选想看的展厅，把午餐和沿途发现也留进行程。", "Pick a few galleries, then leave time for lunch and the city between stops.")),null,"/paris-louvre.jpg",\(q("从卢浮宫开始", "Begin at the Louvre")))
-          ]),
-          TagBlock([
-            \(q("11 月 5 日 · 周四", "Thursday 5 November")),
-            \(q("2 位成人", "2 adults")),
-            \(q("步行 + 公共交通", "Walking + transit"))
-          ],"sm"),
-          InlineHeader(\(q("一天的节奏", "Your day, at a glance"))),
-          Steps([
-            StepsItem("09:30–12:00",\(q("卢浮宫：选两三个重点展厅，提前到入口。", "The Louvre: choose two or three galleries and allow time at the entrance."))),
-            StepsItem("12:00–13:30",\(q("午餐与杜乐丽花园：参观结束后先休息。", "Lunch and the Tuileries: take a proper break after the museum."))),
-            StepsItem("13:30–16:00",\(q("圣日耳曼：过河逛书店，在咖啡馆坐一会儿。", "Saint-Germain: cross the river for bookshops and a café."))),
-            StepsItem("16:30–18:00",$afternoon=="cruise"?\(q("塞纳河游船：预留到码头、候船与登船时间。", "Seine cruise: allow time to reach the pier, queue and board.")):\(q("塞纳河步行：走到喜欢的地方就停，不再增加远处景点。", "A Seine walk: stop where you like, without adding another distant sight.")))
-          ]),
-          InlineHeader(\(q("下午，留一点选择", "Leave a choice for the afternoon"))),
+          TextContent(\(q("巴黎，一天也能从容", "Paris, at your own pace")),"large-heavy"),
+          TextContent(\(q("11 月 5 日 · 两位成人 · 艺术、左岸与塞纳河", "5 November · two adults · art, the Left Bank and the Seine")),"small"),
+          VisualCardBlock([
+            VisualCardItem(BoldText("text",\(q("上午看艺术，下午过生活", "Art in the morning, life in the afternoon")),\(q("从卢浮宫出发，把咖啡与河岸也留进一天里。", "Begin at the Louvre and leave room for coffee and the river.")),"text","md"),"feature","/paris-louvre.jpg",Tag(\(q("一日慢游", "One unhurried day")),null,"sm"),\(q("上午看艺术，下午过生活", "Art in the morning, life in the afternoon")))
+          ],"grid",true),
+          InlineHeader(\(q("四段时间，刚刚好", "Four moments, one good day"))),
+          ListBlock([
+            ListItem(\(q("09:30 · 卢浮宫", "09:30 · The Louvre")),\(q("选两三个重点展厅。午前结束，把精力留给后面的街区。", "Choose two or three galleries, leaving energy for the city afterward.")),{src:"/paris-louvre.jpg",alt:\(q("09:30 · 卢浮宫", "09:30 · The Louvre"))},null,null),
+            ListItem(\(q("12:00 · 午餐与花园", "12:00 · Lunch and gardens")),\(q("先好好吃饭，再到杜乐丽花园走一段。", "Take time for lunch, then walk through the Tuileries.")),{src:"/paris-breakfast.jpg",alt:\(q("12:00 · 午餐与花园", "12:00 · Lunch and gardens"))},null,null),
+            ListItem(\(q("13:30 · 圣日耳曼", "13:30 · Saint-Germain")),\(q("过河逛书店，选一家喜欢的咖啡馆坐下来。", "Cross the river for bookshops and a café that catches your eye.")),{src:"/paris-cafe.jpg",alt:\(q("13:30 · 圣日耳曼", "13:30 · Saint-Germain"))},null,null),
+            ListItem($afternoon=="cruise"?\(q("16:30 · 塞纳河游船", "16:30 · A Seine cruise")):\(q("16:30 · 河岸散步", "16:30 · A riverbank walk")),\(q("傍晚留给河岸与城市天际线，不再增加远处景点。", "Save the evening for the river and skyline, without a distant detour.")),{src:"/paris-eiffel.jpg",alt:\(q("塞纳河与铁塔景观示意", "The Seine and tower, an illustrative view"))})
+          ],"image"),
+          InlineHeader(\(q("换一种傍晚，不换整份计划", "A different evening, the same easy day"))),
           Buttons([
-            Button(\(q("沿河散步", "Walk by the Seine")),@Set($afternoon,"walk"),"secondary"),
-            Button(\(q("换成游船", "Take a river cruise")),@Set($afternoon,"cruise"),"secondary")
+            Button(\(q("沿河散步", "Riverbank walk")),@Set($afternoon,"walk"),"secondary"),
+            Button(\(q("加入游船", "Add a cruise")),@Set($afternoon,"cruise"),"secondary")
           ]),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/paris-louvre.jpg",\(q("博物馆与河岸体验", "Museum and riverside experience")),\(q("博物馆与河岸体验", "Museum and riverside experience")),\(q("11 月 5 日 · 2 位成人 · 按所选方案组合", "5 November · 2 adults · follows your selected plan")),true,"horizontal",104),[
+              TagBlock([
+                \(q("预约入场时段", "Timed entry")),
+                \(q("示例体验方案", "Illustrative offer"))
+              ],"sm")
+            ],{price:BoldText("number","€"+activity,\(q("两人体验预算", "activities budget for two")),"text","lg"),button:Button(\(q("预订体验", "Book experience")),@ToAssistant(\(q("预览购买：当天参观与体验", "Preview purchase: Day visits and activities")),{reviewPurchase:true,item:\(q("当天参观与体验", "Day visits and activities")),price:"€"+activity}),"primary")})
+          ],"grid",true),
+          InlineHeader(\(q("路线，一眼看清", "Get your bearings"))),
           Map([
             {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("艺术与宫殿", "Art and a royal palace")),icon:"building.columns"},
             {id:"germain",title:\(q("圣日耳曼", "Saint-Germain")),lat:48.8539,lng:2.3332,imageSrc:"/paris-cafe.jpg",subtitle:\(q("咖啡馆与左岸散步", "Cafés and Left Bank walks")),icon:"cup.and.saucer"}
           ],[],$place,"regular","wgs84"),
-          InlineHeader(\(q("当天预算", "Budget for two")),\(q("均为示例分配，非门票报价", "Illustrative allocations, not ticket quotations"))),
-          TextContent("€"+total,"large-heavy"),
-          Table([
-            Col(\(q("项目", "Item")),[
-              \(q("午餐与咖啡", "Lunch and coffee")),
-              \(q("市内交通", "Local transport")),
-              \(q("参观与体验", "Visits and activities")),
-              \(q("机动余量", "Flexibility"))
-            ]),
-            Col(\(q("两人合计 €", "Total for two €")),[
-              80,
-              20,
-              activity,
-              40
-            ])
-          ]),
-          Card([
-            CardHeader(\(q("参观与体验预订", "Visits and activities")),\(q("按当前选择打包预览；示例商品", "Preview the current selection; demonstration offer"))),
-            TextContent("€"+activity,"small-heavy"),
-            Buttons([
-              Button(\(q("预览预订", "Preview booking")),@ToAssistant(\(q("预览购买：当天参观与体验", "Preview purchase: Day visits and activities")),{reviewPurchase:true,item:\(q("当天参观与体验", "Day visits and activities")),price:"€"+activity}),"primary")
-            ])
-          ]),
-          TextContent(\(q("不含住宿和往返巴黎的交通。地图仅标地点；时段是建议安排，未计算实时交通。卢浮宫参观信息见下方。", "Excludes accommodation and travel to Paris. Map markers are locations, not live routing; timings are suggestions. See Louvre visitor information below.")),"small"),
+          InlineHeader(\(q("这一天，预算怎么分", "Where the day’s budget goes"))),
+          Stack([
+            BoldText("number","€"+total,\(q("两人当天合计", "total for two")),"text","lg"),
+            TextContent(\(q("含 €40 机动余量", "Includes €40 flexibility")),"small")
+          ],"row","s","center","between",true),
+          PieChart([
+            \(q("餐饮", "Food")),
+            \(q("交通", "Transport")),
+            \(q("体验", "Activities")),
+            \(q("余量", "Flexibility"))
+          ],[
+            80,
+            20,
+            activity,
+            40
+          ],"donut"),
+          EntityList([
+            {left:\(q("午餐与咖啡", "Lunch and coffee")),right:"€80",rightVariant:"number"},
+            {left:\(q("市内交通", "Local transport")),right:"€20",rightVariant:"number"},
+            {left:\(q("参观与体验", "Visits and activities")),right:"€"+activity,rightVariant:"number"},
+            {left:\(q("机动余量", "Flexibility")),right:"€40",rightVariant:"number"}
+          ],"small"),
+          TextContent(\(q("体验、价格与时段为演示安排，不是实时报价；预算不含住宿和往返巴黎交通。地图标示地点，不代表实时导航。", "Offers, prices and timings are illustrative, not live quotes. Excludes accommodation and travel to Paris. Map markers do not represent live navigation.")),"small"),
           ListBlock([
-            ListItem(\(q("卢浮宫 · 预约与开放信息", "Louvre · time slots and opening")),\(q("www.louvre.fr", "www.louvre.fr")),null,null,@OpenUrl("https://www.louvre.fr/en/visit")),
-            ListItem(\(q("左岸街区指南", "Left Bank walking guide")),\(q("parisjetaime.com", "parisjetaime.com")),null,null,@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"))
+            ListItem(\(q("卢浮宫 · 官方参观与预约", "Louvre · official visiting and booking")),\(q("www.louvre.fr", "www.louvre.fr")),null,null,@OpenUrl("https://www.louvre.fr/en/visit")),
+            ListItem(\(q("左岸 · 街区步行指南", "Left Bank · neighborhood walking guide")),\(q("parisjetaime.com", "parisjetaime.com")),null,null,@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"))
           ])
         ],"column","l")
         """
@@ -88,112 +91,122 @@ enum ReviewScenePrograms {
       title = t("规划一次两日游", "Two days, one night")
       source = """
         $stay="central"
-        $flight="early"
         hotel=$stay=="central"?220:160
-        flights=$flight=="early"?320:380
+        flights=320
         total=hotel+flights+160+80+100+60
         root=Stack([
           TextContent(\(q("巴黎，两天一晚", "Paris, two days and one night")),"large-heavy"),
-          TextContent(\(q("从伦敦出发，两位成人。上午抵达、次日傍晚返程，把有限的时间留给艺术、街区和河岸。", "From London for two adults. Arrive in the morning and return the following evening, leaving time for art, neighborhoods and the river."))),
-          TagBlock([
-            \(q("11 月 5–6 日", "5–6 November")),
-            \(q("2 天 · 1 晚", "2 days · 1 night")),
-            \(q("报价均为演示数据", "All quotes are illustrative"))
-          ],"sm"),
+          TextContent(\(q("11 月 5–6 日 · 2 位成人 · 1 间房 · 1 晚", "5–6 November · 2 adults · 1 room · 1 night")),"small"),
+          VisualCardBlock([
+            VisualCardItem(BoldText("text",\(q("把巴黎留给艺术与河岸", "Make time for art and the river")),\(q("两天一个节奏：第一天左岸，第二天铁塔与塞纳河。", "One easy rhythm: the Left Bank first, then the tower and the Seine.")),"text","md"),"feature","/paris-eiffel.jpg",Tag(\(q("两日慢游", "Two easy days")),null,"sm"),\(q("把巴黎留给艺术与河岸", "Make time for art and the river")))
+          ],"grid",true),
+          InlineHeader(\(q("每天，留一个重点", "An anchor for each day"))),
           Tabs([
             TabItem("day1",\(q("第一天 · 艺术与左岸", "Day 1 · Art and the Left Bank")),[
-              ImageBlock("/paris-louvre.jpg",\(q("第一天下午 · 卢浮宫", "Day 1 afternoon · the Louvre"))),
-              Steps([
-                StepsItem("08:00–11:30",\(q("出发、飞行与市区接驳。中午先到酒店寄存行李。", "Departure, flight and city transfer. Leave your bags at the hotel before lunch."))),
-                StepsItem("14:00–17:00",\(q("卢浮宫与杜乐丽花园：预约下午时段，不安排跨城往返。", "Louvre and Tuileries: an afternoon entry, with no cross-city detour."))),
-                StepsItem("18:00–20:00",\(q("圣日耳曼晚餐与散步，回酒店休息。", "Dinner and a walk in Saint-Germain, then back to the hotel.")))
-              ])
+              ListBlock([
+                ListItem(\(q("11:30 · 抵达市区", "11:30 · Arrive in the city")),\(q("酒店寄存行李后午餐，下午再开始参观。", "Leave bags at the hotel and have lunch before sightseeing.")),{src:"/paris-breakfast.jpg",alt:\(q("11:30 · 抵达市区", "11:30 · Arrive in the city"))},null,null),
+                ListItem(\(q("14:00 · 卢浮宫与花园", "14:00 · Louvre and gardens")),\(q("预约下午入场，选重点展厅，结束后走到杜乐丽。", "Book an afternoon slot, choose a few galleries and finish in the Tuileries.")),{src:"/paris-louvre.jpg",alt:\(q("14:00 · 卢浮宫与花园", "14:00 · Louvre and gardens"))},null,null),
+                ListItem(\(q("18:00 · 左岸晚餐", "18:00 · Dinner on the Left Bank")),\(q("圣日耳曼附近吃饭散步，晚上不再跨城赶场。", "Dinner and a walk near Saint-Germain, with no evening cross-city detour.")),{src:"/paris-cafe.jpg",alt:\(q("18:00 · 左岸晚餐", "18:00 · Dinner on the Left Bank"))},null,null)
+              ],"image")
             ]),
             TabItem("day2",\(q("第二天 · 地标与河岸", "Day 2 · Landmarks and the Seine")),[
-              ImageBlock("/paris-eiffel.jpg",\(q("第二天 · 埃菲尔铁塔一带", "Day 2 · around the Eiffel Tower"))),
-              Steps([
-                StepsItem("09:00–11:30",\(q("退房寄存行李，再去铁塔周边与河岸；登塔需另行安排预约。", "Check out and store your bags, then visit the tower area and riverbank. An ascent needs a separate booking."))),
-                StepsItem("12:00–14:30",\(q("午餐与左岸闲逛，14:30 前取回行李。", "Lunch and a Left Bank walk; collect your bags by 14:30."))),
-                StepsItem("15:00–20:00",\(q("前往机场，给值机和安检留出余量；傍晚航班返程。", "Transfer to the airport with check-in and security time before the evening return flight.")))
+              ListBlock([
+                ListItem(\(q("09:00 · 铁塔与河岸", "09:00 · Tower and riverbank")),\(q("退房寄存行李，慢慢逛铁塔周边。登塔需另约时段。", "Check out and store bags, then explore around the tower. Going up needs a separate time slot.")),{src:"/paris-eiffel.jpg",alt:\(q("09:00 · 铁塔与河岸", "09:00 · Tower and riverbank"))},null,null),
+                ListItem(\(q("12:00 · 午餐与最后一段散步", "12:00 · Lunch and a final walk")),\(q("14:30 前取回行李，15:00 前出发去机场。", "Collect bags by 14:30 and leave for the airport by 15:00.")),{src:"/paris-cafe.jpg",alt:\(q("12:00 · 午餐与最后一段散步", "12:00 · Lunch and a final walk"))},null,null)
+              ],"image"),
+              TextCallout("neutral",\(q("18:30 返程，下午留出机场时间", "18:30 return: keep the afternoon clear")),\(q("市区接驳、值机与安检都要计入。示例时间不替代实时路况与航班确认。", "Allow for transfers, check-in and security. Suggested timings do not replace live traffic or flight confirmation.")))
+            ])
+          ]),
+          InlineHeader(\(q("往返航班", "Your return flights"))),
+          Card([
+            Stack([
+              TextContent(\(q("伦敦 ⇄ 巴黎", "London ⇄ Paris")),"small-heavy"),
+              Icon("plane")
+            ],"row","s","center","between",true),
+            TagBlock([
+              \(q("直飞", "Nonstop")),
+              \(q("两人往返", "Return for two")),
+              \(q("随身行李", "Cabin bag"))
+            ],"sm"),
+            Stack([
+              TextContent(\(q("08:00 → 10:20", "08:00 → 10:20")),"small-heavy"),
+              TextContent(\(q("11.05 · LHR → CDG", "5 Nov · LHR → CDG")),"small")
+            ],"row","s","center","between",true),
+            Stack([
+              TextContent(\(q("18:30 → 18:50", "18:30 → 18:50")),"small-heavy"),
+              TextContent(\(q("11.06 · CDG → LHR", "6 Nov · CDG → LHR")),"small")
+            ],"row","s","center","between",true),
+            Stack([
+              BoldText("number","€"+flights,\(q("两人往返总价", "return total for two")),"text","lg"),
+              Buttons([
+                Button(\(q("预订", "Book")),@ToAssistant(\(q("预览购买：两人往返机票", "Preview purchase: Return flights for two")),{reviewPurchase:true,item:\(q("两人往返机票", "Return flights for two")),price:"€"+flights}),"primary")
               ])
-            ])
+            ],"row","s","center","between",true)
           ]),
-          InlineHeader(\(q("往返交通", "Return travel"))),
-          Card([
-            CardHeader(\(q("伦敦 ⇄ 巴黎 · 两人往返机票", "London ⇄ Paris · return flights for two")),\(q("11 月 5 日上午抵达 / 6 日傍晚返程", "Morning arrival on 5 Nov / evening return on 6 Nov"))),
-            Buttons([
-              Button(\(q("基础票 · €320", "Basic · €320")),@Set($flight,"early"),"secondary"),
-              Button(\(q("含托运行李 · €380", "With checked bags · €380")),@Set($flight,"baggage"),"secondary")
-            ]),
-            TextContent("€"+flights,"small-heavy"),
-            TextContent(\(q("两种方案使用相同示例时段，区别在行李；机场接驳另列。无真实航班、余票或承运人。", "Both options use the same illustrative timings and differ by baggage. Airport transfers are separate. No live flight, inventory or carrier is represented.")),"small"),
-            Buttons([
-              Button(\(q("预览机票", "Preview flights")),@ToAssistant(\(q("预览购买：两人往返机票", "Preview purchase: Return flights for two")),{reviewPurchase:true,item:\(q("两人往返机票", "Return flights for two")),price:"€"+flights}),"primary")
-            ])
-          ]),
-          InlineHeader(\(q("住一晚，比较位置与总价", "One night: compare location and total price"))),
-          Table([
-            Col(\(q("住宿方案", "Stay")),[
-              \(q("A · 中心区", "A · central")),
-              \(q("B · 外围近交通站", "B · near outer transit"))
-            ]),
-            Col(\(q("一晚 €", "One night €")),[
-              220,
-              160
-            ]),
-            Col(\(q("取舍", "Trade-off")),[
-              \(q("步行衔接，少折返", "Walking connections, fewer detours")),
-              \(q("节省 €60，进城更久", "Save €60, longer city access"))
-            ])
-          ]),
-          Card([
-            CardHeader(\(q("一间双人房 · 一晚", "One double room · one night")),\(q("11 月 5 日入住，6 日退房；虚构住宿方案", "Check in 5 Nov, out 6 Nov; fictional stays"))),
-            Buttons([
-              Button(\(q("选择中心区", "Choose central")),@Set($stay,"central"),"secondary"),
-              Button(\(q("选择外围", "Choose outer transit")),@Set($stay,"outer"),"secondary")
-            ]),
-            TextContent("€"+hotel,"small-heavy"),
-            TextContent($stay=="central"?\(q("当前方案：取行李后直达机场接驳点，市区步行衔接。", "Current plan: walk between central stops, then collect bags before the airport transfer.")):\(q("当前方案：每天多留出进出市区时间，第二天提前结束街区散步。", "Current plan: allow extra city-access time each day and shorten the second afternoon walk."))),
-            Buttons([
-              Button(\(q("预览住宿", "Preview stay")),@ToAssistant(\(q("预览购买：双人房一晚", "Preview purchase: Double room for one night")),{reviewPurchase:true,item:\(q("双人房一晚", "Double room for one night")),price:"€"+hotel}),"primary")
-            ])
-          ]),
-          InlineHeader(\(q("把两天放在一张地图上", "Your two days on the map"))),
+          InlineHeader(\(q("住一晚，选位置还是选余量", "A stay that suits your priorities"))),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/stay-central.jpg",\(q("左岸 · 花园双人房", "Left Bank · garden double")),\(q("左岸 · 花园双人房", "Left Bank · garden double")),\(q("双人房 · 2 人 · 1 晚", "Double room · 2 guests · 1 night")),true,"horizontal",104),[
+              TagBlock([
+                \(q("含早餐", "Breakfast included")),
+                \(q("中心区", "Central location"))
+              ],"sm")
+            ],{price:BoldText("number","€220",\(q("一晚总价", "one-night total")),"text","lg"),button:Button(\(q("预订", "Book")),Action([@Set($stay,"central"),@ToAssistant(\(q("预览购买：左岸双人房一晚 · 演示房源 A", "Preview purchase: Left Bank double · sample stay A")),{reviewPurchase:true,item:\(q("左岸双人房一晚 · 演示房源 A", "Left Bank double · sample stay A")),price:"€220"})]),"primary")})
+          ],"grid",true),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/stay-transit.jpg",\(q("近交通站 · 舒适双人房", "Transit-side · comfort double")),\(q("近交通站 · 舒适双人房", "Transit-side · comfort double")),\(q("双人房 · 2 人 · 1 晚", "Double room · 2 guests · 1 night")),true,"horizontal",104),[
+              TagBlock([
+                \(q("比中心区省 €60", "Save €60")),
+                \(q("需预留进城时间", "Allow city-access time"))
+              ],"sm")
+            ],{price:BoldText("number","€160",\(q("一晚总价", "one-night total")),"text","lg"),button:Button(\(q("预订", "Book")),Action([@Set($stay,"outer"),@ToAssistant(\(q("预览购买：近交通站双人房一晚 · 演示房源 B", "Preview purchase: Transit-side double · sample stay B")),{reviewPurchase:true,item:\(q("近交通站双人房一晚 · 演示房源 B", "Transit-side double · sample stay B")),price:"€160"})]),"primary")})
+          ],"grid",true),
+          TextContent($stay=="central"?\(q("已选左岸方案：步行衔接，减少市区折返。", "Left Bank selected: walking connections and fewer detours.")):\(q("已选近交通站方案：省 €60，第二天提前结束市区散步。", "Transit-side selected: save €60 and finish the second afternoon walk earlier.")),"small"),
+          InlineHeader(\(q("主要停留点", "Your anchor points"))),
           Map([
             {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("艺术与宫殿", "Art and a royal palace")),icon:"building.columns"},
             {id:"germain",title:\(q("圣日耳曼", "Saint-Germain")),lat:48.8539,lng:2.3332,imageSrc:"/paris-cafe.jpg",subtitle:\(q("咖啡馆与左岸散步", "Cafés and Left Bank walks")),icon:"cup.and.saucer"},
             {id:"eiffel",title:\(q("埃菲尔铁塔", "Eiffel Tower")),lat:48.8584,lng:2.2945,imageSrc:"/paris-eiffel.jpg",subtitle:\(q("塞纳河与城市天际线", "The Seine and skyline")),icon:"mappin.and.ellipse"}
           ],[],null,"regular","wgs84"),
-          InlineHeader(\(q("费用合计", "Trip total")),\(q("两人总额，随机票与住宿选择更新", "Total for two, updated by flight and stay choices"))),
-          TextContent("€"+total,"large-heavy"),
-          Table([
-            Col(\(q("项目", "Item")),[
-              \(q("机票", "Flights")),
-              \(q("一晚住宿", "One-night stay")),
-              \(q("餐饮", "Food")),
-              \(q("机场与市内交通", "Airport and local transport")),
-              \(q("参观预留", "Visits allowance")),
-              \(q("机动余量", "Flexibility"))
-            ]),
-            Col(\(q("两人合计 €", "Total for two €")),[
-              flights,
-              hotel,
-              160,
-              80,
-              100,
-              60
-            ])
-          ]),
-          Card([
-            CardHeader(\(q("参观门票预留", "Visits allowance")),\(q("按实际预约选择场馆；这里不提供票价承诺", "Choose actual visits when booking; no ticket-price claim"))),
-            MetricIndicatorInline("€100",\(q("两人预算上限", "budget cap for two"))),
-            Buttons([
-              Button(\(q("预览参观预约", "Preview visit booking")),@ToAssistant(\(q("预览购买：两人参观预约", "Preview purchase: Visits for two")),{reviewPurchase:true,item:\(q("两人参观预约", "Visits for two")),price:"€100"}),"primary")
-            ])
-          ]),
+          InlineHeader(\(q("一笔预算，看清全部", "The whole trip in one budget"))),
+          Stack([
+            BoldText("number","€"+total,\(q("两人旅行合计", "trip total for two")),"text","lg"),
+            TextContent(\(q("随住宿方案更新", "Updates with your stay")),"small")
+          ],"row","s","center","between",true),
+          PieChart([
+            \(q("机票", "Flights")),
+            \(q("住宿", "Stay")),
+            \(q("餐饮", "Food")),
+            \(q("接驳与交通", "Transfers")),
+            \(q("参观", "Visits")),
+            \(q("余量", "Flexibility"))
+          ],[
+            flights,
+            hotel,
+            160,
+            80,
+            100,
+            60
+          ],"donut"),
+          EntityList([
+            {left:\(q("往返机票", "Return flights")),right:"€"+flights,rightVariant:"number"},
+            {left:\(q("一晚住宿", "One-night stay")),right:"€"+hotel,rightVariant:"number"},
+            {left:\(q("餐饮", "Food")),right:"€160",rightVariant:"number"},
+            {left:\(q("机场与市内交通", "Airport and local transport")),right:"€80",rightVariant:"number"},
+            {left:\(q("参观预留", "Visits allowance")),right:"€100",rightVariant:"number"},
+            {left:\(q("机动余量", "Flexibility")),right:"€60",rightVariant:"number"}
+          ],"small"),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/paris-louvre.jpg",\(q("两人的艺术半日", "An afternoon of art for two")),\(q("两人的艺术半日", "An afternoon of art for two")),\(q("卢浮宫与花园 · 按实际场馆确认预约", "Louvre and gardens · confirm actual venue booking")),true,"horizontal",104),[
+              TagBlock([
+                \(q("两位成人", "Two adults")),
+                \(q("预算预留", "Planning allowance"))
+              ],"sm")
+            ],{price:BoldText("number","€100",\(q("参观预算上限", "visits budget cap")),"text","lg"),button:Button(\(q("预约参观", "Book visits")),@ToAssistant(\(q("预览购买：两人参观预约", "Preview purchase: Visits for two")),{reviewPurchase:true,item:\(q("两人参观预约", "Visits for two")),price:"€100"}),"primary")})
+          ],"grid",true),
+          TextContent(\(q("航班、房源、房型条件和价格均为演示数据，照片仅为对应类型的示意，不代表库存或真实商家。地图不包含实时交通。", "Flights, stays, room terms and prices are illustrative. Stock photos represent the type of offer, not real inventory or vendors. The map does not include live traffic.")),"small"),
           ListBlock([
-            ListItem(\(q("卢浮宫 · 参观与预约", "Louvre · visiting and booking")),\(q("www.louvre.fr", "www.louvre.fr")),null,null,@OpenUrl("https://www.louvre.fr/en/visit")),
-            ListItem(\(q("铁塔 · 登塔信息", "Eiffel Tower · visiting information")),\(q("www.toureiffel.paris", "www.toureiffel.paris")),null,null,@OpenUrl("https://www.toureiffel.paris/en"))
+            ListItem(\(q("卢浮宫 · 官方预约信息", "Louvre · official booking information")),\(q("www.louvre.fr", "www.louvre.fr")),null,null,@OpenUrl("https://www.louvre.fr/en/visit")),
+            ListItem(\(q("铁塔 · 官方参观信息", "Eiffel Tower · official visitor information")),\(q("www.toureiffel.paris", "www.toureiffel.paris")),null,null,@OpenUrl("https://www.toureiffel.paris/en"))
           ])
         ],"column","l")
         """
@@ -209,80 +222,53 @@ enum ReviewScenePrograms {
         extras=$kit=="light"?400:600
         total=camera+extras
         root=Stack([
-          TextContent(\(q("旅行相机，先选愿意随身带的", "A travel camera you will actually carry")),"large-heavy"),
-          TextContent(\(q("预算 ¥7,500，以街景、人像和日常记录为主。建议先选轻量套装，把余量留给电池、存储卡和出门拍摄。", "A ¥7,500 budget for streets, portraits and everyday memories. Start with the lighter kit and leave room for batteries, storage and getting out to shoot."))),
-          TagBlock([
-            \(q("两套虚构商品用于演示", "Two fictional demonstration kits")),
-            \(q("所有金额均为人民币", "All amounts in CNY"))
-          ],"sm"),
-          InlineHeader(\(q("差异在这里", "The differences that matter"))),
+          TextContent(\(q("把预算花在愿意带出门的相机上", "A camera worth taking with you")),"large-heavy"),
+          TextContent(\(q("¥7,500 预算，主要拍街景、人像与旅行日常。我会先选轻量套装：少一点负担，才更可能随身带着。", "With ¥7,500 for streets, portraits and travel, I would begin with the lighter kit. Less to carry means more chances to use it."))),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/camera-light.jpg",\(q("A · 轻装出发套装", "A · travel-light kit")),\(q("A · 轻装出发套装", "A · travel-light kit")),\(q("轻量机身与标准变焦，适合全天随身。", "Light body and standard zoom for all-day carrying.")),true,"horizontal",104),[
+              TagBlock([
+                \(q("优先推荐", "First choice")),
+                \(q("少换镜头", "Fewer lens changes"))
+              ],"sm")
+            ],{price:BoldText("number","¥5,200",\(q("套装示例价", "illustrative kit price")),"text","lg"),button:Button(\(q("购买", "Buy")),Action([@Set($kit,"light"),@ToAssistant(\(q("预览购买：轻装出发相机套装", "Preview purchase: Travel-light camera kit")),{reviewPurchase:true,item:\(q("轻装出发相机套装", "Travel-light camera kit")),price:"¥5,200"})]),"primary")})
+          ],"grid",true),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/camera-dark.jpg",\(q("B · 人像进阶套装", "B · portrait kit")),\(q("B · 人像进阶套装", "B · portrait kit")),\(q("机身与大光圈定焦，偏向人像与夜景。", "Body and fast prime for portraits and evening scenes.")),true,"horizontal",104),[
+              TagBlock([
+                \(q("更重一些", "More to carry")),
+                \(q("定焦取景", "Prime-lens framing"))
+              ],"sm")
+            ],{price:BoldText("number","¥6,800",\(q("套装示例价", "illustrative kit price")),"text","lg"),button:Button(\(q("购买", "Buy")),Action([@Set($kit,"portrait"),@ToAssistant(\(q("预览购买：人像进阶相机套装", "Preview purchase: Portrait camera kit")),{reviewPurchase:true,item:\(q("人像进阶相机套装", "Portrait camera kit")),price:"¥6,800"})]),"primary")})
+          ],"grid",true),
+          InlineHeader(\(q("不用比较每个参数，先看取舍", "Compare the trade-off, not every specification"))),
           Table([
-            Col(\(q("比较项", "Compare")),[
-              \(q("套装价格", "Kit price")),
-              \(q("随身重量", "Carry weight")),
-              \(q("镜头配置", "Lens")),
-              \(q("更适合", "Best suited to"))
+            Col(\(q("你更在意", "Your priority")),[
+              \(q("轻装与便利", "Lightness and convenience")),
+              \(q("人像与弱光", "Portraits and low light")),
+              \(q("初次使用", "Getting started"))
             ]),
-            Col(\(q("A · 轻装出发", "A · travel light")),[
-              "¥5,200",
-              \(q("约 480 g", "about 480 g")),
-              \(q("小型标准变焦", "Compact standard zoom")),
-              \(q("全天随身、城市漫步", "All-day carrying, city walks"))
+            Col(\(q("A · 轻装", "A · light")),[
+              \(q("更适合全天随身", "Better for carrying all day")),
+              \(q("够用，保留预算", "An everyday starting point")),
+              \(q("变焦更灵活", "Flexible zoom framing"))
             ]),
-            Col(\(q("B · 人像进阶", "B · portraits")),[
-              "¥6,800",
-              \(q("约 720 g", "about 720 g")),
-              \(q("大光圈定焦", "Fast prime")),
-              \(q("人像与弱光拍摄", "Portraits and lower light"))
+            Col(\(q("B · 人像", "B · portrait")),[
+              \(q("需要接受额外重量", "Accept the extra weight")),
+              \(q("值得为明确需求投入", "For a specific creative need")),
+              \(q("需要适应定焦构图", "Learn to frame with a prime"))
             ])
           ]),
-          Card([
-            Stack([
-              Icon("camera"),
-              TextContent(\(q("A · 轻装出发套装", "A · travel-light kit")),"small-heavy")
-            ],"row","s"),
-            TextContent(\(q("¥5,200", "¥5,200")),"large-heavy"),
-            TextContent(\(q("轻便机身与小型变焦镜头。旅途中少换镜头，拿起来就能拍。", "A light body and compact zoom. Fewer lens changes and less to carry."))),
-            Buttons([
-              Button(\(q("纳入预算", "Use in budget")),@Set($kit,"light"),"secondary"),
-              Button(\(q("购买套装 A", "Buy kit A")),@ToAssistant(\(q("预览购买：轻装出发相机套装", "Preview purchase: Travel-light camera kit")),{reviewPurchase:true,item:\(q("轻装出发相机套装", "Travel-light camera kit")),price:"¥5,200"}),"primary")
-            ])
-          ]),
-          Card([
-            Stack([
-              Icon("camera"),
-              TextContent(\(q("B · 人像进阶套装", "B · portrait kit")),"small-heavy")
-            ],"row","s"),
-            TextContent(\(q("¥6,800", "¥6,800")),"large-heavy"),
-            TextContent(\(q("更偏向人像与夜晚街景。接受多带一些重量，也需要适应用脚步调整取景。", "For portraits and evening streets. More to carry, with framing adjusted by moving rather than zooming."))),
-            Buttons([
-              Button(\(q("纳入预算", "Use in budget")),@Set($kit,"portrait"),"secondary"),
-              Button(\(q("购买套装 B", "Buy kit B")),@ToAssistant(\(q("预览购买：人像进阶相机套装", "Preview purchase: Portrait camera kit")),{reviewPurchase:true,item:\(q("人像进阶相机套装", "Portrait camera kit")),price:"¥6,800"}),"primary")
-            ])
-          ]),
-          InlineHeader(\(q("把配件也算进去", "Include the essentials"))),
-          TextContent("¥"+total,"large-heavy"),
-          Table([
-            Col(\(q("预算项", "Budget item")),[
-              \(q("相机套装", "Camera kit")),
-              \(q("电池与存储卡预留", "Battery and storage allowance")),
-              \(q("预算剩余", "Budget remaining"))
-            ]),
-            Col(\(q("金额 ¥", "CNY")),[
-              camera,
-              extras,
-              7500-total
-            ])
-          ]),
-          Card([
-            CardHeader(\(q("配件组合", "Accessory bundle")),\(q("按当前套装匹配的演示预算", "Illustrative allocation for the selected kit"))),
-            TextContent("¥"+extras,"small-heavy"),
-            Buttons([
-              Button(\(q("购买配件", "Buy accessories")),@ToAssistant(\(q("预览购买：备用电池与存储卡", "Preview purchase: Spare battery and storage")),{reviewPurchase:true,item:\(q("备用电池与存储卡", "Spare battery and storage")),price:"¥"+extras}),"primary")
-            ])
-          ]),
-          TextCallout("neutral",\(q("我的建议", "My recommendation")),\(q("优先 A。只有当你明确更常拍人像、愿意带更重的设备时，再为 B 多花预算。实际购买前确认握持、镜头兼容与保修。", "Start with A. Choose B when portraits matter enough to justify its extra weight and cost. Before a real purchase, check handling, lens compatibility and warranty."))),
-          TextContent(\(q("产品、规格和价格均为虚构数据，用于展示比较与购买动作；不是品牌评测或实时报价。", "Products, specifications and prices are fictional, illustrating comparisons and purchase actions; this is not a brand review or live quotation.")),"small")
+          InlineHeader(\(q("把必要配件也算进去", "Include the essentials"))),
+          Stack([
+            BoldText("number","¥"+total,\(q("相机与配件合计", "camera and essentials")),"text","lg"),
+            TextContent("¥"+(7500-total)+\(q(" 预算余量", " remaining")),"small-heavy")
+          ],"row","s","center","between",true),
+          EntityList([
+            {left:\(q("当前套装", "Selected kit")),right:"¥"+camera,rightVariant:"number"},
+            {left:\(q("电池与存储卡预留", "Battery and storage allowance")),right:"¥"+extras,rightVariant:"number"}
+          ],"small"),
+          TextCallout("neutral",\(q("选 A，把余量留给出门拍摄", "Choose A and leave room to get out and shoot")),\(q("只有当你明确更常拍人像，并接受额外重量时，再选择 B。购买前亲手试握，核对镜头兼容与保修。", "Choose B when portraits are a clear priority and you accept the extra weight. Before buying, check handling, lens compatibility and warranty."))),
+          TextContent(\(q("两套商品、规格与价格为虚构演示。器材照片仅作示意，不表示照片中的真实品牌或型号具有上述规格。配件为预算预留，不是独立报价。", "Kits, specifications and prices are fictional. Photos illustrate camera equipment; depicted brands and models are not claimed to match these specifications. Accessories are an allowance, not a separate quote.")),"small")
         ],"column","l")
         """
       sources = [
@@ -392,68 +378,60 @@ enum ReviewScenePrograms {
         total=space+food+extras
         perPerson=total/6
         root=Stack([
-          TextContent(\(q("六个人，一个不用赶场的周六", "Six friends, one unhurried Saturday")),"large-heavy"),
-          TextContent(\(q("11 月 7 日，17:00–21:00。晚餐、聊天和桌游放在同一处，预算控制在每人 ¥260 以内。", "7 November, 17:00–21:00. Dinner, conversation and board games in one place, within ¥260 per person."))),
-          ContextCardBlock([
-            ContextCardItem("feature",\(q("先吃饭，再慢慢聊", "Dinner first, conversation after")),\(q("六个人共享一桌，活动只安排一个。留出自然聊天的时间，不把聚会排成任务清单。", "One shared table and one activity. Leave room for conversation rather than filling the evening with a checklist.")),null,"/paris-breakfast.jpg",\(q("先吃饭，再慢慢聊", "Dinner first, conversation after")))
-          ]),
-          TextContent(\(q("场地与套餐为虚构示例；照片仅作氛围参考，不代表实际商家。", "Venues and packages are fictional; imagery sets the mood and does not identify a real vendor.")),"small"),
-          InlineHeader(\(q("先选一个舒服的地方", "Choose a place to settle in"))),
-          Table([
-            Col(\(q("场地", "Venue")),[
-              \(q("A · 共享工作室", "A · shared studio")),
-              \(q("B · 独立包间", "B · private room"))
-            ]),
-            Col(\(q("场地费 ¥", "Venue CNY")),[
-              480,
-              720
-            ]),
-            Col(\(q("主要取舍", "Trade-off")),[
-              \(q("有大桌，自备餐食", "Large table; bring food")),
-              \(q("更私密，场地费高 ¥240", "More private; ¥240 more"))
-            ])
-          ]),
-          Card([
-            CardHeader(\(q("四小时场地 · 六人", "Four-hour space · six guests")),\(q("周六 17:00–21:00；交通位置预订前确认", "Saturday 17:00–21:00; confirm access before booking"))),
-            Buttons([
-              Button(\(q("选共享工作室", "Shared studio")),@Set($venue,"studio"),"secondary"),
-              Button(\(q("选独立包间", "Private room")),@Set($venue,"private"),"secondary")
-            ]),
-            TextContent("¥"+space,"small-heavy"),
-            Buttons([
-              Button(\(q("预览场地预订", "Preview venue booking")),@ToAssistant(\(q("预览购买：聚会场地四小时", "Preview purchase: Four-hour gathering venue")),{reviewPurchase:true,item:\(q("聚会场地四小时", "Four-hour gathering venue")),price:"¥"+space}),"primary")
-            ])
-          ]),
-          InlineHeader(\(q("晚上的安排", "How the evening unfolds"))),
+          TextContent(\(q("六个人，围着一张桌子", "Six friends around one table")),"large-heavy"),
+          TextContent(\(q("11 月 7 日 · 周六 17:00–21:00 · 每人不超过 ¥260", "7 November · Saturday 17:00–21:00 · up to ¥260 each")),"small"),
+          VisualCardBlock([
+            VisualCardItem(BoldText("text",\(q("先吃饭，再慢慢聊", "Dinner first, conversation after")),\(q("一顿共享晚餐、一场桌游，把其余时间留给彼此。", "A shared dinner, a board game and time for each other.")),"text","md"),"feature","/gathering-table.jpg",Tag(\(q("朋友聚会", "An evening together")),null,"sm"),\(q("先吃饭，再慢慢聊", "Dinner first, conversation after")))
+          ],"grid",true),
+          InlineHeader(\(q("选一个能坐下来的地方", "A place to settle in"))),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/venue-daylight.jpg",\(q("A · 明亮长桌空间", "A · daylight table space")),\(q("A · 明亮长桌空间", "A · daylight table space")),\(q("六人共享长桌，可自带餐食。", "A shared table for six; bring your own food.")),true,"horizontal",104),[
+              TagBlock([
+                \(q("更省预算", "Lower venue cost")),
+                \(q("演示场地", "Illustrative venue"))
+              ],"sm")
+            ],{price:BoldText("number","¥480",\(q("四小时场地费", "four-hour venue fee")),"text","lg"),button:Button(\(q("预订", "Book")),Action([@Set($venue,"studio"),@ToAssistant(\(q("预览购买：六人长桌空间四小时", "Preview purchase: Four-hour table space for six")),{reviewPurchase:true,item:\(q("六人长桌空间四小时", "Four-hour table space for six")),price:"¥480"})]),"primary")})
+          ],"grid",true),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/venue-private.jpg",\(q("B · 独立用餐空间", "B · private dining space")),\(q("B · 独立用餐空间", "B · private dining space")),\(q("六人独立空间，适合安静聊天。", "A private space for six, with room to talk.")),true,"horizontal",104),[
+              TagBlock([
+                \(q("多 ¥40 / 人", "¥40 more per person")),
+                \(q("演示场地", "Illustrative venue"))
+              ],"sm")
+            ],{price:BoldText("number","¥720",\(q("四小时场地费", "four-hour venue fee")),"text","lg"),button:Button(\(q("预订", "Book")),Action([@Set($venue,"private"),@ToAssistant(\(q("预览购买：六人独立空间四小时", "Preview purchase: Four-hour private space for six")),{reviewPurchase:true,item:\(q("六人独立空间四小时", "Four-hour private space for six")),price:"¥720"})]),"primary")})
+          ],"grid",true),
+          InlineHeader(\(q("共享晚餐，不用各点各的", "One dinner to share"))),
+          CompositeCardBlock([
+            CompositeCardItem("offer",ImageText("/gathering-table.jpg",\(q("六人共享餐食", "Shared dinner for six")),\(q("六人共享餐食", "Shared dinner for six")),\(q("主食、蔬菜与饮品，六个人一起分享。", "Mains, vegetables and drinks to share between six.")),true,"horizontal",104),[
+              TagBlock([
+                \(q("¥120 / 人", "¥120 per person")),
+                \(q("示例菜单", "Illustrative menu"))
+              ],"sm")
+            ],{price:BoldText("number","¥720",\(q("六人餐食合计", "dinner total for six")),"text","lg"),button:Button(\(q("预订餐食", "Order dinner")),@ToAssistant(\(q("预览购买：六人共享晚餐", "Preview purchase: Shared dinner for six")),{reviewPurchase:true,item:\(q("六人共享晚餐", "Shared dinner for six")),price:"¥720"}),"primary")})
+          ],"grid",true),
+          InlineHeader(\(q("四小时，有松有紧", "Four hours, with room to breathe"))),
           Steps([
-            StepsItem("17:00–17:30",\(q("到场、放东西、布置餐桌。第一位到的人负责与场地交接。", "Arrive and set the table. The first guest handles the venue handover."))),
-            StepsItem("17:30–19:00",\(q("共享晚餐。素食与过敏需求提前单独确认。", "Shared dinner. Confirm vegetarian needs and allergies in advance."))),
-            StepsItem("19:00–20:30",\(q("桌游或聊天，想休息的人不必参与每一轮。", "Board games or conversation, with room to sit out a round."))),
-            StepsItem("20:30–21:00",\(q("收拾、分装剩余食物，确认物品带齐后离开。", "Tidy up, pack leftovers and check belongings before leaving.")))
+            StepsItem("17:00",\(q("到场、布置餐桌，第一位到的人完成场地交接。", "Arrive, set the table and hand over the venue to the first guest."))),
+            StepsItem("17:30",\(q("一起吃饭，聊天不设议程。", "Dinner together, with no agenda for the conversation."))),
+            StepsItem("19:00",\(q("桌游或聊天，想休息的人不必参与每一轮。", "Board games or more conversation; sitting out a round is fine."))),
+            StepsItem("20:30",\(q("收拾、分装剩余食物，21:00 前离场。", "Tidy up, pack leftovers and leave by 21:00.")))
           ]),
-          Card([
-            CardHeader(\(q("六人共享晚餐", "Shared dinner for six")),\(q("主食、蔬菜、蛋白质与无酒精饮品；示例套餐", "Mains, vegetables, protein and soft drinks; sample package"))),
-            TextContent(\(q("¥720", "¥720")),"small-heavy"),
-            Buttons([
-              Button(\(q("预览餐食下单", "Preview food order")),@ToAssistant(\(q("预览购买：六人共享晚餐", "Preview purchase: Shared dinner for six")),{reviewPurchase:true,item:\(q("六人共享晚餐", "Shared dinner for six")),price:"¥720"}),"primary")
-            ])
-          ]),
-          InlineHeader(\(q("选完方案，费用一起更新", "Costs follow your venue choice"))),
-          TextContent("¥"+total,"large-heavy"),
-          TextContent("¥"+perPerson+\(q(" / 人", " per person")),"small-heavy"),
-          Table([
-            Col(\(q("费用", "Cost")),[
-              \(q("场地", "Venue")),
-              \(q("晚餐", "Dinner")),
-              \(q("耗材与机动余量", "Supplies and flexibility"))
-            ]),
-            Col(\(q("合计 ¥", "Total CNY")),[
-              space,
-              720,
-              120
-            ])
-          ]),
-          TextCallout("neutral",\(q("出发前，确认三件事", "Three things to confirm")),\(q("人数是否变动；是否有过敏或饮食禁忌；场地是否允许外带餐食，以及最晚离场时间。", "Guest count; allergies or dietary requirements; whether outside food is allowed and when the venue must be vacated.")))
+          InlineHeader(\(q("选完场地，人均费用一起更新", "The split follows your venue choice"))),
+          Stack([
+            BoldText("number","¥"+perPerson,\(q("每人分摊", "per person")),"text","lg"),
+            BoldText("number","¥"+total,\(q("六人合计", "total for six")),"text","lg")
+          ],"row","s","center","between",true),
+          SingleStackedBarChart([
+            \(q("场地", "Venue")),
+            \(q("餐食", "Dinner")),
+            \(q("耗材与余量", "Supplies and buffer"))
+          ],[space,food,extras]),
+          EntityList([
+            {left:\(q("场地", "Venue")),right:"¥"+space,rightVariant:"number"},
+            {left:\(q("共享晚餐", "Shared dinner")),right:"¥720",rightVariant:"number"},
+            {left:\(q("耗材与机动余量", "Supplies and flexibility")),right:"¥120",rightVariant:"number"}
+          ],"small"),
+          TextContent(\(q("场地、套餐、条件与价格均为虚构示例；图片只展示对应空间与用餐氛围。真实预订前确认人数、饮食要求、外带规则与离场时间。", "Venues, packages, terms and prices are fictional. Photos illustrate spaces and dining. Before a real booking, confirm guests, dietary needs, outside-food rules and closing time.")),"small")
         ],"column","l")
         """
       sources = [

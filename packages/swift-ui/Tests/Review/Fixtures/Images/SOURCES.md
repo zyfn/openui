@@ -46,3 +46,21 @@ Open Access image URLs without pixel editing. Exact delivery URLs, dates,
 accession object IDs and SHA-256 hashes are in `learning-sources.json`.
 `object.jpg` is separately identified as a Qing archaistic cong in the learning
 page; it must not be captioned as a Neolithic Liangzhu object.
+
+## Personal-agent task illustrations
+
+`task-photos.json` records the original delivery URL, author, source page,
+Pexels license and SHA-256 for each additional photograph:
+
+- `stay-central.jpg` — Max Vakhtbovych, bright hotel interior.
+- `stay-transit.jpg` — Real Estate 4k, modern hotel room.
+- `camera-dark.jpg` — Jakub Zerdzicki, camera on a black background.
+- `camera-light.jpg` — Christopher Welsch Leveroni, camera on a white background.
+- `gathering-table.jpg` — Askar Abayev, shared dinner.
+- `venue-daylight.jpg` — Matheus Bertelli, restaurant interior.
+- `venue-private.jpg` — Valeria Boltneva, dining room.
+
+These are stock illustrations, not photos of bookable inventory. Fictional
+hotel names, camera-kit specifications, venue terms and prices do not identify
+the depicted businesses or products. Photographs are downloaded without pixel
+editing and remain confined to the review app.
