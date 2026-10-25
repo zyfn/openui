@@ -57,7 +57,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           InlineHeader(\(q("路线，一眼看清", "Get your bearings"))),
           Map([
             {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("艺术与宫殿", "Art and a royal palace")),icon:"building.columns"},
@@ -202,35 +202,33 @@ enum ReviewScenePrograms {
             Stack([
               TextContent(\(q("左岸 · 花园双人房", "Left Bank · garden double")),"small-heavy"),
               TagBlock([
-                \(q("含早餐", "Breakfast included")),
-                \(q("中心区", "Central location"))
+                \(q("花园景观", "Garden view")),
+                \(q("含早餐", "Breakfast included"))
               ],"sm"),
-              TextContent(\(q("双人房 · 2 人 · 1 晚", "Double room · 2 guests · 1 night")),"small"),
               Stack([
-                BoldText("number","€220",\(q("一晚总价", "one-night total")),"text","lg"),
+                BoldText("number","€220",null,"text","lg"),
                 Buttons([
                   Button(\(q("预订", "Book")),Action([@Set($stay,"central"),@ToAssistant(\(q("预览购买：左岸双人房一晚 · 演示房源 A", "Preview purchase: Left Bank double · sample stay A")),{reviewPurchase:true,item:\(q("左岸双人房一晚 · 演示房源 A", "Left Bank double · sample stay A")),price:"€220"})]),"primary")
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           Card([
             Image(\(q("近交通站 · 舒适双人房", "Transit-side · comfort double")),"/stay-transit.jpg"),
             Stack([
               TextContent(\(q("近交通站 · 舒适双人房", "Transit-side · comfort double")),"small-heavy"),
               TagBlock([
-                \(q("比中心区省 €60", "Save €60")),
-                \(q("需预留进城时间", "Allow city-access time"))
+                \(q("城景房", "City view")),
+                \(q("大床", "King bed"))
               ],"sm"),
-              TextContent(\(q("双人房 · 2 人 · 1 晚", "Double room · 2 guests · 1 night")),"small"),
               Stack([
-                BoldText("number","€160",\(q("一晚总价", "one-night total")),"text","lg"),
+                BoldText("number","€160",null,"text","lg"),
                 Buttons([
                   Button(\(q("预订", "Book")),Action([@Set($stay,"outer"),@ToAssistant(\(q("预览购买：近交通站双人房一晚 · 演示房源 B", "Preview purchase: Transit-side double · sample stay B")),{reviewPurchase:true,item:\(q("近交通站双人房一晚 · 演示房源 B", "Transit-side double · sample stay B")),price:"€160"})]),"primary")
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           TextContent($stay=="central"?\(q("已选左岸方案：步行衔接，减少市区折返。", "Left Bank selected: walking connections and fewer detours.")):\(q("已选近交通站方案：省 €60，第二天提前结束市区散步。", "Transit-side selected: save €60 and finish the second afternoon walk earlier.")),"small"),
           InlineHeader(\(q("主要停留点", "Your anchor points"))),
           Map([
@@ -282,7 +280,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           TextContent(\(q("航班、房源、房型条件和价格均为演示数据，照片仅为对应类型的示意，不代表库存或真实商家。地图不包含实时交通。", "Flights, stays, room terms and prices are illustrative. Stock photos represent the type of offer, not real inventory or vendors. The map does not include live traffic.")),"small"),
           ListBlock([
             ListItem(\(q("卢浮宫 · 官方预约信息", "Louvre · official booking information")),\(q("www.louvre.fr", "www.louvre.fr")),null,null,@OpenUrl("https://www.louvre.fr/en/visit")),
@@ -320,7 +318,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           Card([
             Image(\(q("B · 人像进阶套装", "B · portrait kit")),"/camera-dark.jpg"),
             Stack([
@@ -337,7 +335,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           InlineHeader(\(q("不用比较每个参数，先看取舍", "Compare the trade-off, not every specification"))),
           Table([
             Col(\(q("你更在意", "Your priority")),[
@@ -498,7 +496,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           Card([
             Image(\(q("B · 独立用餐空间", "B · private dining space")),"/venue-private.jpg"),
             Stack([
@@ -515,7 +513,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           InlineHeader(\(q("共享晚餐，不用各点各的", "One dinner to share"))),
           Card([
             Image(\(q("六人共享餐食", "Shared dinner for six")),"/gathering-table.jpg"),
@@ -533,7 +531,7 @@ enum ReviewScenePrograms {
                 ])
               ],"row","xs","center","between",false)
             ],"column","s")
-          ],"card","row","m","start","start",false),
+          ],"card","row","m","stretch","start",false),
           InlineHeader(\(q("四小时，有松有紧", "Four hours, with room to breathe"))),
           Steps([
             StepsItem("17:00",\(q("到场、布置餐桌，第一位到的人完成场地交接。", "Arrive, set the table and hand over the venue to the first guest."))),

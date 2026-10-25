@@ -19,6 +19,9 @@ an `Image` occupies the left column and one nested `Stack` owns the title, tags,
 description, price and button on the right. This keeps the content relationship
 explicit without adding a hotel or product component, changing `ImageText`, or
 moving unrelated CompositeCard body/footer slots into its header.
+The row declares `align="stretch"` so the image fills the measured content
+height. Hotel cards omit the page-level occupancy/night count and the redundant
+price caption; tags describe room attributes rather than comparison advice.
 Outbound and return flights are separate `Card` compositions with dates, local
 departure/arrival times, duration, a one-way price for two and their own buttons.
 The two one-way prices sum to the flight allocation in the trip budget.
