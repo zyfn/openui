@@ -9,7 +9,7 @@ import AppKit
 
 enum NativeMediaStatus: Equatable { case loading, loaded, unavailable }
 enum NativeMediaLayout {
-  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic
+  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic, stretch
 }
 
 /// Shared native resource presentation. Network failures stay outside language
@@ -130,7 +130,33 @@ struct NativeRemoteImage: View {
     case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
     case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
     case .intrinsic: surface.aspectRatio(previewAspectRatio, contentMode: .fit)
+    case .stretch:
+      if #available(iOS 16, macOS 13, *) {
+        NativeStretchMediaLayout(aspectRatio: previewAspectRatio) { surface }
+      } else {
+        surface.aspectRatio(previewAspectRatio, contentMode: .fit)
+      }
     }
+  }
+}
+
+/// Keep a natural measurement until the parent supplies both dimensions. A
+/// stretched row can then crop the image into its measured cross-axis extent
+/// without making that row collapse or relying on a fixed image/text ratio.
+@available(iOS 16, macOS 13, *)
+private struct NativeStretchMediaLayout: Layout {
+  let aspectRatio: CGFloat
+
+  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    let ideal = subviews.first?.sizeThatFits(.unspecified) ?? .zero
+    let width = proposal.width.flatMap { $0.isFinite ? max(0, $0) : nil } ?? ideal.width
+    let height = proposal.height.flatMap { $0.isFinite ? max(0, $0) : nil }
+      ?? width / max(aspectRatio, .leastNonzeroMagnitude)
+    return CGSize(width: width, height: height)
+  }
+
+  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
   }
 }
 

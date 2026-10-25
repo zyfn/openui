@@ -130,7 +130,8 @@ private struct OpenUIStack: View {
 private struct NativeContentImage: View {
     let context: OpenUIComponentContext
     var body: some View {
-        NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "", layout: .intrinsic)
+        NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "",
+            layout: context.stretchesVertically ? .stretch : .intrinsic)
             // Flexible containers need a useful ideal size even before the
             // bitmap loads. The actual parent proposal still controls size.
             .frame(idealWidth: context.theme.minimumCompactCardWidth)

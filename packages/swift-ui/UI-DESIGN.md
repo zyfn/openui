@@ -44,6 +44,13 @@ retry and previews share `OpenUIResourceContext`. A missing or failed image must
 not erase adjacent text or actions. Do not assume every horizontal composition has
 one image and one fixed-width text column.
 
+On platforms using SwiftUI Layout (iOS 16+/macOS 13+), an `Image` directly inside
+a horizontal `Stack` or `Card` with `align="stretch"` retains its natural height
+during measurement, then fills the final row height with proportional cropping.
+This honors the declared cross-axis alignment without a fixed media/content ratio.
+Other alignments and standalone images retain their source-proportional preview.
+The older layout fallback retains the source-proportional preview.
+
 The optional Map renders supplied coordinates and valid point facts. Its default
 bottom cards are compact, internal to the map and synchronized with icon markers.
 Custom content uses ordinary registered components. No ratings, metadata or routes
