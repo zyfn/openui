@@ -67,6 +67,18 @@ final class ChartInspectionTests: XCTestCase {
     XCTAssertNil(drawing.inspectionIndex(at: CGPoint(x: 200, y: 235), size: size))
   }
 
+  func testCompactChartsRequireACompleteAxisGutterBeforeDrawingLabels() {
+    let measurements = NativeChartAxisMeasurements(leftWidth: 32, bottomWidth: 12, lineHeight: 16)
+    let compact = NativeChartLayout(size: CGSize(width: 100, height: 180), measurements: measurements)
+    XCTAssertFalse(compact.showsLeftLabels, "A table preview must not display partial axis digits")
+    XCTAssertGreaterThanOrEqual(compact.rect.width, 80, "Keep the data plot usable in the compact preview")
+    let expanded = NativeChartLayout(size: CGSize(width: 240, height: 180), measurements: measurements)
+    XCTAssertTrue(expanded.showsLeftLabels)
+    let longLabels = NativeChartAxisMeasurements(leftWidth: 88, bottomWidth: 12, lineHeight: 16)
+    XCTAssertFalse(NativeChartLayout(size: CGSize(width: 170, height: 180), measurements: longLabels).showsLeftLabels)
+    XCTAssertTrue(NativeChartLayout(size: CGSize(width: 240, height: 180), measurements: longLabels).showsLeftLabels)
+  }
+
   func testChartLayoutPreservesRegularProjectionAndSeparatesLargeTypeAxes() {
     let regular = NativeChartLayout(size: CGSize(width: 300, height: 250))
     XCTAssertEqual(regular.rect, CGRect(x: 44, y: 18, width: 244, height: 192))

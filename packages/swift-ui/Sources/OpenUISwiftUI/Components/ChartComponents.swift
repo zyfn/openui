@@ -268,6 +268,7 @@ struct NativeChartLayout {
   let bottomLabelWidth: CGFloat
   let measuredBottomLabelWidth: CGFloat
   let showsBottomLabels: Bool
+  let showsLeftLabels: Bool
   let showsXAxisTitle: Bool
   let showsYAxisTitle: Bool
 
@@ -276,7 +277,8 @@ struct NativeChartLayout {
     let lineHeight = max(16 * scale, measurements.lineHeight)
     let tickOffset = max(12 * scale, lineHeight / 2 + 4 * scale)
     let right = min(12 * scale, size.width)
-    let left = min(max(44 * scale, measurements.leftWidth + 8 * scale),
+    let idealLeft = max(44 * scale, measurements.leftWidth + 8 * scale)
+    let left = min(idealLeft,
       max(0, size.width - right - min(80, size.width)))
     let top = min(max(18 * scale, lineHeight + 2 * scale), max(0, size.height - 40))
     let bottom = min(max(40 * scale, tickOffset + lineHeight * 1.5 + 4 * scale),
@@ -286,6 +288,10 @@ struct NativeChartLayout {
     self.scale = scale
     self.lineHeight = lineHeight
     self.tickOffset = tickOffset
+    // A compact preview can reserve a useful plot while lacking a complete
+    // axis gutter. Omit those ticks instead of drawing clipped digit fragments;
+    // values remain available through inspection and accessibility rows.
+    showsLeftLabels = left >= idealLeft
     bottomLabelWidth = max(56 * scale, measurements.bottomWidth + 12 * scale)
     measuredBottomLabelWidth = measurements.bottomWidth > 0 ? measurements.bottomWidth : 44 * scale
     showsXAxisTitle = bottom >= lineHeight + 2 * scale
@@ -460,9 +466,11 @@ struct NativeChartDrawing {
         let y = rect.maxY - rect.height * fraction
         line.move(to: CGPoint(x: rect.minX, y: y))
         line.addLine(to: CGPoint(x: rect.maxX, y: y))
-        text(
-          number(low + (high - low) * fraction), at: CGPoint(x: rect.minX - 6, y: y),
-          canvas: &canvas, anchor: .trailing, maxWidth: max(1, rect.minX - 6))
+        if layout.showsLeftLabels {
+          text(
+            number(low + (high - low) * fraction), at: CGPoint(x: rect.minX - 6, y: y),
+            canvas: &canvas, anchor: .trailing, maxWidth: max(1, rect.minX - 6))
+        }
       }
       let isZero = abs(low + (high - low) * fraction) < 0.000_001
       canvas.stroke(
@@ -489,7 +497,7 @@ struct NativeChartDrawing {
     if horizontal {
       let labelStride = max(1, Int(ceil(CGFloat(count) / max(1,
         rect.height / (layout.lineHeight + 12 * layout.scale)))))
-      for i in 0..<count where i % labelStride == 0 {
+      for i in 0..<count where layout.showsLeftLabels && i % labelStride == 0 {
         text(
           data.labels[i], at: CGPoint(x: rect.minX - 6, y: rect.minY + pitch * (CGFloat(i) + 0.5)),
           canvas: &canvas, anchor: .trailing, maxWidth: max(1, rect.minX - 6))
