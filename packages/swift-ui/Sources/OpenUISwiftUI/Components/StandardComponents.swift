@@ -135,9 +135,9 @@ private struct NativeContentImage: View {
     var body: some View {
         NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "",
             layout: context.stretchesVertically ? .stretch : .intrinsic)
-            // Flexible containers need a useful ideal size even before the
-            // bitmap loads. The actual parent proposal still controls size.
-            .frame(idealWidth: context.theme.minimumCompactCardWidth)
+            // Suggest a media width when a row measures its children. Grid card
+            // widths are unrelated; the parent still controls the final bounds.
+            .frame(idealWidth: context.theme.thumbnailSize)
             .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
     }
 }
