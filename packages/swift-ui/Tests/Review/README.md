@@ -14,14 +14,15 @@ a gathering for six and an illustrated introduction to Liangzhu jades.
 Travel times, flights, accommodation, products, gathering venues and prices are
 explicitly illustrative. Stay choices update the two-day total;
 camera choices update the remaining budget; venue choices update the gathering
-total and per-person cost. Camera recommendations use the official
-`CompositeCardBlock` carousel with image headers, descriptive bodies and
-price/button footers. Rich vertical offers use `Stack`, `Image`, `TextContent`,
-`TagBlock`, `Buttons` and `Separator`, preserving independent purchase actions
-without enclosing card shells or additional product fields. Simple itinerary
-rows retain `ListBlock` / `ListItem`. The one-day itinerary is a fixed authored
-plan without the former walk/cruise switch. Outbound and return flights are separate entries in
-a number list, with dates, local times and one-way prices for two.
+total and per-person cost. Product candidates use the official
+`CompositeCardBlock` / `CompositeCardItem` structure: an image header,
+descriptive body and price/button footer. Cameras use carousel presentation;
+hotel and venue candidates use responsive grids. A single offer uses `Card`
+rather than duplicating an item to satisfy a CardBlock's two-item minimum.
+Simple itinerary rows retain `ListBlock` / `ListItem`. The one-day itinerary is
+a fixed authored plan without the former walk/cruise switch. Outbound and
+return flights remain separate cards with dates, local times, durations,
+one-way prices for two and independent booking actions.
 The two one-way prices sum to the flight allocation in the trip budget.
 Their standard `ToAssistant` action is intercepted only
 by the review host to show a preview alert. Selecting a stay, camera or venue
