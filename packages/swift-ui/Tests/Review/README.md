@@ -14,16 +14,12 @@ a gathering for six and an illustrated introduction to Liangzhu jades.
 Travel times, flights, accommodation, products, gathering venues and prices are
 explicitly illustrative. Stay choices update the two-day total;
 camera choices update the remaining budget; venue choices update the gathering
-total and per-person cost. Purchase cards use a horizontal, nonwrapping `Card`:
-an `Image` occupies the left column and one nested `Stack` owns the title, tags,
-description, price and button on the right. This keeps the content relationship
-explicit without adding a hotel or product component, changing `ImageText`, or
-moving unrelated CompositeCard body/footer slots into its header.
-The row declares `align="stretch"` so the image fills the measured content
-height. Hotel cards omit the page-level occupancy/night count and the redundant
-price caption; tags describe room attributes rather than comparison advice.
-Outbound and return flights are separate `Card` compositions with dates, local
-departure/arrival times, duration, a one-way price for two and their own buttons.
+total and per-person cost. Offers use standard `ListBlock` / `ListItem` fields:
+photo, title, descriptive attributes and a price/action label. Candidates in the
+same group share one list, including its media column and separators. There are
+no additional product fields or enclosing card shells. The whole actionable row
+opens the purchase preview. Outbound and return flights are separate entries in
+a number list, with dates, local times and one-way prices for two.
 The two one-way prices sum to the flight allocation in the trip budget.
 Their standard `ToAssistant` action is intercepted only
 by the review host to show a preview alert. Selecting a stay, camera or venue
@@ -35,9 +31,8 @@ sources. It distinguishes a Neolithic cong from a Qing archaistic object;
 it is an authored example of organizing researched material, not a live search.
 Photograph provenance is in `Fixtures/Images/paris-sources.json` and
 `Fixtures/Images/learning-sources.json`; commercial-offer illustrations are
-documented in `Fixtures/Images/task-photos.json`. Product cards contain a photo,
-title, tags, brief description, price and purchase-preview button. Flight cards
-use routes and local departure/arrival times instead of a photo. Travel budgets
+documented in `Fixtures/Images/task-photos.json`. Offer rows use image lists;
+flight rows use routes and local departure/arrival times without a photo. Travel budgets
 combine interactive charts with a short breakdown. Each page combines SDK components and has no
 secondary example picker. The header contains scene navigation and the source
 editor; language, theme, bubble and diagnostics controls are in the tools menu.
