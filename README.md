@@ -100,14 +100,14 @@ Try it yourself in the [Playground](https://www.openui.com/playground): generate
 | [`@openuidev/vue-lang`](./packages/vue-lang)                                                               | Vue integrations                                 | Vue 3 bindings for defining model-renderable components and rendering streamed OpenUI Lang                   |
 | [`@openuidev/svelte-lang`](./packages/svelte-lang)                                                         | Svelte integrations                              | Svelte 5 bindings for defining model-renderable components and rendering streamed OpenUI Lang                |
 | [`@openuidev/angular-lang`](./packages/angular-lang)                                                       | Angular integrations                             | Angular bindings for defining component libraries and rendering streamed OpenUI Lang                         |
+| [`OpenUILang`](./packages/swift-lang) | Native Apple language bindings | SwiftPM interfaces to the shared parser, runtime, schema and prompt generator through JavaScriptCore |
+| [`OpenUISwiftUI`](./packages/swift-ui) | Native SwiftUI rendering | SwiftUI renderer, standard component registrations and optional native extensions |
 | [`@openuidev/browser-bundle`](./packages/browser-bundle)                                                   | CDN, iframe, and no-build embeds                 | Prebuilt browser bundle that ships the renderer, UI library, React, and styles as script + stylesheet assets |
 | [`@openuidev/a2ui`](./packages/a2ui)                                                                       | A2UI with OpenUI Lang component payloads         | Framework-agnostic A2UI v1.0 protocol client with an optional React renderer                                 |
 | [`@openuidev/server`](./packages/server)                                                                   | Server side utilities                            | Server utilities for OpenUI and OpenUI Gateway                                                               |
 | [`@openuidev/observability-cloud`](./packages/observability-cloud)                                         | Hosted observability in the Thesys console       | Cloud sink that batches OpenUI events and ships them to OpenUI Gateway                                       |
 | [`@openuidev/cli`](./packages/openui-cli)                                                                  | Project scaffolding and prompt generation        | CLI for creating new apps and generating system prompts or JSON schema from a library definition             |
 | [`@openuidev/openclaw-os-plugin`](https://github.com/thesysdev/openclaw-os/tree/main/packages/claw-plugin) | OpenClaw workspaces                              | OpenClaw OS plugin for serving OpenUI-powered OpenClaw workspaces                                            |
-| [`OpenUILang`](./packages/openui-lang) | Native Swift language runtime | Foundation-only parsing, streaming, evaluation, and runtime utilities |
-| [`OpenUISwiftUI`](./packages/openui-swiftui) | Native SwiftUI rendering | Main-actor UI state and app-defined component rendering; depends on `OpenUILang` |
 
 Common starting points:
 
@@ -129,27 +129,6 @@ npm install @openuidev/angular-lang
 # A2UI protocol with OpenUI Lang component payloads
 npm install @openuidev/a2ui zod
 ```
-
-## Native Swift (experimental)
-
-The Swift implementation uses two independent SwiftPM packages. `OpenUILang` owns language and runtime semantics and has no SwiftUI dependency. `OpenUISwiftUI` depends on it for rendering and UI state; component views, themes, navigation, and tool backends are provided by the consuming app. These packages do not participate in the pnpm build or npm release pipeline.
-
-From a checkout with a Swift 6 toolchain:
-
-```sh
-# Foundation-only runtime; Linux and macOS
-swift test --package-path packages/openui-lang
-
-# SwiftUI rendering; macOS
-swift test --package-path packages/openui-swiftui
-
-# Independent macOS playground; no credentials or network required
-cd examples/app-frameworks/swiftui-macos
-./verify.sh
-open '.build/OpenUI Demo.app'
-```
-
-Language tests reuse [`spec/fixtures/1.0`](./spec/fixtures/1.0) without duplicating fixtures. The current harness covers parse/evaluate, streaming, and validation, but does not exercise editing or action interactions end to end. Query fetching is explicit after streaming completes. See the [language package](./packages/openui-lang), [renderer package](./packages/openui-swiftui), and [macOS example](./examples/app-frameworks/swiftui-macos) for API details and limitations. The manifests currently support local path dependencies; a repository-root SwiftPM manifest or separate distribution repositories would be needed for remote SwiftPM consumption.
 
 ## Why OpenUI Lang
 
@@ -192,6 +171,8 @@ openui/
 │   ├── react-email/      # React Email component library for generated emails
 │   ├── assistant-ui/     # assistant-ui Tool UI renderers for OpenUI Lang
 │   ├── lang-core/        # Framework-agnostic parser, prompt, and runtime layer
+│   ├── swift-lang/       # Apple-platform bindings to lang-core (OpenUILang)
+│   ├── swift-ui/         # Native SwiftUI renderer and component library
 │   ├── langchain/        # LangChain/LangGraph streaming integration
 │   ├── vue-lang/         # Vue runtime bindings for OpenUI Lang
 │   ├── svelte-lang/      # Svelte runtime bindings for OpenUI Lang

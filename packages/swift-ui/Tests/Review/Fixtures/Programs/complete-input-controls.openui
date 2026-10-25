@@ -1,0 +1,7 @@
+root=Stack([
+  InlineHeader("Precise values","Direct input, ranges and discrete choices use the same fields."),
+  Form("controls",Buttons([Button("Submit",@ToAssistant("Submit"))]),[
+    FormControl("Continuous range",Slider("range","continuous",0,100,5,[20,80],"Range")),
+    FormControl("Discrete choice",Slider("steps","discrete",0,100,10,[30],"Steps"))
+  ])
+],"column","m")

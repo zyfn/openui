@@ -1,0 +1,16 @@
+$code="let city = \"Kyoto\"\nprint(city)\n"
+root=Stack([
+  InlineHeader("Standard presentation","The same component contracts, with native text and controls."),
+  Stack([Tag("Small",null,"sm"),Tag("Medium",null,"md"),Tag("Large",Icon("check"),"lg","success")],"row","s","start","start",true),
+  IconText(Icon("map-pin"),"inverted","m","Inverted icon badge","A clear symbol beside its supporting text."),
+  IconText(Icon("info"),"info","m","A little context","Semantic colors keep related information together."),
+  EntityList([
+    {left:"**Museum**",right:"[View details](https://example.com/museum)",rightVariant:"text"},
+    {left:"*Admission*",right:"¥80",rightVariant:"number"},
+    {left:"Travel time",right:"`25 min`",rightVariant:"text"}
+  ],"default",{left:"Your afternoon",right:"Estimate"},{left:"Total",right:"¥120",rightVariant:"number"}),
+  EntityList([{left:"Compact **summary**",right:"2 stops",rightVariant:"text"}],"small"),
+  CodeBlock("swift",$code),
+  Button("Use updated code",@Set($code,"let city = \"Osaka\"\nprint(city.uppercased())\n"),"secondary"),
+  CodeBlock("json","{\"city\":\"Kyoto\",\"days\":2,\"open\":true}")
+],"column","m")

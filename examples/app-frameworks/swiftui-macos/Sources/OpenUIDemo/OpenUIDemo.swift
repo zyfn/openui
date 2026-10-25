@@ -106,7 +106,7 @@ private struct Children: View {
 }
 
 private struct MockTools: ToolProvider {
-    func callTool(name: String, arguments: [String: Value]) async throws -> Value {
+    func callTool(name: OpenUIString, arguments: OpenUIObject) async throws -> Value {
         try await Task.sleep(nanoseconds: 1_200_000_000)
         guard name == "loadTrip" else { throw ToolNotFoundError(toolName: name) }
         return .object([ObjectField(key: "message", value: .string("行程已就绪：09:30 西湖散步 → 12:00 龙井村午餐 → 15:00 茶园小坐。"))])

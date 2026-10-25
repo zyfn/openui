@@ -6,11 +6,11 @@ let package = Package(
     platforms: [.macOS(.v13)],
     products: [.executable(name: "OpenUIDemo", targets: ["OpenUIDemo"])],
     dependencies: [
-        .package(path: "../../../packages/openui-lang"),
-        .package(path: "../../../packages/openui-swiftui"),
+        .package(path: "../../../packages/swift-lang"),
+        .package(path: "../../../packages/swift-ui"),
     ],
     targets: [.executableTarget(name: "OpenUIDemo", dependencies: [
-        .product(name: "OpenUILang", package: "openui-lang"),
-        .product(name: "OpenUISwiftUI", package: "openui-swiftui"),
+        .product(name: "OpenUILang", package: "swift-lang"),
+        .product(name: "OpenUISwiftUI", package: "swift-ui"),
     ], swiftSettings: [.swiftLanguageMode(.v5)])]
 )
