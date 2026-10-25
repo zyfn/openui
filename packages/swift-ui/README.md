@@ -43,8 +43,11 @@ and image. Missing optional facts consume no space; no score, route or business
 fact is inferred. Markers use compact icon logos, not rating badges. Optional
 `icon` is an SF Symbol name; the default is a location symbol.
 
-Swiping cards and selecting markers share `value`. Camera padding reserves the
-card's measured height. With no valid point or route the component renders no
+Swiping cards and selecting markers share `value`. The map viewport follows the
+container width and declared size; card measurements do not increase map height.
+Pages use their measured content height and scroll vertically only when they
+exceed the available area. Camera padding reserves the visible card height.
+With no valid point or route the component renders no
 map. Explicit routes can render without place cards. Optional `content` overrides
 pages by point id with ordinary components; missing overrides use default facts,
 while an empty object or explicit null page hides the corresponding cards.

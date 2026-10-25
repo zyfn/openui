@@ -27,10 +27,17 @@ struct NativePager<ID: Hashable, Content: View>: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       if width > 0 {
-        ScrollView(.vertical, showsIndicators: false) {
-          viewport.frame(height: height, alignment: .top)
+        if let height, let maximumHeight, height > maximumHeight {
+          ScrollView(.vertical, showsIndicators: true) {
+            viewport.frame(height: height, alignment: .top)
+          }
+          .frame(height: visibleHeight)
+        } else {
+          // A horizontal scroll view otherwise accepts the parent's proposed
+          // height. Use its measured page height instead, including in overlays.
+          // The initial one-point viewport still measures fixed-size page content.
+          viewport.frame(height: height ?? 1, alignment: .top)
         }
-        .frame(idealHeight: visibleHeight, maxHeight: visibleHeight)
         if showsControls && ids.count > 1 {
           NativePageControls(page: index, count: ids.count, enabled: enabled, identifier: identifier, select: select)
         }

@@ -304,9 +304,9 @@ private struct NativeMapBlock: View {
   }
 }
 
-/// Inline and expanded viewports own their measurements independently. A card
-/// grows naturally in an unconstrained message; only a bounded viewport scrolls
-/// long card content. Camera padding uses that viewport's actual visible inset.
+/// The viewport height depends only on the container width and declared size.
+/// Page measurements reserve camera space without feeding back into map height.
+/// Ordinary cards retain their content height; only overflowing pages scroll.
 private struct NativeMapPresentation: View {
   let context: OpenUIComponentContext
   let data: NativeMapData
@@ -333,14 +333,19 @@ private struct NativeMapPresentation: View {
     }
   }
   private var hasContent: Bool { selection.map(contentIDs.contains) == true }
-  private var inset: CGFloat { hasContent ? contentHeight + 24 : 0 }
-  private var height: CGFloat { imposedHeight ?? (max(160, width / ratio) + inset) }
-  private var maximumCardHeight: CGFloat? { imposedHeight.map { max(44, $0 - 160 - 24) } }
+  private let contentPadding: CGFloat = 12
+  private var height: CGFloat { imposedHeight ?? max(160, width / ratio) }
+  // Leave room above the card for the native map control; long custom content
+  // stays reachable through the pager instead of growing the document viewport.
+  private var maximumCardHeight: CGFloat { max(44, height - 44 - 2 * contentPadding) }
+  private var inset: CGFloat {
+    hasContent ? min(contentHeight, maximumCardHeight) + 2 * contentPadding : 0
+  }
   var body: some View {
     NativeMapCanvas(data: data, selection: $selection, canInteract: context.canInteract,
       accent: context.theme.accent, bottomInset: inset)
       .frame(height: height)
-      .overlay(alignment: .bottom) { contentPages.padding(12) }
+      .overlay(alignment: .bottom) { contentPages.padding(contentPadding) }
       .clipShape(RoundedRectangle(cornerRadius: context.theme.cornerRadius))
       .overlay(alignment: .topTrailing) {
         if let expand {
