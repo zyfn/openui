@@ -23,7 +23,11 @@ enum ReviewLanguage: String, CaseIterable {
       let data = try? Data(contentsOf: url),
       let sources = try? JSONDecoder().decode([String: String].self, from: data)
     else { preconditionFailure("Missing English review programs") }
-    return sources
+    var localized = sources
+    for id in ReviewScenePrograms.ids {
+      localized[id] = ReviewScenePrograms.program(id, english: true)?.source
+    }
+    return localized
   }()
 
   func text(_ key: String) -> String {
@@ -40,13 +44,14 @@ enum ReviewLanguage: String, CaseIterable {
     // Only catalog fixtures opt into translated source. Imported replays and
     // editor drafts retain their exact bytes, even when the host uses English.
     let source: String
-    if ReviewCatalog.scenario(for: original.id) != nil {
+    if ReviewCatalog.isBuiltIn(original.id) {
       guard let english = Self.englishSources[original.id] else {
         preconditionFailure("Missing English review program: \(original.id)")
       }
       source = english
     } else { source = original.source }
-    return ReviewProgram(id: original.id, title: text(original.title), source: source, sources: original.sources)
+    let title = ReviewScenePrograms.program(original.id, english: self == .english)?.title ?? text(original.title)
+    return ReviewProgram(id: original.id, title: title, source: source, sources: original.sources)
   }
 }
 

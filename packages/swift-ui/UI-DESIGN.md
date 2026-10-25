@@ -66,8 +66,8 @@ in [the component catalog](NATIVE-COMPONENTS.md).
 
 ## Verification
 
-The [native review](Tests/Review/README.md) uses eight composition families and
-25 variants, plus independent boundary fixtures. Tests operate real SwiftUI views
+The [native review](Tests/Review/README.md) presents six complete task scenes,
+with the original 25 composition fixtures retained for focused regression checks. Tests operate real SwiftUI views
 in a dedicated iOS Simulator and record interaction, geometry and screenshots.
 Capturing an image or covering a registration does not establish visual approval.
 Approved pixel baselines, when present, are separate from structural assertions.

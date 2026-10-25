@@ -54,9 +54,9 @@ final class ReviewCatalogTests: ReviewTestCase {
 
   func testCatalogAndEngineIntegrity() throws {
     let report = try matrixReport()
-    XCTAssertEqual((report["scenarios"] as? [[String: Any]])?.count, 8,
+    XCTAssertEqual((report["scenarios"] as? [[String: Any]])?.count, 6,
       "Review the bounded matrix before adding another scenario family")
-    XCTAssertLessThanOrEqual(try XCTUnwrap(report["variants"] as? Int), 25,
+    XCTAssertLessThanOrEqual(try XCTUnwrap(report["regressionVariants"] as? Int), 25,
       "The bounded matrix includes separate default, custom and tab-contained Map compositions")
     XCTAssertEqual((report["missing"] as? [String])?.count, 0,
       "Every installed registration needs a real containing fixture, including data helpers")
@@ -105,7 +105,7 @@ final class ReviewCatalogTests: ReviewTestCase {
         index += 1
       }
     }
-    XCTAssertEqual(index, try XCTUnwrap(report["variants"] as? Int))
+    XCTAssertEqual(index, try XCTUnwrap(report["showcaseVariants"] as? Int))
   }
 
   func testDisplayConditionsPreserveProgramState() {

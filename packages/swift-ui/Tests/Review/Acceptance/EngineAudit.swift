@@ -65,6 +65,8 @@ enum ReviewEngineAudit {
       "represented": represented,
       "missing": spec.components.map(\.name).filter { !represented.contains($0) }.sorted(),
       "variants": cases.count,
+      "showcaseVariants": ReviewCatalog.scenarios.flatMap(\.variants).count,
+      "regressionVariants": ReviewCatalog.regressionPrograms.count,
       "duplicateProgramIDs": Set(programIDs.filter { id in programIDs.filter { $0 == id }.count > 1 }).sorted(),
       "failures": failures,
       "localizedVariants": localized.count,

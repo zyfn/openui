@@ -45,7 +45,7 @@ struct ReviewWorkspace: View {
     }
     self.programs = programs
     self.coverage = ReviewCoverage(spec: library.toSpec(), programs: programs)
-    let requestedID = configuration.programID.flatMap { $0.isEmpty ? nil : $0 } ?? "composition"
+    let requestedID = configuration.programID.flatMap { $0.isEmpty ? nil : $0 } ?? "scene-explore"
     guard let selected = programs.first(where: { $0.id == requestedID }) else {
       preconditionFailure("Unknown review program: \(requestedID). Prepare optional replay resources before selecting them.")
     }
@@ -65,7 +65,7 @@ struct ReviewWorkspace: View {
       }
       VStack(spacing: 0) {
         ReviewHeader(scenario: scenario, program: program, position: position,
-          display: display, select: select, move: move, toggleTheme: toggleTheme,
+          display: display, move: move, toggleTheme: toggleTheme,
           toggleBubble: toggleBubble, toggleLanguage: toggleLanguage, isManual: manualSource != nil,
           restoreSample: restoreSample, open: open)
         Divider()
@@ -127,7 +127,7 @@ struct ReviewWorkspace: View {
   private func reloadLocalizedSample() {
     UserDefaults.standard.set(display.language.rawValue, forKey: "review.language")
     guard manualSource == nil, let sample,
-      ReviewCatalog.scenario(for: sample.id) != nil else { return }
+      ReviewCatalog.isBuiltIn(sample.id) else { return }
     load(display.language.program(sample))
   }
   private func open(_ item: ReviewPanel) {

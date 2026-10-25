@@ -1,8 +1,20 @@
 # Native SDK review
 
-This is a finite composition matrix for the installed SwiftUI component library.
+This is a review application for the installed SwiftUI component library.
 The host and tests use the SDK renderer and bundled lang-core directly. They do
 not maintain another component schema, parser or business-specific renderer.
+
+## Six task scenes
+
+The scene directory contains six complete pages: explore, itinerary, comparison,
+preferences, reading and budget. Each page combines SDK components and has no
+secondary example picker. The header contains scene navigation and the source
+editor; language, theme, bubble and diagnostics controls are in the tools menu.
+The original 25 fixtures remain available to targeted regressions and component
+inspection without appearing as extra scene-directory entries.
+
+All of this code is compiled into the review app, not OpenUISwiftUI. The SDK
+contains no scene selector, language toggle, mock data or test-only rendering.
 
 ## Responsibilities
 
@@ -28,14 +40,14 @@ navigation and variant selection accessible. Component search, source, condition
 and diagnostics have separate entries. The bubble toggle only simulates a generic
 chat host surface and is not a component or protocol field.
 
-The header's language button switches the host and all 25 built-in samples between
-Simplified Chinese and English. Foundation bundle localization supplies host copy;
+The tools menu switches the host and built-in examples between Simplified
+Chinese and English. Foundation bundle localization supplies host copy;
 English samples are ordinary DSL resources, not a renderer translation layer.
 Changing language restarts the selected catalog sample. Manual drafts and imported
 replays retain their exact source. The language choice is remembered by the host;
 `--language zh-Hans|en` overrides it for reproducible runs.
 
-The width indicator shows **Full**, **320**, or **240** beside preview conditions.
+Advanced preview conditions offer available width, 320pt and 240pt.
 The default fills the available content area with the host's 20pt reading margins.
 The opt-in full stress matrix alternates width constraints. Its narrow
 stress captures should not be presented as the default full-width appearance.

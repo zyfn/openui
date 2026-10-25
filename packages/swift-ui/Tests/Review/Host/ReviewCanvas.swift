@@ -26,7 +26,7 @@ struct ReviewCanvas: View {
           CardSourceProvider(sources: sources) {
             ReviewRenderedProgram(library: library, state: state, programID: programID)
           }
-            .openUITableCellPolicy(.readOnly)
+            .openUITableCellPolicy(programID.hasPrefix("scene-") ? .unrestricted : .readOnly)
             .openUITheme(display.theme.sdkTheme)
             .openUIResourceContext(OpenUIResourceContext(baseURL: URL(string: "https://sdk-fixture.invalid/")))
             .environment(\.openURL, OpenURLAction { url in

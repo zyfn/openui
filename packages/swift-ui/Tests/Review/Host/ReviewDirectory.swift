@@ -26,7 +26,8 @@ struct ReviewScenarioList: View {
         }
       }
       let extra = programs.filter {
-        ReviewCatalog.scenario(for: $0.id) == nil && !["review-table", "review-table-card"].contains($0.id)
+        ReviewCatalog.scenario(for: $0.id) == nil && !ReviewCatalog.isRegression($0.id)
+          && !["review-table", "review-table-card"].contains($0.id)
       }
       if !extra.isEmpty {
         Section(language.text("外部回放")) {
