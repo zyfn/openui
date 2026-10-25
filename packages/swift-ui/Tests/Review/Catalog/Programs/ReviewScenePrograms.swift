@@ -112,69 +112,55 @@ enum ReviewScenePrograms {
           Card([
             Stack([
               TextContent(\(q("去程 · 伦敦 → 巴黎", "Outbound · London → Paris")),"small-heavy"),
-              TextContent(\(q("11 月 5 日 · 周四", "Thursday 5 November")),"small")
+              TextContent(\(q("11.05 周四", "Thu 5 Nov")),"small")
             ],"row","s","center","between",false),
             Stack([
               Stack([
-                TextContent(\(q("08:00", "08:00")),"large-heavy"),
-                TextContent(\(q("LHR", "LHR")),"small"),
+                TextContent("08:00","large-heavy"),
                 TextContent(\(q("希思罗", "Heathrow")),"small")
               ],"column","xs"),
               Stack([
-                TextContent(\(q("1 小时 20 分", "1 h 20 min")),"small"),
-                Icon("plane"),
+                TextContent("1h20m","small"),
+                Icon("arrow-right"),
                 TextContent(\(q("直飞", "Nonstop")),"small")
+              ],"column","xs","center"),
+              Stack([
+                TextContent("10:20","large-heavy"),
+                TextContent(\(q("戴高乐", "Charles de Gaulle")),"small")
               ],"column","xs"),
               Stack([
-                TextContent(\(q("10:20", "10:20")),"large-heavy"),
-                TextContent(\(q("CDG", "CDG")),"small"),
-                TextContent(\(q("戴高乐", "Charles de Gaulle")),"small")
+                TextContent("€"+outbound,"large"),
+                Buttons([Button(\(q("预订", "Book")),@ToAssistant(\(q("预览购买：去程 · 伦敦 → 巴黎机票", "Preview purchase: Outbound · London → Paris flight")),{reviewPurchase:true,item:\(q("去程 · 伦敦 → 巴黎机票", "Outbound · London → Paris flight")),price:"€"+outbound}),"primary",null,"small")])
               ],"column","xs")
             ],"row","s","center","between",false),
-            TagBlock([
-              \(q("随身行李", "Cabin bag")),
-              \(q("演示航班", "Illustrative flight"))
-            ],"sm"),
-            Stack([
-              Stack([TextContent("€"+outbound,"large-heavy"),TextContent(\(q("两人单程总价", "one-way total for two")),"small")],"column","xs"),
-              Buttons([
-                Button(\(q("预订", "Book")),@ToAssistant(\(q("预览购买：去程 · 伦敦 → 巴黎机票", "Preview purchase: Outbound · London → Paris flight")),{reviewPurchase:true,item:\(q("去程 · 伦敦 → 巴黎机票", "Outbound · London → Paris flight")),price:"€"+outbound}),"primary")
-              ])
-            ],"row","s","center","between",false)
-          ]),
+            TagBlock([\(q("2人单程", "One way · 2 adults")),\(q("含随身行李", "Cabin bag included"))],"sm")
+          ],"card","column","s"),
           Card([
             Stack([
               TextContent(\(q("返程 · 巴黎 → 伦敦", "Return · Paris → London")),"small-heavy"),
-              TextContent(\(q("11 月 6 日 · 周五", "Friday 6 November")),"small")
+              TextContent(\(q("11.06 周五", "Fri 6 Nov")),"small")
             ],"row","s","center","between",false),
             Stack([
               Stack([
-                TextContent(\(q("18:30", "18:30")),"large-heavy"),
-                TextContent(\(q("CDG", "CDG")),"small"),
+                TextContent("18:30","large-heavy"),
                 TextContent(\(q("戴高乐", "Charles de Gaulle")),"small")
               ],"column","xs"),
               Stack([
-                TextContent(\(q("1 小时 20 分", "1 h 20 min")),"small"),
-                Icon("plane"),
+                TextContent("1h20m","small"),
+                Icon("arrow-right"),
                 TextContent(\(q("直飞", "Nonstop")),"small")
+              ],"column","xs","center"),
+              Stack([
+                TextContent("18:50","large-heavy"),
+                TextContent(\(q("希思罗", "Heathrow")),"small")
               ],"column","xs"),
               Stack([
-                TextContent(\(q("18:50", "18:50")),"large-heavy"),
-                TextContent(\(q("LHR", "LHR")),"small"),
-                TextContent(\(q("希思罗", "Heathrow")),"small")
+                TextContent("€"+inbound,"large"),
+                Buttons([Button(\(q("预订", "Book")),@ToAssistant(\(q("预览购买：返程 · 巴黎 → 伦敦机票", "Preview purchase: Return · Paris → London flight")),{reviewPurchase:true,item:\(q("返程 · 巴黎 → 伦敦机票", "Return · Paris → London flight")),price:"€"+inbound}),"primary",null,"small")])
               ],"column","xs")
             ],"row","s","center","between",false),
-            TagBlock([
-              \(q("随身行李", "Cabin bag")),
-              \(q("演示航班", "Illustrative flight"))
-            ],"sm"),
-            Stack([
-              Stack([TextContent("€"+inbound,"large-heavy"),TextContent(\(q("两人单程总价", "one-way total for two")),"small")],"column","xs"),
-              Buttons([
-                Button(\(q("预订", "Book")),@ToAssistant(\(q("预览购买：返程 · 巴黎 → 伦敦机票", "Preview purchase: Return · Paris → London flight")),{reviewPurchase:true,item:\(q("返程 · 巴黎 → 伦敦机票", "Return · Paris → London flight")),price:"€"+inbound}),"primary")
-              ])
-            ],"row","s","center","between",false)
-          ]),
+            TagBlock([\(q("2人单程", "One way · 2 adults")),\(q("含随身行李", "Cabin bag included"))],"sm")
+          ],"card","column","s"),
           TextContent(\(q("起降均为当地时间，巴黎比伦敦快 1 小时；两段行程分别显示两人单程总价。", "Times are local, with Paris one hour ahead of London. Each leg shows a one-way total for two.")),"small"),
           InlineHeader(\(q("住一晚，选位置还是选余量", "A stay that suits your priorities"))),
           CompositeCardBlock([
