@@ -89,6 +89,18 @@ Layout fallbacks on iOS 15/macOS 12 are documented in [the visual contract](UI-D
 Hosts needing different appearance can override a renderer through the existing
 library extension API without changing component names or language syntax.
 
+Compact overview/snippet cards measure their content rather than expanding to a
+parent's available height. Neutral IconText uses an inline glyph and label;
+status/inverted variants retain their semantic badge surfaces.
+
+## SDK and review boundaries
+
+Scene catalogs, authored sample programs, language switching, bubble simulation,
+mock transports and review diagnostics UI belong to the independent review application in
+`Tests/Review`. None are part of the library's `Sources` targets. SDK controls
+still use ordinary platform localization for labels such as Close and Retry;
+model-supplied content is not translated by the renderer.
+
 ## Validation
 
 Run the package tests and `scripts/visual-tests.swift` on an owned phone simulator.

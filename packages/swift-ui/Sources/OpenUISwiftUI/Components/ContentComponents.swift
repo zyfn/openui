@@ -195,6 +195,12 @@ struct NativeMediaText: View {
   enum Media { case icon, thumbnail, banner }
   let context: OpenUIComponentContext
   let media: Media
+  private var hasIconBadge: Bool {
+    switch context.string("iconVariant") {
+    case "inverted", "info", "success", "warning", "danger": return true
+    default: return false
+    }
+  }
   var body: some View {
     Group {
       if media == .banner {
@@ -206,7 +212,8 @@ struct NativeMediaText: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
       } else {
         NativeMediaRow(axis: context.string("layout") == "vertical" ? .vertical : .horizontal,
-          gap: context.theme.contentSpacing, centered: true,
+          gap: media == .icon && !hasIconBadge ? context.theme.contentSpacing * 2 / 3 : context.theme.contentSpacing,
+          centered: true,
           media: { leadingMedia }, copy: { words })
       }
     }
@@ -214,11 +221,17 @@ struct NativeMediaText: View {
   @ViewBuilder private var leadingMedia: some View {
     if media == .icon {
       let colors = NativeBadgeColors(variant: context.string("iconVariant"), theme: context.theme)
-      context.slot("icon").environment(\.openUIIconSize, 16)
-        .foregroundStyle(colors.foreground)
-        .frame(width: 36, height: 36)
-        .background(colors.background, in: RoundedRectangle(cornerRadius: 12))
-        .accessibilityIdentifier("openui.icon-text.badge")
+      if hasIconBadge {
+        context.slot("icon").environment(\.openUIIconSize, 16)
+          .foregroundStyle(colors.foreground)
+          .frame(width: 36, height: 36)
+          .background(colors.background, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
+          .accessibilityIdentifier("openui.icon-text.badge")
+      } else {
+        context.slot("icon").environment(\.openUIIconSize, 16)
+          .foregroundStyle(colors.foreground)
+          .frame(width: 16, height: 16)
+      }
     } else {
       NativeRemoteImage(
         src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
@@ -519,7 +532,7 @@ struct NativeCardItem: View {
     }
   }
   var body: some View {
-    VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
+    VStack(alignment: .leading, spacing: context.theme.contentSpacing * (["Overview", "Snippet"].contains(kind) ? 2 / 3 : 1)) {
       if let src = context.string(kind == "Visual" || kind == "Context" ? "bgImageSrc" : "__none") {
         NativeRemoteImage(src: src, alt: context.string("bgImageAlt") ?? "", layout: .aspect(16 / 9))
           .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
@@ -560,9 +573,8 @@ struct NativeCardItem: View {
           NativeCompositeFooter(context: context, footer: footer)
         }
       }
-    }.padding(context.theme.cardPadding).frame(
-      maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading
-    )
+    }.padding(context.theme.cardPadding)
+      .frame(maxWidth: .infinity, alignment: .topLeading)
     .modifier(NativeCardSurface(
       theme: context.theme,
       fill: kind == "Overview" ? context.theme.metricSurface
