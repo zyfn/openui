@@ -20,14 +20,15 @@ class ReviewTestCase: XCTestCase {
   }
   func launch(
     _ name: String, dark: Bool = false, large: Bool = false, inspect: Bool = false, media: String? = nil,
-    width: String = "available", theme: String = "default", bubble: Bool = false
+    width: String = "available", theme: String = "default", bubble: Bool = false,
+    language: String = "zh-Hans"
   ) -> XCUIApplication {
     continueAfterFailure = false
     let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
     app.launchArguments = [
       "--case", name, "--appearance", dark ? "dark" : "light", "-AppleLanguages", "(en)",
       "-AppleLocale", "en_US",
-      "--width", width, "--theme", theme,
+      "--width", width, "--theme", theme, "--language", language,
     ]
     if large { app.launchArguments.append("--large-text") }
     if inspect { app.launchArguments.append("--inspect") }

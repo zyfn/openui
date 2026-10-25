@@ -54,9 +54,10 @@ roles; the SDK shares supported colors, spacing and media styling through its
 public API rather than reflection.
 
 The 82 standard registrations have upstream names and positional signatures.
-Native presentation may differ: tabs retain a valid reading selection during
-streaming, controls use Apple interaction conventions, and web-specific styling
-is not a native API contract. Optional native extensions are documented separately
+Tabs follows the upstream content-growth selection rule until a user changes the
+active value. Native presentation may differ: controls use Apple interaction
+conventions, and web-specific styling is not a native API contract.
+Optional native extensions are documented separately
 in [the component catalog](NATIVE-COMPONENTS.md).
 
 ## Verification

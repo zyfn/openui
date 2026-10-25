@@ -5,6 +5,7 @@ import SwiftUI
 /// Controlled feeds exercise the SDK while it is mounted. These controls are
 /// test inputs, not alternate parsing, component or business presentation logic.
 @MainActor struct ReviewStreamingWorkspace: View {
+  @Environment(\.reviewLanguage) private var language
   let library: OpenUIComponentLibrary
   let mode: String
   private let source: String
@@ -13,26 +14,27 @@ import SwiftUI
   @State private var offset = 0
   @State private var stage = 0
 
-  init(library: OpenUIComponentLibrary, mode: String) {
+  init(library: OpenUIComponentLibrary, mode: String, language: ReviewLanguage) {
     self.library = library; self.mode = mode
     if mode == "original", let url = Bundle.main.url(forResource: "StreamProgram", withExtension: "openui"),
       let text = try? String(contentsOf: url, encoding: .utf8) { source = text }
-    else { source = mode == "gallery" ? ReviewStreamingPrograms.gallery : ReviewStreamingPrograms.lifecycle }
+    else if mode == "tabs" { source = ReviewStreamingPrograms.tabs }
+    else { source = mode == "gallery" ? ReviewStreamingPrograms.gallery : ReviewStreamingPrograms.lifecycle(language: language) }
     let state = OpenUIState(schema: library.library.toSchema())
-    if mode != "original" { state.setSource(source) }
+    if !["original", "tabs"].contains(mode) { state.setSource(source) }
     _state = StateObject(wrappedValue: state)
-    _offset = State(initialValue: mode == "original" ? 0 : source.count)
+    _offset = State(initialValue: ["original", "tabs"].contains(mode) ? 0 : source.count)
   }
   var body: some View {
     VStack(spacing: 0) {
       HStack {
-        Button("下一段", action: advance).disabled(offset >= source.count)
+        Button(language.text("下一段"), action: advance).disabled(offset >= source.count)
           .accessibilityIdentifier("stream.next")
-        Button("完成接收") { state.complete() }.disabled(offset < source.count)
+        Button(language.text("完成接收")) { state.complete() }.disabled(offset < source.count)
           .accessibilityIdentifier("stream.complete")
-        Button("追加数据", action: append).disabled(!state.isComplete)
+        Button(language.text("追加数据"), action: append).disabled(!state.isComplete)
           .accessibilityIdentifier("stream.append")
-        Button("重开程序", action: replace).accessibilityIdentifier("stream.replace")
+        Button(language.text("重开程序"), action: replace).accessibilityIdentifier("stream.replace")
       }.font(.caption).buttonStyle(.bordered).padding(8)
       ScrollView {
         VStack(alignment: .leading, spacing: 12) {
@@ -68,7 +70,7 @@ import SwiftUI
   private func append() {
     stage += 1
     if mode == "gallery" { state.applyPatch(ReviewStreamingPrograms.galleryAppend) }
-    else if mode == "state" { state.applyPatch(ReviewStreamingPrograms.patch(stage: stage)) }
+    else if mode == "state" { state.applyPatch(ReviewStreamingPrograms.patch(stage: stage, language: language)) }
   }
   private func replace() {
     state.reset(); state.setSource(source); offset = source.count; stage = 0

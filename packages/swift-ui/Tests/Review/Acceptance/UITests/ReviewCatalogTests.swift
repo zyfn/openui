@@ -61,6 +61,9 @@ final class ReviewCatalogTests: ReviewTestCase {
     XCTAssertEqual((report["missing"] as? [String])?.count, 0,
       "Every installed registration needs a real containing fixture, including data helpers")
     XCTAssertEqual((report["duplicateProgramIDs"] as? [String])?.count, 0)
+    XCTAssertEqual(report["localizedVariants"] as? Int, report["variants"] as? Int)
+    XCTAssertEqual((report["localizationFailures"] as? [String: String])?.count, 0,
+      "English fixtures must change only localized string literals: \(report["localizationFailures"] ?? "")")
     XCTAssertEqual((report["failures"] as? [String: Any])?.count, 0,
       "All variants must have valid complete roots and identical final batch/streaming trees: \(report["failures"] ?? "")")
   }

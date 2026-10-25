@@ -31,12 +31,16 @@ enum ReviewWidth: String, CaseIterable {
 }
 
 struct ReviewDisplayOptions {
+  var language = ReviewLanguage.chinese
   var theme = ReviewVisualTheme.standard
   var width = ReviewWidth.available
   var largeText = false
   var dark = false
   var clientBubble = false
-  var summary: String { "\(theme.title) · \(width.title) · \(largeText ? "大字体" : "正常文字") · \(dark ? "深色" : "浅色")" }
+  var summary: String {
+    [theme.title, width.title, largeText ? "大字体" : "正常文字", dark ? "深色" : "浅色"]
+      .map { language.text($0) }.joined(separator: " · ")
+  }
 }
 
 struct ReviewConfiguration {
@@ -56,6 +60,8 @@ struct ReviewConfiguration {
     audit = arguments.contains("--audit-matrix")
     streamingCase = value("--stream-case")
     display = ReviewDisplayOptions(
+      language: ReviewLanguage(rawValue: value("--language")
+        ?? UserDefaults.standard.string(forKey: "review.language") ?? "zh-Hans") ?? .chinese,
       theme: ReviewVisualTheme(rawValue: value("--theme") ?? "") ?? .standard,
       width: ReviewWidth(rawValue: value("--width") ?? "") ?? .available,
       largeText: arguments.contains("--large-text"), dark: value("--appearance") == "dark",

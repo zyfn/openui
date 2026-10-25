@@ -132,6 +132,10 @@ struct NativeImageBlock: View {
 }
 
 enum NativeValue {
+  static func string(_ value: Value?) -> String {
+    if case .string(let text) = value { return text.displayString }
+    return ""
+  }
   static func prop(_ value: Value?, _ key: String) -> Value? {
     switch value {
     case .element(let e): return PropValue.value(e, key)
@@ -215,23 +219,17 @@ struct NativeMediaText: View {
   }
   @ViewBuilder private var leadingMedia: some View {
     if media == .icon {
-      context.slot("icon").foregroundStyle(
-        semanticColor(context.string("iconVariant"), theme: context.theme)
-      ).environment(\.openUIIconSize, iconSize)
+      let colors = NativeBadgeColors(variant: context.string("iconVariant"), theme: context.theme)
+      context.slot("icon").environment(\.openUIIconSize, 16)
+        .foregroundStyle(colors.foreground)
+        .frame(width: 36, height: 36)
+        .background(colors.background, in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityIdentifier("openui.icon-text.badge")
     } else {
       NativeRemoteImage(
         src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
         layout: .thumbnail(CGSize(width: imageSize, height: imageSize)))
         .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
-    }
-  }
-  private var iconSize: CGFloat {
-    switch context.string("iconSize") {
-    case "xs": return 12
-    case "s", "sm": return 14
-    case "l", "lg": return 20
-    case "xl": return 24
-    default: return 16
     }
   }
   private var imageSize: CGFloat {
@@ -276,16 +274,8 @@ struct NativeIconButton: View {
 struct NativeTag: View {
   let context: OpenUIComponentContext
   var body: some View {
-    HStack(spacing: 4) {
-      context.slot("icon")
-      Text(context.string("text") ?? "")
-    }
-    .font(context.string("size") == "lg" ? context.theme.typography.body : context.theme.typography.caption).padding(.horizontal, 8).padding(
-      .vertical, 4
-    )
-    .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
-    .background(
-      semanticColor(context.string("variant"), theme: context.theme).opacity(0.1), in: Capsule())
+    NativeTagPill(text: context.string("text") ?? "", size: context.string("size"),
+      variant: context.string("variant"), theme: context.theme) { context.slot("icon") }
   }
 }
 struct NativeTagBlock: View {
@@ -293,9 +283,8 @@ struct NativeTagBlock: View {
   var body: some View {
     NativeWrappingRow(gap: 8) {
       ForEach(context.children("tags")) { tag in
-        context.render(tag.value).font(context.string("size") == "lg" ? context.theme.typography.body : context.theme.typography.caption)
-          .padding(.horizontal, 8).padding(.vertical, 4).background(
-            context.theme.surface, in: Capsule())
+        NativeTagPill(text: NativeValue.string(tag.value), size: context.string("size"),
+          variant: nil, theme: context.theme) { EmptyView() }
       }
     }
   }
@@ -318,24 +307,41 @@ struct NativeWrappingRow<Content: View>: View {
 struct NativeEntityList: View {
   let context: OpenUIComponentContext
   var body: some View {
-    VStack(alignment: .leading, spacing: context.string("size") == "small" ? 6 : 12) {
+    VStack(alignment: .leading, spacing: 0) {
       if context.string("size") != "small", let header = context.value("header"), header != .null {
-        row(header).font(context.theme.typography.heading)
+        row(header, kind: .header)
+        Divider()
       }
-      ForEach(context.children("rows")) { row($0.value) }
+      let rows = context.children("rows")
+      ForEach(Array(rows.enumerated()), id: \.element.id) { index, item in
+        row(item.value, kind: .body)
+        if index < rows.count - 1 { Divider() }
+      }
       if context.string("size") != "small", let footer = context.value("footer"), footer != .null {
         Divider()
-        row(footer).font(context.theme.typography.heading)
+        row(footer, kind: .footer)
       }
     }
   }
-  private func row(_ value: Value) -> some View {
-    HStack(alignment: .firstTextBaseline, spacing: 12) {
-      Text(NativeValue.string(value, "left") ?? "").fixedSize(horizontal: false, vertical: true)
-      Spacer(minLength: 0)
-      Text(NativeValue.string(value, "right") ?? "").monospacedDigit().multilineTextAlignment(
-        .trailing)
-    }.frame(maxWidth: .infinity, alignment: .leading)
+  private enum RowKind { case header, body, footer }
+  private func row(_ value: Value, kind: RowKind) -> some View {
+    let small = context.string("size") == "small"
+    let numeric = NativeValue.string(value, "rightVariant") == "number"
+    let bodyFont = small ? context.theme.typography.detail : context.theme.typography.body
+    let rightFont = kind == .footer ? context.theme.typography.title : bodyFont.weight(.semibold)
+    let right = NativeInlineMarkdown.text(NativeValue.string(value, "right") ?? "").font(rightFont)
+    return HStack(alignment: .top, spacing: context.theme.spacing("m")) {
+      NativeInlineMarkdown.text(NativeValue.string(value, "left") ?? "")
+        .font(bodyFont).fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      Group {
+        if numeric { right.monospacedDigit() } else { right }
+      }.multilineTextAlignment(.trailing).fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+    .foregroundStyle(kind == .header ? context.theme.secondary : context.theme.foreground)
+    .padding(.vertical, small ? 8 : 16).textSelection(.enabled)
+    .accessibilityIdentifier("openui.entity-list.row")
   }
 }
 private struct NativeListImageWidthKey: EnvironmentKey {
@@ -450,7 +456,7 @@ struct NativeCarousel: View {
   // Rendering-child flattening is appropriate inside a page, never between pages.
   private var pages: [Value] { NativeValue.array(context.value("children")) }
   var body: some View {
-    NativePager(ids: Array(pages.indices), selection: $page, enabled: context.canInteract, identifier: "openui.carousel") { index in
+    NativePager(ids: Array(pages.indices), selection: $page, enabled: true, identifier: "openui.carousel") { index in
       VStack(alignment: .leading, spacing: context.theme.spacing("s")) { context.render(pages[index]) }
         .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant")))
     }
@@ -629,7 +635,7 @@ struct NativeCardBlock: View {
       if children.isEmpty {
         EmptyView()
       } else if context.string("layout") == "carousel" {
-        NativePager(ids: children.map(\.id), selection: selection, enabled: context.canInteract,
+        NativePager(ids: children.map(\.id), selection: selection, enabled: true,
           identifier: "openui.card-block.\(kind.lowercased())") { id in
           if let index = children.firstIndex(where: { $0.id == id }) {
             item(children[index], index: index)

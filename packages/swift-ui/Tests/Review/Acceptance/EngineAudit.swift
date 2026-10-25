@@ -4,7 +4,7 @@ import OpenUISwiftUI
 
 // Core integrity is independent from native rendering and screenshot acceptance.
 enum ReviewEngineAudit {
-  @MainActor static func run(library: OpenUIComponentLibrary) -> String {
+  @MainActor static func run(library: OpenUIComponentLibrary, language: ReviewLanguage = .chinese) -> String {
     let spec = library.toSpec()
     let cases = ReviewCatalog.programs
     let schema = library.library.toSchema()
@@ -12,7 +12,31 @@ enum ReviewEngineAudit {
     let represented = coverage.represented
     let programIDs = cases.map(\.id)
     var failures: [String: [String]] = [:]
+    var localizationFailures: [String: String] = [:]
+    let englishSources = ReviewLanguage.englishSources
+    let expectedIDs = Set(programIDs)
+    if Set(englishSources.keys) != expectedIDs {
+      localizationFailures["catalog"] = "English fixture IDs must match the bounded catalog exactly"
+    }
+    var localized: [ReviewProgram] = []
     for item in cases {
+      guard let source = englishSources[item.id] else { continue }
+      let originalTokens = tokenize(item.source)
+      let englishTokens = tokenize(source)
+      let equivalent = originalTokens.count == englishTokens.count
+        && zip(originalTokens, englishTokens).allSatisfy { original, translated in
+          if case .str(let text) = original, containsChinese(text.displayString) {
+            guard case .str(let english) = translated else { return false }
+            return !containsChinese(english.displayString)
+          }
+          return original == translated
+        }
+      if !equivalent {
+        localizationFailures[item.id] = "Translation changed syntax, identifiers, or nonlocalized arguments"
+      }
+      localized.append(.init(id: "en/" + item.id, title: item.title, source: source))
+    }
+    for item in cases + localized {
       let batch = createParser(schema: schema).parse(item.source)
       let stream = createStreamingParser(schema: schema)
       let characters = Array(item.source)
@@ -43,13 +67,19 @@ enum ReviewEngineAudit {
       "variants": cases.count,
       "duplicateProgramIDs": Set(programIDs.filter { id in programIDs.filter { $0 == id }.count > 1 }).sorted(),
       "failures": failures,
+      "localizedVariants": localized.count,
+      "localizationFailures": localizationFailures,
       "scenarios": ReviewCatalog.scenarios.map { scenario in [
-        "id": scenario.id, "title": scenario.title, "variants": scenario.variants.map(\.id),
+        "id": scenario.id, "title": language.text(scenario.title), "variants": scenario.variants.map(\.id),
         "components": spec.components.map(\.name).filter { name in scenario.variants.contains { coverage.namesByProgram[$0.id]?.contains(name) == true } },
       ] as [String: Any] },
       "scope": "Fixture and engine coverage; native geometry, interaction and image review are separate checks.",
     ]
     let data = try! JSONSerialization.data(withJSONObject: report, options: [.sortedKeys])
     return String(data: data, encoding: .utf8)!
+  }
+
+  private static func containsChinese(_ text: String) -> Bool {
+    text.unicodeScalars.contains { (0x3400...0x9FFF).contains(Int($0.value)) }
   }
 }

@@ -101,22 +101,23 @@ private enum ReviewButtonPlans {
 }
 
 struct ReviewDiagnostics: View {
+  @Environment(\.reviewLanguage) private var language
   @ObservedObject var state: OpenUIState
   @ObservedObject var evidence: ReviewEvidence
 
   var body: some View {
     List {
-      Section("运行状态") {
-        ReviewDiagnosticRow("程序", value: state.isComplete ? "完整" : "流式接收中")
-        ReviewDiagnosticRow("错误", value: "\(state.errors.count)")
-        ReviewDiagnosticRow("交互事件", value: "\(evidence.events)")
+      Section(language.text("运行状态")) {
+        ReviewDiagnosticRow(language.text("程序"), value: state.isComplete ? language.text("完整") : language.text("流式接收中"))
+        ReviewDiagnosticRow(language.text("错误"), value: "\(state.errors.count)")
+        ReviewDiagnosticRow(language.text("交互事件"), value: "\(evidence.events)")
       }
-      Section("当前状态") {
-        Text(evidence.snapshot.isEmpty ? "尚无交互更新" : evidence.snapshot)
+      Section(language.text("当前状态")) {
+        Text(evidence.snapshot.isEmpty ? language.text("尚无交互更新") : evidence.snapshot)
           .font(.footnote.monospaced()).textSelection(.enabled)
       }
       if !state.errors.isEmpty {
-        Section("诊断") { ForEach(Array(state.errors.enumerated()), id: \.offset) { _, error in Text(error.message) } }
+        Section(language.text("诊断")) { ForEach(Array(state.errors.enumerated()), id: \.offset) { _, error in Text(error.message) } }
       }
     }
   }

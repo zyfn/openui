@@ -1,4 +1,4 @@
-import OpenUILang
+@_spi(RuntimeInspection) import OpenUILang
 import SwiftUI
 
 enum OpenUISelectionComponents {
@@ -8,7 +8,7 @@ enum OpenUISelectionComponents {
     }
 }
 
-struct NativeTabPanel: Identifiable {
+struct NativeTabPanel: Identifiable, Equatable {
     let id: OpenUIString
     let label: String
     let content: Value
@@ -26,14 +26,31 @@ struct NativeTabPanel: Identifiable {
     }
 }
 
-/// Reading follows a stable id, never the largest or most recently appended
-/// content. Removing that id chooses the first remaining panel deterministically.
+/// Matches react-ui's TabsRenderer: follow the last item whose JSON content
+/// grows until onValueChange records a manual selection. This also applies to a
+/// complete initial render, not only to streaming. Removing a manually selected
+/// value does not invent a fallback absent from the upstream controlled Tabs.
 struct NativeTabsSelection {
     private(set) var selected: OpenUIString?
-    mutating func choose(_ value: OpenUIString) { selected = value }
+    private var userHasInteracted = false
+    private var previousContentSizes: [OpenUIString: Int] = [:]
+    mutating func choose(_ value: OpenUIString) {
+        guard value != selected else { return }
+        userHasInteracted = true
+        selected = value
+    }
     mutating func reconcile(_ panels: [NativeTabPanel]) {
-        guard !panels.contains(where: { $0.id == selected }) else { return }
-        selected = panels.first?.id
+        if selected == nil || selected == "" { selected = panels.first?.id }
+        guard !userHasInteracted else { return }
+        var candidate: OpenUIString?
+        var nextSizes: [OpenUIString: Int] = [:]
+        for panel in panels {
+            let size = panel.content.jsonStringifyUTF16Length() ?? 0
+            nextSizes[panel.id] = size
+            if size > previousContentSizes[panel.id, default: 0] { candidate = panel.id }
+        }
+        previousContentSizes = nextSizes
+        if let candidate { selected = candidate }
     }
 }
 
@@ -45,7 +62,7 @@ private struct NativeTabsView: View {
     @Namespace private var viewport
     private var panels: [NativeTabPanel] { NativeTabPanel.read(context.children("items")) }
     private var selected: OpenUIString? { local.selected }
-    private var active: NativeTabPanel? { panels.first { $0.id == selected } ?? panels.first }
+    private var active: NativeTabPanel? { panels.first { $0.id == selected } }
     private var nativeSelection: Binding<OpenUIString> {
         Binding(
             get: { active?.id ?? "" },
@@ -54,17 +71,15 @@ private struct NativeTabsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
             if !panels.isEmpty {
-                selector.disabled(!context.canInteract)
+                selector
                     .accessibilityIdentifier(
                         "openui.tabs.\(context.element.statementId ?? "tabs")")
             }
             if let active { context.render(active.content).id(active.id) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onAppear(perform: reconcile)
-        .onChange(of: panels.map { $0.id }) { _ in reconcile() }
-        .onChange(of: selected) { _ in reconcile() }
-        .onChange(of: context.canInteract) { _ in reconcile() }
+        .onAppear { local.reconcile(panels) }
+        .onChange(of: panels) { updated in local.reconcile(updated) }
     }
     private var selector: some View {
         ScrollViewReader { proxy in
@@ -104,9 +119,6 @@ private struct NativeTabsView: View {
                 if !Task.isCancelled, let active { proxy.scrollTo(active.id, anchor: .center) }
             }
         }
-    }
-    private func reconcile() {
-        local.reconcile(panels)
     }
 }
 

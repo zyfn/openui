@@ -109,6 +109,11 @@ let images = object(
 )
 let imageBuild = object("image-build", "isa = PBXBuildFile; fileRef = \(images);")
 let testImageBuild = object("test-image-build", "isa = PBXBuildFile; fileRef = \(images);")
+let localization = object(
+  "review-localization",
+  "isa = PBXFileReference; lastKnownFileType = folder; path = \(quote(review.appendingPathComponent("Fixtures/Localization").path)); sourceTree = \"<absolute>\";"
+)
+let localizationBuild = object("review-localization-build", "isa = PBXBuildFile; fileRef = \(localization);")
 // Replay a saved program without committing conversation data to the SDK.
 var reviewResources: [String] = []
 var reviewReferences: [String] = []
@@ -151,7 +156,7 @@ if let path = option("--stream-program") {
 }
 let sourceGroup = object(
   "sources",
-  "isa = PBXGroup; name = Sources; children = \(array(sourceReferences + [baselines, images] + reviewReferences)); sourceTree = \"<group>\";"
+  "isa = PBXGroup; name = Sources; children = \(array(sourceReferences + [baselines, images, localization] + reviewReferences)); sourceTree = \"<group>\";"
 )
 let productGroup = object(
   "products",
@@ -199,7 +204,7 @@ let resourcePhase = object(
 )
 let hostResources = object(
   "host-resources",
-  "isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = \(array([imageBuild] + reviewResources)); runOnlyForDeploymentPostprocessing = 0;"
+  "isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = \(array([imageBuild, localizationBuild] + reviewResources)); runOnlyForDeploymentPostprocessing = 0;"
 )
 var projectConfigs: [String] = []
 var hostConfigs: [String] = []

@@ -245,15 +245,17 @@ action AST, source revision, prior state and evaluated value before the state wr
 It does not re-evaluate the expression or replace core action semantics.
 
 
-## Stable native reading during streaming
+## Upstream presentation state during streaming
 
 Tabs always use a horizontally scrollable label row, including a single item.
-The first valid id is selected initially; growing content and appended panels do
-not change that selection. Removing the active id selects the first remaining
-item. This deliberately differs from the pinned React renderer's automatic
-follow-the-growing-panel behavior. Component names, parameters and action
-semantics are unchanged. Accordion similarly opens its first item once and keeps
-an explicit collapsed state when later items arrive.
+Selection follows the pinned React renderer: before a user changes the active
+value, the last panel whose JSON-serialized content length grows becomes active.
+The complete initial snapshot uses the same rule. A manual value change stops
+automatic following; removing that value does not invent a fallback. Accordion
+opens the newest item as the item count grows until the user opens or closes one.
+These are renderer-local states, without extra component parameters or DSL state.
+Local tab, disclosure, carousel and table browsing remain available while form
+writes and business actions wait for streaming completion.
 
 Native component-local state is scoped to `OpenUIState.presentationRevision`.
 `push`, `complete`, growing full-buffer `setSource` snapshots and `applyPatch`
@@ -262,7 +264,7 @@ Store values retain their existing core semantics. Anonymous child identities
 preserve their original array paths around null/undefined slots; declared
 runtime-provided statement ids and schema-defined keys retain semantic identity.
 Carousel retains its outer page groups and current page on appends; unkeyed page
-reordering remains positional. Table commits page clamping after rows are removed so later
-appends cannot resurrect an old page. Gallery resource keys include the resolved
+reordering remains positional. Table calculates a safe visible page while retaining
+the upstream current-page state when rows temporarily disappear. Gallery resource keys include the resolved
 request and loader identity; appending photos does not clear previously loaded
 photos or selection.

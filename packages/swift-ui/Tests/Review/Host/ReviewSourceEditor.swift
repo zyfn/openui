@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct ReviewSourceEditor: View {
+  @Environment(\.reviewLanguage) private var language
   @Binding var draft: String
   let runningSource: String
   let diagnostics: [String]
@@ -10,21 +11,21 @@ struct ReviewSourceEditor: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
-        Text(ReviewLangInput.program(from: draft) == runningSource ? "与当前程序相同" : "有未运行的修改")
+        Text(ReviewLangInput.program(from: draft) == runningSource ? language.text("与当前程序相同") : language.text("有未运行的修改"))
           .font(.footnote).foregroundStyle(.secondary)
           .accessibilityIdentifier("review.editor-status")
         Spacer()
-        Button("清空草稿") { draft = "" }
+        Button(language.text("清空草稿")) { draft = "" }
           .font(.footnote).accessibilityIdentifier("review.editor-clear")
       }
-      Text("粘贴或编辑 openui-lang。运行会替换预览并重置本地交互；取消保留草稿和当前状态。")
+      Text(language.text("粘贴或编辑 openui-lang。运行会替换预览并重置本地交互；取消保留草稿和当前状态。"))
         .font(.footnote).foregroundStyle(.secondary)
       ReviewCodeTextEditor(text: $draft)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 12))
       if !diagnostics.isEmpty {
         VStack(alignment: .leading, spacing: 4) {
-          Text("上次运行诊断").font(.footnote.weight(.semibold))
+          Text(language.text("上次运行诊断")).font(.footnote.weight(.semibold))
           ScrollView {
             Text(diagnostics.joined(separator: "\n"))
               .font(.footnote.monospaced()).foregroundStyle(.red).textSelection(.enabled)
@@ -34,10 +35,10 @@ struct ReviewSourceEditor: View {
         }
       }
       HStack {
-        Button("恢复目录样例", action: restoreSample)
+        Button(language.text("恢复目录样例"), action: restoreSample)
           .accessibilityIdentifier("review.editor-restore")
         Spacer()
-        Text("\(draft.count) 字符").font(.caption).foregroundStyle(.secondary)
+        Text(language.format("%ld 字符", draft.count)).font(.caption).foregroundStyle(.secondary)
       }.font(.footnote).frame(minHeight: 44)
     }
     .padding(16)
@@ -61,6 +62,7 @@ enum ReviewLangInput {
 /// Scoped native text editing lets us explicitly disable smart punctuation.
 /// It doesn't change UITextView appearance or any SDK input's configuration.
 private struct ReviewCodeTextEditor: UIViewRepresentable {
+  @Environment(\.reviewLanguage) private var language
   @Binding var text: String
 
   func makeCoordinator() -> Coordinator { Coordinator(text: $text) }
@@ -85,12 +87,13 @@ private struct ReviewCodeTextEditor: UIViewRepresentable {
     view.keyboardDismissMode = .interactive
     view.alwaysBounceVertical = true
     view.accessibilityIdentifier = "review.lang-input"
-    view.accessibilityLabel = "openui-lang 程序"
+    view.accessibilityLabel = language.text("openui-lang 程序")
     return view
   }
 
   func updateUIView(_ view: UITextView, context: Context) {
     context.coordinator.text = $text
+    view.accessibilityLabel = language.text("openui-lang 程序")
     if view.text != text { view.text = text }
   }
 

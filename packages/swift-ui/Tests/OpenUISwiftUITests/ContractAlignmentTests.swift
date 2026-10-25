@@ -54,7 +54,7 @@ final class ContractAlignmentTests: XCTestCase {
         let panels = NativeTabPanel.read(OpenUIRenderChild.children(of: PropValue.value(tabs, "items")!))
         var local = NativeTabsSelection()
         local.reconcile(panels)
-        XCTAssertEqual(local.selected, "a", "Native chat reading keeps the first selection as content grows")
+        XCTAssertEqual(local.selected, "b", "The complete snapshot follows the last growing item, as upstream does")
         local.choose("a")
         local.reconcile([
             panels[0], NativeTabPanel(id: "b", label: "Beta", content: .string("Longer streamed content")),

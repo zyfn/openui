@@ -28,6 +28,18 @@ navigation and variant selection accessible. Component search, source, condition
 and diagnostics have separate entries. The bubble toggle only simulates a generic
 chat host surface and is not a component or protocol field.
 
+The header's language button switches the host and all 25 built-in samples between
+Simplified Chinese and English. Foundation bundle localization supplies host copy;
+English samples are ordinary DSL resources, not a renderer translation layer.
+Changing language restarts the selected catalog sample. Manual drafts and imported
+replays retain their exact source. The language choice is remembered by the host;
+`--language zh-Hans|en` overrides it for reproducible runs.
+
+The width indicator shows **Full**, **320**, or **240** beside preview conditions.
+The default fills the available content area with the host's 20pt reading margins.
+The finite native matrix deliberately alternates width constraints. Its narrow
+stress captures should not be presented as the default full-width appearance.
+
 The source editor retains an in-memory draft separately from executed source.
 Run submits the draft unchanged to the SDK. A single enclosing `openui-lang` fence
 may be removed, but mixed prose is not searched for a program or rewritten. Core
@@ -74,7 +86,7 @@ swift packages/swift-ui/scripts/visual-tests.swift \
 | `--review-program file.openui` | Inspect an external program and its table geometry |
 | `--review-examples file.json` | Add external exported guidance examples |
 
-The host accepts `--case`, `--theme default|accent`, `--bubble`,
+The host accepts `--case`, `--language zh-Hans|en`, `--theme default|accent`, `--bubble`,
 `--width available|standard|narrow`, `--appearance light|dark` and `--large-text`.
 These flags affect the review host only. External-source methods explicitly skip
 when their optional input is absent; report these skips with the acceptance scope.
@@ -83,13 +95,18 @@ when their optional input is absent; report these skips with the acceptance scop
 
 - **Core integrity:** every variant has a valid complete root; the final chunked
   result agrees with the shared streaming/batch behavior expected by the fixture.
+  Both language versions are checked. Shared-core tokens must match exactly except
+  for translated Chinese string literals, preserving names, arguments and state IDs.
 - **Composition:** all installed registrations occur in valid containing programs;
   layout measures actual content and keeps the final table row reachable.
 - **Interaction:** one action writes state once, async results respect source
   replacement, and view identities survive appends and appearance changes.
-- **Streaming:** incomplete views remain read-only. Completion enables unchanged
-  components, valid tab/page selections survive appends, and replacement resets
-  local state. Original source is replayed without asking a model to regenerate it.
+- **Streaming:** incomplete form writes and business actions remain read-only;
+  local tab, disclosure, carousel and table browsing stay available. Tabs follows
+  growing content and Accordion follows new items until a manual value change.
+  Table derives its safe visible page without discarding current-page state.
+  Replacement resets local state. Original source is replayed without asking a
+  model to regenerate it.
 - **Resources:** initial loading, appends, retry, relative/encoded URLs and gallery
   previews use the same SDK resource context.
 - **Contextual UI:** chart details appear inside the chart presentation without

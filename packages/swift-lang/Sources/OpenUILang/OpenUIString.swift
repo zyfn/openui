@@ -167,6 +167,20 @@ extension JSONValue {
 
 public enum JSONValueBridgeError: Error { case nonDataValue, normalizationCollision }
 extension Value {
+    /// Renderer inspection of runtime values, including evaluated elements.
+    /// Keep JSON.stringify semantics in the shared ECMAScript realm; the public
+    /// data-only jsonValue/jsonString APIs retain their existing restrictions.
+    @_spi(RuntimeInspection) public func jsonStringifyUTF16Length() -> Int? {
+        let core = SharedCore.shared
+        return core.sync {
+            let result = core.context.objectForKeyedSubscript("JSON")
+                .invokeMethod("stringify", withArguments: [core.encode(self)])
+            defer { core.context.exception = nil }
+            guard core.context.exception == nil, let result, result.isString else { return nil }
+            return core.string(result).codeUnits.count
+        }
+    }
+
     /// Lossless transport for the data values accepted by tools and state.
     /// Runtime UI/action objects require the host's explicit serialization policy.
     public func jsonValue() throws -> JSONValue {

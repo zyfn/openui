@@ -19,10 +19,20 @@ row heights and horizontal overflow. Its default cell registry is unrestricted;
 PromptOptions available. No form/input capability is removed from the global SDK.
 
 Standard Tabs has only `items`; TabItem defines `value`, `trigger` and `content`.
-Tabs uses stable local selection and horizontal browsing, keeping the selected
-label visible when font/container/label metrics change. No undeclared value/key
-parameters are read by the default renderer. Source replacement resets presentation
-state, while appends and ordinary Store changes preserve it.
+Tabs follows the upstream renderer's selection rule: until a user changes the
+active value, select the last item whose `JSON.stringify(content).length` grows.
+A complete initial render follows the same rule. A manual value change stops
+automatic following, including across appends and ordinary Store updates. Removing
+a manually selected value does not silently select a different item. Horizontal
+browsing keeps the selected label visible when font/container/label metrics change.
+No undeclared value/key parameters are read. Source replacement resets presentation
+state, including the interaction latch and prior content sizes.
+
+Accordion opens the newest item when the item count grows until the user changes
+the open value. Table derives its visible safe page without overwriting the
+upstream current-page state when rows temporarily disappear. Tabs, Accordion,
+Carousel and Table pagination are local browsing, available during streaming;
+form writes and business actions keep their separate completion checks.
 
 ## Optional extensions
 
@@ -37,15 +47,22 @@ subset. Component selection and business actions belong to the caller.
 
 ## Native presentation scope
 
-Registration and positional-schema parity do not imply web presentation parity.
-The current native implementation has these known presentation limits:
+Registration and positional-schema parity do not imply web pixel equivalence.
+The native renderer implements these standard presentation contracts:
 
-| Component | Native presentation limit |
+| Component | Native presentation |
 | --- | --- |
-| CodeBlock | Selectable monospaced text and language label; no syntax-highlighting or copy toolbar |
-| EntityList | Plain left/right text; web rich-text and rightVariant styling are not implemented |
-| Tag | Small and medium use the same compact native treatment |
-| IconText | Web inverted icon-badge styling is not reproduced |
+| CodeBlock | Upstream refractor/Prism grammars, selectable native text, lossless copy and copy feedback; unknown languages remain plain text |
+| EntityList | Inline Markdown in both cells, text/number variants, default header/footer and compact rows |
+| Tag / TagBlock | Distinct small, medium and large metrics; shared icon and semantic color presentation |
+| IconText | Semantic icon badges including inverted, with upstream filled/soft normalization |
+
+CodeBlock bundles `refractor@5.0.0`, the grammar library used by the pinned
+`react-syntax-highlighter@16.1.1`. Tokens are produced in a private JavaScriptCore
+worker and drawn with SwiftUI Text; model code is never evaluated. Its resource
+is separate from lang-core, carries dependency licenses and requires no runtime
+downloads. Rebuild it with `npm ci --ignore-scripts` then `npm run build` in
+`scripts/code-highlighting`. SwiftPM consumers use the checked-in resource.
 
 Layout fallbacks on iOS 15/macOS 12 are documented in [the visual contract](UI-DESIGN.md).
 Hosts needing different appearance can override a renderer through the existing

@@ -2,10 +2,10 @@ import UIKit
 import XCTest
 
 final class ReviewStreamingTests: ReviewTestCase {
-  private func stream(_ mode: String) -> XCUIApplication {
+  private func stream(_ mode: String, language: String = "zh-Hans") -> XCUIApplication {
     continueAfterFailure = false
     let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
-    app.launchArguments = ["--stream-case", mode, "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+    app.launchArguments = ["--stream-case", mode, "--language", language, "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
     app.launch()
     XCTAssertTrue(app.buttons["stream.next"].waitForExistence(timeout: 10))
     let errors = app.staticTexts["review.errors"]
@@ -13,7 +13,47 @@ final class ReviewStreamingTests: ReviewTestCase {
     return app
   }
 
-  func testSavedOriginalStreamsWithoutSwitchingTabOrChangingNavigationType() throws {
+  func testTabsFollowArrivingContentAndAllowManualSelectionBeforeCompletion() {
+    let app = stream("tabs", language: "en")
+    let next = app.buttons["stream.next"]
+    var manuallySelected = false
+    while next.isEnabled {
+      next.tap()
+      let second = app.buttons["openui.tab.b"]
+      if !manuallySelected, second.exists, second.isSelected {
+        let first = app.buttons["openui.tab.a"]
+        XCTAssertTrue(first.isEnabled)
+        first.tap()
+        manuallySelected = true
+      }
+      if manuallySelected { XCTAssertTrue(app.buttons["openui.tab.a"].isSelected) }
+    }
+    XCTAssertTrue(manuallySelected, "The arriving second item must have become active without a user action")
+    app.buttons["stream.complete"].tap()
+    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "stream-tabs-manual-choice-stops-following")
+    app.buttons["stream.replace"].tap()
+    XCTAssertTrue(app.buttons["openui.tab.c"].isSelected,
+      "Replacement starts a fresh upstream selection lifecycle")
+    capture(app, name: "stream-tabs-complete-replay-follows-last-content")
+    app.terminate()
+  }
+
+  func testUnattendedAppendFollowsNewTabsAndAccordionItems() {
+    let app = stream("state", language: "en")
+    XCTAssertTrue(app.buttons["openui.tab.b"].isSelected)
+    XCTAssertTrue(app.staticTexts["Detail one content"].exists)
+    app.buttons["stream.append"].tap()
+    XCTAssertTrue(app.buttons["openui.tab.c"].isSelected)
+    XCTAssertTrue(app.staticTexts["Detail two content"].exists)
+    XCTAssertFalse(app.staticTexts["Detail one content"].exists)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "stream-unattended-tabs-and-accordion-follow-arrivals")
+    app.terminate()
+  }
+
+  func testSavedOriginalFollowsUpstreamTabsAndKeepsHorizontalNavigation() throws {
     guard Bundle(for: Self.self).url(forResource: "StreamProgram", withExtension: "openui") != nil else {
       throw XCTSkip("Supply --stream-program for the original-source streaming replay")
     }
@@ -25,8 +65,7 @@ final class ReviewStreamingTests: ReviewTestCase {
       let first = app.buttons["openui.tab.a"]
       if first.exists {
         sawFirst = true
-        XCTAssertTrue(first.isSelected, "Later panels must not replace the first visible panel")
-        XCTAssertFalse(first.isEnabled, "An incomplete program stays read-only")
+        XCTAssertTrue(first.isEnabled, "Local tab browsing remains available during streaming, as upstream does")
         XCTAssertEqual(app.pickers.count, 0, "Tabs must never turn into a menu Picker")
       }
       let errors = app.staticTexts["stream.pending-diagnostics"]
@@ -38,10 +77,10 @@ final class ReviewStreamingTests: ReviewTestCase {
       }
     }
     XCTAssertTrue(sawFirst)
-    capture(app, name: "stream-original-partial-first-tab")
+    capture(app, name: "stream-original-content-following")
     app.buttons["stream.complete"].tap()
     XCTAssertFalse(app.staticTexts["review.errors"].exists, "The unmodified complete source must validate without pending-field errors")
-    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected)
+    XCTAssertTrue(app.buttons["openui.tab.c"].isSelected)
     XCTAssertTrue(app.buttons["openui.tab.a"].isEnabled,
       "A complete stream must refresh interaction eligibility even when tab props are unchanged")
     let navigation = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "openui.tabs.")).firstMatch
@@ -54,8 +93,7 @@ final class ReviewStreamingTests: ReviewTestCase {
     XCTAssertTrue(content.exists)
     capture(app, name: "stream-original-long-label-horizontal-navigation")
     app.buttons["stream.replace"].tap()
-    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected, "History re-open has deterministic initial selection")
-    XCTAssertFalse(app.buttons["openui.tab.c"].isSelected)
+    XCTAssertTrue(app.buttons["openui.tab.c"].isSelected, "A complete replay uses the upstream last-growing-item rule")
     capture(app, name: "stream-original-history-initial-selection")
     app.terminate()
   }
@@ -64,6 +102,9 @@ final class ReviewStreamingTests: ReviewTestCase {
     let app = stream("state")
     let second = app.buttons["openui.tab.b"]
     let navigation = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "openui.tabs.")).firstMatch
+    let first = app.buttons["openui.tab.a"]
+    for _ in 0..<3 where !first.isHittable { navigation.swipeRight() }
+    first.tap() // A real value change records manual interaction before choosing b.
     for _ in 0..<3 where !second.isHittable { navigation.swipeLeft() }
     second.tap()
     XCTAssertTrue(second.isSelected)
@@ -92,13 +133,13 @@ final class ReviewStreamingTests: ReviewTestCase {
     XCTAssertTrue(app.staticTexts["Count: 12"].exists)
     capture(app, name: "stream-append-retains-native-selection-and-state")
     app.buttons["stream.replace"].tap()
-    XCTAssertTrue(app.buttons["openui.tab.a"].isSelected)
+    XCTAssertTrue(app.buttons["openui.tab.b"].isSelected)
     XCTAssertEqual(app.staticTexts["openui.carousel.page"].label, "1 / 2")
     XCTAssertTrue(app.staticTexts["Count: 10"].exists)
     app.terminate()
   }
 
-  func testTablePageClampsOnRemovalAndDoesNotReboundWhenRowsReturn() {
+  func testTableSafePagePreservesTheUpstreamPageStateWhenRowsReturn() {
     let app = stream("state")
     let next = app.buttons["openui.table.next"]
     reveal(next, in: app); next.tap()
@@ -108,7 +149,7 @@ final class ReviewStreamingTests: ReviewTestCase {
     app.buttons["stream.append"].tap()
     XCTAssertFalse(app.staticTexts["openui.table.page"].exists)
     app.buttons["stream.append"].tap()
-    XCTAssertEqual(app.staticTexts["openui.table.page"].label, "1 / 4", "Removed page state must not reappear on later appends")
+    XCTAssertEqual(app.staticTexts["openui.table.page"].label, "2 / 4", "The safe visible page must not overwrite upstream currentPage state")
     capture(app, name: "stream-table-removal-and-regrowth")
     app.terminate()
   }

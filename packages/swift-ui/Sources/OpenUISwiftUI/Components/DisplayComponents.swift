@@ -8,17 +8,7 @@ enum OpenUIDisplayComponents {
                 Text($0.string("text") ?? "").font(.subheadline.weight(.medium))
             },
             OpenUIReference.component("Separator") { context in NativeSeparator(context: context) },
-            OpenUIReference.component("CodeBlock") { context in
-                VStack(alignment: .leading, spacing: 8) {
-                    if let language = context.string("language"), !language.isEmpty {
-                        Text(language).font(.caption).foregroundStyle(.secondary)
-                    }
-                    ScrollView(.horizontal) {
-                        Text(context.string("codeString") ?? "").font(.system(.body, design: .monospaced))
-                            .textSelection(.enabled)
-                    }
-                }.padding(12).background(context.theme.surface, in: RoundedRectangle(cornerRadius: 10))
-            },
+            OpenUIReference.component("CodeBlock") { NativeCodeBlock(context: $0) },
             OpenUIReference.component("Col") { _ in EmptyView() },
             OpenUIReference.component("Table") { NativeDataTable(context: $0) },
             OpenUIReference.component("EditableTable") { NativeEditableTable(context: $0) },
@@ -87,10 +77,25 @@ private struct NativeMetric: View {
     }
 }
 
+/// Upstream AccordionRenderer opens the newest item as the count grows, until
+/// onValueChange records a user's open/close choice. Removals do not reset it.
+struct NativeAccordionSelection {
+    private(set) var selected: OpenUIString?
+    private var userHasInteracted = false
+    private var previousItemCount = 0
+    mutating func choose(_ value: OpenUIString?) {
+        userHasInteracted = true
+        selected = value
+    }
+    mutating func reconcile(_ keys: [OpenUIString]) {
+        if !userHasInteracted, keys.count > previousItemCount { selected = keys.last }
+        previousItemCount = keys.count
+    }
+}
+
 private struct NativeAccordion: View {
     let context: OpenUIComponentContext
-    @State private var selected: OpenUIString?
-    @State private var initialized = false
+    @State private var local = NativeAccordionSelection()
     private var items: [OpenUIRenderChild] { context.children("items") }
     private var keys: [OpenUIString] {
         items.compactMap { child in
@@ -105,10 +110,9 @@ private struct NativeAccordion: View {
                 {
                     DisclosureGroup(
                         isExpanded: Binding(
-                            get: { selected == key },
+                            get: { local.selected == key },
                             set: { open in
-                                initialized = true
-                                selected = open ? key : nil
+                                local.choose(open ? key : nil)
                             })
                     ) {
                         context.render(PropValue.value(item, "content") ?? .null).padding(.top, 6)
@@ -120,15 +124,8 @@ private struct NativeAccordion: View {
                 }
             }
         }
-        .onAppear(perform: reconcileSelection)
-        .onChange(of: keys) { _ in reconcileSelection() }
-    }
-    private func reconcileSelection() {
-        if keys.isEmpty { initialized = false; selected = nil; return }
-        if !initialized || selected.map({ !keys.contains($0) }) == true {
-            initialized = true
-            selected = keys.first
-        }
+        .onAppear { local.reconcile(keys) }
+        .onChange(of: keys) { updated in local.reconcile(updated) }
     }
 
 }
@@ -174,7 +171,7 @@ private struct NativeDataTable: View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal) { tableContent }
             if pageCount > 1 {
-                NativePageControls(page: safePage, count: pageCount, enabled: context.canInteract, identifier: "openui.table") { currentPage = $0 }
+                NativePageControls(page: safePage, count: pageCount, enabled: true, identifier: "openui.table") { currentPage = $0 }
             }
         }
         .background(
@@ -189,7 +186,6 @@ private struct NativeDataTable: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("openui.table")
         .environment(\.openUIActionDensity, .compact)
-        .onChange(of: pageCount) { count in currentPage = min(currentPage, max(0, count - 1)) }
     }
     @ViewBuilder private var tableContent: some View {
         if #available(iOS 16, macOS 13, *) {

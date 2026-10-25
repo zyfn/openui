@@ -23,7 +23,7 @@ struct ReviewWorkspace: View {
     if let manualSource {
       return ReviewProgram(id: "manual-\(manualRun)", title: "手动 Lang", source: manualSource)
     }
-    return sample
+    return sample.map { display.language.program($0) }
   }
   private var scenario: ReviewScenario? {
     manualSource == nil ? ReviewCatalog.scenario(for: selected) : nil
@@ -50,7 +50,7 @@ struct ReviewWorkspace: View {
       preconditionFailure("Unknown review program: \(requestedID). Prepare optional replay resources before selecting them.")
     }
     let state = OpenUIState(schema: library.library.toSchema())
-    state.setSource(selected.source)
+    state.setSource(configuration.display.language.program(selected).source)
     _state = StateObject(wrappedValue: state)
     _selected = State(initialValue: selected.id)
     _display = State(initialValue: configuration.display)
@@ -66,7 +66,7 @@ struct ReviewWorkspace: View {
       VStack(spacing: 0) {
         ReviewHeader(scenario: scenario, program: program, position: position,
           display: display, select: select, move: move, toggleTheme: toggleTheme,
-          toggleBubble: toggleBubble, isManual: manualSource != nil,
+          toggleBubble: toggleBubble, toggleLanguage: toggleLanguage, isManual: manualSource != nil,
           restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
@@ -74,31 +74,37 @@ struct ReviewWorkspace: View {
       }
     }
     .background(Color(uiColor: .systemBackground))
+    .environment(\.reviewLanguage, display.language)
+    .environment(\.locale, display.language.locale)
     .preferredColorScheme(display.dark ? .dark : .light)
     .sheet(item: $panel) { item in
       NavigationView {
         panelContent(item)
-          .navigationTitle(item.title).navigationBarTitleDisplayMode(.inline)
+          .navigationTitle(display.language.text(item.title)).navigationBarTitleDisplayMode(.inline)
           .toolbar {
             ToolbarItem(placement: .cancellationAction) {
               if item == .source {
-                Button("取消") { panel = nil }.accessibilityIdentifier("review.editor-cancel")
+                Button(display.language.text("取消")) { panel = nil }.accessibilityIdentifier("review.editor-cancel")
               }
             }
             ToolbarItem(placement: .confirmationAction) {
               if item == .source {
-                Button("运行", action: runDraft)
+                Button(display.language.text("运行"), action: runDraft)
                   .disabled(ReviewLangInput.program(from: draft.wrappedValue)
                     .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                   .accessibilityIdentifier("review.editor-run")
               } else {
-                Button("完成") { panel = nil }.accessibilityIdentifier("review.panel-done")
+                Button(display.language.text("完成")) { panel = nil }.accessibilityIdentifier("review.panel-done")
               }
             }
           }
-      }.navigationViewStyle(.stack).accessibilityElement(children: .contain).accessibilityIdentifier("review.panel")
+      }.navigationViewStyle(.stack)
+        .environment(\.reviewLanguage, display.language)
+        .environment(\.locale, display.language.locale)
+        .accessibilityElement(children: .contain).accessibilityIdentifier("review.panel")
     }
     .onAppear(perform: connectEvidence)
+    .onChange(of: display.language) { _ in reloadLocalizedSample() }
   }
 
   @ViewBuilder private func panelContent(_ item: ReviewPanel) -> some View {
@@ -116,6 +122,13 @@ struct ReviewWorkspace: View {
 
   private func toggleBubble() { display.clientBubble.toggle() }
   private func toggleTheme() { display.theme = display.theme.next }
+  private func toggleLanguage() { display.language = display.language.next }
+  private func reloadLocalizedSample() {
+    UserDefaults.standard.set(display.language.rawValue, forKey: "review.language")
+    guard manualSource == nil, let sample,
+      ReviewCatalog.scenario(for: sample.id) != nil else { return }
+    load(display.language.program(sample))
+  }
   private func open(_ item: ReviewPanel) {
     if item == .source, drafts[selected] == nil { drafts[selected] = program?.source ?? "" }
     panel = item
@@ -140,15 +153,18 @@ struct ReviewWorkspace: View {
   }
   private func select(_ item: ReviewProgram) {
     if item.id != selected || manualSource != nil {
-      evidence.reset()
-      state.reset()
-      state.setSource(item.source)
-      evidence.beginExecution(source: item.source, values: state.snapshotState(),
-        revision: state.sourceRevision, inspect: configuration.inspector)
+      load(display.language.program(item))
       manualSource = nil
       selected = item.id
     }
     panel = nil
+  }
+  private func load(_ item: ReviewProgram) {
+    evidence.reset()
+    state.reset()
+    state.setSource(item.source)
+    evidence.beginExecution(source: item.source, values: state.snapshotState(),
+      revision: state.sourceRevision, inspect: configuration.inspector)
   }
   private func move(_ step: Int) {
     let scenarios = ReviewCatalog.scenarios
