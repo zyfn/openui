@@ -4,7 +4,7 @@ import XCTest
 
 final class ChartPaletteTests: XCTestCase {
   func testIncreasingCountsPreservesExistingSeriesColors() {
-    for count in 1...16 {
+    for count in 1...24 {
       let colors = NativeChartPalette.swatches(count: count)
       XCTAssertEqual(colors.count, count)
       XCTAssertEqual(Array(NativeChartPalette.swatches(count: count + 1).prefix(count)), colors)
@@ -22,7 +22,7 @@ final class ChartPaletteTests: XCTestCase {
       }
       return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
     }
-    for swatch in NativeChartPalette.swatches(count: 16) {
+    for swatch in NativeChartPalette.swatches(count: 24) {
       XCTAssertGreaterThanOrEqual(1.05 / (luminance(swatch.light) + 0.05), 3)
       XCTAssertGreaterThanOrEqual((luminance(swatch.dark) + 0.05) / (luminance(0x111214) + 0.05), 4.5)
     }
