@@ -284,14 +284,13 @@ private struct NativeMapBlock: View {
       imposedHeight: height, expand: expands ? { expanded = true } : nil)
   }
   private var fullMap: some View {
-    VStack(spacing: 0) {
-      HStack {
-        Text("Map", bundle: NativeControlResources.bundle).font(.headline)
-        Spacer()
-        Button { expanded = false } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }
-          .buttonStyle(.plain).accessibilityLabel(Text("Close", bundle: NativeControlResources.bundle))
-      }.padding(.horizontal, 16)
-      GeometryReader { geometry in presentation(height: max(160, geometry.size.height), expands: false) }
+    GeometryReader { geometry in
+      NativeMapPresentation(context: context, data: data, selection: selection,
+        imposedHeight: geometry.size.height + geometry.safeAreaInsets.top + geometry.safeAreaInsets.bottom,
+        expand: nil, close: { expanded = false },
+        toolbarTopPadding: geometry.safeAreaInsets.top + 12,
+        contentBottomPadding: max(22, geometry.safeAreaInsets.bottom + 12))
+        .offset(y: -geometry.safeAreaInsets.top)
     }
     .background(context.theme.controlSurface)
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.map.expanded")
@@ -322,6 +321,10 @@ private struct NativeMapPresentation: View {
   @Binding var selection: OpenUIString?
   let imposedHeight: CGFloat?
   let expand: (() -> Void)?
+  var close: (() -> Void)? = nil
+  var toolbarTopPadding: CGFloat = 12
+  var contentBottomPadding: CGFloat = 22
+  @State private var cameraReset = 0
   @State private var width: CGFloat = 0
   @State private var contentHeight: CGFloat = 0
   @Namespace private var measurementScope
@@ -342,8 +345,8 @@ private struct NativeMapPresentation: View {
   }
   private var hasContent: Bool { selection.map(contentIDs.contains) == true }
   private let contentPadding: CGFloat = 14
-  private let bottomPadding: CGFloat = 22
-  private var mapRadius: CGFloat { context.theme.cornerRadius + 4 }
+  private var bottomPadding: CGFloat { contentBottomPadding }
+  private var mapRadius: CGFloat { close == nil ? context.theme.cornerRadius + 4 : 0 }
   private var height: CGFloat {
     imposedHeight ?? max(hasContent ? 240 : 160,
       NativeMapViewport.height(width: width, size: context.string("size")))
@@ -359,7 +362,9 @@ private struct NativeMapPresentation: View {
   var body: some View {
     NativeMapCanvas(data: data, selection: $selection, canInteract: context.canInteract,
       accent: context.theme.accent, bottomInset: inset,
-      trailingInset: expand == nil ? 28 : 86)
+      trailingInset: expand == nil ? 28 : 86,
+      topInset: close == nil ? 56 : toolbarTopPadding + 44 + 52,
+      resetCamera: cameraReset)
       .frame(height: height)
       .overlay(alignment: .bottom) {
         contentPages.padding(.horizontal, contentPadding).padding(.bottom, bottomPadding)
@@ -376,6 +381,9 @@ private struct NativeMapPresentation: View {
             .accessibilityLabel(Text("Expand map", bundle: NativeControlResources.bundle))
         }
       }
+      .overlay(alignment: .top) {
+        if let close { toolbar(close: close).padding(.horizontal, 14).padding(.top, toolbarTopPadding) }
+      }
       .overlay(RoundedRectangle(cornerRadius: mapRadius, style: .continuous)
         .strokeBorder(context.theme.border.opacity(0.6), lineWidth: 0.5))
       .frame(maxWidth: .infinity)
@@ -386,6 +394,49 @@ private struct NativeMapPresentation: View {
         guard let next = values[measurementScope], next.isFinite, next > 0, abs(next - width) > 0.5 else { return }
         width = next
       }
+  }
+  private func toolbar(close: @escaping () -> Void) -> some View {
+    HStack(spacing: 10) {
+      tool("xmark", label: "Close", action: close)
+        .modifier(NativeMapToolbarSurface(theme: context.theme))
+      Spacer(minLength: 0)
+      if data.points.count > 1 {
+        HStack(spacing: 0) {
+          tool("arrow.left", label: "Previous place") { moveSelection(-1) }
+            .disabled(selectedIndex == 0)
+          tool("arrow.right", label: "Next place") { moveSelection(1) }
+            .disabled(selectedIndex == data.points.count - 1)
+        }.modifier(NativeMapToolbarSurface(theme: context.theme)).disabled(!context.canInteract)
+      }
+      HStack(spacing: 0) {
+        tool("scope", label: "Show all places") { cameraReset += 1 }
+          .accessibilityIdentifier("openui.map.show-all")
+        if !data.points.isEmpty {
+          Menu {
+            ForEach(data.points) { point in
+              Button(point.title) { selection = point.id }
+            }
+          } label: {
+            Image(systemName: "list.bullet").frame(width: 44, height: 44)
+          }
+          .accessibilityLabel(Text("Places", bundle: NativeControlResources.bundle))
+          .accessibilityIdentifier("openui.map.places")
+        }
+      }.modifier(NativeMapToolbarSurface(theme: context.theme)).disabled(!context.canInteract)
+    }
+    .font(.body.weight(.semibold)).foregroundStyle(context.theme.foreground)
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("openui.map.toolbar")
+  }
+  private var selectedIndex: Int { data.points.firstIndex { $0.id == selection } ?? 0 }
+  private func moveSelection(_ offset: Int) {
+    let next = selectedIndex + offset
+    guard context.canInteract, data.points.indices.contains(next) else { return }
+    selection = data.points[next].id
+  }
+  private func tool(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) { Image(systemName: symbol).frame(width: 44, height: 44).contentShape(Rectangle()) }
+      .accessibilityLabel(Text(LocalizedStringKey(label), bundle: NativeControlResources.bundle))
   }
   @ViewBuilder private var contentPages: some View {
     if let selected = selection, contentIDs.contains(selected) {
@@ -409,6 +460,15 @@ private struct NativeMapPresentation: View {
         contentHeight = next
       }
     }
+  }
+}
+
+private struct NativeMapToolbarSurface: ViewModifier {
+  let theme: OpenUITheme
+  func body(content: Content) -> some View {
+    content.background(.regularMaterial, in: Capsule())
+      .overlay(Capsule().strokeBorder(theme.border.opacity(0.45), lineWidth: 0.5))
+      .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
   }
 }
 

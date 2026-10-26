@@ -20,6 +20,8 @@ import SwiftUI
     let accent: Color
     var bottomInset: CGFloat = 0
     var trailingInset: CGFloat = 28
+    var topInset: CGFloat = 56
+    var resetCamera = 0
 
     func makeCoordinator() -> NativeMapCoordinator {
       NativeMapCoordinator(onSelection: { selection = $0 })
@@ -28,7 +30,7 @@ import SwiftUI
     func updateUIView(_ view: MKMapView, context: Context) {
       context.coordinator.onSelection = { selection = $0 }
       context.coordinator.update(
-        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset, trailingInset: trailingInset)
+        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset, trailingInset: trailingInset, topInset: topInset, resetCamera: resetCamera)
     }
     static func dismantleUIView(_ view: MKMapView, coordinator: NativeMapCoordinator) {
       view.delegate = nil
@@ -42,6 +44,8 @@ import SwiftUI
     let accent: Color
     var bottomInset: CGFloat = 0
     var trailingInset: CGFloat = 28
+    var topInset: CGFloat = 56
+    var resetCamera = 0
 
     func makeCoordinator() -> NativeMapCoordinator {
       NativeMapCoordinator(onSelection: { selection = $0 })
@@ -50,7 +54,7 @@ import SwiftUI
     func updateNSView(_ view: MKMapView, context: Context) {
       context.coordinator.onSelection = { selection = $0 }
       context.coordinator.update(
-        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset, trailingInset: trailingInset)
+        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset, trailingInset: trailingInset, topInset: topInset, resetCamera: resetCamera)
     }
     static func dismantleNSView(_ view: MKMapView, coordinator: NativeMapCoordinator) {
       view.delegate = nil
@@ -100,6 +104,8 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
   private var interactive = false
   private var bottomInset: CGFloat = 0
   private var trailingInset: CGFloat = 28
+  private var topInset: CGFloat = 56
+  private var lastCameraReset = 0
   private var userAdjustedCamera = false
   private var lastAccent: Color?
 
@@ -113,15 +119,17 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
 
   func update(
     _ view: MKMapView, data: NativeMapData, selected: OpenUIString?,
-    canInteract: Bool, accent: Color, bottomInset: CGFloat = 0, trailingInset: CGFloat = 28
+    canInteract: Bool, accent: Color, bottomInset: CGFloat = 0, trailingInset: CGFloat = 28,
+    topInset: CGFloat = 56, resetCamera: Int = 0
   ) {
     interactive = canInteract
     let accentChanged = lastAccent != accent
     lastAccent = accent
     lineColor = NativeMapColor(accent)
-    let insetChanged = abs(self.bottomInset - bottomInset) > 0.5 || abs(self.trailingInset - trailingInset) > 0.5
+    let insetChanged = abs(self.bottomInset - bottomInset) > 0.5 || abs(self.trailingInset - trailingInset) > 0.5 || abs(self.topInset - topInset) > 0.5
     self.bottomInset = max(0, bottomInset)
     self.trailingInset = max(28, trailingInset)
+    self.topInset = max(0, topInset)
     #if os(iOS)
       view.isUserInteractionEnabled = canInteract
     #else
@@ -163,7 +171,13 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
         if !userAdjustedCamera { fit(view) }
       }
     }
-    if insetChanged && !userAdjustedCamera { fit(view) }
+    if resetCamera != lastCameraReset {
+      lastCameraReset = resetCamera
+      userAdjustedCamera = false
+      applying = true
+      fit(view)
+      applying = false
+    } else if insetChanged && !userAdjustedCamera { fit(view) }
     if accentChanged {
       for annotation in view.annotations.compactMap({ $0 as? NativeMapAnnotation }) {
         (view.view(for: annotation) as? NativeMapMarkerView)?.configure(
@@ -215,8 +229,8 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
       // Fit the geographic extent into the unobscured viewport, then express
       // that camera as a full map rect. This keeps card insets separate from
       // MapKit's own edge-padding projection and subsequent layout changes.
-      let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 28 - trailingInset),
-                          height: max(1, view.bounds.height - bottomInset - 84))
+      let usable = CGRect(x: 28, y: topInset, width: max(1, view.bounds.width - 28 - trailingInset),
+                          height: max(1, view.bounds.height - bottomInset - topInset - 28))
       let scale = max(bounds.width / Double(usable.width), bounds.height / Double(usable.height))
       view.setVisibleMapRect(MKMapRect(
         x: bounds.midX - Double(usable.midX) * scale,
@@ -256,10 +270,10 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
   }
 
   private func reveal(_ annotation: NativeMapAnnotation, in view: MKMapView) {
-    guard view.bounds.height > bottomInset + 80 else { return }
+    guard view.bounds.height > bottomInset + topInset + 28 else { return }
     let point = view.convert(annotation.coordinate, toPointTo: view)
-    let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 28 - trailingInset),
-                        height: max(1, view.bounds.height - bottomInset - 84))
+    let usable = CGRect(x: 28, y: topInset, width: max(1, view.bounds.width - 28 - trailingInset),
+                        height: max(1, view.bounds.height - bottomInset - topInset - 28))
     guard !usable.contains(point) else { return }
     let current = view.visibleMapRect
     // Move only far enough to uncover this marker. Recentring a point that is

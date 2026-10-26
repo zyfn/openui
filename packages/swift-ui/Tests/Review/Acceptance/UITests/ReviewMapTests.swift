@@ -101,6 +101,22 @@ final class ReviewMapTests: ReviewTestCase {
     XCTAssertTrue(close.waitForExistence(timeout: 5))
     let expanded = app.descendants(matching: .any).matching(identifier: "openui.map.expanded").firstMatch
     XCTAssertTrue(expanded.staticTexts["地点二详情"].exists)
+    let toolbar = app.descendants(matching: .any).matching(identifier: "openui.map.toolbar").firstMatch
+    XCTAssertTrue(toolbar.exists)
+    let previous = app.buttons.matching(NSPredicate(format: "label IN %@", ["Previous place", "上一个地点"])).firstMatch
+    previous.tap()
+    XCTAssertTrue(expanded.staticTexts["地点一详情"].waitForExistence(timeout: 5))
+    app.buttons.matching(NSPredicate(format: "label IN %@", ["Next place", "下一个地点"])).firstMatch.tap()
+    XCTAssertTrue(expanded.staticTexts["地点二详情"].waitForExistence(timeout: 5))
+    app.buttons["openui.map.show-all"].tap()
+    let markers = expanded.descendants(matching: .any)
+      .matching(NSPredicate(format: "identifier BEGINSWITH %@", "openui.map.marker."))
+    let unobscured = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      !markers.allElementsBoundByIndex.isEmpty && markers.allElementsBoundByIndex.allSatisfy {
+        $0.frame.minY >= toolbar.frame.maxY
+      }
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [unobscured], timeout: 5), .completed)
     capture(app, name: "map-fullscreen")
     close.tap()
     XCTAssertTrue(expand.waitForExistence(timeout: 5))
