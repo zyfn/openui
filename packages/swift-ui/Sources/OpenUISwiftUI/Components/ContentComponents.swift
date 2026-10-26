@@ -106,7 +106,9 @@ struct NativeCallout: View {
           .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
           VStack(alignment: .leading, spacing: 4) {
             if let title = context.string("title") { Text(title).font(context.theme.typography.heading) }
-            if let detail = context.string("description") { NativeMarkdownText(text: detail) }
+            if let detail = context.string("description") {
+              NativeMarkdownText(text: detail, style: .init(scale: 15 / 17, color: context.theme.secondary))
+            }
           }
           Spacer(minLength: 0)
         }.padding(context.theme.cardPadding)
@@ -314,9 +316,8 @@ struct NativeEntityList: View {
         Divider()
       }
       let rows = context.children("rows")
-      ForEach(Array(rows.enumerated()), id: \.element.id) { index, item in
+      ForEach(rows) { item in
         row(item.value, kind: .body)
-        if index < rows.count - 1 { Divider() }
       }
       if context.string("size") != "small", let footer = context.value("footer"), footer != .null {
         Divider()
@@ -339,7 +340,7 @@ struct NativeEntityList: View {
         style: .init(scale: kind == .footer ? 20 / 17 : scale, weight: .semibold, numeric: numeric, color: color))
       .multilineTextAlignment(.trailing)
     }
-    .padding(.vertical, small ? 8 : context.theme.contentSpacing).textSelection(.enabled)
+    .padding(.vertical, context.theme.spacing(small ? "xs" : "s")).textSelection(.enabled)
     .accessibilityIdentifier("openui.entity-list.row")
   }
 }
@@ -622,6 +623,7 @@ struct NativeCardItem: View {
         context.slot("header")
         context.slot("body")
         if let footer = context.value("footer"), footer != .null {
+          Spacer(minLength: 0)
           NativeCompositeFooter(context: context, footer: footer)
         }
       }
@@ -629,7 +631,7 @@ struct NativeCardItem: View {
       .environment(\.openUITheme, contentTheme)
       .foregroundStyle(contentTheme.foreground)
       .padding(context.theme.cardPadding)
-      .frame(maxWidth: .infinity, alignment: .topLeading)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       .frame(minHeight: artworkSource == nil ? nil
         : kind == "Visual" ? context.theme.minimumCardWidth : context.theme.contentSpacing * 8,
         alignment: .topLeading)

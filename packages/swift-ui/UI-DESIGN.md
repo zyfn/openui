@@ -81,3 +81,10 @@ with the original 25 composition fixtures retained for focused regression checks
 in a dedicated iOS Simulator and record interaction, geometry and screenshots.
 Capturing an image or covering a registration does not establish visual approval.
 Approved pixel baselines, when present, are separate from structural assertions.
+
+
+Peer item cards accept the measured row/page extent, with object actions kept at
+the bottom. EntityList uses open label/value rows and reserves separators for
+explicit headers and totals; Table retains its column grid. Supporting callout
+copy uses the detail text role. These defaults preserve the supplied structure
+and data rather than classifying business content or reordering a response.

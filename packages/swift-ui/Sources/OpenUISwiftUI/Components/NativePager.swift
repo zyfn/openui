@@ -159,13 +159,14 @@ private struct NativePagerLayout: Layout {
   }
   func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
     let layout = geometry(ProposedViewSize(width: bounds.width, height: nil), count: subviews.count)
+    let pageHeight = subviews.map { $0.sizeThatFits(ProposedViewSize(width: layout.pageWidth, height: nil)).height }
+      .filter { $0.isFinite }.max() ?? 0
     for (index, view) in subviews.enumerated() {
-      let height = view.sizeThatFits(ProposedViewSize(width: layout.pageWidth, height: nil)).height
       let position = CGFloat(index) * layout.stride - layout.offset + translation
       let x = rightToLeft ? bounds.width - layout.pageWidth - position : position
       view.place(
         at: CGPoint(x: bounds.minX + x, y: bounds.minY), anchor: .topLeading,
-        proposal: ProposedViewSize(width: layout.pageWidth, height: height))
+        proposal: ProposedViewSize(width: layout.pageWidth, height: pageHeight))
     }
   }
 }
