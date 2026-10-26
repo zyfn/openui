@@ -623,8 +623,8 @@ struct NativeCardItem: View {
         context.slot("header")
         context.slot("body")
         if let footer = context.value("footer"), footer != .null {
-          Spacer(minLength: 0)
           NativeCompositeFooter(context: context, footer: footer)
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
       }
     }

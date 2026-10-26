@@ -73,6 +73,28 @@ final class ReviewCompositionGeometryTests: ReviewTestCase {
 }
 
 extension ReviewCompositionGeometryTests {
+  func testSavedCompositeGridKeepsFooterNearItsBody() throws {
+    guard Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json") != nil else {
+      throw XCTSkip("Provide the unchanged composite grid source")
+    }
+    let app = launch("composite-grid-original", inspect: true)
+    let price = app.staticTexts["¥470/晚"].firstMatch
+    reveal(price, in: app)
+    XCTAssertTrue(price.waitForExistence(timeout: 8))
+    let tag = app.staticTexts["四五星档最低价"].firstMatch
+    XCTAssertTrue(tag.exists)
+    let gap = price.frame.minY - tag.frame.maxY
+    let evidence = XCTAttachment(string: "tag=\(tag.frame); price=\(price.frame); gap=\(gap)")
+    evidence.name = "composite-grid-footer-geometry"
+    evidence.lifetime = .keepAlways
+    add(evidence)
+    capture(app, name: "composite-grid-original-footer-spacing")
+    XCTAssertGreaterThanOrEqual(gap, 0)
+    XCTAssertLessThanOrEqual(gap, 28, "A single-column card must not reserve an empty spacer above its footer")
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    app.terminate()
+  }
+
   func testCompactSnippetReplaysKeepNamesReadable() throws {
     guard Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json") != nil else {
       throw XCTSkip("Provide the saved snippet examples")

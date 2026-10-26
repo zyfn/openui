@@ -87,7 +87,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
       if abs(size.width - width) > 0.5 { width = size.width }
       if maximumHeight != nil, abs(size.height - naturalHeight) > 0.5 { naturalHeight = size.height }
     }
-    .simultaneousGesture(
+    .highPriorityGesture(
       DragGesture(minimumDistance: 16)
         .updating($translation) { value, current, _ in
           guard enabled, ids.count > 1, abs(value.translation.width) > abs(value.translation.height) else { return }
