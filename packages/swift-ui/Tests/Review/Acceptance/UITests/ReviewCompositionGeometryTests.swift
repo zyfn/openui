@@ -86,9 +86,14 @@ extension ReviewCompositionGeometryTests {
           label.frame.width, label.frame.height,
           "Short labels must not collapse into vertical character strips")
       }
-      XCTAssertEqual(
-        app.staticTexts[names[0]].frame.minY, app.staticTexts[names[1]].frame.minY, accuracy: 4,
-        "Cards in the same row align at the top, despite different subtitle lengths")
+      let values = id == "snippet-media" ? ["¥128", "双床房"] : ["2小时", "3处"]
+      for (name, value) in zip(names, values) {
+        let lhs = app.staticTexts[name].firstMatch
+        let rhs = app.staticTexts[value].firstMatch
+        XCTAssertGreaterThan(
+          rhs.frame.minX, lhs.frame.maxX,
+          "Snippet preserves its left-label/right-value relationship")
+      }
       capture(app, name: id + "-readable")
       app.terminate()
     }
@@ -126,5 +131,35 @@ extension ReviewCompositionGeometryTests {
       capture(app, name: "media-slot-" + mode)
       app.terminate()
     }
+  }
+}
+
+extension ReviewCompositionGeometryTests {
+  func testSavedBudgetUsesAlignedValuesAndCompactMetrics() throws {
+    guard Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json") != nil else {
+      throw XCTSkip("Provide the unchanged budget program")
+    }
+    let app = launch("budget-original")
+    let amounts = ["¥490", "¥148", "¥0", "¥70–110", "¥150–250", "¥858 – 1,048"]
+    let first = app.staticTexts[amounts[0]].firstMatch
+    XCTAssertTrue(first.waitForExistence(timeout: 6))
+    for amount in amounts {
+      let value = app.staticTexts[amount].firstMatch
+      XCTAssertTrue(value.exists)
+      XCTAssertEqual(
+        value.frame.maxX, first.frame.maxX, accuracy: 2,
+        "A value's length must not move the right edge of the list")
+    }
+    let label = app.staticTexts["机票 KN5985（实查）"].firstMatch
+    XCTAssertLessThan(
+      label.frame.height, first.frame.height * 1.5,
+      "A short value should leave the label enough room instead of reserving half the row")
+    let low = app.staticTexts["经济走法"].firstMatch
+    let high = app.staticTexts["舒适走法"].firstMatch
+    reveal(high, in: app)
+    XCTAssertEqual(low.frame.minY, high.frame.minY, accuracy: 3)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "budget-original-aligned")
+    app.terminate()
   }
 }

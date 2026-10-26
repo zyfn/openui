@@ -10,6 +10,7 @@ public struct OpenUITypography {
     public var detail: Font = .subheadline
     public var caption: Font = .caption
     public var metric: Font = .title.weight(.semibold).monospacedDigit()
+    public var inlineMetric: Font = .title3.weight(.semibold).monospacedDigit()
     public var actionCompact: Font = .footnote.weight(.medium)
     public var actionRegular: Font = .subheadline.weight(.semibold)
     public init() {}

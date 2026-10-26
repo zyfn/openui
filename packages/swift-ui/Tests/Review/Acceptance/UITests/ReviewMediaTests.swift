@@ -43,7 +43,7 @@ final class ReviewMediaTests: ReviewTestCase {
     reveal(single, in: app)
     single.tap()
     XCTAssertTrue(app.buttons["openui.gallery.image.0"].waitForExistence(timeout: 5))
-    XCTAssertTrue(app.buttons["openui.gallery.image.1"].exists)
+    XCTAssertFalse(app.buttons["openui.gallery.image.1"].exists)
     capture(app, name: "matrix-gallery-single")
     let many = app.buttons["恢复图集"]
     reveal(many, in: app)
@@ -56,6 +56,8 @@ final class ReviewMediaTests: ReviewTestCase {
 
   func testNativeMediaUnavailableKeepsSlotsAndPreservesContent() {
     let app = launch("media-states", inspect: true, media: "unavailable")
+    reveal(app.staticTexts["参考图库"], in: app)
+    app.scrollViews["review.surface"].swipeUp(velocity: .slow)
     let first = app.buttons["openui.gallery.image.0"]
     XCTAssertTrue(first.waitForExistence(timeout: 8))
     XCTAssertFalse(first.isEnabled)

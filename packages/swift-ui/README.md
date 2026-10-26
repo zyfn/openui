@@ -311,6 +311,8 @@ An intrinsic Image has no source dimensions until decoding succeeds; before that
 it uses the documented unresolved-image placeholder ratio. The source proportion
 is preserved after decoding rather than guessed from a URL.
 
-Compact Snippet cards keep their full data and switch the value below the media
-row when the pair cannot fit readably. Grid items align at the top. Neither this
-presentation nor Table column measurement branches on business labels or values.
+Snippet cards retain their compact left-label/right-value structure. Their
+adaptive grid gives a row enough room instead of changing it into a vertical
+product card. Overview metrics use the inline metric typography role. Grid items
+align at the top; EntityList allocates short values their intrinsic width. These
+presentation rules do not branch on business labels or values.

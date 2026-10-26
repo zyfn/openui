@@ -287,3 +287,58 @@ private struct NativeMediaRowSizes: PreferenceKey {
         value.merge(nextValue(), uniquingKeysWith: { _, next in next })
     }
 }
+
+
+/// A label/value row gives short values their intrinsic width instead of half
+/// the viewport. Long values can move below the label without hiding either.
+struct NativeLabelValueLayout: Layout {
+    let gap: CGFloat
+    let minimumLabelWidth: CGFloat
+    var allowsStacking = true
+    var centerVertically = false
+
+    private func frames(_ proposal: ProposedViewSize, _ views: Subviews) -> [CGRect] {
+        guard !views.isEmpty else { return [] }
+        if views.count == 1 {
+            let size = views[0].sizeThatFits(proposal)
+            return [CGRect(origin: .zero, size: size)]
+        }
+        let ideals = views.map { $0.sizeThatFits(.unspecified) }
+        let width =
+            proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil }
+            ?? ideals[0].width + gap + ideals[1].width
+        let valueWidth = min(width, ideals[1].width)
+        let labelMinimum = min(minimumLabelWidth, ideals[0].width)
+        if labelMinimum + gap + valueWidth <= width || !allowsStacking {
+            let rightWidth = min(valueWidth, max(1, width - labelMinimum - gap))
+            let leftWidth = max(1, width - gap - rightWidth)
+            let left = views[0].sizeThatFits(ProposedViewSize(width: leftWidth, height: nil))
+            let right = views[1].sizeThatFits(ProposedViewSize(width: rightWidth, height: nil))
+            let height = max(left.height, right.height)
+            return [
+                CGRect(
+                    x: 0, y: centerVertically ? (height - left.height) / 2 : 0, width: leftWidth, height: left.height),
+                CGRect(
+                    x: width - rightWidth, y: centerVertically ? (height - right.height) / 2 : 0,
+                    width: rightWidth, height: right.height),
+            ]
+        }
+        let left = views[0].sizeThatFits(ProposedViewSize(width: width, height: nil))
+        let right = views[1].sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return [
+            CGRect(origin: .zero, size: CGSize(width: width, height: left.height)),
+            CGRect(x: 0, y: left.height + gap, width: width, height: right.height),
+        ]
+    }
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let values = frames(proposal, subviews)
+        return CGSize(width: values.map(\.maxX).max() ?? 0, height: values.map(\.maxY).max() ?? 0)
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (view, frame) in zip(subviews, frames(ProposedViewSize(width: bounds.width, height: nil), subviews)) {
+            view.place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                anchor: .topLeading, proposal: ProposedViewSize(frame.size))
+        }
+    }
+}

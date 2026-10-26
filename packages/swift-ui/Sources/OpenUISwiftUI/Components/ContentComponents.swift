@@ -330,16 +330,16 @@ struct NativeEntityList: View {
     let numeric = NativeValue.string(value, "rightVariant") == "number"
     let scale: CGFloat = small ? 15 / 17 : 1
     let color = kind == .header ? context.theme.secondary : context.theme.foreground
-    return HStack(alignment: .top, spacing: context.theme.spacing("m")) {
+    return NativeLabelValueLayout(
+      gap: context.theme.spacing("m"), minimumLabelWidth: context.theme.minimumTextColumnWidth
+    ) {
       NativeMarkdownText(text: NativeValue.string(value, "left") ?? "", mode: .inline,
-        style: .init(scale: scale, color: color))
-        .fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
+        style: .init(scale: scale, weight: kind == .body ? .regular : .semibold, color: color))
       NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
         style: .init(scale: kind == .footer ? 20 / 17 : scale, weight: .semibold, numeric: numeric, color: color))
-        .multilineTextAlignment(.trailing).fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .trailing)
+      .multilineTextAlignment(.trailing)
     }
-    .padding(.vertical, small ? 8 : 16).textSelection(.enabled)
+    .padding(.vertical, small ? 8 : context.theme.contentSpacing).textSelection(.enabled)
     .accessibilityIdentifier("openui.entity-list.row")
   }
 }
@@ -582,21 +582,15 @@ struct NativeCardItem: View {
     VStack(alignment: .leading, spacing: context.theme.contentSpacing * (["Overview", "Snippet"].contains(kind) ? 2 / 3 : 1)) {
       switch kind {
       case "Snippet":
-        ViewThatFits(in: .horizontal) {
-          HStack(alignment: .top, spacing: 12) {
-            context.slot("lhs").fixedSize(horizontal: true, vertical: true)
-            Spacer(minLength: 0)
-            context.slot("rhs").fixedSize(horizontal: true, vertical: true)
-            actionIndicator
-          }
-          VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
+        HStack(alignment: .center, spacing: 8) {
+          NativeLabelValueLayout(
+            gap: 12, minimumLabelWidth: context.theme.minimumCompactCardWidth,
+            allowsStacking: false, centerVertically: true
+          ) {
             context.slot("lhs")
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-              context.slot("rhs")
-              Spacer(minLength: 0)
-              actionIndicator
-            }
+            context.slot("rhs")
           }
+          actionIndicator
         }
       case "Overview":
         HStack(alignment: .top, spacing: 8) {
@@ -692,7 +686,7 @@ struct NativeCardBlock: View {
       set: { selectedID = $0 })
   }
   private var minimumWidth: CGFloat {
-    ["Snippet", "Overview"].contains(kind)
+    kind == "Overview"
       ? context.theme.minimumCompactCardWidth : context.theme.minimumCardWidth
   }
   private var gap: CGFloat {

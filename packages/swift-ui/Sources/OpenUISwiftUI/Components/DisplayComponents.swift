@@ -44,16 +44,26 @@ private struct NativeMetric: View {
         Group {
             if inline {
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) { content }
-                    VStack(alignment: .leading, spacing: 4) { content }
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        value.fixedSize(horizontal: true, vertical: true)
+                        details
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        value; details
+                    }
                 }
             } else {
-                VStack(alignment: .leading, spacing: 4) { content }
+                VStack(alignment: .leading, spacing: 4) {
+                    value; details
+                }
             }
         }.accessibilityElement(children: .combine)
     }
-    @ViewBuilder private var content: some View {
-        Text(context.string("value") ?? "").font(context.theme.typography.metric).monospacedDigit()
+    private var value: some View {
+        Text(context.string("value") ?? "")
+            .font(inline ? context.theme.typography.inlineMetric : context.theme.typography.metric).monospacedDigit()
+    }
+    @ViewBuilder private var details: some View {
         if let previous = context.string("previousValue") {
             Text(previous).strikethrough().font(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
         }
