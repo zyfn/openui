@@ -91,7 +91,7 @@ enum ReviewScenePrograms {
             activity,
             40
           ],"donut"),
-          TextContent(\(q("艺术、左岸、塞纳河，两人预算 €240。先确认卢浮宫时段；门票参考 10 月 26 日官网价，餐饮交通为估算，不含住宿及往返交通。", "Art, the Left Bank and the Seine: €240 for two. Confirm your Louvre slot first. Tickets use 26 Oct published rates; meals and transport are estimates, excluding accommodation and travel to Paris.")),"small")
+          TextContent(\(q("两人当天预算 €240。先确认卢浮宫时段；餐饮和交通为预留，未计入往返巴黎的交通。", "€240 for two on the day. Reserve the Louvre slot first; meals and local transport are allowances, excluding travel to Paris.")),"small")
         ],"column","l")
         """
       sources = [
@@ -283,12 +283,12 @@ enum ReviewScenePrograms {
             Col(\(q("玉琮", "Cong")),[\(q("方形器身", "Squared body")),\(q("贯穿圆孔", "Round bore")),\(q("转角面纹", "Corner masks"))]),
             Col(\(q("玉璧", "Bi")),[\(q("扁平圆盘", "Flat disk")),\(q("中央开孔", "Central opening")),\(q("此件表面简洁", "Plain surface here"))])
           ]),
-          TextContent(\(q("工艺与材料支持身份或仪式用途的解释，但确切含义仍不明确。[1][2]", "Workmanship and material suggest status or ritual; the precise meanings remain uncertain.[1][2]")),"small"),
+          TextContent(\(q("工艺与材料支持身份或仪式用途的解释，但确切含义仍不能确定。", "Workmanship and material suggest status or ritual, but the precise meaning remains uncertain.")),"small"),
           Separator(),
           VisualCardBlock([VisualCardItem(BoldText("text",\(q("同形，不同时代", "Same form, another era")),\(q("清代仿古玉琮", "An archaistic cong from the Qing dynasty")),"text","lg"),"qing","/object.jpg",Tag(\(q("清代", "Qing dynasty")),null,"sm"),\(q("同形，不同时代", "Same form, another era")))],"grid",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/42751")),
           InlineHeader(\(q("两件玉琮，有多高？", "How tall are the two cong?"))),
           BarChart([\(q("馆藏高度", "Object height"))],[Series(\(q("良渚玉琮", "Liangzhu cong")),[25.4]),Series(\(q("清代仿古琮", "Qing archaistic cong")),[12.7])],"grouped",null,"cm",220),
-          TextContent(\(q("仅比较这两件馆藏的高度，不代表各时代玉器的平均尺寸。[1][4]", "Heights of these two collection objects only, not period averages.[1][4]")),"small"),
+          TextContent(\(q("这里只比较两件馆藏，不代表各时代玉器的平均尺寸。", "These two collection objects only, not period averages.")),"small"),
           TextContent(\(q("形似，不等于同时代；先看器物，再查出处。", "Similar form does not mean the same date. Look closely, then check the record.")),"small-heavy"),
           TextContent(\(q("图像与数据：The Met Open Access。图注和延伸阅读图卡链接到馆藏记录。", "Images and measurements: The Met Open Access. Captions and the further-reading card link to collection records.")),"small")
         ],"column","l")
