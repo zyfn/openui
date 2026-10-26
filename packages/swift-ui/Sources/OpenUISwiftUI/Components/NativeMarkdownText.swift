@@ -36,12 +36,20 @@ struct NativeMarkdownText: View {
   @Environment(\.cardSources) private var sources
   @Environment(\.openURL) private var openURL
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.multilineTextAlignment) private var textAlignment
   @ScaledMetric(relativeTo: .body) private var bodySize = FontProperties.defaultSize
   @StateObject private var math = NativeMathRenderer()
   @State private var prepared: String?
   @State private var preparedRequest: NativeRichTextRequest?
   @State private var citation: NativeCitationSelection?
   private var foreground: Color { style.color ?? theme.foreground }
+  private var frameAlignment: Alignment {
+    switch textAlignment {
+    case .center: return .center
+    case .trailing: return .trailing
+    default: return .leading
+    }
+  }
   private var mathSize: CGFloat { bodySize * style.scale }
   private var mathColor: String { NativeMathColor.css(foreground, scheme: colorScheme) }
   private var request: NativeRichTextRequest {
@@ -61,6 +69,7 @@ struct NativeMarkdownText: View {
       .markdownSoftBreakMode(mode == .markdown ? .space : .lineBreak)
       .markdownBlockStyle(\.paragraph) { configuration in
         configuration.label.fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: frameAlignment)
           .relativeLineSpacing(.em(0.15))
           .markdownMargin(top: 0, bottom: mode == .inline ? 0 : theme.contentSpacing)
       }
@@ -73,7 +82,7 @@ struct NativeMarkdownText: View {
       .markdownImageProvider(NativeMarkdownImageProvider(math: math, fontSize: mathSize, color: mathColor))
       .markdownInlineImageProvider(NativeMarkdownInlineImages(math: math, fontSize: mathSize, color: mathColor, resources: resources))
       .textSelection(.enabled)
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .frame(maxWidth: .infinity, alignment: frameAlignment)
       .background(alignment: .topLeading) {
         NativeMathHost(renderer: math).frame(width: 1, height: 1).clipped().opacity(0.001)
           .accessibilityHidden(true).allowsHitTesting(false)

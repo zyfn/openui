@@ -426,6 +426,7 @@ private struct NativeMapPresentation: View {
     }
     .font(.body.weight(.semibold)).foregroundStyle(context.theme.foreground)
     .buttonStyle(.plain)
+    .accessibilityElement(children: .contain)
     .accessibilityIdentifier("openui.map.toolbar")
   }
   private var selectedIndex: Int { data.points.firstIndex { $0.id == selection } ?? 0 }
