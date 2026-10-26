@@ -56,10 +56,12 @@ class ReviewTestCase: XCTestCase {
       let fraction = distance / max(1, scroll.frame.height)
       let startY = downward ? 0.3 : 0.7
       let endY = downward ? startY + fraction : startY - fraction
-      scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: startY))
+      // Use the document gutter: a drag starting inside a map intentionally
+      // pans the map, rather than revealing the next document section.
+      scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: startY))
         .press(
           forDuration: 0.05,
-          thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: endY)))
+          thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: endY)))
     }
     XCTAssertTrue(
       element.isHittable && viewport.contains(element.frame),

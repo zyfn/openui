@@ -5,7 +5,7 @@ import XCTest
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
   func testStayLinksLeaveTheRecommendedBudgetUnchanged() {
     let app = launch("scene-two-day-trip", inspect: true, language: "en")
-    let title = app.staticTexts["Left Bank garden room · recommended"].firstMatch
+    let title = app.staticTexts["Left Bank · garden double"].firstMatch
     reveal(title, in: app)
     let pagers = app.descendants(matching: .any)
       .matching(identifier: "openui.card-block.composite.pager")

@@ -103,6 +103,16 @@ enum ReviewScenePrograms {
       title = t("规划一次两日游", "Two days in Paris")
       request = t("帮两位成人安排 11 月 5 日从伦敦出发、6 日返回的巴黎两天一晚。包含机票、酒店对比、每天的行程和总预算。", "Plan two days and one night in Paris for two adults, leaving London on 5 November and returning on 6 November. Include flights, a hotel comparison, a daily itinerary and a total budget.")
       source = """
+        outboundOptions=[
+          {id:"out-direct-1",carrier:"British Airways",route:"5 Nov · LHR → CDG",departure:"08:00",arrival:"10:20",price:150,tags:[\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],details:\(q("经济舱", "Economy")),url:"https://www.britishairways.com/travel/home/public/en_gb/"},
+          {id:"out-direct-2",carrier:"Air France",route:"5 Nov · LHR → CDG",departure:"09:30",arrival:"11:50",price:190,tags:[\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],details:\(q("经济舱", "Economy")),url:"https://www.airfrance.com/"},
+          {id:"out-connection",carrier:"KLM",route:"5 Nov · LHR → AMS → CDG",departure:"08:00",arrival:"13:15",price:135,tags:[\(q("中转 1 次", "1 stop")),\(q("4小时15分", "4h 15m"))],details:\(q("AMS 停留 1小时30分", "AMS layover · 1h 30m")),url:"https://www.klm.com/"}
+        ]
+        returnOptions=[
+          {id:"back-direct-1",carrier:"British Airways",route:"6 Nov · CDG → LHR",departure:"18:30",arrival:"18:50",price:170,tags:[\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],details:\(q("经济舱", "Economy")),url:"https://www.britishairways.com/travel/home/public/en_gb/"},
+          {id:"back-direct-2",carrier:"Air France",route:"6 Nov · CDG → LHR",departure:"20:00",arrival:"20:20",price:195,tags:[\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],details:\(q("经济舱", "Economy")),url:"https://www.airfrance.com/"},
+          {id:"back-connection",carrier:"KLM",route:"6 Nov · CDG → AMS → LHR",departure:"13:30",arrival:"16:35",price:125,tags:[\(q("中转 1 次", "1 stop")),\(q("4小时05分", "4h 05m"))],details:\(q("AMS 停留 1小时20分", "AMS layover · 1h 20m")),url:"https://www.klm.com/"}
+        ]
         hotel=220
         outbound=150
         inbound=170
@@ -170,42 +180,34 @@ enum ReviewScenePrograms {
           ]),
           InlineHeader(\(q("都在这张地图上", "Your places, on one map"))),
           Map([
-            {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("艺术与宫殿", "Art and a royal palace")),icon:"building.columns"},
-            {id:"germain",title:\(q("圣日耳曼", "Saint-Germain")),lat:48.8539,lng:2.3332,imageSrc:"/paris-cafe.jpg",subtitle:\(q("咖啡馆与左岸散步", "Cafés and Left Bank walks")),icon:"cup.and.saucer"},
+            {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("博物馆 · 巴黎第一区", "Museum · Paris 1st arrondissement")),icon:"building.columns"},
+            {id:"germain",title:\(q("圣日耳曼", "Saint-Germain")),lat:48.8539,lng:2.3332,imageSrc:"/paris-cafe.jpg",subtitle:\(q("巴黎第六区", "Paris 6th arrondissement")),icon:"cup.and.saucer"},
             {id:"eiffel",title:\(q("埃菲尔铁塔", "Eiffel Tower")),lat:48.8584,lng:2.2945,imageSrc:"/paris-eiffel.jpg",subtitle:\(q("塞纳河与城市天际线", "The Seine and skyline")),icon:"mappin.and.ellipse"},
             {id:"cruise",title:\(q("塞纳河游船码头", "Seine cruise pier")),lat:48.86039,lng:2.29353,imageSrc:"/paris-eiffel.jpg",subtitle:"Port de la Bourdonnais",icon:"ferry"},
             {id:"deux-magots",title:"Les Deux Magots",lat:48.85389,lng:2.33306,imageSrc:"/paris-cafe.jpg",subtitle:"6 place Saint-Germain-des-Prés",icon:"cup.and.saucer"}
-          ],[],null,"regular","wgs84"),
+          ],[
+            [{lat:48.8606,lng:2.3376},{lat:48.8539,lng:2.3332},{lat:48.85389,lng:2.33306}],
+            [{lat:48.8584,lng:2.2945},{lat:48.86039,lng:2.29353}]
+          ],"louvre","regular","wgs84"),
+          TextContent(\(q("两组连线分别表示两天的地点顺序，不是道路导航。", "Separate lines show each day’s stop order, not road navigation.")),"small"),
           InlineHeader(\(q("往返交通", "Getting there and back"))),
-          TextContent(\(q("推荐 08:00 去程、18:30 返程；时间均为当地时间。", "The 08:00 outbound and 18:30 return leave room for both days. All times are local.")),"small"),
+          TextContent(\(q("推荐直飞往返；中转方案较便宜，但会占用更多游览时间。以下均为当地时间。", "Direct flights preserve sightseeing time. Connections cost less but take longer. All times below are local.")),"small"),
           Tabs([
-            TabItem("outbound",\(q("去程 · 11 月 5 日", "Outbound · 5 Nov")),[CompositeCardBlock([CompositeCardItem("early",IconText(Icon("plane"),"neutral","m",\(q("早班抵达 · 推荐", "Early arrival · recommended")),\(q("11 月 5 日 · 希思罗 → 戴高乐", "5 Nov · Heathrow → Charles de Gaulle")),true),[
-                  BoldText("text","08:00 → 10:20",null,"text","lg"),
-                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
-                ],{price:BoldText("number","€150",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"primary",null,"small")}),
-                CompositeCardItem("midmorning",IconText(Icon("plane"),"neutral","m",\(q("上午出发", "Mid-morning departure")),\(q("11 月 5 日 · 希思罗 → 戴高乐", "5 Nov · Heathrow → Charles de Gaulle")),true),[
-                  BoldText("text","09:30 → 11:50",null,"text","lg"),
-                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
-                ],{price:BoldText("number","€190",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")}),
-                CompositeCardItem("later",IconText(Icon("plane"),"neutral","m",\(q("午前出发", "Late-morning departure")),\(q("11 月 5 日 · 希思罗 → 戴高乐", "5 Nov · Heathrow → Charles de Gaulle")),true),[
-                  BoldText("text","11:00 → 13:20",null,"text","lg"),
-                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
-                ],{price:BoldText("number","€210",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")})],"carousel",true)]),
-            TabItem("inbound",\(q("返程 · 11 月 6 日", "Return · 6 Nov")),[CompositeCardBlock([CompositeCardItem("evening",IconText(Icon("plane"),"neutral","m",\(q("傍晚返程 · 推荐", "Evening return · recommended")),\(q("11 月 6 日 · 戴高乐 → 希思罗", "6 Nov · Charles de Gaulle → Heathrow")),true),[
-                  BoldText("text","18:30 → 18:50",null,"text","lg"),
-                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
-                ],{price:BoldText("number","€170",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"primary",null,"small")}),
-                CompositeCardItem("late",IconText(Icon("plane"),"neutral","m",\(q("晚班返程", "Late return")),\(q("11 月 6 日 · 戴高乐 → 希思罗", "6 Nov · Charles de Gaulle → Heathrow")),true),[
-                  BoldText("text","20:00 → 20:20",null,"text","lg"),
-                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
-                ],{price:BoldText("number","€195",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")}),
-                CompositeCardItem("afternoon",IconText(Icon("plane"),"neutral","m",\(q("提前返程", "Earlier return")),\(q("11 月 6 日 · 戴高乐 → 希思罗", "6 Nov · Charles de Gaulle → Heathrow")),true),[
-                  BoldText("text","16:00 → 16:20",null,"text","lg"),
-                  TagBlock([\(q("直飞", "Nonstop")),\(q("需缩短游览", "Shorter sightseeing day"))],"sm")
-                ],{price:BoldText("number","€145",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")})],"carousel",true)])
+            TabItem("outbound",\(q("去程 · 11 月 5 日", "Outbound · 5 Nov")),[CompositeCardBlock(@Each(outboundOptions,"flight",CompositeCardItem(flight.id,
+                IconText(Icon("plane"),"neutral","m",flight.carrier,flight.route,true),[
+                  BoldText("text",flight.departure+" → "+flight.arrival,null,"text","lg"),
+                  TagBlock(flight.tags,"sm"),
+                  Text("text",flight.details)
+                ],{price:BoldText("number","€"+flight.price,\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl(flight.url),"primary",null,"small")})),"carousel",true)]),
+            TabItem("inbound",\(q("返程 · 11 月 6 日", "Return · 6 Nov")),[CompositeCardBlock(@Each(returnOptions,"flight",CompositeCardItem(flight.id,
+                IconText(Icon("plane"),"neutral","m",flight.carrier,flight.route,true),[
+                  BoldText("text",flight.departure+" → "+flight.arrival,null,"text","lg"),
+                  TagBlock(flight.tags,"sm"),
+                  Text("text",flight.details)
+                ],{price:BoldText("number","€"+flight.price,\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl(flight.url),"primary",null,"small")})),"carousel",true)])
           ]),
           InlineHeader(\(q("住一晚，选一处落脚点", "A place to stay"))),
-          CompositeCardBlock([CompositeCardItem("central",ImageTextLarge("/stay-central.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("左岸花园房 · 推荐", "Left Bank garden room · recommended")),null,true),[
+          CompositeCardBlock([CompositeCardItem("central",ImageTextLarge("/stay-central.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("左岸 · 花园双人房", "Left Bank · garden double")),null,true),[
               TagBlock([\(q("花园景观", "Garden view")),\(q("含早餐", "Breakfast included"))],"sm"),Text("text",\(q("花园朝向，双人入住，含早餐。", "Garden-facing double room with breakfast.")))
             ],{price:BoldText("number","€220",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"),"primary",null,"small")}),
             CompositeCardItem("outer",ImageTextLarge("/stay-transit.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("近交通站 · 大床房", "Transit-side king room")),null,true),[
