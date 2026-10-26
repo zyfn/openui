@@ -19,6 +19,16 @@ final class ReviewFullLibraryParityTests: ReviewTestCase {
     app.terminate()
   }
 
+  func testSingleSeriesChartKeepsOneColorWithoutARepeatedLegend() {
+    let app = launch("chart-palette", language: "en")
+    let heading = app.staticTexts["A single trend"]
+    reveal(heading, in: app)
+    XCTAssertTrue(heading.exists)
+    XCTAssertFalse(app.buttons["openui.chart.legend.Steps"].exists)
+    capture(app, name: "palette-single-series-week")
+    app.terminate()
+  }
+
   func testRichTextRendersBlocksMathCodeAndSourceContext() {
     let app = launch("complete-rich-text", inspect: true, language: "en")
     XCTAssertTrue(app.staticTexts["A complete answer"].waitForExistence(timeout: 8))

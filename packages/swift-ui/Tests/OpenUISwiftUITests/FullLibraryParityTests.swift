@@ -15,6 +15,17 @@ final class FullLibraryParityTests: XCTestCase {
     XCTAssertEqual(NativeChartNumber.tooltip(-2_555_555, locale: Locale(identifier: "en_US")), "-2.5M")
   }
 
+  func testChartScaleUsesReadableTicksWithoutChangingObservedValues() {
+    let positive = NativeChartScale(low: 0, high: 25)
+    XCTAssertEqual(positive.ticks, [0, 10, 20, 30])
+    XCTAssertEqual(positive.high, 30)
+    XCTAssertEqual(NativeChartScale(low: -3, high: 25).ticks, [-10, 0, 10, 20, 30])
+    XCTAssertEqual(NativeChartScale(low: 0, high: 1).ticks, [0, 0.25, 0.5, 0.75, 1])
+    let extreme = NativeChartScale(low: 0, high: Double.greatestFiniteMagnitude)
+    XCTAssertTrue(extreme.low.isFinite)
+    XCTAssertTrue(extreme.high.isFinite)
+  }
+
   func testLegendKeepsOneCurrentSeriesAndRetainsHiddenKeysAcrossDataChanges() {
     var visibility = NativeChartVisibility()
     visibility.toggle("a", current: ["a", "b", "c"])

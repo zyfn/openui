@@ -136,6 +136,9 @@ struct NativeChart: View {
     context.theme.chartColors(forSeriesCount: legend.count)
   }
   private var legend: [String] { allData.legendNames(for: name) }
+  private var showsLegend: Bool {
+    legend.count > 1 || ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name)
+  }
   private var drawing: NativeChartDrawing {
     NativeChartDrawing(
       data: data, name: name, variant: context.string("variant"),
@@ -202,23 +205,21 @@ struct NativeChart: View {
               anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
           }
         }
-      }.frame(
-        height: CGFloat(
-          min(
-            1200,
-            max(100, context.number("height") ?? (name == "SingleStackedBarChart" ? 100 : 250)))))
-      NativeWrappingRow(gap: 16) {
-        ForEach(Array(legend.enumerated()), id: \.offset) { index, title in
-          if name == "SingleStackedBarChart" {
-            legendLabel(index: index, title: title).accessibilityElement(children: .combine)
-          } else {
-            Button { visibility.toggle(title, current: legend) } label: { legendLabel(index: index, title: title) }
-              .buttonStyle(.plain)
-              .opacity(visibility.hidden.contains(OpenUIString(title)) ? 0.3 : 1)
-              .accessibilityLabel(title)
-              .accessibilityValue(visibility.hidden.contains(OpenUIString(title))
-                ? Text("Hidden", bundle: NativeControlResources.bundle) : Text("Visible", bundle: NativeControlResources.bundle))
-              .accessibilityIdentifier("openui.chart.legend." + title)
+      }.frame(height: CGFloat(min(1200, max(100, context.number("height") ?? defaultHeight))))
+      if showsLegend {
+        NativeWrappingRow(gap: 16) {
+          ForEach(Array(legend.enumerated()), id: \.offset) { index, title in
+            if name == "SingleStackedBarChart" {
+              legendLabel(index: index, title: title).accessibilityElement(children: .combine)
+            } else {
+              Button { visibility.toggle(title, current: legend) } label: { legendLabel(index: index, title: title) }
+                .buttonStyle(.plain)
+                .opacity(visibility.hidden.contains(OpenUIString(title)) ? 0.3 : 1)
+                .accessibilityLabel(title)
+                .accessibilityValue(visibility.hidden.contains(OpenUIString(title))
+                  ? Text("Hidden", bundle: NativeControlResources.bundle) : Text("Visible", bundle: NativeControlResources.bundle))
+                .accessibilityIdentifier("openui.chart.legend." + title)
+            }
           }
         }
       }
@@ -229,6 +230,11 @@ struct NativeChart: View {
         if next != axisMeasurements { axisMeasurements = next }
       }
       .onChange(of: data.accessibilityRows) { _ in inspected = nil; pinnedInspection = false }
+  }
+  private var defaultHeight: Double {
+    if name == "SingleStackedBarChart" { return 100 }
+    if ["PieChart", "RadialChart"].contains(name) { return 210 }
+    return 250
   }
   private func legendLabel(index: Int, title: String) -> some View {
     HStack(spacing: 6) {
@@ -520,8 +526,8 @@ struct NativeChartDrawing {
   }
   var axisLabels: (left: [String], bottom: [String]) {
     func ticks(_ low: Double, _ high: Double) -> [String] {
-      // The grid can reduce from four intervals to one as text grows. Measure
-      // every possible displayed value, including thirds in scientific notation.
+      // Scatter plots retain their numeric domain, so measure every interval
+      // count the grid might show as the available space changes.
       var labels: [String] = []
       for count in 1...4 {
         for index in 0...count {
@@ -538,18 +544,22 @@ struct NativeChartDrawing {
     guard ["BarChart", "HorizontalBarChart", "LineChart", "AreaChart"].contains(name)
       else { return ([], []) }
     let bounds = domain
-    let numeric = ticks(bounds.low, bounds.high)
+    let numeric = NativeChartScale(low: bounds.low, high: bounds.high).ticks.map(number)
     return name == "HorizontalBarChart" ? (data.labels, numeric) : (numeric, data.labels)
   }
   private func grid(
     _ canvas: inout GraphicsContext, rect: CGRect, low: Double, high: Double,
-    horizontal: Bool = false, layout: NativeChartLayout
+    horizontal: Bool = false, layout: NativeChartLayout, tickValues: [Double]? = nil
   ) {
     let available = horizontal ? rect.width : rect.height
     let spacing = horizontal ? layout.bottomLabelWidth : layout.lineHeight + 10 * layout.scale
     let count = max(1, min(4, Int(available / max(1, spacing))))
-    for i in 0...count {
-      let fraction = Double(i) / Double(count)
+    let values = tickValues ?? (0...count).map { low + (high - low) * Double($0) / Double(count) }
+    let stride = max(1, Int(ceil(Double(max(1, values.count - 1)) / Double(count))))
+    for i in values.indices where i % stride == 0 || i == values.count - 1 {
+      let value = values[i]
+      let fraction = (value - low) / (high - low)
+      guard fraction.isFinite else { continue }
       var line = Path()
       if horizontal {
         let x = rect.minX + rect.width * fraction
@@ -557,8 +567,8 @@ struct NativeChartDrawing {
         line.addLine(to: CGPoint(x: x, y: rect.maxY))
         if layout.showsBottomLabels {
           text(
-            number(low + (high - low) * fraction), at: CGPoint(x: x, y: rect.maxY + layout.tickOffset),
-            canvas: &canvas, anchor: i == 0 ? .leading : i == count ? .trailing : .center,
+            number(value), at: CGPoint(x: x, y: rect.maxY + layout.tickOffset),
+            canvas: &canvas, anchor: i == 0 ? .leading : i == values.count - 1 ? .trailing : .center,
             maxWidth: rect.width / CGFloat(count))
         }
       } else {
@@ -567,11 +577,11 @@ struct NativeChartDrawing {
         line.addLine(to: CGPoint(x: rect.maxX, y: y))
         if layout.showsLeftLabels {
           text(
-            number(low + (high - low) * fraction), at: CGPoint(x: rect.minX - 6, y: y),
+            number(value), at: CGPoint(x: rect.minX - 6, y: y),
             canvas: &canvas, anchor: .trailing, maxWidth: max(1, rect.minX - 6))
         }
       }
-      let isZero = abs(low + (high - low) * fraction) < 0.000_001
+      let isZero = abs(value) < 0.000_001
       canvas.stroke(
         line, with: .color(isZero ? axisColorValue.opacity(0.35) : gridColorValue),
         lineWidth: isZero ? 0.75 : 0.5)
@@ -586,8 +596,11 @@ struct NativeChartDrawing {
     let horizontal = name == "HorizontalBarChart"
     let bars = name == "BarChart" || horizontal
     let stacked = bars && variant == "stacked"
-    let (low, high) = domain
-    grid(&canvas, rect: rect, low: low, high: high, horizontal: horizontal, layout: layout)
+    let bounds = domain
+    let scale = NativeChartScale(low: bounds.low, high: bounds.high)
+    let low = scale.low, high = scale.high
+    grid(&canvas, rect: rect, low: low, high: high, horizontal: horizontal,
+      layout: layout, tickValues: scale.ticks)
     let numeric = { (v: Double) -> CGFloat in
       let f = CGFloat((v - low) / (high - low))
       return horizontal ? rect.minX + rect.width * f : rect.maxY - rect.height * f

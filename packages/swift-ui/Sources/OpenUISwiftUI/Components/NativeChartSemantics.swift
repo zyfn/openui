@@ -23,6 +23,49 @@ enum NativeChartNumber {
   }
 }
 
+/// A rounded plotting domain keeps axes readable without changing the data
+/// values shown by inspection or accessibility.
+struct NativeChartScale {
+  let low: Double
+  let high: Double
+  let ticks: [Double]
+
+  init(low rawLow: Double, high rawHigh: Double, maximumIntervals: Int = 4) {
+    let range = rawHigh - rawLow
+    guard rawLow.isFinite, rawHigh.isFinite, range.isFinite, range > 0 else {
+      low = rawLow; high = rawHigh; ticks = [rawLow, rawHigh]
+      return
+    }
+    let roughStep = range / Double(max(1, maximumIntervals))
+    guard roughStep.isFinite, roughStep > 0 else {
+      low = rawLow; high = rawHigh; ticks = [rawLow, rawHigh]
+      return
+    }
+    let magnitude = pow(10, floor(log10(roughStep)))
+    let unit = roughStep / magnitude
+    let step = (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10) * magnitude
+    guard step.isFinite, step > 0 else {
+      low = rawLow; high = rawHigh; ticks = [rawLow, rawHigh]
+      return
+    }
+    let roundedLow = floor(rawLow / step) * step
+    let roundedHigh = ceil(rawHigh / step) * step
+    guard roundedLow.isFinite, roundedHigh.isFinite else {
+      low = rawLow; high = rawHigh; ticks = [rawLow, rawHigh]
+      return
+    }
+    let intervalCount = ((roundedHigh - roundedLow) / step).rounded()
+    guard intervalCount.isFinite, intervalCount > 0, intervalCount <= 12 else {
+      low = rawLow; high = rawHigh; ticks = [rawLow, rawHigh]
+      return
+    }
+    let intervals = Int(intervalCount)
+    low = roundedLow
+    high = roundedHigh
+    ticks = (0...intervals).map { roundedLow + Double($0) * step }
+  }
+}
+
 /// Same last-visible guard as upstream useSeriesVisibility. Hidden keys survive
 /// data swaps; only keys present in the current data participate in the guard.
 struct NativeChartVisibility {
