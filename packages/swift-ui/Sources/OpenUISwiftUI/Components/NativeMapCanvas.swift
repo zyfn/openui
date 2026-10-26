@@ -258,8 +258,15 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
                         height: max(1, view.bounds.height - bottomInset - 84))
     guard !usable.contains(point) else { return }
     let current = view.visibleMapRect
-    let dx = Double((point.x - usable.midX) / view.bounds.width) * current.width
-    let dy = Double((point.y - usable.midY) / view.bounds.height) * current.height
+    // Move only far enough to uncover this marker. Recentring a point that is
+    // barely outside an edge can unnecessarily pan the other places offscreen.
+    let targetX = min(max(point.x, usable.minX), usable.maxX)
+    let targetY = min(max(point.y, usable.minY), usable.maxY)
+    let deltaX = point.x - targetX
+    let deltaY = point.y - targetY
+    guard abs(deltaX) > 0.5 || abs(deltaY) > 0.5 else { return }
+    let dx = Double(deltaX / view.bounds.width) * current.width
+    let dy = Double(deltaY / view.bounds.height) * current.height
     applying = true
     view.setVisibleMapRect(MKMapRect(x: current.minX + dx, y: current.minY + dy,
       width: current.width, height: current.height), animated: false)
