@@ -50,16 +50,18 @@ final class ReviewMapTests: ReviewTestCase {
       "The selected point must remain fully above its place preview after camera layout settles")
     XCTAssertFalse(app.staticTexts["openui.map.page"].exists)
     XCTAssertFalse(app.buttons["openui.map.next"].exists)
+    let openedURL = app.staticTexts["review.opened-url"]
+    XCTAssertEqual(openedURL.label, "No URL opened")
     capture(app, name: "map-default-icon-markers-and-place-card")
     pager.swipeLeft()
     XCTAssertTrue(app.staticTexts["当前地点：b"].waitForExistence(timeout: 3))
+    XCTAssertEqual(openedURL.label, "No URL opened", "Swiping must not activate a place link")
     capture(app, name: "map-default-card-swipe-selects-marker")
     let marker = app.descendants(matching: .any).matching(identifier: "openui.map.marker.a").firstMatch
     reveal(marker, in: app)
     marker.tap()
     XCTAssertTrue(app.staticTexts["当前地点：a"].waitForExistence(timeout: 3))
-    let openedURL = app.staticTexts["review.opened-url"]
-    XCTAssertTrue(!openedURL.exists || openedURL.label.isEmpty, "Swiping must not activate a place link")
+    XCTAssertEqual(openedURL.label, "No URL opened", "Selecting a marker must not activate a place link")
     let card = app.buttons["openui.map.place.a"]
     card.tap()
     XCTAssertEqual(app.staticTexts["review.opened-url"].label, "https://example.invalid/places/a?source=sdk")
