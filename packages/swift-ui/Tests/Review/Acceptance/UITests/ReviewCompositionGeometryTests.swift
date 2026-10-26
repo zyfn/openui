@@ -73,6 +73,47 @@ final class ReviewCompositionGeometryTests: ReviewTestCase {
 }
 
 extension ReviewCompositionGeometryTests {
+  func testVerticalDragStartingOnCarouselStillScrollsTheDocument() {
+    let app = launch("scene-shopping", language: "en")
+    let pager = app.descendants(matching: .any)
+      .matching(identifier: "openui.card-block.composite.pager").firstMatch
+    XCTAssertTrue(pager.waitForExistence(timeout: 8))
+    let before = pager.frame.minY
+    let visible = pager.frame.intersection(app.scrollViews["review.surface"].frame)
+    let origin = app.coordinate(withNormalizedOffset: .zero)
+    let start = origin.withOffset(CGVector(dx: visible.midX, dy: visible.midY + 30))
+    let end = origin.withOffset(CGVector(dx: visible.midX, dy: visible.midY - 100))
+    start.press(forDuration: 0.05, thenDragTo: end)
+    XCTAssertLessThan(pager.frame.minY, before - 50,
+      "Paging must not consume a vertical drag intended for the enclosing document")
+    capture(app, name: "carousel-vertical-document-scroll")
+    app.terminate()
+  }
+
+  func testGenericCardSlotsKeepTheirIntrinsicVerticalOrder() throws {
+    guard let url = Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json"),
+      (try String(contentsOf: url, encoding: .utf8)).contains("card-matrix-grid") else {
+      throw XCTSkip("Provide the generic card composition fixtures")
+    }
+    let app = launch("card-matrix-grid", inspect: true, language: "en")
+    for (body, footer) in [("Brief body", "101"), ("Second body", "Inspect item")] {
+      let value = app.staticTexts[footer].firstMatch
+      let target = value.exists ? value : app.buttons[footer].firstMatch
+      reveal(target, in: app)
+      let text = app.staticTexts[body].firstMatch
+      XCTAssertTrue(text.exists)
+      XCTAssertGreaterThanOrEqual(target.frame.minY, text.frame.maxY)
+      XCTAssertLessThanOrEqual(target.frame.minY - text.frame.maxY, 28,
+        "Missing media or footer slots do not reserve empty regions")
+    }
+    let final = app.staticTexts["No footer body"].firstMatch
+    reveal(final, in: app)
+    XCTAssertTrue(final.exists)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "generic-card-slot-matrix")
+    app.terminate()
+  }
+
   func testCarouselCoverKeepsItsWidthAndDoesNotCreateAnEmptyFooterRegion() {
     let app = launch("scene-shopping", language: "zh-Hans")
     let price = app.staticTexts["¥5,200"].firstMatch
