@@ -74,6 +74,13 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
         "https://www.metmuseum.org/art/collection/search/" + target)
     }
     capture(app, name: "learning-archaistic-card-and-conclusion")
+    let firstSeries = app.buttons["openui.chart.legend.Liangzhu cong"]
+    let secondSeries = app.buttons["openui.chart.legend.Qing archaistic cong"]
+    reveal(firstSeries, in: app)
+    XCTAssertTrue(secondSeries.exists)
+    XCTAssertEqual(firstSeries.value as? String, "Visible")
+    XCTAssertEqual(secondSeries.value as? String, "Visible")
+    capture(app, name: "learning-two-series-height-chart")
     app.terminate()
   }
 

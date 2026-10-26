@@ -5,6 +5,17 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class ChartInspectionTests: XCTestCase {
+  func testYAxisTitleDoesNotOverlapTheHighestTick() {
+    let measurements = NativeChartAxisMeasurements(lineHeight: 18)
+    let layout = NativeChartLayout(size: CGSize(width: 318, height: 220), measurements: measurements, hasYAxisTitle: true)
+    XCTAssertTrue(layout.showsYAxisTitle)
+    let titleBottom = 2 + layout.lineHeight
+    let tickTop = layout.rect.minY - layout.lineHeight / 2
+    XCTAssertGreaterThanOrEqual(tickTop - titleBottom, 8)
+    let untitled = NativeChartLayout(size: CGSize(width: 318, height: 220), measurements: measurements)
+    XCTAssertLessThan(untitled.rect.minY, layout.rect.minY)
+  }
+
   @MainActor func testPieChartPlucksSlicePropsIntoRealValues() throws {
     let drawing = try chart(
       "slices=[Slice(\"阅读\",9.5),Slice(\"创作\",9.5),Slice(\"整理\",3)]\nroot=PieChart(slices.props.category,slices.props.value,\"donut\")",

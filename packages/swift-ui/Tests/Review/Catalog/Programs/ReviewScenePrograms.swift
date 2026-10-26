@@ -331,7 +331,7 @@ enum ReviewScenePrograms {
           Separator(),
           VisualCardBlock([VisualCardItem(BoldText("text",\(q("同形，不同时代", "Same form, another era")),\(q("清代仿古玉琮", "An archaistic cong from the Qing dynasty")),"text","lg"),"qing","/object.jpg",Tag(\(q("清代", "Qing dynasty")),null,"sm"),\(q("同形，不同时代", "Same form, another era")))],"grid",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/42751")),
           InlineHeader(\(q("两件玉琮，有多高？", "How tall are the two cong?"))),
-          BarChart([\(q("良渚玉琮", "Liangzhu")),\(q("清代仿古琮", "Qing"))],[Series(\(q("高度（cm）", "Height (cm)")),[25.4,12.7])],"grouped",null,"cm",220),
+          BarChart([\(q("馆藏高度", "Object height"))],[Series(\(q("良渚玉琮", "Liangzhu cong")),[25.4]),Series(\(q("清代仿古琮", "Qing archaistic cong")),[12.7])],"grouped",null,"cm",220),
           TextContent(\(q("仅比较这两件馆藏的高度，不代表各时代玉器的平均尺寸。[1][4]", "Heights of these two collection objects only, not period averages.[1][4]")),"small"),
           TextContent(\(q("形似，不等于同时代；先看器物，再查出处。", "Similar form does not mean the same date. Look closely, then check the record.")),"small-heavy"),
           TextContent(\(q("图像与数据：The Met Open Access。图注和延伸阅读图卡链接到馆藏记录。", "Images and measurements: The Met Open Access. Captions and the further-reading card link to collection records.")),"small")

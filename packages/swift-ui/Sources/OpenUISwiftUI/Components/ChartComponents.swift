@@ -143,7 +143,8 @@ struct NativeChart: View {
       secondary: context.theme.secondary, border: context.theme.border,
       gridColor: context.theme.chartGrid, axisColor: context.theme.chartAxis,
       canvasColor: context.theme.canvas, labelFont: context.theme.typography.caption,
-      inspected: inspected, axisScale: axisScale, axisMeasurements: axisMeasurements)
+      inspected: inspected, axisScale: axisScale, axisMeasurements: axisMeasurements,
+      hasYAxisTitle: context.string("yLabel")?.isEmpty == false)
   }
   private var measuredAxisLabels: some View {
     let labels = drawing.axisLabels
@@ -355,7 +356,7 @@ struct NativeChartLayout {
   let showsXAxisTitle: Bool
   let showsYAxisTitle: Bool
 
-  init(size: CGSize, scale: CGFloat = 1, measurements: NativeChartAxisMeasurements = .init()) {
+  init(size: CGSize, scale: CGFloat = 1, measurements: NativeChartAxisMeasurements = .init(), hasYAxisTitle: Bool = false) {
     let scale = max(1, scale)
     let lineHeight = max(16 * scale, measurements.lineHeight)
     let tickOffset = max(12 * scale, lineHeight / 2 + 4 * scale)
@@ -363,7 +364,8 @@ struct NativeChartLayout {
     let idealLeft = max(44 * scale, measurements.leftWidth + 8 * scale)
     let left = min(idealLeft,
       max(0, size.width - right - min(80, size.width)))
-    let top = min(max(18 * scale, lineHeight + 2 * scale), max(0, size.height - 40))
+    let titleClearance = lineHeight * 1.5 + 10 * scale
+    let top = min(hasYAxisTitle ? titleClearance : max(18 * scale, lineHeight + 2 * scale), max(0, size.height - 40))
     let bottom = min(max(40 * scale, tickOffset + lineHeight * 1.5 + 4 * scale),
       max(0, size.height - top - 40))
     rect = CGRect(x: left, y: top, width: max(1, size.width - left - right),
@@ -378,7 +380,7 @@ struct NativeChartLayout {
     bottomLabelWidth = max(56 * scale, measurements.bottomWidth + 12 * scale)
     measuredBottomLabelWidth = measurements.bottomWidth > 0 ? measurements.bottomWidth : 44 * scale
     showsXAxisTitle = bottom >= lineHeight + 2 * scale
-    showsYAxisTitle = top >= lineHeight + 2
+    showsYAxisTitle = hasYAxisTitle && top >= titleClearance
     showsBottomLabels = bottom >= tickOffset + lineHeight * 1.5 + 4 * scale
   }
 
@@ -430,6 +432,7 @@ struct NativeChartDrawing {
   var inspected: Int? = nil
   var axisScale: CGFloat = 1
   var axisMeasurements = NativeChartAxisMeasurements()
+  var hasYAxisTitle = false
   private var gridColorValue: Color { gridColor ?? border }
   private var axisColorValue: Color { axisColor ?? secondary }
   private func color(_ index: Int) -> Color {
@@ -502,7 +505,7 @@ struct NativeChartDrawing {
   }
   private func number(_ value: Double) -> String { NativeChartNumber.tick(value) }
   func layout(_ size: CGSize) -> NativeChartLayout {
-    NativeChartLayout(size: size, scale: axisScale, measurements: axisMeasurements)
+    NativeChartLayout(size: size, scale: axisScale, measurements: axisMeasurements, hasYAxisTitle: hasYAxisTitle)
   }
   private var domain: (low: Double, high: Double) {
     let stacked = ["BarChart", "HorizontalBarChart"].contains(name) && variant == "stacked"
