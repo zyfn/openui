@@ -63,7 +63,8 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     capture(app, name: "learning-gallery-full-object")
     close.tap()
     XCTAssertEqual(cong.frame.minY, position, accuracy: 3)
-    for (label, target) in [("Same form, another era", "42751")] {
+    XCTAssertFalse(app.buttons["openui.gallery.options"].exists)
+    for (label, target) in [("Cong", "72376"), ("Bi", "49371"), ("Same form, another era", "42751")] {
       let card = label == "Same form, another era"
         ? app.buttons[label].firstMatch : app.links[label].firstMatch
       reveal(card, in: app)

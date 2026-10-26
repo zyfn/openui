@@ -148,19 +148,6 @@ private struct NativeStretchMediaLayout: Layout {
   }
 }
 
-private struct NativeOriginalImageLink: View {
-  let src: String?
-  @Environment(\.openURL) private var openURL
-  @Environment(\.openUIResourceContext) private var resources
-  var body: some View {
-    if let url = resources.request(for: src)?.url {
-      Button { openURL(url) } label: {
-        Text("Open original image", bundle: NativeControlResources.bundle)
-      }.buttonStyle(.plain).font(.caption).frame(minHeight: 44)
-    }
-  }
-}
-
 private struct NativeGalleryResourceID: Hashable {
   let itemID: String
   let source: String?
@@ -225,7 +212,6 @@ struct NativeImageGallery: View {
   @State private var pictures: [NativeGalleryResourceID: Image] = [:]
   @State private var selected: NativeGalleryResourceID?
   @State private var preview = false
-  @State private var diagnostics = false
   @State private var retries: [String: Int] = [:]
   // The pinned upstream ImageGallery previews five items, with Show All.
   private let previewLimit = 5
@@ -271,7 +257,7 @@ struct NativeImageGallery: View {
           }
         }
       }
-      if !images.isEmpty {
+      if images.count > previewLimit || !failed.isEmpty {
         HStack {
           if images.count > previewLimit {
             Button {
@@ -285,58 +271,19 @@ struct NativeImageGallery: View {
             .disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.showAll")
           }
           Spacer(minLength: 0)
-          Menu {
-            if !failed.isEmpty {
-              Button {
-                for image in failed { retries[image.id, default: 0] += 1 }
-              } label: {
-                Text("Retry", bundle: NativeControlResources.bundle)
-              }
-              .accessibilityIdentifier("openui.gallery.retry")
-            }
+          if !failed.isEmpty {
             Button {
-              diagnostics = true
-            } label: {
-              Text("Image descriptions", bundle: NativeControlResources.bundle)
-            }
-            .accessibilityIdentifier("openui.gallery.details")
-          } label: {
-            Image(systemName: "ellipsis").frame(width: 44, height: 44)
+              for image in failed { retries[image.id, default: 0] += 1 }
+            } label: { Text("Retry", bundle: NativeControlResources.bundle) }
+              .accessibilityIdentifier("openui.gallery.retry")
+              .disabled(!context.canInteract)
           }
-          .accessibilityLabel(Text("Image descriptions", bundle: NativeControlResources.bundle))
-          .accessibilityIdentifier("openui.gallery.options")
-          .disabled(!context.canInteract)
         }.font(context.theme.typography.caption)
       }
     }
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery")
     .sheet(isPresented: $preview) {
       NativeGalleryPreview(images: images, selected: $selected, pictures: pictures, phases: phases, record: record)
-    }
-    .sheet(isPresented: $diagnostics) {
-      NavigationView {
-        List(images) { image in
-          VStack(alignment: .leading, spacing: 4) {
-            Text(image.alt)
-            if let details = image.details { Text(details).font(.caption) }
-            if phases[image.key] == .unavailable {
-              Text("Image unavailable", bundle: NativeControlResources.bundle).font(.caption)
-            }
-            NativeOriginalImageLink(src: image.src)
-          }
-        }
-        .navigationTitle(Text("Image descriptions", bundle: NativeControlResources.bundle))
-        .toolbar {
-          ToolbarItem(placement: .confirmationAction) {
-            Button {
-              diagnostics = false
-            } label: {
-              Text("Close", bundle: NativeControlResources.bundle)
-            }
-            .accessibilityIdentifier("openui.gallery.details.close")
-          }
-        }
-      }
     }
     .onChange(of: images.map(\.key)) { keys in
       let current = Set(keys)

@@ -67,12 +67,8 @@ final class ReviewMediaTests: ReviewTestCase {
     XCTAssertGreaterThan(first.frame.height, 60)
     XCTAssertFalse(app.buttons["openui.media.retry"].exists)
     capture(app, name: "media-unavailable-preserved-slots")
-    let options = app.buttons["openui.gallery.options"]
-    reveal(options, in: app)
-    options.tap()
-    app.buttons["openui.gallery.details"].tap()
-    XCTAssertTrue(app.staticTexts["参考照片一"].waitForExistence(timeout: 3))
-    app.buttons["openui.gallery.details.close"].tap()
+    XCTAssertFalse(app.buttons["openui.gallery.options"].exists)
+    XCTAssertTrue(app.buttons["openui.gallery.retry"].exists)
     let choice = app.buttons["保留本地选择"]
     reveal(choice, in: app)
     choice.tap()
@@ -153,9 +149,8 @@ final class ReviewMediaTests: ReviewTestCase {
     app.terminate()
 
     let retry = launch("media-states", inspect: true, media: "retry")
-    let options = retry.buttons["openui.gallery.options"]
-    reveal(options, in: retry)
-    options.tap()
+    let retryButton = retry.buttons["openui.gallery.retry"]
+    reveal(retryButton, in: retry)
     retry.buttons["openui.gallery.retry"].tap()
     let recovered = retry.buttons["openui.gallery.image.0"]
     XCTAssertTrue(recovered.waitForExistence(timeout: 8))

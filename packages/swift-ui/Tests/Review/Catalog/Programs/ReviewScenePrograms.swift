@@ -320,6 +320,7 @@ enum ReviewScenePrograms {
             {src:"/liangzhu-cong.jpg",alt:\(q("玉琮全貌", "Cong · full object")),details:\(q("玉琮 · 约公元前 2400 年", "Cong · about 2400 BCE"))},
             {src:"/liangzhu-bi.jpg",alt:\(q("玉璧全貌", "Bi · full object")),details:\(q("玉璧 · 公元前三千纪中叶", "Bi · mid-third millennium BCE"))}
           ]),
+          TextContent(\(q("点击图片查看全貌并切换。馆藏记录：[玉琮](https://www.metmuseum.org/art/collection/search/72376) · [玉璧](https://www.metmuseum.org/art/collection/search/49371)", "Tap an image to view it in full and switch between objects. Collection records: [Cong](https://www.metmuseum.org/art/collection/search/72376) · [Bi](https://www.metmuseum.org/art/collection/search/49371)")),"small"),
           InlineHeader(\(q("一眼分清琮与璧", "Cong and bi, at a glance"))),
           Table([
             Col(\(q("观察", "Look for")),[\(q("外形", "Form")),\(q("中部", "Center")),\(q("纹饰", "Decoration"))]),
