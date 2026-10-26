@@ -2,6 +2,23 @@ import UIKit
 import XCTest
 
 final class ReviewFullLibraryParityTests: ReviewTestCase {
+  func testChartPaletteAcrossGroupedBarsPieAndStackedBars() {
+    let app = launch("chart-palette", language: "en")
+    XCTAssertTrue(app.buttons["openui.chart.legend.Mineral"].waitForExistence(timeout: 5))
+    capture(app, name: "palette-two-series-bars")
+    let sixth = app.buttons["openui.chart.legend.F"]
+    reveal(sixth, in: app)
+    capture(app, name: "palette-six-category-pie")
+    sixth.tap()
+    XCTAssertEqual(sixth.value as? String, "Hidden")
+    capture(app, name: "palette-hidden-slice-stable-colors")
+    sixth.tap()
+    let fourth = app.buttons.matching(identifier: "openui.chart.legend.D").element(boundBy: 1)
+    reveal(fourth, in: app)
+    capture(app, name: "palette-four-series-stacked-bars")
+    app.terminate()
+  }
+
   func testRichTextRendersBlocksMathCodeAndSourceContext() {
     let app = launch("complete-rich-text", inspect: true, language: "en")
     XCTAssertTrue(app.staticTexts["A complete answer"].waitForExistence(timeout: 8))
