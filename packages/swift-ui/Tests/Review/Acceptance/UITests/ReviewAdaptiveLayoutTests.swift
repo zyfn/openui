@@ -3,6 +3,32 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
+  func testAttractionPlansExposePricesAndKeepBudgetTotalsConsistent() {
+    let day = launch("scene-day-trip", language: "en")
+    let museum = day.staticTexts["€64"].firstMatch
+    reveal(museum, in: day)
+    XCTAssertTrue(museum.exists)
+    XCTAssertTrue(day.buttons["Book tickets"].firstMatch.exists)
+    let cruise = day.staticTexts["€36"].firstMatch
+    reveal(cruise, in: day)
+    XCTAssertTrue(cruise.exists)
+    let total = day.staticTexts["€240"].firstMatch
+    reveal(total, in: day)
+    XCTAssertTrue(total.exists)
+    XCTAssertFalse(day.staticTexts["review.errors"].exists)
+    capture(day, name: "one-day-attractions-budget")
+    day.terminate()
+
+    let two = launch("scene-two-day-trip", language: "en")
+    two.buttons["Day 2 · Tower and Seine"].tap()
+    let tower = two.staticTexts["€47"].firstMatch
+    reveal(tower, in: two)
+    XCTAssertTrue(tower.exists)
+    capture(two, name: "two-day-attractions-second-day")
+    XCTAssertFalse(two.staticTexts["review.errors"].exists)
+    two.terminate()
+  }
+
   func testBasicComposedStayKeepsAllCopyAndPriceToTheRightOfItsImage() {
     let app = launch("scene-two-day-trip", language: "en")
     let title = app.staticTexts["Left Bank · garden double"].firstMatch

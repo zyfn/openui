@@ -22,26 +22,41 @@ enum ReviewScenePrograms {
       request = t("11 月 5 日我们两个人在巴黎玩一天。想轻松一点，看看艺术、逛街区，也帮我安排吃饭、交通和预算。", "We have one day in Paris on 5 November. Plan an unhurried day for two adults with art, a neighborhood walk, places to eat, transport and a clear budget.")
       source = """
         $place="louvre"
-        activity=60
+        activity=64+36
         total=80+20+40+activity
         root=Stack([
           TextContent(\(q("巴黎，一天也能从容", "Paris, at your own pace")),"large-heavy"),
           TextContent(\(q("2026 年 11 月 5 日 · 2 位成人 · 示例预算", "5 November 2026 · 2 adults · sample budget")),"small"),
-          ImageBlock("/paris-louvre.jpg",\(q("上午看艺术，下午过生活", "Art in the morning, life in the afternoon"))),
-          InlineHeader(\(q("四段时间，刚刚好", "Four moments, one good day"))),
-          ListBlock([
-            ListItem(\(q("09:30 · 卢浮宫", "09:30 · The Louvre")),\(q("选两三个重点展厅。午前结束，把精力留给后面的街区。", "Choose two or three galleries, leaving energy for the city afterward.")),{src:"/paris-louvre.jpg",alt:\(q("09:30 · 卢浮宫", "09:30 · The Louvre"))},null,null),
-            ListItem(\(q("12:00 · 午餐与花园", "12:00 · Lunch and gardens")),\(q("先好好吃饭，再到杜乐丽花园走一段。", "Take time for lunch, then walk through the Tuileries.")),{src:"/paris-breakfast.jpg",alt:\(q("12:00 · 午餐与花园", "12:00 · Lunch and gardens"))},null,null),
-            ListItem(\(q("13:30 · 圣日耳曼", "13:30 · Saint-Germain")),\(q("过河逛书店，选一家喜欢的咖啡馆坐下来。", "Cross the river for bookshops and a café that catches your eye.")),{src:"/paris-cafe.jpg",alt:\(q("13:30 · 圣日耳曼", "13:30 · Saint-Germain"))},null,null),
-            ListItem(\(q("16:30 · 河岸散步", "16:30 · A riverbank walk")),\(q("傍晚留给河岸与城市天际线，不再增加远处景点。", "Save the evening for the river and skyline, without a distant detour.")),{src:"/paris-eiffel.jpg",alt:\(q("塞纳河与铁塔景观示意", "The Seine and tower, an illustrative view"))})
-          ],"image"),
+          TextContent(\(q("上午看艺术，午后逛左岸，傍晚到铁塔附近乘船；把参观和休息串成一条路线。", "Art in the morning, the Left Bank after lunch, then a cruise near the tower. Keep time for breaks between visits."))),
+          InlineHeader(\(q("值得停留的三个地方", "Three places worth your time"))),
           Card([
-            ImageBlock("/paris-louvre.jpg",\(q("博物馆与河岸体验", "Museum and riverside experience"))),
-            TextContent(\(q("博物馆与河岸体验", "Museum and riverside experience")),"small-heavy"),
-            TagBlock([\(q("预约入场时段", "Timed entry")), \(q("示例体验方案", "Illustrative offer"))],"sm"),
-            TextContent(\(q("11 月 5 日 · 2 位成人 · 博物馆参观", "5 November · 2 adults · museum visit"))),
-            Stack([TextContent("€"+activity,"large-heavy"),Buttons([Button(\(q("预订体验", "Book experience")),@ToAssistant(\(q("预览购买：当天参观与体验", "Preview purchase: Day visits and activities")),{reviewPurchase:true,item:\(q("当天参观与体验", "Day visits and activities")),price:"€"+activity}),"primary",null,"small")])],"row","s","center","between",false)
-          ]),
+                Image(\(q("卢浮宫", "The Louvre")),"/paris-louvre.jpg"),
+                Stack([
+                  TextContent(\(q("卢浮宫", "The Louvre")),"small-heavy"),
+                  TagBlock([\(q("艺术 · 建议 2–3 小时", "Art · allow 2–3 hours"))],"sm"),
+                  TextContent(\(q("先看重点展厅，不追求一次走完。按非 EEA 成人票预算，优惠资格另核。", "Choose a few galleries. Budget uses the non-EEA adult rate; check discount eligibility.")),"small"),
+                  Stack([BoldText("number","€64",\(q("€32 × 2 位成人", "€32 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@ToAssistant(\(q("预览预订：卢浮宫", "Preview booking: The Louvre")),{reviewPurchase:true,item:\(q("卢浮宫", "The Louvre")),price:"€64"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false),
+          Card([
+                Image(\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),"/paris-cafe.jpg"),
+                Stack([
+                  TextContent(\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),"small-heavy"),
+                  TagBlock([\(q("街区散步 · 建议 1–2 小时", "Neighborhood walk · 1–2 hours"))],"sm"),
+                  TextContent(\(q("过河逛书店和街巷，午餐与咖啡另计。公共街区无需门票预约。", "Explore bookshops and side streets. Food is separate; no admission booking is needed.")),"small"),
+                  Stack([BoldText("number","€0",\(q("公共街区免费", "Free public streets")),"text","lg"),Buttons([Button(\(q("安排参观", "Plan visit")),@ToAssistant(\(q("安排参观：圣日耳曼街区", "Plan visit: Saint-Germain-des-Prés")),{reviewPurchase:false,item:\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),price:"€0"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false),
+          Card([
+                Image(\(q("塞纳河观光游船", "Seine sightseeing cruise")),"/paris-eiffel.jpg"),
+                Stack([
+                  TextContent(\(q("塞纳河观光游船", "Seine sightseeing cruise")),"small-heavy"),
+                  TagBlock([\(q("Bateaux Parisiens · 约 1 小时", "Bateaux Parisiens · about 1 hour"))],"sm"),
+                  TextContent(\(q("从铁塔附近码头登船，看河岸地标。按官网网络票价预算，班次与库存待确认。", "Board near the Eiffel Tower. Budget uses the published online fare; confirm departures and availability.")),"small"),
+                  Stack([BoldText("number","€36",\(q("€18 × 2 位成人", "€18 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@ToAssistant(\(q("预览预订：塞纳河观光游船", "Preview booking: Seine sightseeing cruise")),{reviewPurchase:true,item:\(q("塞纳河观光游船", "Seine sightseeing cruise")),price:"€36"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false),
+          TextCallout("neutral",\(q("衔接建议", "Getting between stops")),\(q("卢浮宫后在市中心午餐，再步行到圣日耳曼。去游船码头安排公共交通，抵达后再按实际班次登船。", "Have lunch after the Louvre, then walk to Saint-Germain. Use public transport to reach the cruise pier and confirm the next departure."))),
           InlineHeader(\(q("路线，一眼看清", "Get your bearings"))),
           Map([
             {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("艺术与宫殿", "Art and a royal palace")),icon:"building.columns"},
@@ -69,7 +84,7 @@ enum ReviewScenePrograms {
             {left:\(q("参观与体验", "Visits and activities")),right:"€"+activity,rightVariant:"number"},
             {left:\(q("机动余量", "Flexibility")),right:"€40",rightVariant:"number"}
           ],"small"),
-          TextContent(\(q("示例预算，不含住宿及往返交通；参观时段、票价以场馆确认信息为准。", "Sample budget, excluding accommodation and travel to Paris. Confirm admission times and ticket prices with the venue.")),"small")
+          TextContent(\(q("门票按 2026-10-26 官网价计算，适用资格与时段须确认；餐饮交通为估算，不含住宿和往返交通。按钮仅演示预约，不实际下单。", "Ticket rates checked on 26 Oct 2026; confirm eligibility and availability. Food and transport are estimates. Accommodation and travel to Paris are excluded. Buttons preview bookings only.")),"small")
         ],"column","l")
         """
       sources = [
@@ -85,26 +100,55 @@ enum ReviewScenePrograms {
         outbound=150
         inbound=170
         flights=outbound+inbound
-        total=hotel+flights+160+80+100+60
+        visits=64+47+36
+        total=hotel+flights+160+80+visits+60
         root=Stack([
           TextContent(\(q("巴黎，两天一晚", "Paris, two days and one night")),"large-heavy"),
           TextContent(\(q("5–6 Nov 2026 · 2 位成人 · 1 晚 · 示例报价", "5–6 Nov 2026 · 2 adults · 1 night · sample offers")),"small"),
-          ImageBlock("/paris-eiffel.jpg",\(q("把巴黎留给艺术与河岸", "Make time for art and the river"))),
-          InlineHeader(\(q("每天，留一个重点", "An anchor for each day"))),
+          TextContent(\(q("第一天以卢浮宫和左岸为主；第二天集中在铁塔与塞纳河，下午留给返程。", "Spend day one at the Louvre and on the Left Bank. Keep day two around the tower and Seine, leaving the afternoon for your flight."))),
+          InlineHeader(\(q("按天看景点", "Places to visit each day"))),
           Tabs([
             TabItem("day1",\(q("第一天 · 艺术与左岸", "Day 1 · Art and the Left Bank")),[
-              ListBlock([
-                ListItem(\(q("12:30 · 抵达市区", "12:30 · Arrive in the city")),\(q("酒店寄存行李后午餐，下午再开始参观。", "Leave bags at the hotel and have lunch before sightseeing.")),{src:"/paris-breakfast.jpg",alt:\(q("12:30 · 抵达市区", "12:30 · Arrive in the city"))},null,null),
-                ListItem(\(q("14:00 · 卢浮宫与花园", "14:00 · Louvre and gardens")),\(q("预约下午入场，选重点展厅，结束后走到杜乐丽。", "Book an afternoon slot, choose a few galleries and finish in the Tuileries.")),{src:"/paris-louvre.jpg",alt:\(q("14:00 · 卢浮宫与花园", "14:00 · Louvre and gardens"))},null,null),
-                ListItem(\(q("18:00 · 左岸晚餐", "18:00 · Dinner on the Left Bank")),\(q("圣日耳曼附近吃饭散步，晚上不再跨城赶场。", "Dinner and a walk near Saint-Germain, with no evening cross-city detour.")),{src:"/paris-cafe.jpg",alt:\(q("18:00 · 左岸晚餐", "18:00 · Dinner on the Left Bank"))},null,null)
-              ],"image")
+              TextContent(\(q("抵达后先寄存行李、午餐，再预约下午的卢浮宫时段。晚餐放在左岸。", "Store your bags and have lunch after arrival, then choose an afternoon Louvre slot. Stay on the Left Bank for dinner.")),"small"),
+              Card([
+                Image(\(q("卢浮宫", "The Louvre")),"/paris-louvre.jpg"),
+                Stack([
+                  TextContent(\(q("卢浮宫", "The Louvre")),"small-heavy"),
+                  TagBlock([\(q("艺术 · 建议 2–3 小时", "Art · allow 2–3 hours"))],"sm"),
+                  TextContent(\(q("先看重点展厅，不追求一次走完。按非 EEA 成人票预算，优惠资格另核。", "Choose a few galleries. Budget uses the non-EEA adult rate; check discount eligibility.")),"small"),
+                  Stack([BoldText("number","€64",\(q("€32 × 2 位成人", "€32 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@ToAssistant(\(q("预览预订：卢浮宫", "Preview booking: The Louvre")),{reviewPurchase:true,item:\(q("卢浮宫", "The Louvre")),price:"€64"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false),
+              Card([
+                Image(\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),"/paris-cafe.jpg"),
+                Stack([
+                  TextContent(\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),"small-heavy"),
+                  TagBlock([\(q("街区散步 · 建议 1–2 小时", "Neighborhood walk · 1–2 hours"))],"sm"),
+                  TextContent(\(q("过河逛书店和街巷，午餐与咖啡另计。公共街区无需门票预约。", "Explore bookshops and side streets. Food is separate; no admission booking is needed.")),"small"),
+                  Stack([BoldText("number","€0",\(q("公共街区免费", "Free public streets")),"text","lg"),Buttons([Button(\(q("安排参观", "Plan visit")),@ToAssistant(\(q("安排参观：圣日耳曼街区", "Plan visit: Saint-Germain-des-Prés")),{reviewPurchase:false,item:\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),price:"€0"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false)
             ]),
-            TabItem("day2",\(q("第二天 · 地标与河岸", "Day 2 · Landmarks and the Seine")),[
-              ListBlock([
-                ListItem(\(q("09:00 · 铁塔与河岸", "09:00 · Tower and riverbank")),\(q("退房寄存行李，慢慢逛铁塔周边。登塔需另约时段。", "Check out and store bags, then explore around the tower. Going up needs a separate time slot.")),{src:"/paris-eiffel.jpg",alt:\(q("09:00 · 铁塔与河岸", "09:00 · Tower and riverbank"))},null,null),
-                ListItem(\(q("12:00 · 午餐与最后一段散步", "12:00 · Lunch and a final walk")),\(q("14:30 前取回行李，15:00 前出发去机场。", "Collect bags by 14:30 and leave for the airport by 15:00.")),{src:"/paris-cafe.jpg",alt:\(q("12:00 · 午餐与最后一段散步", "12:00 · Lunch and a final walk"))},null,null)
-              ],"image"),
-              TextCallout("neutral",\(q("18:30 返程，下午留出机场时间", "18:30 return: keep the afternoon clear")),\(q("市区接驳、值机与安检都要计入。示例时间不替代实时路况与航班确认。", "Allow for transfers, check-in and security. Suggested timings do not replace live traffic or flight confirmation.")))
+            TabItem("day2",\(q("第二天 · 铁塔与塞纳河", "Day 2 · Tower and Seine")),[
+              Card([
+                Image(\(q("埃菲尔铁塔 · 二层", "Eiffel Tower · second floor")),"/paris-eiffel.jpg"),
+                Stack([
+                  TextContent(\(q("埃菲尔铁塔 · 二层", "Eiffel Tower · second floor")),"small-heavy"),
+                  TagBlock([\(q("电梯登塔 · 建议 1.5–2 小时", "By elevator · allow 1.5–2 hours"))],"sm"),
+                  TextContent(\(q("选择电梯到二层，不含顶层。按 25 岁以上成人票计算，预留安检时间。", "Elevator access to the second floor, not the summit. Rate is for adults over 24; allow time for security.")),"small"),
+                  Stack([BoldText("number","€47",\(q("€23.50 × 2 位成人", "€23.50 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@ToAssistant(\(q("预览预订：埃菲尔铁塔 · 二层", "Preview booking: Eiffel Tower · second floor")),{reviewPurchase:true,item:\(q("埃菲尔铁塔 · 二层", "Eiffel Tower · second floor")),price:"€47"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false),
+              Card([
+                Image(\(q("塞纳河观光游船", "Seine sightseeing cruise")),"/paris-eiffel.jpg"),
+                Stack([
+                  TextContent(\(q("塞纳河观光游船", "Seine sightseeing cruise")),"small-heavy"),
+                  TagBlock([\(q("Bateaux Parisiens · 约 1 小时", "Bateaux Parisiens · about 1 hour"))],"sm"),
+                  TextContent(\(q("从铁塔附近码头登船，看河岸地标。按官网网络票价预算，班次与库存待确认。", "Board near the Eiffel Tower. Budget uses the published online fare; confirm departures and availability.")),"small"),
+                  Stack([BoldText("number","€36",\(q("€18 × 2 位成人", "€18 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@ToAssistant(\(q("预览预订：塞纳河观光游船", "Preview booking: Seine sightseeing cruise")),{reviewPurchase:true,item:\(q("塞纳河观光游船", "Seine sightseeing cruise")),price:"€36"}),"primary",null,"small")])],"row","s","center","between",false)
+                ],"column","s","stretch","between",false)
+              ],"card","row","m","stretch","start",false),
+              TextCallout("neutral",\(q("18:30 返程，下午留给机场", "18:30 flight: keep the afternoon clear")),\(q("午餐后取行李，计划 15:00 前出发去机场；按实际航班与交通情况提前调整。", "Collect your bags after lunch and plan to leave for the airport by 15:00; adjust for the actual flight and traffic.")))
             ])
           ]),
           InlineHeader(\(q("往返航班示例", "Sample return flights"))),
@@ -204,7 +248,7 @@ enum ReviewScenePrograms {
             hotel,
             160,
             80,
-            100,
+            visits,
             60
           ],"donut"),
           EntityList([
@@ -212,10 +256,10 @@ enum ReviewScenePrograms {
             {left:\(q("一晚住宿", "One-night stay")),right:"€"+hotel,rightVariant:"number"},
             {left:\(q("餐饮", "Food")),right:"€160",rightVariant:"number"},
             {left:\(q("机场与市内交通", "Airport and local transport")),right:"€80",rightVariant:"number"},
-            {left:\(q("参观预留", "Visits allowance")),right:"€100",rightVariant:"number"},
+            {left:\(q("景点门票", "Attraction tickets")),right:"€"+visits,rightVariant:"number"},
             {left:\(q("机动余量", "Flexibility")),right:"€60",rightVariant:"number"}
           ],"small"),
-          TextContent(\(q("航班、房源与报价仅作演示，照片为示意；预订前需查询实际库存和条件。", "Flights, stays and prices are samples; photos are illustrative. Check live availability and terms before booking.")),"small")
+          TextContent(\(q("门票参考 2026-10-26 官网价；航班酒店为演示报价，餐饮交通为估算，照片为示意。按钮仅预览，不实际下单。", "Tickets use published rates checked on 26 Oct 2026. Flights and hotels are sample offers; food and transport are estimates. Photos are illustrative and buttons preview bookings only.")),"small")
         ],"column","l")
         """
       sources = [
