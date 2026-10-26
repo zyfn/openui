@@ -11,6 +11,7 @@ final class NativeMapComponentsTests: XCTestCase {
     let good: Value = .object([
       .init(key: "id", value: .string("a")), .init(key: "title", value: .string("Zero coordinates")),
       .init(key: "lat", value: .number(0)), .init(key: "lng", value: .number(0)),
+      .init(key: "url", value: .string("https://example.invalid/place?a=1")),
     ])
     let element = EvaluatedElement(typeName: "Map", props: [("points", .array([bad, good]))])
     let context = OpenUIComponentContext(element: element, registry: library.registry, state: state)
@@ -21,6 +22,7 @@ final class NativeMapComponentsTests: XCTestCase {
     XCTAssertNil(data.points.first?.imageSrc)
     XCTAssertNil(data.points.first?.subtitle)
     XCTAssertNil(data.points.first?.icon)
+    XCTAssertEqual(data.points.first?.url, "https://example.invalid/place?a=1")
     XCTAssertTrue(data.routes.isEmpty)
   }
   @MainActor func testMapIsAnOptInExtensionOfAll82StandardComponents() throws {

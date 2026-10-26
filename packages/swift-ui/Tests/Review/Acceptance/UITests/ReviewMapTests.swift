@@ -58,7 +58,13 @@ final class ReviewMapTests: ReviewTestCase {
     reveal(marker, in: app)
     marker.tap()
     XCTAssertTrue(app.staticTexts["当前地点：a"].waitForExistence(timeout: 3))
+    let openedURL = app.staticTexts["review.opened-url"]
+    XCTAssertTrue(!openedURL.exists || openedURL.label.isEmpty, "Swiping must not activate a place link")
+    let card = app.buttons["openui.map.place.a"]
+    card.tap()
+    XCTAssertEqual(app.staticTexts["review.opened-url"].label, "https://example.invalid/places/a?source=sdk")
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "map-default-place-link")
     app.terminate()
   }
 

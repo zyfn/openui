@@ -150,7 +150,7 @@ extension ReviewPrograms {
     .init(id: "map-places", title: "地点与默认信息卡", source: """
       $place="a"
       places=[
-        {id:"a",title:"街角展馆",subtitle:"建筑与展陈 · 留意细节",imageSrc:"/detail.jpg",icon:"building.columns",lat:30.245,lng:120.164},
+        {id:"a",title:"街角展馆",subtitle:"建筑与展陈 · 留意细节",imageSrc:"/detail.jpg",url:"https://example.invalid/places/a?source=sdk",icon:"building.columns",lat:30.245,lng:120.164},
         {id:"b",title:"河畔书屋",subtitle:"在水边，留一点阅读时间",imageSrc:"/object.jpg",icon:"book.closed",lat:30.251,lng:120.172},
         {id:"c",title:"一处没有图片的地点",lat:30.248,lng:120.167}
       ]

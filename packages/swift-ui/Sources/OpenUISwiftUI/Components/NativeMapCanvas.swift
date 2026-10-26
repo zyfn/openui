@@ -19,6 +19,7 @@ import SwiftUI
     let canInteract: Bool
     let accent: Color
     var bottomInset: CGFloat = 0
+    var trailingInset: CGFloat = 28
 
     func makeCoordinator() -> NativeMapCoordinator {
       NativeMapCoordinator(onSelection: { selection = $0 })
@@ -27,7 +28,7 @@ import SwiftUI
     func updateUIView(_ view: MKMapView, context: Context) {
       context.coordinator.onSelection = { selection = $0 }
       context.coordinator.update(
-        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset)
+        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset, trailingInset: trailingInset)
     }
     static func dismantleUIView(_ view: MKMapView, coordinator: NativeMapCoordinator) {
       view.delegate = nil
@@ -40,6 +41,7 @@ import SwiftUI
     let canInteract: Bool
     let accent: Color
     var bottomInset: CGFloat = 0
+    var trailingInset: CGFloat = 28
 
     func makeCoordinator() -> NativeMapCoordinator {
       NativeMapCoordinator(onSelection: { selection = $0 })
@@ -48,7 +50,7 @@ import SwiftUI
     func updateNSView(_ view: MKMapView, context: Context) {
       context.coordinator.onSelection = { selection = $0 }
       context.coordinator.update(
-        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset)
+        view, data: data, selected: selection, canInteract: canInteract, accent: accent, bottomInset: bottomInset, trailingInset: trailingInset)
     }
     static func dismantleNSView(_ view: MKMapView, coordinator: NativeMapCoordinator) {
       view.delegate = nil
@@ -97,6 +99,7 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
   private var lineColor = NativeMapColor.systemBlue
   private var interactive = false
   private var bottomInset: CGFloat = 0
+  private var trailingInset: CGFloat = 28
   private var userAdjustedCamera = false
   private var lastAccent: Color?
 
@@ -110,14 +113,15 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
 
   func update(
     _ view: MKMapView, data: NativeMapData, selected: OpenUIString?,
-    canInteract: Bool, accent: Color, bottomInset: CGFloat = 0
+    canInteract: Bool, accent: Color, bottomInset: CGFloat = 0, trailingInset: CGFloat = 28
   ) {
     interactive = canInteract
     let accentChanged = lastAccent != accent
     lastAccent = accent
     lineColor = NativeMapColor(accent)
-    let insetChanged = abs(self.bottomInset - bottomInset) > 0.5
+    let insetChanged = abs(self.bottomInset - bottomInset) > 0.5 || abs(self.trailingInset - trailingInset) > 0.5
     self.bottomInset = max(0, bottomInset)
+    self.trailingInset = max(28, trailingInset)
     #if os(iOS)
       view.isUserInteractionEnabled = canInteract
     #else
@@ -211,7 +215,7 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
       // Fit the geographic extent into the unobscured viewport, then express
       // that camera as a full map rect. This keeps card insets separate from
       // MapKit's own edge-padding projection and subsequent layout changes.
-      let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 56),
+      let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 28 - trailingInset),
                           height: max(1, view.bounds.height - bottomInset - 84))
       let scale = max(bounds.width / Double(usable.width), bounds.height / Double(usable.height))
       view.setVisibleMapRect(MKMapRect(
@@ -254,7 +258,7 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
   private func reveal(_ annotation: NativeMapAnnotation, in view: MKMapView) {
     guard view.bounds.height > bottomInset + 80 else { return }
     let point = view.convert(annotation.coordinate, toPointTo: view)
-    let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 56),
+    let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 28 - trailingInset),
                         height: max(1, view.bounds.height - bottomInset - 84))
     guard !usable.contains(point) else { return }
     let current = view.visibleMapRect
@@ -333,12 +337,12 @@ private final class NativeMapAnnotation: NSObject, MKAnnotation {
 /// Compact icon badges own a stable hit target. MapKit's automatic oversized
 /// marker expansion is not used, and no score or inferred category is displayed.
 private final class NativeMapMarkerView: MKAnnotationView {
-  private var symbol = "mappin.and.ellipse"
+  private var symbol = "location.fill"
   private var accent = NativeMapColor.systemBlue
   private var scale: CGFloat = 1
 
   func configure(icon: String?, accent: NativeMapColor, scale: CGFloat) {
-    symbol = icon ?? "mappin.and.ellipse"; self.accent = accent; self.scale = scale
+    symbol = icon ?? "location.fill"; self.accent = accent; self.scale = scale
     redraw()
   }
   override func setSelected(_ selected: Bool, animated: Bool) {
@@ -358,9 +362,14 @@ private final class NativeMapMarkerView: MKAnnotationView {
   #endif
   private func redraw() {
     let selected = isSelected
-    let size = CGSize(width: 44, height: 44)
-    let circle = CGRect(x: selected ? 3 : 6, y: selected ? 3 : 6,
-                        width: selected ? 38 : 32, height: selected ? 38 : 32)
+    let size = CGSize(width: 44, height: 52)
+    centerOffset = CGPoint(x: 0, y: -23)
+    let outline = CGMutablePath()
+    outline.move(to: CGPoint(x: 22, y: 49))
+    outline.addLine(to: CGPoint(x: 15.82, y: 41.02))
+    outline.addArc(center: CGPoint(x: 22, y: 22), radius: 20,
+      startAngle: .pi * 0.6, endAngle: .pi * 0.4, clockwise: false)
+    outline.closeSubpath()
     #if os(iOS)
     let surface = NativeMapColor.systemBackground
     #else
@@ -378,10 +387,10 @@ private final class NativeMapMarkerView: MKAnnotationView {
     func background(_ context: CGContext) {
       context.setShadow(offset: CGSize(width: 0, height: 2), blur: 4,
                         color: NativeMapColor.black.withAlphaComponent(0.16).cgColor)
-      context.setFillColor(fill.cgColor); context.fillEllipse(in: circle)
+      context.setFillColor(fill.cgColor); context.addPath(outline); context.fillPath()
       context.setShadow(offset: .zero, blur: 0, color: nil)
       context.setStrokeColor(NativeMapColor.white.withAlphaComponent(0.95).cgColor)
-      context.setLineWidth(2); context.strokeEllipse(in: circle.insetBy(dx: 1, dy: 1))
+      context.setLineWidth(selected ? 2 : 1.5); context.addPath(outline); context.strokePath()
     }
     #if os(iOS)
     let format = UIGraphicsImageRendererFormat(); format.scale = max(1, scale)
@@ -389,7 +398,7 @@ private final class NativeMapMarkerView: MKAnnotationView {
       background(drawing.cgContext)
       let glyph = UIImage(systemName: glyphSymbol,
         withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold))
-        ?? UIImage(systemName: "mappin.and.ellipse")
+        ?? UIImage(systemName: "location.fill")
       if let glyph { glyph.withTintColor(glyphColor, renderingMode: .alwaysOriginal).draw(in: glyphRect(glyph.size)) }
     }
     layer.zPosition = selected ? 10 : 0
@@ -398,7 +407,7 @@ private final class NativeMapMarkerView: MKAnnotationView {
       guard let context = NSGraphicsContext.current?.cgContext else { return false }
       background(context)
       let glyph = NSImage(systemSymbolName: glyphSymbol, accessibilityDescription: nil)
-        ?? NSImage(systemSymbolName: "mappin.and.ellipse", accessibilityDescription: nil)
+        ?? NSImage(systemSymbolName: "location.fill", accessibilityDescription: nil)
       if let glyph { glyph.withSymbolConfiguration(.init(paletteColors: [glyphColor]))?.draw(in: glyphRect(glyph.size)) }
       return true
     }
