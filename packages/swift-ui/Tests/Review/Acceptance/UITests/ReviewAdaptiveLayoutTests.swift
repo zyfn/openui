@@ -4,11 +4,13 @@ import XCTest
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
   func testAttractionPlansExposePricesAndKeepBudgetTotalsConsistent() {
-    let day = launch("scene-day-trip", language: "en")
+    let day = launch("scene-day-trip", inspect: true, language: "en")
     let museum = day.staticTexts["€64"].firstMatch
     reveal(museum, in: day)
     XCTAssertTrue(museum.exists)
     XCTAssertTrue(day.buttons["Book tickets"].firstMatch.exists)
+    day.buttons["Book tickets"].firstMatch.tap()
+    XCTAssertEqual(day.staticTexts["review.opened-url"].label, "https://ticket.louvre.fr/en")
     let cruise = day.staticTexts["€36"].firstMatch
     reveal(cruise, in: day)
     XCTAssertTrue(cruise.exists)
