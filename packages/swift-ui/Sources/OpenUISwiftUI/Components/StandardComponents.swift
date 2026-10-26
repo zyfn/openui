@@ -19,6 +19,7 @@ public enum OpenUIStandardComponents {
             OpenUIReference.component("Card") { context in
                 OpenUIStack(context: context)
                     .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant")))
+                    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
             }
         ]
         let byName = Dictionary(uniqueKeysWithValues: implementations.map { ($0.definition.name, $0) })

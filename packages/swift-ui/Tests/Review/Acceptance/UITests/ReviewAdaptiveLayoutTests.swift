@@ -3,6 +3,20 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
+  func testOverviewFactsShareTheAvailableRowWidth() {
+    let app = launch("scene-two-day-trip", language: "en")
+    let labels = ["2 people", "2 days", "4 places"].map { app.staticTexts[$0].firstMatch }
+    for label in labels { XCTAssertTrue(label.waitForExistence(timeout: 5)) }
+    let available = app.windows.firstMatch.frame.width - 40
+    let width = (available - 16) / 3
+    for (index, label) in labels.enumerated() {
+      XCTAssertEqual(label.frame.midX, 20 + width / 2 + CGFloat(index) * (width + 8), accuracy: 3)
+      XCTAssertEqual(label.frame.midY, labels[0].frame.midY, accuracy: 2)
+    }
+    capture(app, name: "overview-equal-width-facts")
+    app.terminate()
+  }
+
   func testStayLinksLeaveTheRecommendedBudgetUnchanged() {
     let app = launch("scene-two-day-trip", inspect: true, language: "en")
     let title = app.staticTexts["Left Bank · garden double"].firstMatch

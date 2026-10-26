@@ -28,9 +28,9 @@ enum ReviewScenePrograms {
           TextContent(\(q("巴黎，一天也能从容", "Paris, at your own pace")),"large-heavy"),
           TextContent(\(q("2026 年 11 月 5 日", "5 November 2026")),"small"),
           Stack([
-            OverviewCardItem("party",Text("text",\(q("2 人", "2 people")),null,"text","lg")),
-            OverviewCardItem("duration",Text("text",\(q("1 天", "1 day")),null,"text","lg")),
-            OverviewCardItem("places",Text("text",\(q("3 处景点", "3 places")),null,"text","lg"))
+            OverviewCardItem("party",IconText(Icon("users"),"neutral","m",\(q("2 人", "2 people")),null,true,"vertical")),
+            OverviewCardItem("duration",IconText(Icon("calendar-days"),"neutral","m",\(q("1 天", "1 day")),null,true,"vertical")),
+            OverviewCardItem("places",IconText(Icon("map-pin"),"neutral","m",\(q("3 处景点", "3 places")),null,true,"vertical"))
           ],"row","s","stretch","start",false),
           TextContent(\(q("上午看艺术，午后逛左岸，傍晚到铁塔附近乘船；把参观和休息串成一条路线。", "Art in the morning, the Left Bank after lunch, then a cruise near the tower. Keep time for breaks between visits."))),
           InlineHeader(\(q("值得停留的三个地方", "Three places worth your time"))),
@@ -123,9 +123,9 @@ enum ReviewScenePrograms {
           TextContent(\(q("巴黎两日，艺术与塞纳河", "Paris, art and the Seine")),"large-heavy"),
           TextContent(\(q("2026 年 11 月 5–6 日", "5–6 November 2026")),"small"),
           Stack([
-            OverviewCardItem("party",Text("text",\(q("2 人", "2 people")),null,"text","lg")),
-            OverviewCardItem("duration",Text("text",\(q("2 天", "2 days")),null,"text","lg")),
-            OverviewCardItem("places",Text("text",\(q("4 处景点", "4 places")),null,"text","lg"))
+            OverviewCardItem("party",IconText(Icon("users"),"neutral","m",\(q("2 人", "2 people")),null,true,"vertical")),
+            OverviewCardItem("duration",IconText(Icon("calendar-days"),"neutral","m",\(q("2 天", "2 days")),null,true,"vertical")),
+            OverviewCardItem("places",IconText(Icon("map-pin"),"neutral","m",\(q("4 处景点", "4 places")),null,true,"vertical"))
           ],"row","s","stretch","start",false),
           TextContent(\(q("推荐早班抵达、傍晚返程，住左岸。第一天看艺术、逛街区，第二天把铁塔和游船放在一起，少走回头路。", "Take an early flight in and an evening flight home, with a base on the Left Bank. Pair art and neighborhood walks on day one, then the tower and a river cruise on day two."))),
           InlineHeader(\(q("两天这样走", "Your two days"))),

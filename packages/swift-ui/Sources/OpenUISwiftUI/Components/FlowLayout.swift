@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// A surface can opt into sharing a row's available main-axis space.
+/// Content such as text, controls and images keeps its intrinsic negotiation.
+struct OpenUIFlexGrowKey: LayoutValueKey {
+    static let defaultValue = false
+}
+
 /// Pure placement is also used by tests; no global display state is consulted.
 enum OpenUIFlowPlacement {
     static func frames(sizes: [CGSize], width: CGFloat, gap: CGFloat, align: String, justify: String,
@@ -85,6 +91,15 @@ struct OpenUIFlexLayout: Layout {
                 let offered = min(ideal[index].width, remaining / CGFloat(order.count - position))
                 proposals[index] = max(0, offered)
                 remaining = max(0, remaining - subviews[index].sizeThatFits(ProposedViewSize(width: offered, height: nil)).width)
+            }
+            let growing = subviews.indices.filter { subviews[$0][OpenUIFlexGrowKey.self] }
+            if !growing.isEmpty {
+                let intrinsicWidth = subviews.indices.filter { !subviews[$0][OpenUIFlexGrowKey.self] }
+                    .reduce(CGFloat.zero) { sum, index in
+                        sum + subviews[index].sizeThatFits(ProposedViewSize(width: proposals[index], height: nil)).width
+                    }
+                let share = max(0, width - gap * CGFloat(subviews.count - 1) - intrinsicWidth) / CGFloat(growing.count)
+                for index in growing { proposals[index] = share }
             }
         }
         var dimensions = subviews.indices.map {
@@ -179,7 +194,7 @@ enum NativeMediaRowPlacement {
         let beside = copy(remaining)
         if axis == .vertical {
             let textFrame = CGRect(x: 0, y: media.height + gap, width: full.width, height: full.height)
-            return Result(media: CGRect(origin: .zero, size: media), text: textFrame,
+            return Result(media: CGRect(origin: CGPoint(x: centered ? max(0, (width - media.width) / 2) : 0, y: 0), size: media), text: textFrame,
                           size: CGSize(width: max(width, max(media.width, full.width)), height: textFrame.maxY), stacked: true)
         }
 

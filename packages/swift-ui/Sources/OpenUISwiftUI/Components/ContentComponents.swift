@@ -218,7 +218,10 @@ struct NativeMediaText: View {
         NativeMediaRow(axis: context.string("layout") == "vertical" ? .vertical : .horizontal,
           gap: media == .icon && !hasIconBadge ? context.theme.contentSpacing * 2 / 3 : context.theme.contentSpacing,
           centered: true,
-          media: { leadingMedia }, copy: { words })
+          media: { leadingMedia }, copy: {
+            words.frame(maxWidth: .infinity, alignment: context.string("layout") == "vertical" ? .center : .leading)
+              .multilineTextAlignment(context.string("layout") == "vertical" ? .center : .leading)
+          })
       }
     }
   }
@@ -595,13 +598,13 @@ struct NativeCardItem: View {
         }
       case "Overview":
         HStack(alignment: .top, spacing: 8) {
-          context.slot("top")
+          context.slot("top").frame(maxWidth: .infinity, alignment: .center)
           if isAction {
             Spacer(minLength: 0)
             actionIndicator
           }
         }
-        context.slot("bottom")
+        context.slot("bottom").frame(maxWidth: .infinity, alignment: .center)
       case "Context":
         context.slot("title").font(context.theme.typography.caption)
           .foregroundStyle(contentTheme.secondary)
@@ -651,6 +654,7 @@ struct NativeCardItem: View {
         : context.string("bgColor") == "gray" ? context.theme.surface : nil,
       bordered: artworkSource == nil && kind != "Overview" && context.string("bgColor") != "gray"))
     .environment(\.openUIActionDensity, .compact)
+    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
   }
 }
 
