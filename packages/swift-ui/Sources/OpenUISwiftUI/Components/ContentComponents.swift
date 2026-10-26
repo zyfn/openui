@@ -214,6 +214,7 @@ struct NativeMediaText: View {
             .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
           words
         }.frame(maxWidth: .infinity, alignment: .leading)
+          .fixedSize(horizontal: false, vertical: true)
       } else {
         NativeMediaRow(axis: context.string("layout") == "vertical" ? .vertical : .horizontal,
           gap: media == .icon && !hasIconBadge ? context.theme.contentSpacing * 2 / 3 : context.theme.contentSpacing,

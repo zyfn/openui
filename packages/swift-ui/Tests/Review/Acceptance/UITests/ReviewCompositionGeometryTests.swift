@@ -73,6 +73,30 @@ final class ReviewCompositionGeometryTests: ReviewTestCase {
 }
 
 extension ReviewCompositionGeometryTests {
+  func testCarouselCoverKeepsItsWidthAndDoesNotCreateAnEmptyFooterRegion() {
+    let app = launch("scene-shopping", language: "zh-Hans")
+    let price = app.staticTexts["¥5,200"].firstMatch
+    reveal(price, in: app)
+    XCTAssertTrue(price.waitForExistence(timeout: 8))
+    let image = app.images["A · 轻装出发套装"].firstMatch
+    let description = app.staticTexts["轻量机身与标准变焦，适合全天随身。"].firstMatch
+    let pager = app.descendants(matching: .any)
+      .matching(identifier: "openui.card-block.composite.pager").firstMatch
+    XCTAssertTrue(image.exists)
+    XCTAssertTrue(description.exists)
+    let gap = price.frame.minY - description.frame.maxY
+    let evidence = XCTAttachment(string: "image=\(image.frame); pager=\(pager.frame); description=\(description.frame); price=\(price.frame); gap=\(gap)")
+    evidence.name = "carousel-cover-footer-geometry"
+    evidence.lifetime = .keepAlways
+    add(evidence)
+    capture(app, name: "carousel-cover-and-footer")
+    XCTAssertGreaterThanOrEqual(image.frame.width, pager.frame.width - 90,
+      "The cover fills its page content width, allowing only padding, spacing and the next-page peek")
+    XCTAssertLessThanOrEqual(gap, 48,
+      "These similarly sized peer cards must not create a large empty region above their footers")
+    app.terminate()
+  }
+
   func testSavedCompositeGridKeepsFooterNearItsBody() throws {
     guard Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json") != nil else {
       throw XCTSkip("Provide the unchanged composite grid source")
