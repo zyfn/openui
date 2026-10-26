@@ -17,6 +17,12 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     let total = day.staticTexts["€240"].firstMatch
     reveal(total, in: day)
     XCTAssertTrue(total.exists)
+    let map = day.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
+    reveal(map, in: day)
+    for id in ["louvre", "germain", "cruise", "deux-magots"] {
+      XCTAssertTrue(day.descendants(matching: .any)
+        .matching(identifier: "openui.map.marker." + id).firstMatch.waitForExistence(timeout: 5))
+    }
     XCTAssertFalse(day.staticTexts["review.errors"].exists)
     capture(day, name: "one-day-attractions-budget")
     day.terminate()

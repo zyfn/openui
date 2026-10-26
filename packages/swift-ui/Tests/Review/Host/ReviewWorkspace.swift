@@ -4,6 +4,7 @@ import SwiftUI
 
 @MainActor
 struct ReviewWorkspace: View {
+  @Environment(\.openURL) private var openURL
   @Environment(\.horizontalSizeClass) private var sizeClass
   private let library: OpenUIComponentLibrary
   private let programs: [ReviewProgram]
@@ -189,6 +190,13 @@ struct ReviewWorkspace: View {
     state.onStateUpdate = { [evidence] in evidence.capture($0) }
     state.onAction = { event in
       evidence.record(event)
+      if event.type.displayString == "open_url",
+        case .string(let raw)? = event.params.last(where: { $0.0 == "url" })?.1,
+        let url = URL(string: raw.displayString), ["https", "http"].contains(url.scheme ?? "") {
+        if configuration.inspector { evidence.openedURL = url.absoluteString }
+        else { openURL(url) }
+        return
+      }
       // The ordinary ToAssistant action terminates at this review host. There
       // is no checkout provider, order API, or purchase behavior in the SDK.
       purchasePreview = ReviewPurchasePreview(event: event)
