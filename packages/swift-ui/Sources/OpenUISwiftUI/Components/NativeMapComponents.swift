@@ -252,13 +252,6 @@ private struct NativeMapBlock: View {
       else { localSelection = next }
     })
   }
-  private var ratio: CGFloat {
-    switch context.string("size") {
-    case "compact": return 16 / 10
-    case "expanded": return 3 / 4
-    default: return 4 / 3
-    }
-  }
   var body: some View {
     Group {
       if data.points.isEmpty && data.routes.isEmpty {
@@ -286,7 +279,7 @@ private struct NativeMapBlock: View {
     }
   }
   private func presentation(height: CGFloat?, expands: Bool) -> some View {
-    NativeMapPresentation(context: context, data: data, selection: selection, ratio: ratio,
+    NativeMapPresentation(context: context, data: data, selection: selection,
       imposedHeight: height, expand: expands ? { expanded = true } : nil)
   }
   private var fullMap: some View {
@@ -304,6 +297,21 @@ private struct NativeMapBlock: View {
   }
 }
 
+/// Inline sizes remain bounded reading surfaces. Fullscreen expansion
+/// supplies its own height, independent of these document presentation limits.
+enum NativeMapViewport {
+  static func height(width: CGFloat, size: String?) -> CGFloat {
+    let ratio: CGFloat
+    let maximum: CGFloat
+    switch size {
+    case "compact": ratio = 16 / 10; maximum = 240
+    case "expanded": ratio = 1; maximum = 360
+    default: ratio = 4 / 3; maximum = 300
+    }
+    return min(maximum, max(160, width / ratio))
+  }
+}
+
 /// The viewport height depends only on the container width and declared size.
 /// Page measurements reserve camera space without feeding back into map height.
 /// Ordinary cards retain their content height; only overflowing pages scroll.
@@ -311,7 +319,6 @@ private struct NativeMapPresentation: View {
   let context: OpenUIComponentContext
   let data: NativeMapData
   @Binding var selection: OpenUIString?
-  let ratio: CGFloat
   let imposedHeight: CGFloat?
   let expand: (() -> Void)?
   @State private var width: CGFloat = 0
@@ -334,10 +341,14 @@ private struct NativeMapPresentation: View {
   }
   private var hasContent: Bool { selection.map(contentIDs.contains) == true }
   private let contentPadding: CGFloat = 12
-  private var height: CGFloat { imposedHeight ?? max(160, width / ratio) }
+  private var height: CGFloat {
+    imposedHeight ?? NativeMapViewport.height(width: width, size: context.string("size"))
+  }
   // Leave room above the card for the native map control; long custom content
   // stays reachable through the pager instead of growing the document viewport.
-  private var maximumCardHeight: CGFloat { max(44, height - 44 - 2 * contentPadding) }
+  private var maximumCardHeight: CGFloat {
+    max(44, min(height * 0.45, height - 44 - 2 * contentPadding))
+  }
   private var inset: CGFloat {
     hasContent ? min(contentHeight, maximumCardHeight) + 2 * contentPadding : 0
   }
@@ -370,7 +381,9 @@ private struct NativeMapPresentation: View {
     if let selected = selection, contentIDs.contains(selected) {
       NativePager(ids: contentIDs, selection: Binding(get: { selection ?? selected }, set: { selection = $0 }),
         enabled: context.canInteract, identifier: "openui.map", showsControls: false,
-        maximumHeight: maximumCardHeight) { id in
+        maximumHeight: maximumCardHeight,
+        maximumPageWidth: contentIDs.count > 1 ? context.theme.maximumCarouselCardWidth : nil,
+        trailingPeek: 20, pageSpacing: 8) { id in
           if usesDefaultCard(id), let point = data.points.first(where: { $0.id == id }) {
             NativeMapPlaceCard(point: point, theme: context.theme)
           } else {

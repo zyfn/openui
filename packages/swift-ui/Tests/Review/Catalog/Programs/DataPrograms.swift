@@ -157,7 +157,7 @@ extension ReviewPrograms {
       root=Stack([
         TextContent("把地点放回地图","large-heavy"),
         TextContent("点按图标，或横滑地点卡片。信息来自同一组地点。","small"),
-        Map(places,[],$place,"regular","gcj02"),
+        Map(places,[],$place,"expanded","gcj02"),
         TextContent("当前地点："+$place,"small"),
         TextContent("坐标为 SDK 交互示例；没有提供评分、实时路线或开放信息。","small")
       ],"column","m")

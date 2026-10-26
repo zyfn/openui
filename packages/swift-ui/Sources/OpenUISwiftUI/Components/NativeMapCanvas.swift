@@ -60,7 +60,7 @@ import SwiftUI
   let view = NativeSizingMapView()
   view.onSizeChange = { [weak coordinator] view in coordinator?.viewportChanged(view) }
   view.delegate = coordinator
-  view.mapType = .mutedStandard
+  view.mapType = .standard
   view.pointOfInterestFilter = .excludingAll
   view.showsUserLocation = false
   view.isRotateEnabled = false
@@ -190,6 +190,7 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
   }
 
   private func fit(_ view: MKMapView) {
+    guard view.bounds.width > 0, view.bounds.height > 0 else { return }
     var bounds = MKMapRect.null
     for annotation in view.annotations.compactMap({ $0 as? NativeMapAnnotation }) {
       let point = MKMapPoint(annotation.coordinate)
@@ -207,15 +208,17 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
         bounds = MKMapRect(x: center.x - radius, y: center.y - radius,
                           width: radius * 2, height: radius * 2)
       }
-      #if os(iOS)
-        view.setVisibleMapRect(
-          bounds,
-          edgePadding: UIEdgeInsets(top: 56, left: 28, bottom: 28 + bottomInset, right: 28), animated: false)
-      #else
-        view.setVisibleMapRect(
-          bounds,
-          edgePadding: NSEdgeInsets(top: 56, left: 28, bottom: 28 + bottomInset, right: 28), animated: false)
-      #endif
+      // Fit the geographic extent into the unobscured viewport, then express
+      // that camera as a full map rect. This keeps card insets separate from
+      // MapKit's own edge-padding projection and subsequent layout changes.
+      let usable = CGRect(x: 28, y: 56, width: max(1, view.bounds.width - 56),
+                          height: max(1, view.bounds.height - bottomInset - 84))
+      let scale = max(bounds.width / Double(usable.width), bounds.height / Double(usable.height))
+      view.setVisibleMapRect(MKMapRect(
+        x: bounds.midX - Double(usable.midX) * scale,
+        y: bounds.midY - Double(usable.midY) * scale,
+        width: Double(view.bounds.width) * scale,
+        height: Double(view.bounds.height) * scale), animated: false)
     }
   }
 
@@ -255,12 +258,21 @@ final class NativeMapCoordinator: NSObject, MKMapViewDelegate {
                         height: max(1, view.bounds.height - bottomInset - 84))
     guard !usable.contains(point) else { return }
     let current = view.visibleMapRect
-    let location = MKMapPoint(annotation.coordinate)
-    let offset = current.height * Double(bottomInset) / Double(view.bounds.height) / 2
+    let dx = Double((point.x - usable.midX) / view.bounds.width) * current.width
+    let dy = Double((point.y - usable.midY) / view.bounds.height) * current.height
     applying = true
-    view.setVisibleMapRect(MKMapRect(x: location.x - current.width / 2,
-      y: location.y - current.height / 2 + offset, width: current.width, height: current.height), animated: false)
+    view.setVisibleMapRect(MKMapRect(x: current.minX + dx, y: current.minY + dy,
+      width: current.width, height: current.height), animated: false)
     applying = false
+  }
+
+  func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+    guard !applying, !userAdjustedCamera,
+      let selected = mapView.selectedAnnotations.compactMap({ $0 as? NativeMapAnnotation }).first
+    else { return }
+    // MapKit can settle its projection after a viewport/card measurement.
+    // Keep the selected marker inside the unobscured area once that settles.
+    reveal(selected, in: mapView)
   }
 
   func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
@@ -314,12 +326,12 @@ private final class NativeMapAnnotation: NSObject, MKAnnotation {
 /// Compact icon badges own a stable hit target. MapKit's automatic oversized
 /// marker expansion is not used, and no score or inferred category is displayed.
 private final class NativeMapMarkerView: MKAnnotationView {
-  private var symbol = "mappin"
+  private var symbol = "mappin.and.ellipse"
   private var accent = NativeMapColor.systemBlue
   private var scale: CGFloat = 1
 
   func configure(icon: String?, accent: NativeMapColor, scale: CGFloat) {
-    symbol = icon ?? "mappin"; self.accent = accent; self.scale = scale
+    symbol = icon ?? "mappin.and.ellipse"; self.accent = accent; self.scale = scale
     redraw()
   }
   override func setSelected(_ selected: Bool, animated: Bool) {
@@ -368,7 +380,9 @@ private final class NativeMapMarkerView: MKAnnotationView {
     let format = UIGraphicsImageRendererFormat(); format.scale = max(1, scale)
     image = UIGraphicsImageRenderer(size: size, format: format).image { drawing in
       background(drawing.cgContext)
-      let glyph = UIImage(systemName: glyphSymbol) ?? UIImage(systemName: "mappin")
+      let glyph = UIImage(systemName: glyphSymbol,
+        withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold))
+        ?? UIImage(systemName: "mappin.and.ellipse")
       if let glyph { glyph.withTintColor(glyphColor, renderingMode: .alwaysOriginal).draw(in: glyphRect(glyph.size)) }
     }
     layer.zPosition = selected ? 10 : 0
@@ -377,7 +391,7 @@ private final class NativeMapMarkerView: MKAnnotationView {
       guard let context = NSGraphicsContext.current?.cgContext else { return false }
       background(context)
       let glyph = NSImage(systemSymbolName: glyphSymbol, accessibilityDescription: nil)
-        ?? NSImage(systemSymbolName: "mappin", accessibilityDescription: nil)
+        ?? NSImage(systemSymbolName: "mappin.and.ellipse", accessibilityDescription: nil)
       if let glyph { glyph.withSymbolConfiguration(.init(paletteColors: [glyphColor]))?.draw(in: glyphRect(glyph.size)) }
       return true
     }

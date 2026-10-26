@@ -2,6 +2,30 @@ import UIKit
 import XCTest
 
 final class ReviewMapTests: ReviewTestCase {
+  func testSavedMapKeepsItsPointsAboveTheProvidedContent() throws {
+    guard Bundle(for: Self.self).url(forResource: "ReviewProgram", withExtension: "openui") != nil else {
+      throw XCTSkip("Provide an unchanged saved program through --review-program")
+    }
+    let app = launch("review")
+    let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
+    let pager = app.descendants(matching: .any).matching(identifier: "openui.map.pager").firstMatch
+    XCTAssertTrue(map.waitForExistence(timeout: 5))
+    XCTAssertTrue(pager.waitForExistence(timeout: 5))
+    XCTAssertLessThanOrEqual(map.frame.height, map.frame.width + 2)
+    let markers = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "identifier BEGINSWITH %@", "openui.map.marker."))
+    let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      let frames = markers.allElementsBoundByIndex.map(\.frame)
+      return !frames.isEmpty && frames.allSatisfy {
+        $0.minY >= map.frame.minY && $0.maxY <= pager.frame.minY
+      }
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 8), .completed,
+      "Fitting supplied points must account for the measured preview, including unselected points")
+    capture(app, name: "map-saved-program-inline")
+    app.terminate()
+  }
+
   func testDefaultPlaceCardsUseSuppliedFactsAndSynchronizeWithIconMarkers() {
     let app = launch("map-places", inspect: true)
     let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
@@ -10,8 +34,20 @@ final class ReviewMapTests: ReviewTestCase {
     XCTAssertTrue(pager.waitForExistence(timeout: 5))
     reveal(pager, in: app)
     XCTAssertGreaterThan(pager.frame.height, 60)
+    XCTAssertLessThanOrEqual(map.frame.height, map.frame.width + 2,
+      "The expanded inline map does not become a portrait panel")
+    XCTAssertLessThanOrEqual(map.frame.height, 360,
+      "Inline maps do not grow to document-sized panels")
+    XCTAssertLessThanOrEqual(pager.frame.height, map.frame.height * 0.45 + 2,
+      "Place pages leave the majority of the viewport available for geography")
     XCTAssertGreaterThanOrEqual(pager.frame.minY, map.frame.minY)
     XCTAssertLessThanOrEqual(pager.frame.maxY, map.frame.maxY + 2)
+    let initialMarker = app.descendants(matching: .any).matching(identifier: "openui.map.marker.a").firstMatch
+    let visibleMarker = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      initialMarker.exists && initialMarker.frame.maxY <= pager.frame.minY
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [visibleMarker], timeout: 5), .completed,
+      "The selected point must remain fully above its place preview after camera layout settles")
     XCTAssertFalse(app.staticTexts["openui.map.page"].exists)
     XCTAssertFalse(app.buttons["openui.map.next"].exists)
     capture(app, name: "map-default-icon-markers-and-place-card")
