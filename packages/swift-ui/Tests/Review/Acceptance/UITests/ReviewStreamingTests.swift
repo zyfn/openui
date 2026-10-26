@@ -39,6 +39,20 @@ final class ReviewStreamingTests: ReviewTestCase {
     app.terminate()
   }
 
+  func testLongTwoDayProgramCompletesAndEnablesItsActions() {
+    let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
+    app.launchArguments = ["--case", "scene-two-day-trip", "--language", "en", "-AppleLanguages", "(en)"]
+    app.launch()
+    let replay = app.buttons["review.replay"]
+    XCTAssertTrue(replay.waitForExistence(timeout: 10))
+    let ready = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed)
+    XCTAssertTrue(app.buttons["Day 1 · Art"].isEnabled)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    app.terminate()
+  }
+
   private func stream(_ mode: String, language: String = "zh-Hans") -> XCUIApplication {
     continueAfterFailure = false
     let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")

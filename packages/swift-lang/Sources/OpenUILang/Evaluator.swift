@@ -61,10 +61,17 @@ public final class Evaluator {
         return EvaluatedElement(typeName: element.typeName)
     } }
     public func evaluateRoot(_ result: ParseResult) -> EvaluatedElement? { core.sync {
-        let diagnostics = core.array([]), js = core.object()
-        js.setValue(result.root.map { core.materialized(.element($0)) } ?? JSValue(nullIn: core.context)!, forProperty: "root")
-        if let expression = result.rootExpression { js.setValue(core.ast(expression), forProperty: "rootExpression") }
-        let value = core.call("root", [js, jsContext(), core.library(schema), JSValue(nullIn: core.context)!, diagnostics])
+        let diagnostics = core.array([])
+        let js: JSValue
+        if let snapshot = result.coreSnapshot, snapshot.matches(result) {
+            js = snapshot.value
+        } else {
+            js = core.object()
+            js.setValue(result.root.map { core.materialized(.element($0)) } ?? JSValue(nullIn: core.context)!, forProperty: "root")
+            if let expression = result.rootExpression { js.setValue(core.ast(expression), forProperty: "rootExpression") }
+        }
+        let contextValue = jsContext(), libraryValue = core.library(schema)
+        let value = core.call("root", [js, contextValue, libraryValue, JSValue(nullIn: core.context)!, diagnostics])
         errors += core.items(diagnostics).map(core.error)
         if case .element(let node) = core.decode(value) { return node };return nil
     } }

@@ -207,12 +207,25 @@ struct ReviewWorkspace: View {
     guard !configuration.instant, scenario != nil, manualSource == nil,
       let source = program?.source else { return }
     let generation = playbackGeneration
-    let characters = Array(source)
-    for start in stride(from: 0, to: characters.count, by: 160) {
+    // Coalesce transport text at line boundaries. Large JSON input records
+    // arrive intact, while every update still passes through SDK push/complete.
+    var chunks: [String] = []
+    var pending = ""
+    let lines = source.components(separatedBy: "\n")
+    for (index, line) in lines.enumerated() {
+      let piece = line + (index < lines.count - 1 ? "\n" : "")
+      if !pending.isEmpty && pending.count + piece.count > 1_800 {
+        chunks.append(pending)
+        pending = ""
+      }
+      pending += piece
+    }
+    if !pending.isEmpty { chunks.append(pending) }
+    for chunk in chunks {
       guard !Task.isCancelled, generation == playbackGeneration, scenario != nil,
         manualSource == nil else { return }
-      state.push(String(characters[start..<min(start + 160, characters.count)]))
-      try? await Task.sleep(nanoseconds: 60_000_000)
+      state.push(chunk)
+      try? await Task.sleep(nanoseconds: 250_000_000)
     }
     guard !Task.isCancelled, generation == playbackGeneration, scenario != nil,
       manualSource == nil else { return }

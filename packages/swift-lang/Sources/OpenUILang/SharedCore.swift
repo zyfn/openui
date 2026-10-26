@@ -1,6 +1,26 @@
 import Foundation
 import JavaScriptCore
 
+/// JSValue is used only while holding SharedCore's serialized realm lock.
+final class CoreParseSnapshot: @unchecked Sendable {
+    let value: JSValue
+    let root: ElementNode?
+    let expression: ASTNode?
+
+    init(value: JSValue, root: ElementNode?, expression: ASTNode?) {
+        self.value = value
+        self.root = root
+        self.expression = expression
+    }
+
+    func matches(_ result: ParseResult) -> Bool {
+        guard root == result.root, expression == result.rootExpression else { return false }
+        return root?.statementId == result.root?.statementId
+            && root?.partial == result.root?.partial
+            && root?.hasDynamicProps == result.root?.hasDynamicProps
+    }
+}
+
 enum LangCoreResources {
     static let bundle = resolve(in: .main) { .module }
 
@@ -361,7 +381,7 @@ extension SharedCore {
     }
     func parseResult(_ js: JSValue) -> ParseResult {
         let meta = js.forProperty("meta")!
-        let result = ParseResult(root: js.forProperty("root").isNull ? nil : element(js.forProperty("root")),
+        var result = ParseResult(root: js.forProperty("root").isNull ? nil : element(js.forProperty("root")),
             rootExpression: js.forProperty("rootExpression").isUndefined ? nil : decodeAST(js.forProperty("rootExpression")),
             meta: ParseMeta(incomplete: meta.forProperty("incomplete").toBool(), unresolved: items(meta.forProperty("unresolved")).map { $0.toString() }, orphaned: items(meta.forProperty("orphaned")).map { $0.toString() }, statementCount: Int(meta.forProperty("statementCount").toInt32()), errors: items(meta.forProperty("errors")).map(error)),
             stateDeclarations: entries(js.forProperty("stateDeclarations")).map { ($0.0.displayString, .stateDefault(StateDefault(materialized($0.1)))) },
@@ -371,6 +391,7 @@ extension SharedCore {
             }, mutationStatements: items(js.forProperty("mutationStatements")).map { m in
                 MutationStatementInfo(statementId: m.forProperty("statementId").toString(), toolAST: m.forProperty("toolAST").isUndefined ? nil : decodeAST(m.forProperty("toolAST")), argsAST: m.forProperty("argsAST").isUndefined ? nil : decodeAST(m.forProperty("argsAST")))
             })
+        result.coreSnapshot = CoreParseSnapshot(value: js, root: result.root, expression: result.rootExpression)
         return result
     }
 }

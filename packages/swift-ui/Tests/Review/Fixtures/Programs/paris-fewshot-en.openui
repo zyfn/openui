@@ -13,77 +13,10 @@ stayCost=recommendedStay.pricePerRoomNight*trip.rooms*trip.nights
 visitCost=(input.places[0].unitPrice+input.places[1].unitPrice+input.places[2].unitPrice+input.places[3].unitPrice)*trip.adults
 total=flightCost+stayCost+visitCost+input.budgetAssumptions.food+input.budgetAssumptions.localTransport+input.budgetAssumptions.buffer
 heading=Stack([TextContent("Paris, two days and one night","large-heavy"),TextContent("5–6 November 2026 · two adults","small")],"column","s")
-overview=Stack([
- OverviewCardItem("people",IconText(Icon("users"),"neutral","m",trip.adults+" people",null,true,"vertical")),
- OverviewCardItem("days",IconText(Icon("calendar-days"),"neutral","m",trip.days+" days",null,true,"vertical")),
- OverviewCardItem("nights",IconText(Icon("moon"),"neutral","m",trip.nights+" night",null,true,"vertical"))
-],"row","s","stretch","start",false)
-itinerary=Stack([InlineHeader("Your two days"),Buttons([
- Button("Day 1 · Art",@Set($day,"day1"),$day=="day1"?"primary":"secondary",null,"small"),
- Button("Day 2 · Seine",@Set($day,"day2"),$day=="day2"?"primary":"secondary",null,"small")
-]),$day=="day1"?Stack([
- TextContent("Leave bags after arrival. Visit the Louvre in the afternoon, then cross the Seine to the Left Bank.","small"),
- Stack([
-  Image(input.places[0].name,input.places[0].image),
-  Stack([TextContent(input.places[0].name,"small-heavy"),TagBlock(input.places[0].tags,"sm"),TextContent(input.places[0].description,"small"),
-    Stack([BoldText("number",currency+(input.places[0].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[0].booking?"Book":"Details",@OpenUrl(input.places[0].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),Separator(),Stack([
-  Image(input.places[1].name,input.places[1].image),
-  Stack([TextContent(input.places[1].name,"small-heavy"),TagBlock(input.places[1].tags,"sm"),TextContent(input.places[1].description,"small"),
-    Stack([BoldText("number",currency+(input.places[1].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[1].booking?"Book":"Details",@OpenUrl(input.places[1].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),Separator(),
- ListBlock([ListItem(input.places[4].name,input.places[4].description,{src:input.places[4].image,alt:input.places[4].name})],"image")
-],"column","m"):Stack([
- Stack([
-  Image(input.places[2].name,input.places[2].image),
-  Stack([TextContent(input.places[2].name,"small-heavy"),TagBlock(input.places[2].tags,"sm"),TextContent(input.places[2].description,"small"),
-    Stack([BoldText("number",currency+(input.places[2].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[2].booking?"Book":"Details",@OpenUrl(input.places[2].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),Separator(),Stack([
-  Image(input.places[3].name,input.places[3].image),
-  Stack([TextContent(input.places[3].name,"small-heavy"),TagBlock(input.places[3].tags,"sm"),TextContent(input.places[3].description,"small"),
-    Stack([BoldText("number",currency+(input.places[3].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[3].booking?"Book":"Details",@OpenUrl(input.places[3].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),
- TextContent("Collect bags after lunch and plan to leave the city at 15:00, allowing time for the recommended 18:30 flight.","small")
-],"column","m")],"column","m")
+overview=Stack([ OverviewCardItem("people",IconText(Icon("users"),"neutral","m",trip.adults+" people",null,true,"vertical")), OverviewCardItem("days",IconText(Icon("calendar-days"),"neutral","m",trip.days+" days",null,true,"vertical")), OverviewCardItem("nights",IconText(Icon("moon"),"neutral","m",trip.nights+" night",null,true,"vertical")) ],"row","s","stretch","start",false)
+itinerary=Stack([InlineHeader("Your two days"),Buttons([ Button("Day 1 · Art",@Set($day,"day1"),$day=="day1"?"primary":"secondary",null,"small"), Button("Day 2 · Seine",@Set($day,"day2"),$day=="day2"?"primary":"secondary",null,"small") ]),$day=="day1"?Stack([ TextContent("Leave bags after arrival. Visit the Louvre in the afternoon, then cross the Seine to the Left Bank.","small"), Stack([ Image(input.places[0].name,input.places[0].image), Stack([TextContent(input.places[0].name,"small-heavy"),TagBlock(input.places[0].tags,"sm"),TextContent(input.places[0].description,"small"), Stack([BoldText("number",currency+(input.places[0].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[0].booking?"Book":"Details",@OpenUrl(input.places[0].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false),Separator(),Stack([ Image(input.places[1].name,input.places[1].image), Stack([TextContent(input.places[1].name,"small-heavy"),TagBlock(input.places[1].tags,"sm"),TextContent(input.places[1].description,"small"), Stack([BoldText("number",currency+(input.places[1].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[1].booking?"Book":"Details",@OpenUrl(input.places[1].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false),Separator(), ListBlock([ListItem(input.places[4].name,input.places[4].description,{src:input.places[4].image,alt:input.places[4].name})],"image") ],"column","m"):Stack([ Stack([ Image(input.places[2].name,input.places[2].image), Stack([TextContent(input.places[2].name,"small-heavy"),TagBlock(input.places[2].tags,"sm"),TextContent(input.places[2].description,"small"), Stack([BoldText("number",currency+(input.places[2].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[2].booking?"Book":"Details",@OpenUrl(input.places[2].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false),Separator(),Stack([ Image(input.places[3].name,input.places[3].image), Stack([TextContent(input.places[3].name,"small-heavy"),TagBlock(input.places[3].tags,"sm"),TextContent(input.places[3].description,"small"), Stack([BoldText("number",currency+(input.places[3].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[3].booking?"Book":"Details",@OpenUrl(input.places[3].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false), TextContent("Collect bags after lunch and plan to leave the city at 15:00, allowing time for the recommended 18:30 flight.","small") ],"column","m")],"column","m")
 placesMap=Stack([InlineHeader("Your places, on one map"),Map(@Each(input.places,"p",{id:p.id,title:p.name,lat:p.lat,lng:p.lng,imageSrc:p.image,subtitle:p.description,url:p.url,icon:p.icon}),input.routes,null,"regular","wgs84")],"column","m")
-transport=Stack([
- InlineHeader("Flights, each way"),
- TextContent("An early nonstop out and an evening return leave more time in Paris. Each price covers two adults on one leg; times are local.","small"),
- InlineHeader(outboundGroup.title,outboundGroup.route),
- CompositeCardBlock(@Each(outboundGroup.options,"f",CompositeCardItem(f.id,
-  Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(outboundGroup.route,"small")],"row","s","center","start",false),[
-    Stack([
-      Stack([TextContent(f.departure,"large-heavy"),TextContent(outboundGroup.origin,"small")],"column","xs"),
-      Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"),
-      Stack([TextContent(f.arrival,"large-heavy"),TextContent(outboundGroup.destination,"small")],"column","xs")
-    ],"row","s","center","between",false),
-    TextContent(f.detail,"small")
-  ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("Book",@OpenUrl(f.url),"primary",null,"small")}
-)),"carousel",true),
- InlineHeader(returnGroup.title,returnGroup.route),
- CompositeCardBlock(@Each(returnGroup.options,"f",CompositeCardItem(f.id,
-  Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(returnGroup.route,"small")],"row","s","center","start",false),[
-    Stack([
-      Stack([TextContent(f.departure,"large-heavy"),TextContent(returnGroup.origin,"small")],"column","xs"),
-      Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"),
-      Stack([TextContent(f.arrival,"large-heavy"),TextContent(returnGroup.destination,"small")],"column","xs")
-    ],"row","s","center","between",false),
-    TextContent(f.detail,"small")
-  ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("Book",@OpenUrl(f.url),"primary",null,"small")}
-)),"carousel",true)
-],"column","m")
-stays=Stack([InlineHeader("A place to stay"),CompositeCardBlock(@Each(input.stays,"h",CompositeCardItem(h.id,ImageTextLarge(h.image,h.name,h.name,null,true),[
- TagBlock(h.tags,"sm"),Text("text",h.description)
- ],{price:BoldText("number",currency+(h.pricePerRoomNight*trip.rooms*trip.nights),null,"text","lg"),button:Button("Book",@OpenUrl(h.url),"primary",null,"small")})),"carousel",true)],"column","m")
-budget=Stack([InlineHeader("Recommended plan budget"),BoldText("number",currency+total,trip.adults+" people · including buffer","text","lg"),PieChart([
- "Flights","Stay","Food","Transport","Tickets","Buffer"
- ],[flightCost,stayCost,input.budgetAssumptions.food,input.budgetAssumptions.localTransport,visitCost,input.budgetAssumptions.buffer],"donut")],"column","m")
+transport=Stack([ InlineHeader("Flights, each way"), TextContent("An early nonstop out and an evening return leave more time in Paris. Each price covers two adults on one leg; times are local.","small"), InlineHeader(outboundGroup.title,outboundGroup.route), CompositeCardBlock(@Each(outboundGroup.options,"f",CompositeCardItem(f.id, Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(outboundGroup.route,"small")],"row","s","center","start",false),[ Stack([ Stack([TextContent(f.departure,"large-heavy"),TextContent(outboundGroup.origin,"small")],"column","xs"), Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"), Stack([TextContent(f.arrival,"large-heavy"),TextContent(outboundGroup.destination,"small")],"column","xs") ],"row","s","center","between",false), TextContent(f.detail,"small") ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("Book",@OpenUrl(f.url),"primary",null,"small")} )),"carousel",true), InlineHeader(returnGroup.title,returnGroup.route), CompositeCardBlock(@Each(returnGroup.options,"f",CompositeCardItem(f.id, Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(returnGroup.route,"small")],"row","s","center","start",false),[ Stack([ Stack([TextContent(f.departure,"large-heavy"),TextContent(returnGroup.origin,"small")],"column","xs"), Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"), Stack([TextContent(f.arrival,"large-heavy"),TextContent(returnGroup.destination,"small")],"column","xs") ],"row","s","center","between",false), TextContent(f.detail,"small") ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("Book",@OpenUrl(f.url),"primary",null,"small")} )),"carousel",true) ],"column","m")
+stays=Stack([InlineHeader("A place to stay"),CompositeCardBlock(@Each(input.stays,"h",CompositeCardItem(h.id,ImageTextLarge(h.image,h.name,h.name,null,true),[ TagBlock(h.tags,"sm"),Text("text",h.description) ],{price:BoldText("number",currency+(h.pricePerRoomNight*trip.rooms*trip.nights),null,"text","lg"),button:Button("Book",@OpenUrl(h.url),"primary",null,"small")})),"carousel",true)],"column","m")
+budget=Stack([InlineHeader("Recommended plan budget"),BoldText("number",currency+total,trip.adults+" people · including buffer","text","lg"),PieChart([ "Flights","Stay","Food","Transport","Tickets","Buffer" ],[flightCost,stayCost,input.budgetAssumptions.food,input.budgetAssumptions.localTransport,visitCost,input.budgetAssumptions.buffer],"donut")],"column","m")
 closing=TextContent("Confirm both flights and the room before reserving the Louvre time slot. Food and local transport retain a small buffer.","small-heavy")

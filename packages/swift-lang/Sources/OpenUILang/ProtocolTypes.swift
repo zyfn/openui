@@ -367,6 +367,9 @@ public struct ParseResult: Sendable {
     public var stateDeclarations: [(String, Materialized)]
     public var queryStatements: [QueryStatementInfo]
     public var mutationStatements: [MutationStatementInfo]
+    /// Keeps the original lang-core value for evaluation within its serialized
+    /// JavaScript realm. Native fields remain the public typed representation.
+    var coreSnapshot: CoreParseSnapshot? = nil
 }
 
 // MARK: - Actions

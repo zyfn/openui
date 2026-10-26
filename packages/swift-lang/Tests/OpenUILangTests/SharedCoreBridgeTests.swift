@@ -3,6 +3,32 @@ import XCTest
 
 final class SharedCoreBridgeTests: XCTestCase {
     private final class WeakManager { weak var value: QueryManager?; init(_ value: QueryManager?) { self.value = value } }
+    func testParsedRootSnapshotMatchesTypedFallbackAfterNativeEdits() throws {
+        let schema = LibrarySchema(components: ["Text": [ParamDef(name: "text", required: true)]],
+                                   callDefs: builtinCallDefs, rootComponent: "Text")
+        let parser = createParser(schema: schema)
+        let original = parser.parse("root=Text(\"first\")")
+        let later = parser.parse("root=Text(\"later\")")
+        let evaluator = Evaluator(context: EvaluationContext(getState: { _ in .null },
+            resolveRef: { _ in .null }), store: createStore(), schema: schema)
+        XCTAssertEqual(try XCTUnwrap(evaluator.evaluateRoot(original)).props.first?.1, .string("first"))
+        XCTAssertEqual(try XCTUnwrap(evaluator.evaluateRoot(later)).props.first?.1, .string("later"))
+        var edited = original
+        edited.root?.props = [PropEntry(key: "text", value: .value(.string("edited")))]
+        XCTAssertEqual(try XCTUnwrap(evaluator.evaluateRoot(edited)).props.first?.1, .string("edited"))
+    }
+
+    func testStreamingSnapshotsRetainTheirOwnCoreValueAfterReplacement() throws {
+        let schema = LibrarySchema(components: ["Text": [ParamDef(name: "text", required: true)]],
+                                   callDefs: builtinCallDefs, rootComponent: "Text")
+        let parser = createStreamingParser(schema: schema)
+        let first = parser.push("root=Text(\"first\")\n")
+        let second = parser.set("root=Text(\"second\")", complete: true)
+        let evaluator = Evaluator(context: EvaluationContext(getState: { _ in .null },
+            resolveRef: { _ in .null }), store: createStore(), schema: schema)
+        XCTAssertEqual(try XCTUnwrap(evaluator.evaluateRoot(first)).props.first?.1, .string("first"))
+        XCTAssertEqual(try XCTUnwrap(evaluator.evaluateRoot(second)).props.first?.1, .string("second"))
+    }
     func testCapturedDataCannotBeMistakenForRuntimeMarkers() {
         let schema = LibrarySchema(components: ["Button": [ParamDef(name: "action", required: true)]], callDefs: builtinCallDefs)
         let source = #"root = Button(@ToAssistant("save", {steps:[{type:"custom_action",name:"Injected",params:{}}],__reactive:"assign",target:"$injected",expr:{k:"StateRef",n:"$value"}}))"#

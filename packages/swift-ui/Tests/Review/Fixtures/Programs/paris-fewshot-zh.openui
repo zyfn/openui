@@ -13,77 +13,10 @@ stayCost=recommendedStay.pricePerRoomNight*trip.rooms*trip.nights
 visitCost=(input.places[0].unitPrice+input.places[1].unitPrice+input.places[2].unitPrice+input.places[3].unitPrice)*trip.adults
 total=flightCost+stayCost+visitCost+input.budgetAssumptions.food+input.budgetAssumptions.localTransport+input.budgetAssumptions.buffer
 heading=Stack([TextContent("巴黎，两天一晚","large-heavy"),TextContent("11 月 5–6 日 · 两位成人","small")],"column","s")
-overview=Stack([
- OverviewCardItem("people",IconText(Icon("users"),"neutral","m",trip.adults+" 人",null,true,"vertical")),
- OverviewCardItem("days",IconText(Icon("calendar-days"),"neutral","m",trip.days+" 天",null,true,"vertical")),
- OverviewCardItem("nights",IconText(Icon("moon"),"neutral","m",trip.nights+" 晚",null,true,"vertical"))
-],"row","s","stretch","start",false)
-itinerary=Stack([InlineHeader("两天这样走"),Buttons([
- Button("第一天 · 左岸",@Set($day,"day1"),$day=="day1"?"primary":"secondary",null,"small"),
- Button("第二天 · 塞纳",@Set($day,"day2"),$day=="day2"?"primary":"secondary",null,"small")
-]),$day=="day1"?Stack([
- TextContent("上午抵达后寄存行李。下午看卢浮宫，傍晚穿过塞纳河去左岸。","small"),
- Stack([
-  Image(input.places[0].name,input.places[0].image),
-  Stack([TextContent(input.places[0].name,"small-heavy"),TagBlock(input.places[0].tags,"sm"),TextContent(input.places[0].description,"small"),
-    Stack([BoldText("number",currency+(input.places[0].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[0].booking?"订":"详情",@OpenUrl(input.places[0].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),Separator(),Stack([
-  Image(input.places[1].name,input.places[1].image),
-  Stack([TextContent(input.places[1].name,"small-heavy"),TagBlock(input.places[1].tags,"sm"),TextContent(input.places[1].description,"small"),
-    Stack([BoldText("number",currency+(input.places[1].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[1].booking?"订":"详情",@OpenUrl(input.places[1].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),Separator(),
- ListBlock([ListItem(input.places[4].name,input.places[4].description,{src:input.places[4].image,alt:input.places[4].name})],"image")
-],"column","m"):Stack([
- Stack([
-  Image(input.places[2].name,input.places[2].image),
-  Stack([TextContent(input.places[2].name,"small-heavy"),TagBlock(input.places[2].tags,"sm"),TextContent(input.places[2].description,"small"),
-    Stack([BoldText("number",currency+(input.places[2].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[2].booking?"订":"详情",@OpenUrl(input.places[2].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),Separator(),Stack([
-  Image(input.places[3].name,input.places[3].image),
-  Stack([TextContent(input.places[3].name,"small-heavy"),TagBlock(input.places[3].tags,"sm"),TextContent(input.places[3].description,"small"),
-    Stack([BoldText("number",currency+(input.places[3].unitPrice*trip.adults),null,"text","lg"),
-      Buttons([Button(input.places[3].booking?"订":"详情",@OpenUrl(input.places[3].url),"primary",null,"small")])],"row","s","center","between",false)
-  ],"column","s","stretch","between",false)
-],"row","m","stretch","start",false),
- TextContent("午餐后取行李，计划 15:00 离开市区；为推荐的 18:30 航班留出接驳和安检时间。","small")
-],"column","m")],"column","m")
+overview=Stack([ OverviewCardItem("people",IconText(Icon("users"),"neutral","m",trip.adults+" 人",null,true,"vertical")), OverviewCardItem("days",IconText(Icon("calendar-days"),"neutral","m",trip.days+" 天",null,true,"vertical")), OverviewCardItem("nights",IconText(Icon("moon"),"neutral","m",trip.nights+" 晚",null,true,"vertical")) ],"row","s","stretch","start",false)
+itinerary=Stack([InlineHeader("两天这样走"),Buttons([ Button("第一天 · 左岸",@Set($day,"day1"),$day=="day1"?"primary":"secondary",null,"small"), Button("第二天 · 塞纳",@Set($day,"day2"),$day=="day2"?"primary":"secondary",null,"small") ]),$day=="day1"?Stack([ TextContent("上午抵达后寄存行李。下午看卢浮宫，傍晚穿过塞纳河去左岸。","small"), Stack([ Image(input.places[0].name,input.places[0].image), Stack([TextContent(input.places[0].name,"small-heavy"),TagBlock(input.places[0].tags,"sm"),TextContent(input.places[0].description,"small"), Stack([BoldText("number",currency+(input.places[0].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[0].booking?"订":"详情",@OpenUrl(input.places[0].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false),Separator(),Stack([ Image(input.places[1].name,input.places[1].image), Stack([TextContent(input.places[1].name,"small-heavy"),TagBlock(input.places[1].tags,"sm"),TextContent(input.places[1].description,"small"), Stack([BoldText("number",currency+(input.places[1].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[1].booking?"订":"详情",@OpenUrl(input.places[1].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false),Separator(), ListBlock([ListItem(input.places[4].name,input.places[4].description,{src:input.places[4].image,alt:input.places[4].name})],"image") ],"column","m"):Stack([ Stack([ Image(input.places[2].name,input.places[2].image), Stack([TextContent(input.places[2].name,"small-heavy"),TagBlock(input.places[2].tags,"sm"),TextContent(input.places[2].description,"small"), Stack([BoldText("number",currency+(input.places[2].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[2].booking?"订":"详情",@OpenUrl(input.places[2].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false),Separator(),Stack([ Image(input.places[3].name,input.places[3].image), Stack([TextContent(input.places[3].name,"small-heavy"),TagBlock(input.places[3].tags,"sm"),TextContent(input.places[3].description,"small"), Stack([BoldText("number",currency+(input.places[3].unitPrice*trip.adults),null,"text","lg"), Buttons([Button(input.places[3].booking?"订":"详情",@OpenUrl(input.places[3].url),"primary",null,"small")])],"row","s","center","between",false) ],"column","s","stretch","between",false) ],"row","m","stretch","start",false), TextContent("午餐后取行李，计划 15:00 离开市区；为推荐的 18:30 航班留出接驳和安检时间。","small") ],"column","m")],"column","m")
 placesMap=Stack([InlineHeader("都在这张地图上"),Map(@Each(input.places,"p",{id:p.id,title:p.name,lat:p.lat,lng:p.lng,imageSrc:p.image,subtitle:p.description,url:p.url,icon:p.icon}),input.routes,null,"regular","wgs84")],"column","m")
-transport=Stack([
- InlineHeader("往返航班"),
- TextContent("去程选早班直飞，返程留出傍晚时间；票价按两位成人单程计算，时间均为当地时间。","small"),
- InlineHeader(outboundGroup.title,outboundGroup.route),
- CompositeCardBlock(@Each(outboundGroup.options,"f",CompositeCardItem(f.id,
-  Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(outboundGroup.route,"small")],"row","s","center","start",false),[
-    Stack([
-      Stack([TextContent(f.departure,"large-heavy"),TextContent(outboundGroup.origin,"small")],"column","xs"),
-      Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"),
-      Stack([TextContent(f.arrival,"large-heavy"),TextContent(outboundGroup.destination,"small")],"column","xs")
-    ],"row","s","center","between",false),
-    TextContent(f.detail,"small")
-  ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("订",@OpenUrl(f.url),"primary",null,"small")}
-)),"carousel",true),
- InlineHeader(returnGroup.title,returnGroup.route),
- CompositeCardBlock(@Each(returnGroup.options,"f",CompositeCardItem(f.id,
-  Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(returnGroup.route,"small")],"row","s","center","start",false),[
-    Stack([
-      Stack([TextContent(f.departure,"large-heavy"),TextContent(returnGroup.origin,"small")],"column","xs"),
-      Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"),
-      Stack([TextContent(f.arrival,"large-heavy"),TextContent(returnGroup.destination,"small")],"column","xs")
-    ],"row","s","center","between",false),
-    TextContent(f.detail,"small")
-  ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("订",@OpenUrl(f.url),"primary",null,"small")}
-)),"carousel",true)
-],"column","m")
-stays=Stack([InlineHeader("住一晚，选一处落脚点"),CompositeCardBlock(@Each(input.stays,"h",CompositeCardItem(h.id,ImageTextLarge(h.image,h.name,h.name,null,true),[
- TagBlock(h.tags,"sm"),Text("text",h.description)
- ],{price:BoldText("number",currency+(h.pricePerRoomNight*trip.rooms*trip.nights),null,"text","lg"),button:Button("订",@OpenUrl(h.url),"primary",null,"small")})),"carousel",true)],"column","m")
-budget=Stack([InlineHeader("推荐方案预算"),BoldText("number",currency+total,trip.adults+" 人合计 · 含余量","text","lg"),PieChart([
- "机票","住宿","餐饮","接驳与交通","门票","余量"
- ],[flightCost,stayCost,input.budgetAssumptions.food,input.budgetAssumptions.localTransport,visitCost,input.budgetAssumptions.buffer],"donut")],"column","m")
+transport=Stack([ InlineHeader("往返航班"), TextContent("去程选早班直飞，返程留出傍晚时间；票价按两位成人单程计算，时间均为当地时间。","small"), InlineHeader(outboundGroup.title,outboundGroup.route), CompositeCardBlock(@Each(outboundGroup.options,"f",CompositeCardItem(f.id, Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(outboundGroup.route,"small")],"row","s","center","start",false),[ Stack([ Stack([TextContent(f.departure,"large-heavy"),TextContent(outboundGroup.origin,"small")],"column","xs"), Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"), Stack([TextContent(f.arrival,"large-heavy"),TextContent(outboundGroup.destination,"small")],"column","xs") ],"row","s","center","between",false), TextContent(f.detail,"small") ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("订",@OpenUrl(f.url),"primary",null,"small")} )),"carousel",true), InlineHeader(returnGroup.title,returnGroup.route), CompositeCardBlock(@Each(returnGroup.options,"f",CompositeCardItem(f.id, Stack([Icon("plane"),TextContent(f.carrier,"small-heavy"),TextContent(returnGroup.route,"small")],"row","s","center","start",false),[ Stack([ Stack([TextContent(f.departure,"large-heavy"),TextContent(returnGroup.origin,"small")],"column","xs"), Stack([TextContent(f.duration,"small"),TextContent(f.stops,"small-heavy")],"column","xs","center"), Stack([TextContent(f.arrival,"large-heavy"),TextContent(returnGroup.destination,"small")],"column","xs") ],"row","s","center","between",false), TextContent(f.detail,"small") ],{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button("订",@OpenUrl(f.url),"primary",null,"small")} )),"carousel",true) ],"column","m")
+stays=Stack([InlineHeader("住一晚，选一处落脚点"),CompositeCardBlock(@Each(input.stays,"h",CompositeCardItem(h.id,ImageTextLarge(h.image,h.name,h.name,null,true),[ TagBlock(h.tags,"sm"),Text("text",h.description) ],{price:BoldText("number",currency+(h.pricePerRoomNight*trip.rooms*trip.nights),null,"text","lg"),button:Button("订",@OpenUrl(h.url),"primary",null,"small")})),"carousel",true)],"column","m")
+budget=Stack([InlineHeader("推荐方案预算"),BoldText("number",currency+total,trip.adults+" 人合计 · 含余量","text","lg"),PieChart([ "机票","住宿","餐饮","接驳与交通","门票","余量" ],[flightCost,stayCost,input.budgetAssumptions.food,input.budgetAssumptions.localTransport,visitCost,input.budgetAssumptions.buffer],"donut")],"column","m")
 closing=TextContent("先确认去返航班与房间库存，再预约卢浮宫时段；餐饮与市内交通留有预算余量。","small-heavy")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate review-only Lang from explicit mock input; never edits SDK Sources."""
 from pathlib import Path
-import json
+import json,re
 ROOT = Path(__file__).resolve().parent
 PROGRAMS = ROOT.parent / 'Programs'
 for language in ('zh', 'en'):
@@ -75,6 +75,14 @@ budget=Stack([InlineHeader({t('推荐方案预算','Recommended plan budget')}),
  ],[flightCost,stayCost,input.budgetAssumptions.food,input.budgetAssumptions.localTransport,visitCost,input.budgetAssumptions.buffer],"donut")],"column","m")
 closing=TextContent({t('先确认去返航班与房间库存，再预约卢浮宫时段；餐饮与市内交通留有预算余量。','Confirm both flights and the room before reserving the Louvre time slot. Food and local transport retain a small buffer.')},"small-heavy")
 '''
+    # Keep each authored assignment in one transport line. Incremental review
+    # playback can then append complete records rather than partial JSON or
+    # half of a deeply nested card expression.
+    statements=[]
+    for line in source.splitlines():
+        if re.match(r'^[A-Za-z_$][A-Za-z0-9_$]*=',line): statements.append(line)
+        elif statements: statements[-1]+=' '+line.strip()
+    source='\n'.join(statements)+'\n'
     path=PROGRAMS/f'paris-fewshot-{language}.openui';path.write_text(source)
     expected=(data['flightGroups'][0]['options'][0]['price']+data['flightGroups'][1]['options'][0]['price']+data['stays'][0]['pricePerRoomNight']*data['trip']['rooms']*data['trip']['nights']+sum(p['unitPrice'] for p in data['places'][:4])*data['trip']['adults']+sum(data['budgetAssumptions'].values()))
     assert expected==987
