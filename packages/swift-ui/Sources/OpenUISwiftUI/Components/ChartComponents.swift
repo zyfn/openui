@@ -133,7 +133,7 @@ struct NativeChart: View {
   private var allData: NativeChartData { NativeChartData(context: context).prepared(for: name) }
   private var data: NativeChartData { allData.excluding(visibility.hidden, for: name) }
   private var palette: [Color] {
-    context.theme.dataColors.isEmpty ? [context.theme.accent] : context.theme.dataColors
+    context.theme.chartColors(forSeriesCount: legend.count)
   }
   private var legend: [String] { allData.legendNames(for: name) }
   private var drawing: NativeChartDrawing {

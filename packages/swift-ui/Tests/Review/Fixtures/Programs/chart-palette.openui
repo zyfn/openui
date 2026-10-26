@@ -1,0 +1,6 @@
+root=Stack([
+ InlineHeader("Chart color system","Shared series colors, legends and inspection"),
+ BarChart(["A","B","C"],[Series("Mineral",[24,18,21]),Series("Clay",[16,22,19])],"grouped",null,"Units",220),
+ PieChart(["A","B","C","D","E","F"],[32,22,16,12,10,8],"donut"),
+ BarChart(["One","Two"],[Series("A",[8,10]),Series("B",[6,7]),Series("C",[5,5]),Series("D",[4,3])],"stacked",null,"Units",220)
+],"column","l")

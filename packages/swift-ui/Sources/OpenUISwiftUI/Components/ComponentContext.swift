@@ -31,13 +31,16 @@ public struct OpenUITheme {
     public var cardShadowY: CGFloat = 0
     public var contentSpacing: CGFloat = 12
     public var metricSurface = NativeControlPalette.adaptive(light: 0xF3F4F6, dark: 0x24262A)
-    public var dataColors: [Color] = [
-        NativeControlPalette.adaptive(light: 0x3A6EE8, dark: 0x8BAAFF),
-        NativeControlPalette.adaptive(light: 0x2D8A7C, dark: 0x7FD4BF),
-        NativeControlPalette.adaptive(light: 0xBA7336, dark: 0xEDB57D),
-        NativeControlPalette.adaptive(light: 0x9067BF, dark: 0xC6A5F0),
-        NativeControlPalette.adaptive(light: 0x6D7A90, dark: 0xA8B6CF),
-    ]
+    private var customDataColors: [Color]?
+    /// Explicit host colors retain their existing override behavior.
+    public var dataColors: [Color] {
+        get { customDataColors ?? NativeChartPalette.swatches(count: 6).map(\.color) }
+        set { customDataColors = newValue }
+    }
+    public func chartColors(forSeriesCount count: Int) -> [Color] {
+        if let customDataColors { return customDataColors.isEmpty ? [accent] : customDataColors }
+        return NativeChartPalette.swatches(count: count).map(\.color)
+    }
     public var chartGrid = NativeControlPalette.adaptive(light: 0xE8EAEE, dark: 0x34373C)
     public var chartAxis = NativeControlPalette.adaptive(light: 0x6A6F78, dark: 0xB4BBC6)
     public var minimumCardWidth: CGFloat = 240
