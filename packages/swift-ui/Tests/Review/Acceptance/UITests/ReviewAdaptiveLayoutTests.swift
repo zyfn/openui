@@ -3,19 +3,24 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
-  func testLearningVisualCardsAreCompactAndOpenTheirOwnRecords() {
+  func testLearningVisualCardsAreCompactAndOpenTheirOwnRecords() throws {
     let app = launch("scene-learning", inspect: true, language: "en")
-    let cong = app.buttons["Cong"].firstMatch
-    let bi = app.buttons["Bi"].firstMatch
+    let cong = app.images["Cong · full object"].firstMatch
+    let bi = app.images["Bi · full object"].firstMatch
     reveal(cong, in: app)
     XCTAssertTrue(bi.exists)
     XCTAssertEqual(cong.frame.minY, bi.frame.minY, accuracy: 2)
-    XCTAssertEqual(cong.frame.width, bi.frame.width, accuracy: 2)
     XCTAssertLessThanOrEqual(cong.frame.height, 300)
     XCTAssertGreaterThanOrEqual(bi.frame.minX, cong.frame.maxX + 6)
-    capture(app, name: "learning-paired-visual-cards")
+    for (view, file) in [(cong, "liangzhu-cong"), (bi, "liangzhu-bi")] {
+      let size = try fixtureImageSize(file)
+      XCTAssertEqual(view.frame.width / view.frame.height, size.width / size.height, accuracy: 0.03,
+        "Observation images must preserve the complete object's source proportions")
+    }
+    capture(app, name: "learning-complete-objects-side-by-side")
     for (label, target) in [("Cong", "72376"), ("Bi", "49371"), ("Same form, another era", "42751")] {
-      let card = app.buttons[label].firstMatch
+      let card = label == "Same form, another era"
+        ? app.buttons[label].firstMatch : app.links[label].firstMatch
       reveal(card, in: app)
       XCTAssertLessThanOrEqual(card.frame.height, 300)
       card.tap()

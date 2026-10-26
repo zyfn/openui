@@ -455,10 +455,17 @@ enum ReviewScenePrograms {
           TagBlock([\(q("新石器时代", "Neolithic")),\(q("玉器", "Jade")),\(q("馆藏阅读", "Collection study"))],"sm"),
           TextContent(\(q("看形状、比工艺，再区分证据与推断。", "Look at form and workmanship, then separate evidence from interpretation."))),
           Stack([
-            VisualCardBlock([VisualCardItem(BoldText("text",\(q("玉琮", "Cong")),\(q("约公元前 2400 年", "About 2400 BCE")),"text","lg"),"cong","/liangzhu-cong.jpg",Tag(\(q("良渚", "Liangzhu")),null,"sm"),\(q("玉琮", "Cong")))],"carousel",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/72376")),
-            VisualCardBlock([VisualCardItem(BoldText("text",\(q("玉璧", "Bi")),\(q("公元前三千纪中叶", "Mid-third millennium BCE")),"text","lg"),"bi","/liangzhu-bi.jpg",Tag(\(q("良渚", "Liangzhu")),null,"sm"),\(q("玉璧", "Bi")))],"carousel",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/49371"))
-          ],"row","s","stretch","start",false),
-          TextContent(\(q("图卡为裁切预览；点按查看完整馆藏图片与记录。", "Cropped previews. Tap either card for the complete collection image and record.")),"small"),
+            Stack([
+              Image(\(q("玉琮全貌", "Cong · full object")),"/liangzhu-cong.jpg"),
+              TextContent(\(q("[玉琮](https://www.metmuseum.org/art/collection/search/72376)", "[Cong](https://www.metmuseum.org/art/collection/search/72376)")),"small-heavy"),
+              TextContent(\(q("约公元前 2400 年 · 高 25.4 cm", "About 2400 BCE · 25.4 cm high")),"small")
+            ],"column","xs"),
+            Stack([
+              Image(\(q("玉璧全貌", "Bi · full object")),"/liangzhu-bi.jpg"),
+              TextContent(\(q("[玉璧](https://www.metmuseum.org/art/collection/search/49371)", "[Bi](https://www.metmuseum.org/art/collection/search/49371)")),"small-heavy"),
+              TextContent(\(q("公元前三千纪中叶 · 约 15.6 cm", "Mid-third millennium BCE · about 15.6 cm")),"small")
+            ],"column","xs")
+          ],"row","m","start","start",false),
           InlineHeader(\(q("一眼分清琮与璧", "Cong and bi, at a glance"))),
           Table([
             Col(\(q("观察", "Look for")),[\(q("外形", "Form")),\(q("中部", "Center")),\(q("纹饰", "Decoration"))]),
@@ -472,7 +479,7 @@ enum ReviewScenePrograms {
           HorizontalBarChart([\(q("良渚玉琮", "Liangzhu cong")),\(q("清代仿古琮", "Qing archaistic cong"))],[Series(\(q("高度（cm）", "Height (cm)")),[25.4,12.7])],"grouped","cm"),
           TextContent(\(q("仅比较这两件馆藏的高度，不代表各时代玉器的平均尺寸。[1][4]", "Heights of these two collection objects only, not period averages.[1][4]")),"small"),
           TextContent(\(q("形似，不等于同时代；先看器物，再查出处。", "Similar form does not mean the same date. Look closely, then check the record.")),"small-heavy"),
-          TextContent(\(q("图像与数据：The Met Open Access。点击图卡查看完整记录。", "Images and measurements: The Met Open Access. Tap a card for its full record.")),"small")
+          TextContent(\(q("图像与数据：The Met Open Access。图注和延伸阅读图卡链接到馆藏记录。", "Images and measurements: The Met Open Access. Captions and the further-reading card link to collection records.")),"small")
         ],"column","l")
         """
       sources = [
