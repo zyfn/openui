@@ -40,7 +40,7 @@ enum ReviewScenePrograms {
                   TextContent(\(q("卢浮宫", "The Louvre")),"small-heavy"),
                   TagBlock([\(q("艺术", "Art")),\(q("博物馆", "Museum"))],"sm"),
                   TextContent(\(q("法国国王昔日的宫殿，馆藏横跨近一万年的艺术史。", "The former palace of the kings of France, with collections encompassing nearly 10,000 years of art history.")),"small"),
-                  Stack([BoldText("number","€64",\(q("非 EEA 成人 €32 × 2", "Non-EEA adults €32 × 2")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@OpenUrl("https://ticket.louvre.fr/en"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€64",\(q("非 EEA 成人 €32 × 2", "Non-EEA adults €32 × 2")),"text","lg"),Buttons([Button(\(q("订", "Book")),@OpenUrl("https://ticket.louvre.fr/en"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
               ],"row","m","stretch","start",false),
           Separator(),
@@ -50,7 +50,7 @@ enum ReviewScenePrograms {
                   TextContent(\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),"small-heavy"),
                   TagBlock([\(q("左岸", "Left Bank")),\(q("免费", "Free"))],"sm"),
                   TextContent(\(q("双叟与花神咖啡馆曾是巴黎文学和艺术界的聚会场所。", "Les Deux Magots and Café de Flore were meeting spots for the Paris literary and artistic world.")),"small"),
-                  Stack([BoldText("number","€0",\(q("公共街区免费", "Free public streets")),"text","lg"),Buttons([Button(\(q("查看地点", "View place")),@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€0",\(q("公共街区免费", "Free public streets")),"text","lg"),Buttons([Button(\(q("详情", "Details")),@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
               ],"row","m","stretch","start",false),
           Separator(),
@@ -60,7 +60,7 @@ enum ReviewScenePrograms {
                   TextContent(\(q("塞纳河观光游船", "Seine sightseeing cruise")),"small-heavy"),
                   TagBlock([\(q("Bateaux Parisiens", "Bateaux Parisiens")),\(q("1 小时", "1 hour")),\(q("语音导览", "Audio guide"))],"sm"),
                   TextContent(\(q("一小时塞纳河观光游船，含语音导览。", "Duration: 1 hour. Included: Audio guides.")),"small"),
-                  Stack([BoldText("number","€36",\(q("€18 × 2 位成人", "€18 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@OpenUrl("https://www.bateauxparisiens.com/en/cruise-tours/guided-tour.html"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€36",\(q("€18 × 2 位成人", "€18 × 2 adults")),"text","lg"),Buttons([Button(\(q("订", "Book")),@OpenUrl("https://www.bateauxparisiens.com/en/cruise-tours/guided-tour.html"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
               ],"row","m","stretch","start",false),
           TextCallout("neutral",\(q("衔接建议", "Getting between stops")),\(q("卢浮宫后在市中心午餐，再步行到圣日耳曼。去游船码头安排公共交通，抵达后再按实际班次登船。", "Have lunch after the Louvre, then walk to Saint-Germain. Use public transport to reach the cruise pier and confirm the next departure."))),
@@ -103,35 +103,32 @@ enum ReviewScenePrograms {
       title = t("规划一次两日游", "Two days in Paris")
       request = t("帮两位成人安排 11 月 5 日从伦敦出发、6 日返回的巴黎两天一晚。包含机票、酒店对比、每天的行程和总预算。", "Plan two days and one night in Paris for two adults, leaving London on 5 November and returning on 6 November. Include flights, a hotel comparison, a daily itinerary and a total budget.")
       source = """
-        $stay="central"
-        $outbound="early"
-        $inbound="evening"
-        hotel=$stay=="central"?220:$stay=="outer"?160:280
-        outbound=$outbound=="early"?150:$outbound=="midmorning"?190:210
-        inbound=$inbound=="evening"?170:$inbound=="late"?195:145
+        hotel=220
+        outbound=150
+        inbound=170
         flights=outbound+inbound
         visits=64+47+36
         total=hotel+flights+160+80+visits+60
         root=Stack([
-          TextContent(\(q("巴黎，两天一晚", "Paris, two days and one night")),"large-heavy"),
+          TextContent(\(q("巴黎两日，艺术与塞纳河", "Paris, art and the Seine")),"large-heavy"),
           TextContent(\(q("2026 年 11 月 5–6 日", "5–6 November 2026")),"small"),
           Stack([
             OverviewCardItem("party",Text("text",\(q("2 人", "2 people")),null,"text","lg")),
             OverviewCardItem("duration",Text("text",\(q("2 天", "2 days")),null,"text","lg")),
             OverviewCardItem("places",Text("text",\(q("4 处景点", "4 places")),null,"text","lg"))
           ],"row","s","stretch","start",false),
-          TextContent(\(q("第一天以卢浮宫和左岸为主；第二天集中在铁塔与塞纳河，下午留给返程。", "Spend day one at the Louvre and on the Left Bank. Keep day two around the tower and Seine, leaving the afternoon for your flight."))),
-          InlineHeader(\(q("按天看景点", "Places to visit each day"))),
+          TextContent(\(q("推荐早班抵达、傍晚返程，住左岸。第一天看艺术、逛街区，第二天把铁塔和游船放在一起，少走回头路。", "Take an early flight in and an evening flight home, with a base on the Left Bank. Pair art and neighborhood walks on day one, then the tower and a river cruise on day two."))),
+          InlineHeader(\(q("两天这样走", "Your two days"))),
           Tabs([
             TabItem("day1",\(q("第一天 · 艺术与左岸", "Day 1 · Art and the Left Bank")),[
-              TextContent(\(q("抵达后先寄存行李、午餐，再预约下午的卢浮宫时段。晚餐放在左岸。", "Store your bags and have lunch after arrival, then choose an afternoon Louvre slot. Stay on the Left Bank for dinner.")),"small"),
+              TextContent(\(q("抵达后寄存行李，午餐后参观卢浮宫，再过河到圣日耳曼。", "Leave your bags at the hotel. Visit the Louvre after lunch, then cross to Saint-Germain.")),"small"),
               Stack([
                 Image(\(q("卢浮宫", "The Louvre")),"/paris-louvre.jpg"),
                 Stack([
                   TextContent(\(q("卢浮宫", "The Louvre")),"small-heavy"),
                   TagBlock([\(q("艺术", "Art")),\(q("博物馆", "Museum"))],"sm"),
                   TextContent(\(q("法国国王昔日的宫殿，馆藏横跨近一万年的艺术史。", "The former palace of the kings of France, with collections encompassing nearly 10,000 years of art history.")),"small"),
-                  Stack([BoldText("number","€64",\(q("非 EEA 成人 €32 × 2", "Non-EEA adults €32 × 2")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@OpenUrl("https://ticket.louvre.fr/en"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€64",\(q("非 EEA 成人 €32 × 2", "Non-EEA adults €32 × 2")),"text","lg"),Buttons([Button(\(q("订", "Book")),@OpenUrl("https://ticket.louvre.fr/en"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
               ],"row","m","stretch","start",false),
           Separator(),
@@ -141,9 +138,12 @@ enum ReviewScenePrograms {
                   TextContent(\(q("圣日耳曼街区", "Saint-Germain-des-Prés")),"small-heavy"),
                   TagBlock([\(q("左岸", "Left Bank")),\(q("免费", "Free"))],"sm"),
                   TextContent(\(q("双叟与花神咖啡馆曾是巴黎文学和艺术界的聚会场所。", "Les Deux Magots and Café de Flore were meeting spots for the Paris literary and artistic world.")),"small"),
-                  Stack([BoldText("number","€0",\(q("公共街区免费", "Free public streets")),"text","lg"),Buttons([Button(\(q("查看地点", "View place")),@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€0",\(q("公共街区免费", "Free public streets")),"text","lg"),Buttons([Button(\(q("详情", "Details")),@OpenUrl("https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
-              ],"row","m","stretch","start",false)
+              ],"row","m","stretch","start",false),
+              Separator(),
+              InlineHeader(\(q("在左岸歇一会儿", "A break on the Left Bank"))),
+              ListBlock([ListItem(\(q("Les Deux Magots · 双叟咖啡馆", "Les Deux Magots")),\(q("圣日耳曼广场的文学咖啡馆。餐饮计入两天 €160 的预留。", "A literary café on Place Saint-Germain-des-Prés. Meals and drinks are covered by the €160 food allowance.")),{src:"/paris-cafe.jpg",alt:\(q("咖啡馆氛围示意", "Illustrative café atmosphere"))})],"image")
             ]),
             TabItem("day2",\(q("第二天 · 铁塔与塞纳河", "Day 2 · Tower and Seine")),[
               Stack([
@@ -152,7 +152,7 @@ enum ReviewScenePrograms {
                   TextContent(\(q("埃菲尔铁塔 · 二层", "Eiffel Tower · second floor")),"small-heavy"),
                   TagBlock([\(q("电梯", "Elevator")),\(q("二层", "Second floor"))],"sm"),
                   TextContent(\(q("乘电梯前往埃菲尔铁塔二层。", "This ticket grants access to the second floor by elevator.")),"small"),
-                  Stack([BoldText("number","€47",\(q("€23.50 × 2 位成人", "€23.50 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@OpenUrl("https://ticket.toureiffel.paris/en"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€47",\(q("€23.50 × 2 位成人", "€23.50 × 2 adults")),"text","lg"),Buttons([Button(\(q("订", "Book")),@OpenUrl("https://ticket.toureiffel.paris/en"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
               ],"row","m","stretch","start",false),
           Separator(),
@@ -162,62 +162,13 @@ enum ReviewScenePrograms {
                   TextContent(\(q("塞纳河观光游船", "Seine sightseeing cruise")),"small-heavy"),
                   TagBlock([\(q("Bateaux Parisiens", "Bateaux Parisiens")),\(q("1 小时", "1 hour")),\(q("语音导览", "Audio guide"))],"sm"),
                   TextContent(\(q("一小时塞纳河观光游船，含语音导览。", "Duration: 1 hour. Included: Audio guides.")),"small"),
-                  Stack([BoldText("number","€36",\(q("€18 × 2 位成人", "€18 × 2 adults")),"text","lg"),Buttons([Button(\(q("预订门票", "Book tickets")),@OpenUrl("https://www.bateauxparisiens.com/en/cruise-tours/guided-tour.html"),"primary",null,"small")])],"row","s","center","between",false)
+                  Stack([BoldText("number","€36",\(q("€18 × 2 位成人", "€18 × 2 adults")),"text","lg"),Buttons([Button(\(q("订", "Book")),@OpenUrl("https://www.bateauxparisiens.com/en/cruise-tours/guided-tour.html"),"primary",null,"small")])],"row","s","center","between",false)
                 ],"column","s","stretch","between",false)
               ],"row","m","stretch","start",false),
-              TextCallout("neutral",\(q("返程前留足机场时间", "Allow time for the airport")),$inbound=="afternoon"?\(q("16:00 航班：午餐后尽早取行李，计划 12:30 左右离开市区；缩短第二天游览。", "16:00 flight: collect bags after an early lunch and aim to leave the city around 12:30. Shorten day-two sightseeing.")):$inbound=="late"?\(q("20:00 航班：计划 16:30 左右离开市区，仍需按实际路况预留时间。", "20:00 flight: aim to leave the city around 16:30, allowing for actual traffic.")):\(q("18:30 航班：计划 15:00 左右离开市区，提前取行李。", "18:30 flight: aim to leave the city around 15:00 and collect bags beforehand.")))
+              TextContent(\(q("18:30 返程：午餐后取行李，计划 15:00 离开市区前往机场。", "For the 18:30 flight, collect your bags after lunch and plan to leave for the airport at 15:00.")),"small")
             ])
           ]),
-          InlineHeader(\(q("吃饭，也留一点从容", "Make time for a proper break"))),
-          ListBlock([
-            ListItem(\(q("左岸午餐", "Lunch on the Left Bank")),\(q("参观后在圣日耳曼附近用餐；先看当天菜单，避免为了吃饭再跨城。", "Choose a place near Saint-Germain after sightseeing. Check the day's menu and avoid another cross-city trip.")),{src:"/paris-breakfast.jpg",alt:\(q("餐食示意", "Illustrative meal"))}),
-            ListItem(\(q("双叟咖啡馆 · Les Deux Magots", "Les Deux Magots · café break")),\(q("圣日耳曼广场的文学咖啡馆，适合街区散步后坐下来。餐饮从当天预算中支出，按实际点单计费。", "A literary café on Place Saint-Germain-des-Prés. Take a break after your walk; food and drinks come from the day's budget and are charged as ordered.")),{src:"/paris-cafe.jpg",alt:\(q("咖啡馆氛围示意，非商家实景", "Illustrative café atmosphere, not a venue photograph"))})
-          ],"image"),
-          InlineHeader(\(q("去程 · 伦敦到巴黎", "Outbound · London to Paris"))),
-          CompositeCardBlock([CompositeCardItem("early",IconText(Icon("plane"),"neutral","m",\(q("早班 · 留足游览时间", "Early · more time in Paris")),\(q("11 月 5 日 · LHR → CDG", "5 Nov · LHR → CDG")),true),[
-              BoldText("text","08:00 → 10:20",null,"text","lg"),
-              TagBlock([\(q("直飞", "Nonstop")),\(q("1h20m", "1h20m"))],"sm"),
-              Text("text",\(q("伦敦希思罗 → 巴黎戴高乐；时间为当地时间。", "London Heathrow → Paris Charles de Gaulle; local times.")))
-            ],{price:BoldText("number","€150",\(q("2 人单程", "One way · 2 adults")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($outbound,"early"),"primary",null,"small")}),
-            CompositeCardItem("midmorning",IconText(Icon("plane"),"neutral","m",\(q("上午出发 · 从容起床", "Mid-morning · easier start")),\(q("11 月 5 日 · LHR → CDG", "5 Nov · LHR → CDG")),true),[
-              BoldText("text","09:30 → 11:50",null,"text","lg"),
-              TagBlock([\(q("直飞", "Nonstop")),\(q("1h20m", "1h20m"))],"sm"),
-              Text("text",\(q("伦敦希思罗 → 巴黎戴高乐；时间为当地时间。", "London Heathrow → Paris Charles de Gaulle; local times.")))
-            ],{price:BoldText("number","€190",\(q("2 人单程", "One way · 2 adults")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($outbound,"midmorning"),"primary",null,"small")}),
-            CompositeCardItem("later",IconText(Icon("plane"),"neutral","m",\(q("午前出发 · 缩短首日", "Later · shorter first day")),\(q("11 月 5 日 · LHR → CDG", "5 Nov · LHR → CDG")),true),[
-              BoldText("text","11:00 → 13:20",null,"text","lg"),
-              TagBlock([\(q("直飞", "Nonstop")),\(q("1h20m", "1h20m"))],"sm"),
-              Text("text",\(q("伦敦希思罗 → 巴黎戴高乐；时间为当地时间。", "London Heathrow → Paris Charles de Gaulle; local times.")))
-            ],{price:BoldText("number","€210",\(q("2 人单程", "One way · 2 adults")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($outbound,"later"),"primary",null,"small")})],"carousel",true),
-          InlineHeader(\(q("返程 · 巴黎到伦敦", "Return · Paris to London"))),
-          CompositeCardBlock([CompositeCardItem("evening",IconText(Icon("plane"),"neutral","m",\(q("傍晚返程 · 推荐", "Evening · recommended")),\(q("11 月 6 日 · CDG → LHR", "6 Nov · CDG → LHR")),true),[
-              BoldText("text","18:30 → 18:50",null,"text","lg"),
-              TagBlock([\(q("直飞", "Nonstop")),\(q("1h20m", "1h20m"))],"sm"),
-              Text("text",\(q("巴黎戴高乐 → 伦敦希思罗；时间为当地时间。", "Paris Charles de Gaulle → London Heathrow; local times.")))
-            ],{price:BoldText("number","€170",\(q("2 人单程", "One way · 2 adults")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($inbound,"evening"),"primary",null,"small")}),
-            CompositeCardItem("late",IconText(Icon("plane"),"neutral","m",\(q("晚班 · 多留一段散步", "Late · more time in the city")),\(q("11 月 6 日 · CDG → LHR", "6 Nov · CDG → LHR")),true),[
-              BoldText("text","20:00 → 20:20",null,"text","lg"),
-              TagBlock([\(q("直飞", "Nonstop")),\(q("1h20m", "1h20m"))],"sm"),
-              Text("text",\(q("巴黎戴高乐 → 伦敦希思罗；时间为当地时间。", "Paris Charles de Gaulle → London Heathrow; local times.")))
-            ],{price:BoldText("number","€195",\(q("2 人单程", "One way · 2 adults")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($inbound,"late"),"primary",null,"small")}),
-            CompositeCardItem("afternoon",IconText(Icon("plane"),"neutral","m",\(q("下午返程 · 少花一些", "Afternoon · lower fare")),\(q("11 月 6 日 · CDG → LHR", "6 Nov · CDG → LHR")),true),[
-              BoldText("text","16:00 → 16:20",null,"text","lg"),
-              TagBlock([\(q("直飞", "Nonstop")),\(q("1h20m", "1h20m"))],"sm"),
-              Text("text",\(q("巴黎戴高乐 → 伦敦希思罗；时间为当地时间。", "Paris Charles de Gaulle → London Heathrow; local times.")))
-            ],{price:BoldText("number","€145",\(q("2 人单程", "One way · 2 adults")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($inbound,"afternoon"),"primary",null,"small")})],"carousel",true),
-          TextContent(\(q("示例航班及两人单程报价；巴黎比伦敦快 1 小时。换选航班后，预算随之更新。", "Sample flights and one-way fares for two. Paris is one hour ahead of London. Selecting a flight updates the budget.")),"small"),
-          InlineHeader(\(q("住宿 · 三个候选方案", "Stays · three options"))),
-          CompositeCardBlock([CompositeCardItem("central",ImageTextLarge("/stay-central.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("左岸 · 花园双人房", "Left Bank · garden double")),null,true),[
-              TagBlock([\(q("花园景观", "Garden view")),\(q("含早餐", "Breakfast included"))],"sm"),Text("text",\(q("双人房，含早餐，花园朝向。", "Double room with breakfast and a garden outlook.")))
-            ],{price:BoldText("number","€220",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($stay,"central"),"primary",null,"small")}),
-            CompositeCardItem("outer",ImageTextLarge("/stay-transit.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("近交通站 · 舒适双人房", "Transit-side · comfort double")),null,true),[
-              TagBlock([\(q("城景", "City view")),\(q("大床", "King bed"))],"sm"),Text("text",\(q("大床房，城景，靠近公共交通。", "King room with a city view near public transport.")))
-            ],{price:BoldText("number","€160",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($stay,"outer"),"primary",null,"small")}),
-            CompositeCardItem("riverside",ImageTextLarge("/stay-central.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("河畔 · 景观双人房", "Riverside · view double")),null,true),[
-              TagBlock([\(q("河景", "River view")),\(q("含早餐", "Breakfast included"))],"sm"),Text("text",\(q("双人房，河景，含早餐。", "Double room with a river view and breakfast.")))
-            ],{price:BoldText("number","€280",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("选择", "Select")),@Set($stay,"riverside"),"primary",null,"small")})],"carousel",true),
-          TextContent($stay=="central"?\(q("已选花园房 · €220 / 晚", "Garden room selected · €220 / night")):$stay=="outer"?\(q("已选近交通站方案 · €160 / 晚", "Transit-side room selected · €160 / night")):\(q("已选河景房 · €280 / 晚", "River-view room selected · €280 / night")),"small"),
-          InlineHeader(\(q("主要停留点", "Your anchor points"))),
+          InlineHeader(\(q("都在这张地图上", "Your places, on one map"))),
           Map([
             {id:"louvre",title:\(q("卢浮宫", "The Louvre")),lat:48.8606,lng:2.3376,imageSrc:"/paris-louvre.jpg",subtitle:\(q("艺术与宫殿", "Art and a royal palace")),icon:"building.columns"},
             {id:"germain",title:\(q("圣日耳曼", "Saint-Germain")),lat:48.8539,lng:2.3332,imageSrc:"/paris-cafe.jpg",subtitle:\(q("咖啡馆与左岸散步", "Cafés and Left Bank walks")),icon:"cup.and.saucer"},
@@ -225,10 +176,48 @@ enum ReviewScenePrograms {
             {id:"cruise",title:\(q("塞纳河游船码头", "Seine cruise pier")),lat:48.86039,lng:2.29353,imageSrc:"/paris-eiffel.jpg",subtitle:"Port de la Bourdonnais",icon:"ferry"},
             {id:"deux-magots",title:"Les Deux Magots",lat:48.85389,lng:2.33306,imageSrc:"/paris-cafe.jpg",subtitle:"6 place Saint-Germain-des-Prés",icon:"cup.and.saucer"}
           ],[],null,"regular","wgs84"),
-          InlineHeader(\(q("一笔预算，看清全部", "The whole trip in one budget"))),
+          InlineHeader(\(q("往返交通", "Getting there and back"))),
+          TextContent(\(q("推荐 08:00 去程、18:30 返程；时间均为当地时间。", "The 08:00 outbound and 18:30 return leave room for both days. All times are local.")),"small"),
+          Tabs([
+            TabItem("outbound",\(q("去程 · 11 月 5 日", "Outbound · 5 Nov")),[CompositeCardBlock([CompositeCardItem("early",IconText(Icon("plane"),"neutral","m",\(q("早班抵达 · 推荐", "Early arrival · recommended")),\(q("11 月 5 日 · 希思罗 → 戴高乐", "5 Nov · Heathrow → Charles de Gaulle")),true),[
+                  BoldText("text","08:00 → 10:20",null,"text","lg"),
+                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
+                ],{price:BoldText("number","€150",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"primary",null,"small")}),
+                CompositeCardItem("midmorning",IconText(Icon("plane"),"neutral","m",\(q("上午出发", "Mid-morning departure")),\(q("11 月 5 日 · 希思罗 → 戴高乐", "5 Nov · Heathrow → Charles de Gaulle")),true),[
+                  BoldText("text","09:30 → 11:50",null,"text","lg"),
+                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
+                ],{price:BoldText("number","€190",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")}),
+                CompositeCardItem("later",IconText(Icon("plane"),"neutral","m",\(q("午前出发", "Late-morning departure")),\(q("11 月 5 日 · 希思罗 → 戴高乐", "5 Nov · Heathrow → Charles de Gaulle")),true),[
+                  BoldText("text","11:00 → 13:20",null,"text","lg"),
+                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
+                ],{price:BoldText("number","€210",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")})],"carousel",true)]),
+            TabItem("inbound",\(q("返程 · 11 月 6 日", "Return · 6 Nov")),[CompositeCardBlock([CompositeCardItem("evening",IconText(Icon("plane"),"neutral","m",\(q("傍晚返程 · 推荐", "Evening return · recommended")),\(q("11 月 6 日 · 戴高乐 → 希思罗", "6 Nov · Charles de Gaulle → Heathrow")),true),[
+                  BoldText("text","18:30 → 18:50",null,"text","lg"),
+                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
+                ],{price:BoldText("number","€170",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"primary",null,"small")}),
+                CompositeCardItem("late",IconText(Icon("plane"),"neutral","m",\(q("晚班返程", "Late return")),\(q("11 月 6 日 · 戴高乐 → 希思罗", "6 Nov · Charles de Gaulle → Heathrow")),true),[
+                  BoldText("text","20:00 → 20:20",null,"text","lg"),
+                  TagBlock([\(q("直飞", "Nonstop")),\(q("1小时20分", "1h 20m"))],"sm")
+                ],{price:BoldText("number","€195",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")}),
+                CompositeCardItem("afternoon",IconText(Icon("plane"),"neutral","m",\(q("提前返程", "Earlier return")),\(q("11 月 6 日 · 戴高乐 → 希思罗", "6 Nov · Charles de Gaulle → Heathrow")),true),[
+                  BoldText("text","16:00 → 16:20",null,"text","lg"),
+                  TagBlock([\(q("直飞", "Nonstop")),\(q("需缩短游览", "Shorter sightseeing day"))],"sm")
+                ],{price:BoldText("number","€145",\(q("两人单程", "For two · one way")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.britishairways.com/travel/home/public/en_gb/"),"secondary",null,"small")})],"carousel",true)])
+          ]),
+          InlineHeader(\(q("住一晚，选一处落脚点", "A place to stay"))),
+          CompositeCardBlock([CompositeCardItem("central",ImageTextLarge("/stay-central.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("左岸花园房 · 推荐", "Left Bank garden room · recommended")),null,true),[
+              TagBlock([\(q("花园景观", "Garden view")),\(q("含早餐", "Breakfast included"))],"sm"),Text("text",\(q("花园朝向，双人入住，含早餐。", "Garden-facing double room with breakfast.")))
+            ],{price:BoldText("number","€220",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"),"primary",null,"small")}),
+            CompositeCardItem("outer",ImageTextLarge("/stay-transit.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("近交通站 · 大床房", "Transit-side king room")),null,true),[
+              TagBlock([\(q("城景", "City view")),\(q("大床", "King bed"))],"sm"),Text("text",\(q("大床、城景，靠近公共交通。", "King bed, city view and public transport nearby.")))
+            ],{price:BoldText("number","€160",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"),"secondary",null,"small")}),
+            CompositeCardItem("riverside",ImageTextLarge("/stay-central.jpg",\(q("客房示意图", "Illustrative guest room")),\(q("河畔 · 景观房", "Riverside view room")),null,true),[
+              TagBlock([\(q("河景", "River view")),\(q("含早餐", "Breakfast included"))],"sm"),Text("text",\(q("河景双人房，含早餐。", "River-view double room with breakfast.")))
+            ],{price:BoldText("number","€280",\(q("1 间 · 1 晚", "1 room · 1 night")),"text","lg"),button:Button(\(q("订", "Book")),@OpenUrl("https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"),"secondary",null,"small")})],"carousel",true),
+          InlineHeader(\(q("推荐方案，花费一眼看清", "The recommended plan, priced out"))),
           Stack([
             BoldText("number","€"+total,\(q("两人旅行合计", "trip total for two")),"text","lg"),
-            TextContent(\(q("随住宿方案更新", "Updates with your stay")),"small")
+            TextContent(\(q("按推荐航班与住宿计算", "Based on the recommended flights and stay")),"small")
           ],"row","s","center","between",true),
           PieChart([
             \(q("机票", "Flights")),
@@ -245,7 +234,8 @@ enum ReviewScenePrograms {
             visits,
             60
           ],"donut"),
-          TextContent(\(q("两天各留一个重点，第二天下午留给返程。先确认航班、住宿和入场时段；航班酒店是演示报价，门票参考 10 月 26 日官网价，餐饮交通为估算。", "One focus each day, with the second afternoon reserved for departure. Confirm flights, your stay and admission slots first. Flights and hotels are sample quotes; tickets use 26 Oct published rates, and meals and transport are estimates.")),"small")
+          TextContent(\(q("我推荐早去晚回、住左岸，两人预算 €987，已含 €60 余量。先订航班和住宿，再按抵达时间预约卢浮宫，第二天集中游览铁塔与塞纳河。", "I recommend the early outbound, evening return and a Left Bank stay: €987 for two, including a €60 buffer. Book flights and your room first, then fit the Louvre slot around your arrival.")),"small"),
+          TextContent(\(q("示例机票与房源，非实时库存；门票参考 2026-10-26 官网价，餐饮交通为估算，照片为示意。", "Illustrative flights and stays, not live inventory. Ticket rates checked 26 Oct 2026; food and transport are estimates. Photos are illustrative.")),"small")
         ],"column","l")
         """
       sources = [

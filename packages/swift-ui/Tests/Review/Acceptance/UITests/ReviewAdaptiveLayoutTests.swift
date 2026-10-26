@@ -3,24 +3,24 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
-  func testHorizontalStayChoicesUpdateTheTripBudget() {
+  func testStayLinksLeaveTheRecommendedBudgetUnchanged() {
     let app = launch("scene-two-day-trip", inspect: true, language: "en")
-    let title = app.staticTexts["Left Bank · garden double"].firstMatch
+    let title = app.staticTexts["Left Bank garden room · recommended"].firstMatch
     reveal(title, in: app)
     let pagers = app.descendants(matching: .any)
       .matching(identifier: "openui.card-block.composite.pager")
-    XCTAssertEqual(pagers.count, 3)
-    let stays = pagers.element(boundBy: 2)
+    XCTAssertEqual(pagers.count, 2)
+    let stays = pagers.element(boundBy: 1)
     reveal(stays, in: app)
     stays.swipeLeft()
-    let button = stays.buttons.matching(identifier: "Select").allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
+    let button = stays.buttons.matching(identifier: "Book").allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
     XCTAssertNotNil(button)
     button?.tap()
-    XCTAssertTrue(app.staticTexts["Transit-side room selected · €160 / night"].waitForExistence(timeout: 5))
-    let total = app.staticTexts["€927"].firstMatch
+    XCTAssertTrue(app.staticTexts["review.opened-url"].label.hasPrefix("https://www.booking.com/searchresults.html"))
+    let total = app.staticTexts["€987"].firstMatch
     reveal(total, in: app)
     XCTAssertTrue(total.exists)
-    capture(app, name: "trip-horizontal-selection-budget")
+    capture(app, name: "trip-booking-link-fixed-budget")
     app.terminate()
   }
 
@@ -29,8 +29,8 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     let museum = day.staticTexts["€64"].firstMatch
     reveal(museum, in: day)
     XCTAssertTrue(museum.exists)
-    XCTAssertTrue(day.buttons["Book tickets"].firstMatch.exists)
-    day.buttons["Book tickets"].firstMatch.tap()
+    XCTAssertTrue(day.buttons["Book"].firstMatch.exists)
+    day.buttons["Book"].firstMatch.tap()
     XCTAssertEqual(day.staticTexts["review.opened-url"].label, "https://ticket.louvre.fr/en")
     let cruise = day.staticTexts["€36"].firstMatch
     reveal(cruise, in: day)
