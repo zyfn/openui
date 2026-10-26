@@ -40,8 +40,10 @@ their source proportions instead of inheriting a fixed web aspect ratio.
 Thumbnail and gallery slots retain their visual roles. These are
 native visual defaults, not additional language rules. Resource state,
 retry and previews share `OpenUIResourceContext`. A missing or failed image must
-not erase adjacent text or actions. Do not assume every horizontal composition has
-one image and one fixed-width text column.
+not erase adjacent text or actions. Loading and failure retain the declared media
+slot and show a neutral placeholder; detailed failure controls live in optional
+diagnostics. Do not assume every horizontal composition has one image and one
+fixed-width text column.
 
 On platforms using SwiftUI Layout (iOS 16+/macOS 13+), an `Image` directly inside
 a nonwrapping horizontal `Stack` or `Card` with `align="stretch"` fills the final
@@ -51,7 +53,6 @@ instead of a flexible image's original aspect ratio. An image-only row keeps its
 natural measurement so it cannot collapse to zero height.
 This honors the declared cross-axis alignment without a fixed media/content ratio.
 Other alignments and standalone images retain their source-proportional preview.
-The older layout fallback retains the source-proportional preview.
 
 The optional Map renders supplied coordinates and valid point facts. Its default
 bottom cards are compact, internal to the map and synchronized with icon markers.
@@ -60,9 +61,9 @@ are inferred from labels. SVG and WebView are installed through `OpenUIWeb`.
 
 ## Platform boundaries
 
-The modern Layout implementation is available on iOS 16/macOS 13 and later. iOS 15
-and macOS 12 retain stack/scroll fallbacks; identical layout algorithms or pixels
-across OS versions are not promised. MarkdownUI manages its internal semantic font
+The SDK requires iOS 16/macOS 13 or later and uses one measured Layout
+implementation. Pager height comes from the complete measured pages, rather than
+an asynchronous horizontal-scroll height cache. MarkdownUI manages its internal semantic font
 roles; the SDK shares supported colors, spacing and media styling through its
 public API rather than reflection.
 

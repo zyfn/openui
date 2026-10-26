@@ -146,11 +146,7 @@ private struct NativeCalendarPresentation: ViewModifier {
     @ScaledMetric(relativeTo: .body) private var height: CGFloat = 500
     @ViewBuilder func body(content: Content) -> some View {
         #if os(iOS)
-            if #available(iOS 16, *) {
-                content.presentationDetents([.height(height), .large]).presentationDragIndicator(.visible)
-            } else {
-                content
-            }
+            content.presentationDetents([.height(height), .large]).presentationDragIndicator(.visible)
         #else
             content
         #endif

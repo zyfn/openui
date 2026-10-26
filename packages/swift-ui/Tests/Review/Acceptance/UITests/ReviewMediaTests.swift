@@ -43,7 +43,7 @@ final class ReviewMediaTests: ReviewTestCase {
     reveal(single, in: app)
     single.tap()
     XCTAssertTrue(app.buttons["openui.gallery.image.0"].waitForExistence(timeout: 5))
-    XCTAssertFalse(app.buttons["openui.gallery.image.1"].exists)
+    XCTAssertTrue(app.buttons["openui.gallery.image.1"].exists)
     capture(app, name: "matrix-gallery-single")
     let many = app.buttons["恢复图集"]
     reveal(many, in: app)
@@ -54,26 +54,28 @@ final class ReviewMediaTests: ReviewTestCase {
     app.terminate()
   }
 
-  func testNativeMediaUnavailableCollapsesAndPreservesContent() {
+  func testNativeMediaUnavailableKeepsSlotsAndPreservesContent() {
     let app = launch("media-states", inspect: true, media: "unavailable")
-    let summary = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["9 images unavailable", "9 张图片暂不可用"])).firstMatch
-    XCTAssertTrue(summary.waitForExistence(timeout: 8))
-    let gallery = app.descendants(matching: .any).matching(identifier: "openui.gallery").firstMatch
-    reveal(gallery, in: app)
-    XCTAssertLessThan(gallery.frame.height, app.windows.firstMatch.frame.height * 0.35)
-    XCTAssertFalse(app.buttons["openui.gallery.image.0"].exists)
-    XCTAssertTrue(app.staticTexts["观察作品的细节"].exists)
+    let first = app.buttons["openui.gallery.image.0"]
+    XCTAssertTrue(first.waitForExistence(timeout: 8))
+    XCTAssertFalse(first.isEnabled)
+    XCTAssertTrue(app.buttons["openui.gallery.image.4"].exists)
     XCTAssertTrue(app.staticTexts["这段摘要在图片不可用时仍应保留。"].exists)
-    capture(app, name: "media-all-unavailable")
+    reveal(first, in: app)
+    XCTAssertGreaterThan(first.frame.height, 60)
+    XCTAssertFalse(app.buttons["openui.media.retry"].exists)
+    capture(app, name: "media-unavailable-preserved-slots")
+    let options = app.buttons["openui.gallery.options"]
+    reveal(options, in: app)
+    options.tap()
     app.buttons["openui.gallery.details"].tap()
-    XCTAssertTrue(app.staticTexts["参考照片一"].exists)
-    XCTAssertTrue(app.staticTexts["参考照片九"].exists)
+    XCTAssertTrue(app.staticTexts["参考照片一"].waitForExistence(timeout: 3))
+    app.buttons["openui.gallery.details.close"].tap()
     let choice = app.buttons["保留本地选择"]
     reveal(choice, in: app)
     choice.tap()
     XCTAssertTrue(app.staticTexts["1"].exists)
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
-    capture(app, name: "media-unavailable-descriptions")
     app.terminate()
   }
 
@@ -135,10 +137,11 @@ final class ReviewMediaTests: ReviewTestCase {
     app.scrollViews["review.surface"].swipeUp(velocity: .slow)
     let good = app.buttons["openui.gallery.image.0"]
     XCTAssertTrue(good.waitForExistence(timeout: 8))
-    let summary = app.staticTexts["4 images unavailable"]
-    XCTAssertTrue(summary.waitForExistence(timeout: 8))
+    let unavailable = app.buttons["openui.gallery.image.1"]
+    XCTAssertTrue(unavailable.waitForExistence(timeout: 8))
+    XCTAssertFalse(unavailable.isEnabled)
     reveal(good, in: app)
-    XCTAssertFalse(app.buttons["openui.gallery.image.1"].exists)
+    XCTAssertTrue(app.buttons["openui.gallery.image.1"].exists)
     capture(app, name: "media-partial-photos")
     good.tap()
     let failed = app.buttons["openui.gallery.thumbnail.1"]
@@ -148,15 +151,14 @@ final class ReviewMediaTests: ReviewTestCase {
     app.terminate()
 
     let retry = launch("media-states", inspect: true, media: "retry")
-    XCTAssertTrue(retry.staticTexts["9 images unavailable"].waitForExistence(timeout: 8))
-    let button = retry.buttons["openui.gallery.retry"]
-    reveal(button, in: retry)
-    button.tap()
+    let options = retry.buttons["openui.gallery.options"]
+    reveal(options, in: retry)
+    options.tap()
+    retry.buttons["openui.gallery.retry"].tap()
     let recovered = retry.buttons["openui.gallery.image.0"]
     XCTAssertTrue(recovered.waitForExistence(timeout: 8))
     let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: recovered)
     XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
-    XCTAssertFalse(retry.staticTexts["9 images unavailable"].exists)
     capture(retry, name: "media-retry-recovered")
     retry.terminate()
   }

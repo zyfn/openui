@@ -2,7 +2,7 @@
 
 Apple-platform bindings for the shared OpenUI `lang-core`. The SwiftPM product and
 import are `OpenUILang`; the package identity is `swift-lang`. Swift 6 tools build
-in Swift 5 language mode on iOS 15+ and macOS 12+. JavaScriptCore is required.
+in Swift 5 language mode on iOS 16+ and macOS 13+. JavaScriptCore is required.
 
 Parsing, streaming completion, expression evaluation, library extension, Schema,
 Prompt generation, Store, query lifecycle and message handling delegate to the

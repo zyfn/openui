@@ -85,7 +85,7 @@ This replaces the former single-string tooltip without adding language fields.
 shared loading condition to native renderers. Empty charts omit a fixed canvas;
 loaded values remain visible during refetch.
 
-Layout fallbacks on iOS 15/macOS 12 are documented in [the visual contract](UI-DESIGN.md).
+The minimum supported versions are iOS 16/macOS 13; measured layout uses one implementation. See [the visual contract](UI-DESIGN.md).
 Hosts needing different appearance can override a renderer through the existing
 library extension API without changing component names or language syntax.
 

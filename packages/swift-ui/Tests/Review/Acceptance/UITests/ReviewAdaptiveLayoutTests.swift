@@ -13,6 +13,11 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
       XCTAssertGreaterThan(content.frame.height, 0)
       XCTAssertEqual(content.frame.width, app.windows.firstMatch.frame.width - 40, accuracy: 2)
       XCTAssertFalse(app.staticTexts["review.errors"].exists)
+      let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        !app.descendants(matching: .any).matching(identifier: "openui.media.loading")
+          .allElementsBoundByIndex.contains(where: { $0.isHittable })
+      }, object: nil)
+      XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
       capture(app, name: "adaptive-" + name)
       app.terminate()
     }

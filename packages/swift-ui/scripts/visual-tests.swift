@@ -98,9 +98,16 @@ let testProduct = object(
   "test-product",
   "isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = ComponentVisualUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR;"
 )
+let baselineDirectory =
+  option("--baselines-dir").map { URL(fileURLWithPath: $0).standardizedFileURL }
+  ?? review.appendingPathComponent("Fixtures/Baselines")
+guard baselineDirectory.lastPathComponent == "Baselines", files.fileExists(atPath: baselineDirectory.path) else {
+  print("--baselines-dir must point to an existing Baselines directory")
+  exit(2)
+}
 let baselines = object(
   "baseline-folder",
-  "isa = PBXFileReference; lastKnownFileType = folder; path = \(quote(review.appendingPathComponent("Fixtures/Baselines").path)); sourceTree = \"<absolute>\";"
+  "isa = PBXFileReference; lastKnownFileType = folder; path = \(quote(baselineDirectory.path)); sourceTree = \"<absolute>\";"
 )
 let baselineBuild = object("baseline-build", "isa = PBXBuildFile; fileRef = \(baselines);")
 let images = object(
@@ -217,7 +224,7 @@ var testConfigs: [String] = []
 for configuration in ["Debug", "Release"] {
   let common = [
     "ONLY_ACTIVE_ARCH": configuration == "Debug" ? "YES" : "NO", "SDKROOT": "iphoneos",
-    "IPHONEOS_DEPLOYMENT_TARGET": "15.0", "SWIFT_VERSION": "5.0", "CLANG_ENABLE_MODULES": "YES",
+    "IPHONEOS_DEPLOYMENT_TARGET": "16.0", "SWIFT_VERSION": "5.0", "CLANG_ENABLE_MODULES": "YES",
     "SWIFT_ACTIVE_COMPILATION_CONDITIONS": configuration == "Debug" ? "DEBUG" : "",
     "SWIFT_OPTIMIZATION_LEVEL": configuration == "Debug" ? "-Onone" : "-O",
     "CURRENT_PROJECT_VERSION": buildStamp,

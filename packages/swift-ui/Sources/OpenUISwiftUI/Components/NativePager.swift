@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Paging accepts arbitrary views and stable selection ids. Current systems use
-/// SwiftUI scroll targets; the older-system gesture adapter shares the same
-/// content measurement and selection, without a second card implementation.
+/// One layout pass measures all pages and places them in a clipped viewport.
+/// Page height is intrinsic, including updates inside a mounted page; it is not
+/// fed back asynchronously through a horizontal ScrollView's fixed frame.
 struct NativePager<ID: Hashable, Content: View>: View {
   let ids: [ID]
   @Binding var selection: ID
@@ -14,73 +14,51 @@ struct NativePager<ID: Hashable, Content: View>: View {
   var trailingPeek: CGFloat = 0
   var pageSpacing: CGFloat = 0
   @ViewBuilder let content: (ID) -> Content
-  @Namespace private var measurementScope
+  @Namespace private var scope
   @State private var width: CGFloat = 0
-  @State private var heights: [ID: CGFloat] = [:]
+  @State private var naturalHeight: CGFloat = 0
   @GestureState private var translation: CGFloat = 0
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.layoutDirection) private var direction
   @Environment(\.openUITheme) private var theme
   private var index: Int { ids.firstIndex(of: selection) ?? 0 }
   private var isCarousel: Bool { maximumPageWidth != nil }
-  private var pageWidth: CGFloat {
-    guard let maximumPageWidth else { return width }
-    let peek = min(max(0, trailingPeek), max(0, width - theme.minimumCardWidth - pageSpacing))
-    let reservation = peek > 0 ? peek + pageSpacing : 0
-    return min(max(1, maximumPageWidth), max(1, width - reservation))
-  }
-  private var stride: CGFloat { pageWidth + pageSpacing }
-  private var height: CGFloat? { isCarousel ? heights.values.max() : heights[selection] ?? heights.values.max() }
-  private var visibleHeight: CGFloat? { height.map { min($0, maximumHeight ?? $0) } }
-  private var position: Binding<ID?> {
-    Binding(get: { selection }, set: { if let id = $0, enabled, ids.contains(id) { selection = id } })
+  private var fallbackWidth: CGFloat { maximumPageWidth ?? theme.minimumCardWidth }
+  private var geometry: NativePagerGeometry {
+    NativePagerGeometry(
+      width: max(1, width), count: ids.count, selected: index,
+      maximumPageWidth: maximumPageWidth, minimumPageWidth: theme.minimumCardWidth,
+      peek: trailingPeek, spacing: pageSpacing)
   }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      if width > 0 {
-        if let height, let maximumHeight, height > maximumHeight {
-          ScrollView(.vertical, showsIndicators: true) {
-            viewport.frame(height: height, alignment: .top)
-          }
-          .frame(height: visibleHeight)
-        } else {
-          // A horizontal scroll view otherwise accepts the parent's proposed
-          // height. Use its measured page height instead, including in overlays.
-          // The initial one-point viewport still measures fixed-size page content.
-          viewport.frame(height: height ?? 1, alignment: .top)
-        }
-        if showsControls && ids.count > 1 {
-          NativePageControls(page: index, count: ids.count, enabled: enabled, identifier: identifier, select: select)
-        }
+      if let maximumHeight {
+        // Only explicitly capped map previews need a vertical scroll viewport.
+        ScrollView(.vertical, showsIndicators: naturalHeight > maximumHeight) { strip }
+          .frame(height: min(max(1, naturalHeight), maximumHeight))
       } else {
-        // Establish a real viewport before measuring text or images. A synthetic
-        // one-point proposal can produce invalid intrinsic text dimensions.
-        Color.clear.frame(height: 1)
+        strip
+      }
+      if showsControls && ids.count > 1 {
+        NativePageControls(page: index, count: ids.count, enabled: enabled, identifier: identifier, select: select)
       }
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(GeometryReader { geometry in
-      Color.clear.preference(key: NativePagerWidths.self, value: [measurementScope: geometry.size.width])
-    })
-    .onPreferenceChange(NativePagerWidths.self) { measurements in
-      guard let next = measurements[measurementScope], next.isFinite, next > 0 else { return }
-      if abs(next - width) > 0.5 { width = next }
-    }
-    .onPreferenceChange(NativePagerHeights<ID>.self) { measurements in
-      let measured = (measurements[measurementScope] ?? [:]).filter { $0.value.isFinite && $0.value > 0 }
-      let updated = heights.merging(measured, uniquingKeysWith: { _, next in next })
-      if updated != heights { heights = updated }
-    }
+    .frame(idealWidth: fallbackWidth, maxWidth: .infinity, alignment: .leading)
+    .animation(
+      reduceMotion
+        ? nil
+        : .interactiveSpring(
+          response: theme.motion.pagingResponse,
+          dampingFraction: theme.motion.pagingDamping), value: selection
+    )
     .onChange(of: ids) { available in
-      heights = heights.filter { available.contains($0.key) }
       if !available.contains(selection), let first = available.first { selection = first }
     }
-    .animation(reduceMotion ? nil : .interactiveSpring(response: theme.motion.pagingResponse,
-        dampingFraction: theme.motion.pagingDamping), value: selection)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier(identifier + ".pager")
-    .accessibilityAdjustableAction { direction in
-      switch direction {
+    .accessibilityAdjustableAction { action in
+      switch action {
       case .increment: select(index + 1)
       case .decrement: select(index - 1)
       @unknown default: break
@@ -88,69 +66,113 @@ struct NativePager<ID: Hashable, Content: View>: View {
     }
   }
 
-  private var pages: some View {
-    ForEach(ids, id: \.self) { id in
-      content(id)
-        .frame(width: pageWidth, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .background(GeometryReader { geometry in
-          Color.clear.preference(key: NativePagerHeights<ID>.self,
-            value: [measurementScope: [id: geometry.size.height]])
-        })
-        .id(id)
-        .accessibilityHidden(!isCarousel && id != selection)
-    }
-  }
-
-  @ViewBuilder private var viewport: some View {
-    if #available(iOS 17, macOS 14, *) {
-      let scroll = ScrollView(.horizontal, showsIndicators: false) {
-        HStack(alignment: .top, spacing: pageSpacing) { pages }.scrollTargetLayout()
+  private var strip: some View {
+    NativePagerLayout(
+      selected: index, maximumPageWidth: maximumPageWidth,
+      minimumPageWidth: theme.minimumCardWidth, peek: trailingPeek, spacing: pageSpacing,
+      fallbackWidth: fallbackWidth, translation: translation, rightToLeft: direction == .rightToLeft
+    ) {
+      ForEach(ids, id: \.self) { id in
+        content(id).id(id).accessibilityHidden(!isCarousel && id != selection)
       }
-      .scrollPosition(id: position, anchor: .leading)
-      .scrollDisabled(!enabled)
-      if isCarousel { scroll.scrollTargetBehavior(.viewAligned) }
-      else { scroll.scrollTargetBehavior(.paging) }
+    }
+    .clipped().contentShape(Rectangle())
+    .background(
+      GeometryReader { measured in
+        Color.clear.preference(key: NativePagerSizes.self, value: [scope: measured.size])
+      }
+    )
+    .onPreferenceChange(NativePagerSizes.self) { sizes in
+      guard let size = sizes[scope], size.width.isFinite, size.height.isFinite else { return }
+      if abs(size.width - width) > 0.5 { width = size.width }
+      if maximumHeight != nil, abs(size.height - naturalHeight) > 0.5 { naturalHeight = size.height }
+    }
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 16)
+        .updating($translation) { value, current, _ in
+          guard enabled, ids.count > 1, abs(value.translation.width) > abs(value.translation.height) else { return }
+          let movement = value.translation.width * (direction == .rightToLeft ? -1 : 1)
+          let edge = (index == 0 && movement > 0) || (index == ids.count - 1 && movement < 0)
+          current = movement * (edge ? 0.2 : 1)
+        }
+        .onEnded { value in
+          guard enabled, abs(value.translation.width) > abs(value.translation.height),
+            abs(value.predictedEndTranslation.width) > max(24, geometry.stride * 0.2)
+          else { return }
+          let movement = value.predictedEndTranslation.width * (direction == .rightToLeft ? -1 : 1)
+          select(index + (movement < 0 ? 1 : -1))
+        })
+  }
+
+  private func select(_ next: Int) {
+    guard enabled, ids.indices.contains(next) else { return }
+    selection = ids[next]
+  }
+}
+
+struct NativePagerGeometry {
+  let width: CGFloat
+  let pageWidth: CGFloat
+  let stride: CGFloat
+  let offset: CGFloat
+
+  init(
+    width: CGFloat, count: Int, selected: Int, maximumPageWidth: CGFloat?,
+    minimumPageWidth: CGFloat, peek: CGFloat, spacing: CGFloat
+  ) {
+    self.width = max(1, width.isFinite ? width : 1)
+    if let maximumPageWidth {
+      let visiblePeek = min(max(0, peek), max(0, self.width - minimumPageWidth - spacing))
+      let reservation = count > 1 && visiblePeek > 0 ? visiblePeek + spacing : 0
+      pageWidth = min(max(1, maximumPageWidth), max(1, self.width - reservation))
     } else {
-      HStack(alignment: .top, spacing: pageSpacing) { pages }
-        .offset(x: -CGFloat(index) * stride + translation)
-        .frame(width: width, alignment: .leading)
-        .clipped()
-        .contentShape(Rectangle())
-        .simultaneousGesture(
-          DragGesture(minimumDistance: 16)
-            .updating($translation) { value, current, _ in
-              guard enabled, ids.count > 1, abs(value.translation.width) > abs(value.translation.height) else { return }
-              let edge = (index == 0 && value.translation.width > 0) || (index == ids.count - 1 && value.translation.width < 0)
-              current = value.translation.width * (edge ? 0.2 : 1)
-            }
-            .onEnded { value in
-              guard abs(value.translation.width) > abs(value.translation.height),
-                abs(value.predictedEndTranslation.width) > max(24, stride * 0.2) else { return }
-              select(index + (value.predictedEndTranslation.width < 0 ? 1 : -1))
-            })
+      pageWidth = self.width
+    }
+    stride = pageWidth + spacing
+    let end = max(0, CGFloat(count) * pageWidth + CGFloat(max(0, count - 1)) * spacing - self.width)
+    offset = min(max(0, CGFloat(selected) * stride), end)
+  }
+}
+
+private struct NativePagerLayout: Layout {
+  let selected: Int
+  let maximumPageWidth: CGFloat?
+  let minimumPageWidth: CGFloat
+  let peek: CGFloat
+  let spacing: CGFloat
+  let fallbackWidth: CGFloat
+  let translation: CGFloat
+  let rightToLeft: Bool
+
+  private func geometry(_ proposal: ProposedViewSize, count: Int) -> NativePagerGeometry {
+    let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? fallbackWidth
+    return NativePagerGeometry(
+      width: width, count: count, selected: selected,
+      maximumPageWidth: maximumPageWidth, minimumPageWidth: minimumPageWidth, peek: peek, spacing: spacing)
+  }
+  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    let layout = geometry(proposal, count: subviews.count)
+    let height =
+      subviews.map { $0.sizeThatFits(ProposedViewSize(width: layout.pageWidth, height: nil)).height }
+      .filter { $0.isFinite }.max() ?? 0
+    return CGSize(width: layout.width, height: height)
+  }
+  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    let layout = geometry(ProposedViewSize(width: bounds.width, height: nil), count: subviews.count)
+    for (index, view) in subviews.enumerated() {
+      let height = view.sizeThatFits(ProposedViewSize(width: layout.pageWidth, height: nil)).height
+      let position = CGFloat(index) * layout.stride - layout.offset + translation
+      let x = rightToLeft ? bounds.width - layout.pageWidth - position : position
+      view.place(
+        at: CGPoint(x: bounds.minX + x, y: bounds.minY), anchor: .topLeading,
+        proposal: ProposedViewSize(width: layout.pageWidth, height: height))
     }
   }
-
-  private func select(_ index: Int) {
-    guard enabled, ids.indices.contains(index) else { return }
-    selection = ids[index]
-  }
 }
 
-// Each pager has its own key within the preference, so nested pagers cannot
-// overwrite each other's dimensions and empty sibling values cannot erase them.
-private struct NativePagerWidths: PreferenceKey {
-  static let defaultValue: [Namespace.ID: CGFloat] = [:]
-  static func reduce(value: inout [Namespace.ID: CGFloat], nextValue: () -> [Namespace.ID: CGFloat]) {
+private struct NativePagerSizes: PreferenceKey {
+  static let defaultValue: [Namespace.ID: CGSize] = [:]
+  static func reduce(value: inout [Namespace.ID: CGSize], nextValue: () -> [Namespace.ID: CGSize]) {
     value.merge(nextValue(), uniquingKeysWith: { _, next in next })
-  }
-}
-private struct NativePagerHeights<ID: Hashable>: PreferenceKey {
-  static var defaultValue: [Namespace.ID: [ID: CGFloat]] { [:] }
-  static func reduce(value: inout [Namespace.ID: [ID: CGFloat]], nextValue: () -> [Namespace.ID: [ID: CGFloat]]) {
-    value.merge(nextValue(), uniquingKeysWith: { current, next in
-      current.merging(next, uniquingKeysWith: { _, next in next })
-    })
   }
 }

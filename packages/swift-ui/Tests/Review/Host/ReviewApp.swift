@@ -18,7 +18,9 @@ struct ComponentVisualHostApp: App {
         if configuration.streamingCase == "queries" {
           ReviewQueryWorkspace(library: library)
         } else if let mode = configuration.streamingCase {
-          ReviewStreamingWorkspace(library: library, mode: mode, language: configuration.display.language)
+          ReviewStreamingWorkspace(
+            library: library, mode: mode, language: configuration.display.language,
+            autoRun: configuration.streamingAuto)
         } else if configuration.audit {
           ReviewEngineAuditView(library: library)
         } else {

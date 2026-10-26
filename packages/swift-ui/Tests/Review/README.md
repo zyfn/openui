@@ -123,6 +123,7 @@ swift packages/swift-ui/scripts/visual-tests.swift \
 | `--phone-only` | Phone acceptance without wide-screen or broad large-text sweeps |
 | `--package-tests` | Run the package-level checks too |
 | `--prepare-only` | Generate a project for Xcode or XcodeBuildMCP |
+| `--baselines-dir path/Baselines` | Compare with a versioned native screenshot reference set |
 | `--stream-program file.openui` | Replay an unchanged saved streaming source |
 | `--review-program file.openui` | Inspect an external program and its table geometry |
 | `--review-examples file.json` | Add external exported guidance examples |
@@ -178,3 +179,8 @@ Screenshots document native output; they do not independently prove aesthetics.
 Structural checks and approved pixel comparisons are distinct. The runner exports
 an xcresult bundle, bounded logs, attachments and its last result path into the
 chosen output directory. Avoid changing source during a recorded acceptance run.
+
+The `resizing-carousel` streaming fixture checks mounted content growth without
+adding another task scene. Saved sources can be replayed with `--stream-auto`;
+the original program bytes remain unchanged. Geometry checks cover footer/section
+separation, narrow snippets and image-slot stability across resource states.

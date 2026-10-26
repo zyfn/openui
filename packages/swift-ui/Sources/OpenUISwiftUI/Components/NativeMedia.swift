@@ -12,16 +12,15 @@ enum NativeMediaLayout {
   case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic, stretch
 }
 
-/// Shared native resource presentation. Network failures stay outside language
-/// diagnostics, and a failed resource does not retain a successful image's box.
+/// Shared native resource presentation. Resource states preserve the declared
+/// media layout; network failures remain separate from language diagnostics.
 struct NativeRemoteImage: View {
   let src: String?
   var alt = ""
   var layout: NativeMediaLayout = .aspect(4 / 3)
-  var compactStates = false
   var cachedImage: Image?
+  var attempt = 0
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
-  @State private var attempt = 0
   @State private var phase: AsyncImagePhase = .empty
   @State private var imageSize: CGSize?
   @State private var loadedRequest: NativeResourceRequestID?
@@ -41,10 +40,14 @@ struct NativeRemoteImage: View {
           case .failure: unavailable.onAppear { onStatus?(.unavailable, nil) }
           @unknown default: unavailable.onAppear { onStatus?(.unavailable, nil) }
           }
-        }.task(id: requestID) { await load() }
+        }
       } else {
         unavailable.onAppear { onStatus?(.unavailable, nil) }
       }
+    }
+    .task(id: requestID) {
+      guard cachedImage == nil else { return }
+      if requestID.request == nil { onStatus?(.unavailable, nil) } else { await load() }
     }
   }
   private var requestID: NativeResourceRequestID {
@@ -86,36 +89,27 @@ struct NativeRemoteImage: View {
     .accessibilityElement(children: .ignore).accessibilityLabel(alt)
     .accessibilityAddTraits(.isImage).accessibilityHidden(alt.isEmpty)
   }
-  @ViewBuilder private var loading: some View {
-    if compactStates {
-      HStack(spacing: 8) {
-        ProgressView().controlSize(.small)
-        Text("Loading image", bundle: NativeControlResources.bundle).font(.caption)
-      }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        .foregroundStyle(theme.secondary).accessibilityIdentifier("openui.media.loading")
-    } else {
-      canvas { ZStack { theme.surface; ProgressView() } }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Loading image", bundle: NativeControlResources.bundle))
-        .accessibilityValue(alt)
-        .accessibilityIdentifier("openui.media.loading")
+  private var loading: some View { placeholder(loading: true) }
+  private var unavailable: some View { placeholder(loading: false) }
+  private func placeholder(loading: Bool) -> some View {
+    canvas {
+      ZStack {
+        theme.surface
+        if loading {
+          ProgressView().controlSize(.small).tint(theme.secondary)
+        } else {
+          Image(systemName: "photo").font(.body).foregroundStyle(theme.secondary.opacity(0.55))
+        }
+      }
     }
-  }
-  @ViewBuilder private var unavailable: some View {
-    if case .thumbnail(let size) = layout {
-      Image(systemName: "photo")
-        .font(.body).foregroundStyle(theme.secondary)
-        .frame(width: size.width, height: min(44, size.height))
-        .accessibilityLabel(Text("Image unavailable", bundle: NativeControlResources.bundle))
-        .accessibilityValue(alt).accessibilityIdentifier("openui.media.unavailable")
-    } else if compactStates {
-      Label { Text("Image unavailable", bundle: NativeControlResources.bundle) }
-        icon: { Image(systemName: "photo") }
-        .font(.caption).foregroundStyle(theme.secondary).frame(maxWidth: .infinity, minHeight: 44)
-        .accessibilityIdentifier("openui.media.unavailable")
-    } else {
-      NativeMediaUnavailable(alt: alt, src: src, allowsActions: !cardIsAction) { attempt += 1 }
-    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      alt.isEmpty
+        ? Text(loading ? "Loading image" : "Image unavailable", bundle: NativeControlResources.bundle) : Text(alt)
+    )
+    .accessibilityValue(Text(loading ? "Loading image" : "Image unavailable", bundle: NativeControlResources.bundle))
+    .accessibilityAddTraits(.isImage)
+    .accessibilityIdentifier(loading ? "openui.media.loading" : "openui.media.unavailable")
   }
   // Source proportions determine ordinary image height. Explicitly stretched
   // images receive their bounds from the parent instead.
@@ -130,11 +124,7 @@ struct NativeRemoteImage: View {
     case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
     case .intrinsic: surface.aspectRatio(previewAspectRatio, contentMode: .fit)
     case .stretch:
-      if #available(iOS 16, macOS 13, *) {
-        NativeStretchMediaLayout(aspectRatio: previewAspectRatio) { surface }
-      } else {
-        surface.aspectRatio(previewAspectRatio, contentMode: .fit)
-      }
+      NativeStretchMediaLayout(aspectRatio: previewAspectRatio) { surface }
     }
   }
 }
@@ -142,7 +132,6 @@ struct NativeRemoteImage: View {
 /// Keep a natural measurement until the parent supplies both dimensions. A
 /// stretched row can then crop the image into its measured cross-axis extent
 /// without making that row collapse or relying on a fixed image/text ratio.
-@available(iOS 16, macOS 13, *)
 private struct NativeStretchMediaLayout: Layout {
   let aspectRatio: CGFloat
 
@@ -156,33 +145,6 @@ private struct NativeStretchMediaLayout: Layout {
 
   func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
     subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
-  }
-}
-
-private struct NativeMediaUnavailable: View {
-  let alt: String
-  let src: String?
-  let allowsActions: Bool
-  let retry: () -> Void
-  @Environment(\.openUITheme) private var theme
-  var body: some View {
-    HStack(alignment: .center, spacing: 10) {
-      Image(systemName: "photo").accessibilityHidden(true)
-      VStack(alignment: .leading, spacing: 3) {
-        Text("Image unavailable", bundle: NativeControlResources.bundle).font(.subheadline)
-        if !alt.isEmpty { Text(alt).font(.caption) }
-        if allowsActions { NativeOriginalImageLink(src: src) }
-      }
-      Spacer(minLength: 0)
-      if allowsActions && src?.isEmpty == false {
-        Button(action: retry) { Text("Retry", bundle: NativeControlResources.bundle) }
-          .font(.caption.weight(.semibold)).frame(minWidth: 44, minHeight: 44)
-          .buttonStyle(.plain).accessibilityIdentifier("openui.media.retry")
-      }
-    }
-    .foregroundStyle(theme.secondary).padding(10).frame(maxWidth: .infinity, alignment: .leading)
-    .background(theme.surface, in: RoundedRectangle(cornerRadius: theme.controlCornerRadius))
-    .accessibilityElement(children: .contain).accessibilityIdentifier("openui.media.unavailable")
   }
 }
 
@@ -223,6 +185,8 @@ struct NativeImageGallery: View {
   @State private var pictures: [NativeGalleryResourceID: Image] = [:]
   @State private var selected: NativeGalleryResourceID?
   @State private var preview = false
+  @State private var diagnostics = false
+  @State private var retries: [String: Int] = [:]
   // The pinned upstream ImageGallery previews five items, with Show All.
   private let previewLimit = 5
   private var images: [NativeGalleryImage] {
@@ -231,74 +195,114 @@ struct NativeImageGallery: View {
         src: NativeValue.string(child.value, "src"), alt: NativeValue.string(child.value, "alt") ?? "",
         details: NativeValue.string(child.value, "details"),
         requestID: .init(request: resources.request(for: NativeValue.string(child.value, "src")),
-          loader: ObjectIdentifier(resources.loader), attempt: 0))
+          loader: ObjectIdentifier(resources.loader), attempt: retries[child.id, default: 0]))
     }
   }
-  private var visible: [NativeGalleryImage] { Array(images.filter { phases[$0.key] != .unavailable }.prefix(previewLimit)) }
+  private var visible: [NativeGalleryImage] { Array(images.prefix(previewLimit)) }
   private var failed: [NativeGalleryImage] { images.filter { phases[$0.key] == .unavailable } }
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
       if !visible.isEmpty {
-        LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())]
-          : [GridItem(.adaptive(minimum: context.theme.minimumCompactCardWidth), spacing: context.theme.contentSpacing)],
+        LazyVGrid(
+          columns: typeSize.isAccessibilitySize
+            ? [GridItem(.flexible(), alignment: .topLeading)]
+            : [
+              GridItem(
+                .adaptive(minimum: context.theme.minimumCompactCardWidth), spacing: context.theme.contentSpacing,
+                alignment: .topLeading)
+            ],
           alignment: .leading, spacing: context.theme.contentSpacing) {
           ForEach(visible) { image in
             VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
               Button {
                 selected = image.key; preview = true
               } label: {
-                NativeRemoteImage(src: image.src, alt: image.alt, layout: .aspect(4 / 3), compactStates: true,
-                  cachedImage: pictures[image.key], onStatus: { record($0, image: $1, for: image.key) })
-                  .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius))
+                NativeRemoteImage(
+                  src: image.src, alt: image.alt, layout: .aspect(4 / 3),
+                  cachedImage: pictures[image.key], attempt: image.requestID.attempt,
+                  onStatus: { record($0, image: $1, for: image.key) }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius))
               }
               .buttonStyle(.plain).disabled(!context.canInteract || pictures[image.key] == nil)
               .accessibilityLabel(image.alt.isEmpty ? Text("View image", bundle: NativeControlResources.bundle) : Text(image.alt))
-              .accessibilityValue(pictures[image.key] == nil ? Text("Loading image", bundle: NativeControlResources.bundle) : Text(""))
+              .accessibilityValue(
+                phases[image.key] == .unavailable
+                  ? Text("Image unavailable", bundle: NativeControlResources.bundle)
+                  : pictures[image.key] == nil ? Text("Loading image", bundle: NativeControlResources.bundle) : Text("")
+              )
               .accessibilityIdentifier("openui.gallery.image.\(image.index)")
               if let details = image.details { Text(details).font(context.theme.typography.caption).foregroundStyle(context.theme.secondary) }
             }
           }
         }
       }
-      if images.count > previewLimit && !pictures.isEmpty {
-        Button {
-          if !images.contains(where: { $0.key == selected && pictures[$0.key] != nil }) {
-            selected = images.first(where: { pictures[$0.key] != nil })?.key
-          }
-          preview = true
-        } label: { Text("Show all photos", bundle: NativeControlResources.bundle) }
-          .disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.showAll")
-      }
-      if !failed.isEmpty {
-        VStack(alignment: .leading, spacing: 4) {
-          HStack {
-            Text("\(failed.count) images unavailable", bundle: NativeControlResources.bundle).font(.subheadline)
-            Spacer(minLength: 0)
+      if !images.isEmpty {
+        HStack {
+          if images.count > previewLimit {
             Button {
-              for image in failed { phases.removeValue(forKey: image.key) }
-            } label: { Text("Retry", bundle: NativeControlResources.bundle) }
-              .font(.caption.weight(.semibold)).frame(minWidth: 44, minHeight: 44)
-              .buttonStyle(.plain).disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.retry")
-          }
-          DisclosureGroup {
-            ForEach(failed) { image in
-              VStack(alignment: .leading, spacing: 4) {
-                if !image.alt.isEmpty { Text(image.alt).font(.subheadline) }
-                if let details = image.details { Text(details).font(.caption) }
-                NativeOriginalImageLink(src: image.src)
-              }.padding(.vertical, 4)
+              if !images.contains(where: { $0.key == selected && pictures[$0.key] != nil }) {
+                selected = images.first(where: { pictures[$0.key] != nil })?.key
+              }
+              preview = true
+            } label: {
+              Text("Show all photos", bundle: NativeControlResources.bundle)
             }
-          } label: { Text("Image descriptions", bundle: NativeControlResources.bundle) }
-            .font(.caption).accessibilityIdentifier("openui.gallery.details")
-        }
-        .foregroundStyle(context.theme.secondary).padding(12)
-        .background(context.theme.surface, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
-        .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery.unavailable")
+            .disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.showAll")
+          }
+          Spacer(minLength: 0)
+          Menu {
+            if !failed.isEmpty {
+              Button {
+                for image in failed { retries[image.id, default: 0] += 1 }
+              } label: {
+                Text("Retry", bundle: NativeControlResources.bundle)
+              }
+              .accessibilityIdentifier("openui.gallery.retry")
+            }
+            Button {
+              diagnostics = true
+            } label: {
+              Text("Image descriptions", bundle: NativeControlResources.bundle)
+            }
+            .accessibilityIdentifier("openui.gallery.details")
+          } label: {
+            Image(systemName: "ellipsis").frame(width: 44, height: 44)
+          }
+          .accessibilityLabel(Text("Image descriptions", bundle: NativeControlResources.bundle))
+          .accessibilityIdentifier("openui.gallery.options")
+          .disabled(!context.canInteract)
+        }.font(context.theme.typography.caption)
       }
     }
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery")
     .sheet(isPresented: $preview) {
       NativeGalleryPreview(images: images, selected: $selected, pictures: pictures, phases: phases, record: record)
+    }
+    .sheet(isPresented: $diagnostics) {
+      NavigationView {
+        List(images) { image in
+          VStack(alignment: .leading, spacing: 4) {
+            Text(image.alt)
+            if let details = image.details { Text(details).font(.caption) }
+            if phases[image.key] == .unavailable {
+              Text("Image unavailable", bundle: NativeControlResources.bundle).font(.caption)
+            }
+            NativeOriginalImageLink(src: image.src)
+          }
+        }
+        .navigationTitle(Text("Image descriptions", bundle: NativeControlResources.bundle))
+        .toolbar {
+          ToolbarItem(placement: .confirmationAction) {
+            Button {
+              diagnostics = false
+            } label: {
+              Text("Close", bundle: NativeControlResources.bundle)
+            }
+            .accessibilityIdentifier("openui.gallery.details.close")
+          }
+        }
+      }
     }
     .onChange(of: images.map(\.key)) { keys in
       let current = Set(keys)

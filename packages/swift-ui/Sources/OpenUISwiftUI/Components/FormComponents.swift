@@ -107,16 +107,14 @@ private struct OpenUINativeFormControl: View {
     }
     @ViewBuilder private var layout: some View {
         if grouped && compact && !typeSize.isAccessibilitySize {
-            if #available(iOS 16, macOS 13, *) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 24) {
-                        label.fixedSize(horizontal: true, vertical: true)
-                        input.frame(minWidth: 120, maxWidth: .infinity)
-                            .environment(\.openUIFieldPresentation, .inline)
-                    }
-                    stacked
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 24) {
+                    label.fixedSize(horizontal: true, vertical: true)
+                    input.frame(minWidth: 120, maxWidth: .infinity)
+                        .environment(\.openUIFieldPresentation, .inline)
                 }
-            } else { stacked }
+                stacked
+            }
         } else { stacked }
     }
     private var label: some View {
@@ -137,12 +135,8 @@ private struct OpenUINativeButtons: View {
         if context.string("direction") == "column" {
             VStack(alignment: .leading, spacing: 8) { buttons }
         } else {
-            if #available(iOS 16, macOS 13, *) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 12) { buttons }
-                    VStack(alignment: .leading, spacing: 8) { buttons }
-                }
-            } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { buttons }
                 VStack(alignment: .leading, spacing: 8) { buttons }
             }
         }

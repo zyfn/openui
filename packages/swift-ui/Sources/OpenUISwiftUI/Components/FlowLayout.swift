@@ -45,7 +45,6 @@ enum OpenUIFlowPlacement {
     }
 }
 
-@available(iOS 16, macOS 13, *)
 struct OpenUIFlexLayout: Layout {
     var direction: String
     var gap: CGFloat
@@ -199,8 +198,8 @@ enum NativeMediaRowPlacement {
     }
 }
 
-/// Shared by ImageText/IconText and list media. Scroll overflow is intentional
-/// when a program requests a horizontal row whose fixed media cannot fit.
+/// Ordinary media rows participate directly in their parent's Layout pass.
+/// Only real horizontal overflow uses a scroll viewport and measured height.
 struct NativeMediaRow<Media: View, Copy: View>: View {
     var axis: NativeMediaRowAxis
     var gap: CGFloat
@@ -210,67 +209,52 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
     @Environment(\.openUITheme) private var theme
     @Namespace private var scope
     @State private var width: CGFloat = 0
-    @State private var height: CGFloat = 0
+    @State private var contentSize = CGSize.zero
+    private var overflows: Bool { width > 0 && contentSize.width > width + 0.5 }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if width > 0 {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    row.fixedSize(horizontal: false, vertical: true)
-                        .background(GeometryReader { geometry in
-                            Color.clear.preference(key: NativeMediaRowHeights.self, value: [scope: geometry.size.height])
-                        })
-                }
-                .frame(height: max(1, height))
-                .accessibilityIdentifier("openui.media-row")
-            } else { Color.clear.frame(height: 1) }
+        Group {
+            if overflows {
+                ScrollView(.horizontal, showsIndicators: true) { row }
+                    .frame(height: max(1, contentSize.height))
+            } else {
+                row
+            }
         }
         .frame(idealWidth: theme.minimumCompactCardWidth, maxWidth: .infinity, alignment: .leading)
         .background(GeometryReader { geometry in
             Color.clear.preference(key: NativeMediaRowWidths.self, value: [scope: geometry.size.width])
         })
         .onPreferenceChange(NativeMediaRowWidths.self) { values in
-            guard let next = values[scope], next.isFinite, next > 0 else { return }
-            if abs(next - width) > 0.5 { width = next }
+            if let next = values[scope], next.isFinite, next > 0, abs(next - width) > 0.5 { width = next }
         }
-        .onPreferenceChange(NativeMediaRowHeights.self) { values in
-            guard let next = values[scope], next.isFinite, next > 0 else { return }
-            if abs(next - height) > 0.5 { height = next }
-        }
-    }
-
-    @ViewBuilder private var row: some View {
-        if #available(iOS 16, macOS 13, *) {
-            NativeMediaRowLayout(width: width, gap: gap, axis: axis, centered: centered) {
-                media
-                copy
+        .onPreferenceChange(NativeMediaRowSizes.self) { values in
+            if let next = values[scope], next.width.isFinite, next.height.isFinite, next != contentSize {
+                contentSize = next
             }
-        } else if axis == .horizontal {
-            // The old systems cannot run Layout measurements. Keep an explicit
-            // horizontal relationship, constrain copy to the viewport, and let
-            // any fixed-size media overflow scroll instead of clipping text.
-            HStack(alignment: centered ? .center : .top, spacing: gap) {
-                media
-                copy.frame(width: width, alignment: .leading)
-            }.frame(minWidth: width, alignment: .leading)
-        } else {
-            // An explicit vertical declaration stays vertical on older systems.
-            VStack(alignment: .leading, spacing: gap) {
-                media
-                copy.frame(width: width, alignment: .leading)
-            }.frame(minWidth: width, alignment: .leading)
         }
+        .accessibilityElement(children: .contain).accessibilityIdentifier("openui.media-row")
+    }
+    private var row: some View {
+        NativeMediaRowLayout(fallbackWidth: max(1, width), gap: gap, axis: axis, centered: centered) {
+            media
+            copy
+        }
+        .background(
+            GeometryReader { geometry in
+                Color.clear.preference(key: NativeMediaRowSizes.self, value: [scope: geometry.size])
+            })
     }
 }
 
-@available(iOS 16, macOS 13, *)
 private struct NativeMediaRowLayout: Layout {
-    let width: CGFloat
+    let fallbackWidth: CGFloat
     let gap: CGFloat
     let axis: NativeMediaRowAxis
     let centered: Bool
 
-    private func measured(_ subviews: Subviews) -> NativeMediaRowPlacement.Result {
+    private func measured(_ proposal: ProposedViewSize, _ subviews: Subviews) -> NativeMediaRowPlacement.Result {
+        let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? fallbackWidth
         guard subviews.count > 1 else {
             let size = subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)) ?? .zero
             return .init(media: .zero, text: CGRect(origin: .zero, size: size), size: size, stacked: true)
@@ -278,12 +262,11 @@ private struct NativeMediaRowLayout: Layout {
         return NativeMediaRowPlacement.measure(width: width, media: subviews[0].sizeThatFits(.unspecified),
             gap: gap, axis: axis, centered: centered) { subviews[1].sizeThatFits(ProposedViewSize(width: $0, height: nil)) }
     }
-
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        measured(subviews).size
+        measured(proposal, subviews).size
     }
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = measured(subviews)
+        let result = measured(proposal, subviews)
         let frames = subviews.count > 1 ? [result.media, result.text] : [result.text]
         for (view, frame) in zip(subviews, frames) {
             view.place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
@@ -298,9 +281,9 @@ private struct NativeMediaRowWidths: PreferenceKey {
         value.merge(nextValue(), uniquingKeysWith: { _, next in next })
     }
 }
-private struct NativeMediaRowHeights: PreferenceKey {
-    static let defaultValue: [Namespace.ID: CGFloat] = [:]
-    static func reduce(value: inout [Namespace.ID: CGFloat], nextValue: () -> [Namespace.ID: CGFloat]) {
+private struct NativeMediaRowSizes: PreferenceKey {
+    static let defaultValue: [Namespace.ID: CGSize] = [:]
+    static func reduce(value: inout [Namespace.ID: CGSize], nextValue: () -> [Namespace.ID: CGSize]) {
         value.merge(nextValue(), uniquingKeysWith: { _, next in next })
     }
 }

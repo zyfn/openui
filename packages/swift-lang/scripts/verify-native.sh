@@ -29,6 +29,6 @@ for name,want in expected.items():
 PY
 fi
 run_check 'Language AddressSanitizer regression' work/shared-core-validation/asan-tests.log swift test --package-path packages/swift-lang --scratch-path work/shared-core-validation/asan-build --sanitize=address
-run_check 'iOS 15 Simulator compile' work/shared-core-validation/ios-build.log swift build --package-path packages/swift-ui --scratch-path work/shared-core-validation/ios-build --triple arm64-apple-ios15.0-simulator --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)"
+run_check 'iOS 16 Simulator compile' work/shared-core-validation/ios-build.log swift build --package-path packages/swift-ui --scratch-path work/shared-core-validation/ios-build --triple arm64-apple-ios16.0-simulator --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)"
 run_check 'macOS example consumer compile' work/shared-core-validation/example-build.log swift build --package-path examples/app-frameworks/swiftui-macos --scratch-path work/shared-core-validation/example-build
 printf 'Requested native acceptance checks passed.\n'

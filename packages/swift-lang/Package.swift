@@ -3,10 +3,10 @@ import PackageDescription
 
 let package = Package(
     name: "swift-lang",
-    platforms: [.macOS(.v12), .iOS(.v15)],
-    products: [
-        .library(name: "OpenUILang", targets: ["OpenUILang"]),
-    ],
+  platforms: [.macOS(.v13), .iOS(.v16)],
+  products: [
+    .library(name: "OpenUILang", targets: ["OpenUILang"])
+  ],
     targets: [
         .target(name: "COpenUIRegExp", exclude: ["README.md", "VENDOR.json", "vendor/LICENSE"],
                 sources: ["Bridge.c", "RegExpEngine.c", "UnicodeEngine.c"], publicHeadersPath: "include"),

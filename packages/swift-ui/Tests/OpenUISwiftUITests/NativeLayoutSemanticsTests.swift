@@ -47,3 +47,22 @@ final class NativeLayoutSemanticsTests: XCTestCase {
     }
   }
 }
+
+extension NativeLayoutSemanticsTests {
+    func testLastPeekingPageStaysWithinTheViewportWithoutADeadTrailingArea() {
+        let first = NativePagerGeometry(
+            width: 350, count: 3, selected: 0,
+            maximumPageWidth: 320, minimumPageWidth: 240, peek: 32, spacing: 16)
+        let last = NativePagerGeometry(
+            width: 350, count: 3, selected: 2,
+            maximumPageWidth: 320, minimumPageWidth: 240, peek: 32, spacing: 16)
+        XCTAssertEqual(first.offset, 0)
+        XCTAssertLessThan(first.pageWidth, first.width)
+        XCTAssertEqual(2 * last.stride - last.offset + last.pageWidth, last.width, accuracy: 0.01)
+        XCTAssertGreaterThan(2 * last.stride - last.offset, 0, "The previous page remains visible beside the last card")
+        let single = NativePagerGeometry(
+            width: 300, count: 1, selected: 0,
+            maximumPageWidth: 320, minimumPageWidth: 240, peek: 32, spacing: 16)
+        XCTAssertEqual(single.pageWidth, 300)
+    }
+}

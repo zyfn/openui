@@ -48,9 +48,9 @@ jobs:
         run: swift test --package-path packages/swift-ui
       - name: Compile the standalone macOS example
         run: swift build --package-path examples/app-frameworks/swiftui-macos
-      - name: Compile for iOS 15 Simulator
+      - name: Compile for iOS 16 Simulator
         run: >-
           swift build --package-path packages/swift-ui
           --scratch-path "$RUNNER_TEMP/openui-ios"
-          --triple arm64-apple-ios15.0-simulator
+          --triple arm64-apple-ios16.0-simulator
           --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)"

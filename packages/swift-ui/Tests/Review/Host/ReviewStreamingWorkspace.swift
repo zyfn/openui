@@ -8,19 +8,24 @@ import SwiftUI
   @Environment(\.reviewLanguage) private var language
   let library: OpenUIComponentLibrary
   let mode: String
+  var autoRun = false
   private let source: String
   @StateObject private var state: OpenUIState
   @StateObject private var evidence = ReviewEvidence()
   @State private var offset = 0
   @State private var stage = 0
 
-  init(library: OpenUIComponentLibrary, mode: String, language: ReviewLanguage) {
-    self.library = library; self.mode = mode
+  init(library: OpenUIComponentLibrary, mode: String, language: ReviewLanguage, autoRun: Bool = false) {
+    self.library = library; self.mode = mode; self.autoRun = autoRun
     if mode == "original", let url = Bundle.main.url(forResource: "StreamProgram", withExtension: "openui"),
       let text = try? String(contentsOf: url, encoding: .utf8) { source = text }
-    else if mode == "tabs" { source = ReviewStreamingPrograms.tabs }
-    else if mode == "modal" { source = ReviewStreamingPrograms.modal }
-    else { source = mode == "gallery" ? ReviewStreamingPrograms.gallery : ReviewStreamingPrograms.lifecycle(language: language) }
+    else if mode == "resizing-carousel" {
+      source = ReviewStreamingPrograms.resizingCarousel
+    } else if mode == "tabs" {
+      source = ReviewStreamingPrograms.tabs
+    } else if mode == "modal" {
+      source = ReviewStreamingPrograms.modal
+    } else { source = mode == "gallery" ? ReviewStreamingPrograms.gallery : ReviewStreamingPrograms.lifecycle(language: language) }
     let state = OpenUIState(schema: library.library.toSchema())
     if !["original", "tabs"].contains(mode) { state.setSource(source, streaming: mode == "modal") }
     _state = StateObject(wrappedValue: state)
@@ -38,10 +43,10 @@ import SwiftUI
         Button(language.text("重开程序"), action: replace).accessibilityIdentifier("stream.replace")
       }.font(.caption).buttonStyle(.bordered).padding(8)
       ScrollView {
-        VStack(alignment: .leading, spacing: 12) {
+        LazyVStack(alignment: .leading, spacing: 12) {
           OpenUIRenderer(state: state, registry: library.registry)
             .openUIResourceContext(OpenUIResourceContext(baseURL: URL(string: "https://sdk-fixture.invalid/")))
-            .frame(maxWidth: 240, alignment: .leading).padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20))
           ReviewEvidenceFooter(state: state, evidence: evidence)
           Text("\(offset) / \(source.count)").accessibilityIdentifier("stream.offset")
@@ -60,6 +65,15 @@ import SwiftUI
       evidence.beginExecution(source: source, values: state.snapshotState(), revision: state.sourceRevision, inspect: true)
       state.onStateUpdate = { [evidence] in evidence.capture($0) }
       state.onActionEvaluation = { [evidence] in evidence.recordEvaluation($0) }
+    }
+    .task {
+      if autoRun {
+        while offset < source.count, !Task.isCancelled {
+          advance()
+          try? await Task.sleep(nanoseconds: 30_000_000)
+        }
+        if !Task.isCancelled { state.complete() }
+      }
     }
   }
   private func advance() {

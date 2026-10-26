@@ -48,6 +48,7 @@ struct ReviewConfiguration {
   let inspector: Bool
   let audit: Bool
   let streamingCase: String?
+  let streamingAuto: Bool
   let exportFull: Bool
   let display: ReviewDisplayOptions
 
@@ -60,6 +61,7 @@ struct ReviewConfiguration {
     inspector = arguments.contains("--inspect")
     audit = arguments.contains("--audit-matrix")
     streamingCase = value("--stream-case")
+    streamingAuto = arguments.contains("--stream-auto")
     exportFull = arguments.contains("--export-full")
     display = ReviewDisplayOptions(
       language: ReviewLanguage(rawValue: value("--language")

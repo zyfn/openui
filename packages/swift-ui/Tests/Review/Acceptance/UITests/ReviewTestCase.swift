@@ -137,7 +137,7 @@ class ReviewTestCase: XCTestCase {
     } else {
       let note = XCTAttachment(
         string:
-          "No approved baseline for \(name). This run captures a native image for review; it does not establish pixel-regression acceptance."
+          "No screenshot reference for \(name). This native capture is review evidence, not visual approval."
       )
       note.name = "baseline-status-" + name
       note.lifetime = .keepAlways

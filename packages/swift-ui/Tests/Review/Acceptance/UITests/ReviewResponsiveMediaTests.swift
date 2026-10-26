@@ -48,7 +48,7 @@ final class ReviewResponsiveMediaTests: ReviewTestCase {
     setDisplaySwitch("review.toggle-text", enabled: acceptsLargeText, in: app)
     app.buttons["review.panel-done"].tap()
     waitForPanelToClose(in: app)
-    let row = app.scrollViews["openui.media-row"].firstMatch
+    let row = app.descendants(matching: .any).matching(identifier: "openui.media-row").firstMatch
     reveal(row, in: app)
     XCTAssertEqual(photo.frame.width, 64, accuracy: 2)
     XCTAssertEqual(photo.frame.height, 64, accuracy: 2)

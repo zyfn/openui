@@ -90,7 +90,7 @@ Standard Card uses exactly the official seven parameters (`children`, `variant`,
 
 ## Layout and theme
 
-The collection contains the pinned upstream default library's 82 registrations, including chart data items and parent-consumed records; see [NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md). On iOS 16/macOS 13, row/column layout uses child measurement, real first-text baselines and distinct space-around/space-evenly distribution. Wrapped rows measure each line independently. The older iOS 15/macOS 12 path retains native stacks and adaptive-grid wrapping, with reduced flow semantics. Use Stack for list/wrapping layouts and Carousel for container-width horizontal pages; these respond to their actual parent proposal, not a device-specific layout template.
+The collection contains the pinned upstream default library's 82 registrations, including chart data items and parent-consumed records; see [NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md). On iOS 16/macOS 13, row/column layout uses child measurement, real first-text baselines and distinct space-around/space-evenly distribution. Wrapped rows measure each line independently. The package minimum is iOS 16/macOS 13, so the older stack/grid approximation is not shipped. Use Stack for list/wrapping layouts and Carousel for container-width horizontal pages; these respond to their actual parent proposal, not a device-specific layout template.
 
 Use `.openUITheme(theme)` to map semantic surfaces, foregrounds, spacing, and minimum card width to the product design system. Text uses Dynamic Type semantic fonts. There are no screen-global measurements. Override any standard component with `extending(overriding: ...)` when a product needs its own loader or view.
 

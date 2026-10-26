@@ -116,7 +116,7 @@ struct NativeChartData {
   }
 }
 
-/// Canvas works on the package's iOS 15/macOS 12 baseline. All chart families
+/// Canvas renders chart families on the package's supported platforms. All chart families
 /// use actual plotted geometry, with axes, legends, pointer inspection and
 /// complete VoiceOver data, including negative and degenerate domains.
 struct NativeChart: View {
@@ -255,13 +255,8 @@ private struct NativeChartTooltip: View {
   @Environment(\.displayScale) private var displayScale
   @ScaledMetric(relativeTo: .subheadline) private var markerSize: CGFloat = 9
   var body: some View {
-    if #available(iOS 16, macOS 13, *) {
-      NativeChartTooltipLayout(anchor: anchor, bounds: bounds) { label }
-        .allowsHitTesting(false)
-    } else {
-      label.padding(8).frame(maxWidth: bounds.width, maxHeight: bounds.height, alignment: .topLeading)
-        .allowsHitTesting(false)
-    }
+    NativeChartTooltipLayout(anchor: anchor, bounds: bounds) { label }
+      .allowsHitTesting(false)
   }
   private var label: some View {
     VStack(alignment: .leading, spacing: 10) {
@@ -316,7 +311,6 @@ enum NativeChartTooltipPlacement {
   }
 }
 
-@available(iOS 16, macOS 13, *)
 private struct NativeChartTooltipLayout: Layout {
   let anchor: CGPoint
   let bounds: CGSize

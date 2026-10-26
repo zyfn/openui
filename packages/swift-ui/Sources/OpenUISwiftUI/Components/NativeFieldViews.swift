@@ -184,7 +184,7 @@ struct OpenUINativeField: View {
             NativeChoiceField(context: context, cards: kind == .optionCards)
         }
     }
-    // Text.foregroundColor preserves a Text value for the iOS 15 prompt API.
+    // Text.foregroundColor preserves a Text value for the prompt API.
     private var inputPrompt: Text { Text(placeholder).foregroundColor(context.theme.secondary) }
     private func optionLabel(_ option: NativeFieldOption) -> some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -275,7 +275,7 @@ extension View {
         if hidden { labelsHidden() } else { self }
     }
     @ViewBuilder fileprivate func openUIEditorBackground() -> some View {
-        if #available(iOS 16, macOS 13, *) { scrollContentBackground(.hidden) } else { self }
+        scrollContentBackground(.hidden)
     }
     @ViewBuilder fileprivate func openUIKeyboard(_ kind: String?) -> some View {
         #if os(iOS)

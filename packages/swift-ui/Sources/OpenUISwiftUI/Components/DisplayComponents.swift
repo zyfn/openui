@@ -43,12 +43,8 @@ private struct NativeMetric: View {
     var body: some View {
         Group {
             if inline {
-                if #available(iOS 16, macOS 13, *) {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .firstTextBaseline, spacing: 8) { content }
-                        VStack(alignment: .leading, spacing: 4) { content }
-                    }
-                } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) { content }
                     VStack(alignment: .leading, spacing: 4) { content }
                 }
             } else {
@@ -144,9 +140,6 @@ private struct NativeDataTable: View {
     @Namespace private var measurementScope
     private let pageSize = 10 // Pinned upstream Table's DEFAULT_PAGE_SIZE.
     private let columnGap: CGFloat = 16
-    private var fallbackWidth: CGFloat {
-        max(minimumWidth, (availableWidth - columnGap * CGFloat(max(0, columns.count - 1))) / CGFloat(max(1, columns.count)))
-    }
     private var columns: [Column] {
         context.children("columns").compactMap { child in
             guard case .element(let element) = child.value else { return nil }
@@ -195,53 +188,30 @@ private struct NativeDataTable: View {
         .environment(\.openUIActionDensity, .compact)
     }
     @ViewBuilder private var tableContent: some View {
-        if #available(iOS 16, macOS 13, *) {
-            NativeDataTableLayout(columns: columns.count, width: max(minimumWidth, availableWidth),
-                minimum: minimumWidth, gap: columnGap) {
-                ForEach(columns) { column in
-                    Text(column.title).font(context.theme.typography.detail.weight(.semibold))
-                        .foregroundStyle(context.theme.secondary)
-                        .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                context.theme.border.frame(height: 0.5).layoutValue(key: NativeTableBoundaryKey.self, value: true)
-                    .accessibilityHidden(true)
-                ForEach(visibleRows, id: \.self) { row in
-                    ForEach(columns) { column in
-                        cell(column.data.indices.contains(row) ? column.data[row] : .null)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("openui.table.cell.\(row).\(column.id)")
-                    }
-                    if row < visibleRows.upperBound - 1 {
-                        context.theme.border.frame(height: 0.5).layoutValue(key: NativeTableBoundaryKey.self, value: true)
-                            .accessibilityHidden(true)
-                    }
-                }
+        NativeDataTableLayout(
+            columns: columns.count, width: max(minimumWidth, availableWidth),
+            minimum: minimumWidth, gap: columnGap
+        ) {
+            ForEach(columns) { column in
+                Text(column.title).font(context.theme.typography.detail.weight(.semibold))
+                    .foregroundStyle(context.theme.secondary)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-        } else {
-            // Grid is unavailable on the package's original iOS 15/macOS 12
-            // deployment baseline. Retain the existing scrollable fallback.
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top, spacing: columnGap) {
-                    ForEach(columns) { column in
-                        Text(column.title).font(.subheadline.weight(.semibold))
-                            .frame(width: fallbackWidth, alignment: .leading)
-                    }
-                }.padding(.vertical, 10)
-                Divider()
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(visibleRows, id: \.self) { row in
-                        HStack(alignment: .top, spacing: columnGap) {
-                            ForEach(columns) { column in
-                                cell(column.data.indices.contains(row) ? column.data[row] : .null)
-                                    .frame(width: fallbackWidth, alignment: .leading)
-                            }
-                        }.padding(.vertical, 10).accessibilityElement(children: .combine)
-                        if row < visibleRows.upperBound - 1 { Divider() }
-                    }
+            context.theme.border.frame(height: 0.5).layoutValue(key: NativeTableBoundaryKey.self, value: true)
+                .accessibilityHidden(true)
+            ForEach(visibleRows, id: \.self) { row in
+                ForEach(columns) { column in
+                    cell(column.data.indices.contains(row) ? column.data[row] : .null)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("openui.table.cell.\(row).\(column.id)")
+                }
+                if row < visibleRows.upperBound - 1 {
+                    context.theme.border.frame(height: 0.5).layoutValue(key: NativeTableBoundaryKey.self, value: true)
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -262,12 +232,13 @@ enum NativeTableColumnPlacement {
     static func widths(ideal: [CGFloat], minimum: CGFloat, available: CGFloat, gap: CGFloat) -> [CGFloat] {
         guard !ideal.isEmpty else { return [] }
         let available = available.isFinite ? max(0, available) : 0
-        let floor = max(1, minimum)
-        var widths = ideal.map { _ in floor }
-        var remaining = max(0, available - gap * CGFloat(ideal.count - 1) - floor * CGFloat(ideal.count))
-        let order = ideal.indices.sorted { ideal[$0] < ideal[$1] }
+        let floor = minimum.isFinite ? max(1, minimum) : 1
+        let preferred = ideal.map { $0.isFinite ? max(1, $0) : floor }
+        var widths = preferred.map { min($0, floor) }
+        var remaining = max(0, available - gap * CGFloat(ideal.count - 1) - widths.reduce(0, +))
+        let order = preferred.indices.sorted { preferred[$0] < preferred[$1] }
         for (offset, index) in order.enumerated() {
-            let target = ideal[index].isFinite ? max(floor, ideal[index]) : available
+            let target = preferred[index]
             let extra = min(max(0, target - floor), remaining / CGFloat(order.count - offset))
             widths[index] += extra
             remaining -= extra
@@ -279,10 +250,8 @@ enum NativeTableColumnPlacement {
     }
 }
 
-@available(iOS 16, macOS 13, *)
 private struct NativeTableBoundaryKey: LayoutValueKey { static let defaultValue = false }
 
-@available(iOS 16, macOS 13, *)
 private struct NativeDataTableLayout: Layout {
     let columns: Int
     let width: CGFloat
@@ -292,7 +261,7 @@ private struct NativeDataTableLayout: Layout {
     private func frames(_ views: Subviews) -> [CGRect] {
         guard columns > 0 else { return [] }
         let cells = views.indices.filter { !views[$0][NativeTableBoundaryKey.self] }
-        var ideal = Array(repeating: minimum, count: columns)
+        var ideal = Array(repeating: CGFloat.zero, count: columns)
         for (position, index) in cells.enumerated() {
             let measured = views[index].sizeThatFits(.unspecified).width
             if measured.isFinite { ideal[position % columns] = max(ideal[position % columns], measured) }

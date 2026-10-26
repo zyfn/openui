@@ -301,14 +301,7 @@ struct NativeWrappingRow<Content: View>: View {
   var gap: CGFloat = 12
   @ViewBuilder let content: Content
   var body: some View {
-    if #available(iOS 16, macOS 13, *) {
-      OpenUIFlexLayout(direction: "row", gap: gap, align: "start", justify: "start", wrap: true) { content }
-    } else {
-      LazyVGrid(
-        columns: [GridItem(.adaptive(minimum: 120), spacing: gap)], alignment: .leading,
-        spacing: gap
-      ) { content }
-    }
+    OpenUIFlexLayout(direction: "row", gap: gap, align: "start", justify: "start", wrap: true) { content }
   }
 }
 
@@ -589,11 +582,21 @@ struct NativeCardItem: View {
     VStack(alignment: .leading, spacing: context.theme.contentSpacing * (["Overview", "Snippet"].contains(kind) ? 2 / 3 : 1)) {
       switch kind {
       case "Snippet":
-        HStack(alignment: .top, spacing: 12) {
-          context.slot("lhs")
-          Spacer(minLength: 0)
-          context.slot("rhs")
-          actionIndicator
+        ViewThatFits(in: .horizontal) {
+          HStack(alignment: .top, spacing: 12) {
+            context.slot("lhs").fixedSize(horizontal: true, vertical: true)
+            Spacer(minLength: 0)
+            context.slot("rhs").fixedSize(horizontal: true, vertical: true)
+            actionIndicator
+          }
+          VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
+            context.slot("lhs")
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+              context.slot("rhs")
+              Spacer(minLength: 0)
+              actionIndicator
+            }
+          }
         }
       case "Overview":
         HStack(alignment: .top, spacing: 8) {
@@ -640,9 +643,9 @@ struct NativeCardItem: View {
         if let source = artworkSource {
           ZStack {
             Color.black
-            NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .fill, compactStates: true)
-            LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)], startPoint: .top, endPoint: .bottom)
-          }.allowsHitTesting(false)
+          NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .fill)
+          LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)], startPoint: .top, endPoint: .bottom)
+        }.allowsHitTesting(false)
         }
       }
       .clipShape(RoundedRectangle(cornerRadius: context.theme.cornerRadius))
@@ -659,16 +662,12 @@ private struct NativeCompositeFooter: View {
   let context: OpenUIComponentContext
   let footer: Value
   var body: some View {
-    if #available(iOS 16, macOS 13, *) {
-      ViewThatFits(in: .horizontal) {
-        row
-        VStack(alignment: .leading, spacing: 12) {
-          price
-          button
-        }.frame(maxWidth: .infinity, alignment: .leading)
-      }
-    } else {
+    ViewThatFits(in: .horizontal) {
       row
+      VStack(alignment: .leading, spacing: 12) {
+        price
+        button
+      }.frame(maxWidth: .infinity, alignment: .leading)
     }
   }
   private var row: some View {
@@ -717,9 +716,10 @@ struct NativeCardBlock: View {
       } else {
         LazyVGrid(
           columns: context.flag("responsive") == false
-            ? [GridItem(.flexible()), GridItem(.flexible())]
+            ? [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)]
             : typeSize.isAccessibilitySize
-              ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: minimumWidth), spacing: gap)],
+              ? [GridItem(.flexible(), alignment: .topLeading)]
+              : [GridItem(.adaptive(minimum: minimumWidth), spacing: gap, alignment: .topLeading)],
           alignment: .leading, spacing: gap
         ) {
           ForEach(Array(children.enumerated()), id: \.element.id) { index, child in

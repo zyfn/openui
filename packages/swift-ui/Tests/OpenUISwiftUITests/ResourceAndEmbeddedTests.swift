@@ -92,9 +92,16 @@ final class ResourceAndEmbeddedTests: XCTestCase {
     func testTablesShareSpaceAndOnlyOverflowWhenMinimumColumnsRequireIt() {
         let compact = NativeTableColumnPlacement.widths(ideal: [60, 120, 800], minimum: 88, available: 335, gap: 16)
         XCTAssertEqual(compact.reduce(0, +) + 32, 335, accuracy: 0.5)
-        XCTAssertTrue(compact.allSatisfy { $0 >= 88 })
+        XCTAssertGreaterThanOrEqual(compact[0], 60)
+        XCTAssertTrue(compact.dropFirst().allSatisfy { $0 >= 88 })
         XCTAssertGreaterThan(compact[2], compact[0])
-        let wide = NativeTableColumnPlacement.widths(ideal: [50, 50, 50, 50, 50], minimum: 88, available: 335, gap: 16)
+        let short = NativeTableColumnPlacement.widths(
+            ideal: [50, 50, 50, 50, 50], minimum: 88, available: 335, gap: 16)
+        XCTAssertEqual(
+            short.reduce(0, +) + 64, 335, accuracy: 0.5,
+            "Short scalar columns fit without reserving paragraph-sized floors")
+        let wide = NativeTableColumnPlacement.widths(
+            ideal: [120, 120, 120, 120, 120], minimum: 88, available: 335, gap: 16)
         XCTAssertGreaterThan(wide.reduce(0, +) + 64, 335)
         XCTAssertEqual(NativeTableColumnPlacement.widths(ideal: [], minimum: 88, available: 0, gap: 16), [])
     }

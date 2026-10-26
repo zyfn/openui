@@ -95,7 +95,7 @@ containers measure their children and grow with content. `Stack`/`Card` preserve
 the program's row/column direction. With `wrap=true`, a row flows onto additional
 lines when the children no longer fit. It does not invent a different composition
 based on image count or business meaning. Adaptive grids choose a column count
-from available space; Carousel pages track the current container width; Table
+from available space; Carousel pages are measured synchronously at the current container width; Table
 keeps aligned component columns and horizontal scrolling when necessary.
 
 Standard Table accepts registered cell components, matching the upstream library.
@@ -119,9 +119,9 @@ let options = OpenUINativePrompt.options(for: installed.toSpec(), tableCellPolic
 let prompt = installed.prompt(options)
 ```
 
-On iOS 16/macOS 13+, native Layout handles measured baseline, stretch and main-axis
-distribution. The iOS 15/macOS 12 compatibility path retains native stacks and an
-adaptive-grid wrapping fallback; it does not yet provide identical flow semantics.
+Native Layout handles measured baseline, stretch and main-axis distribution on
+the minimum supported iOS 16/macOS 13 versions. There is one layout implementation;
+older stack/grid approximations have been removed.
 Accessibility text and parent width are environment inputs, not screen-global
 breakpoints. The 82-component schema has no CSS/media-query or arbitrary flex-weight
 API. A fixed row should therefore not be described as automatic column reflow.
@@ -129,8 +129,9 @@ API. A fixed row should therefore not be described as automatic column reflow.
 The standard 82 registration names and their parameter contracts stay intact.
 Visual design belongs to the SDK's shared theme and native presentation; it can
 improve on upstream styling without renaming components or dropping capabilities.
-Image currently uses its upstream 3:2 default crop, ImageText accepts an explicit
-imageSize in both orientations, and Table paginates at ten rows. Design defaults
+Image preserves source proportions; ImageBlock and ImageTextLarge use the theme's
+cover role (3:2 by default). ImageText accepts an explicit imageSize in both
+orientations, and Table paginates at ten rows. Design defaults
 are distinct from imposing a native-only 40% table-column cap or ignoring a field.
 
 ## Usage
@@ -212,13 +213,13 @@ Use the upstream `Button(label, action)` for host navigation. The extra Navigati
 
 ## Development
 
-Requires Swift 6, with Swift 5 source language mode. Deployment targets are macOS 12+ and iOS 15+.
+Requires Swift 6, with Swift 5 source language mode. Deployment targets are macOS 13+ and iOS 16+.
 
 ```sh
 swift test --package-path packages/swift-ui
 swift build --package-path packages/swift-ui \
   --scratch-path /tmp/openui-ios-build \
-  --triple arm64-apple-ios15.0-simulator \
+  --triple arm64-apple-ios16.0-simulator \
   --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)"
 ```
 
@@ -302,3 +303,14 @@ reordering remains positional. Table calculates a safe visible page while retain
 the upstream current-page state when rows temporarily disappear. Gallery resource keys include the resolved
 request and loader identity; appending photos does not clear previously loaded
 photos or selection.
+
+
+Image loading and failure use the same declared slot as successful images:
+thumbnail dimensions, cover aspect ratios and background bounds are preserved.
+An intrinsic Image has no source dimensions until decoding succeeds; before that,
+it uses the documented unresolved-image placeholder ratio. The source proportion
+is preserved after decoding rather than guessed from a URL.
+
+Compact Snippet cards keep their full data and switch the value below the media
+row when the pair cannot fit readably. Grid items align at the top. Neither this
+presentation nor Table column measurement branches on business labels or values.

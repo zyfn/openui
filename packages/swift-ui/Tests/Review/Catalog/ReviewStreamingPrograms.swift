@@ -53,3 +53,20 @@ enum ReviewStreamingPrograms {
     photos=ImageGallery([{src:"/detail.jpg",alt:"Photo A"},{src:"/object.jpg",alt:"Photo B"},{src:"/detail.jpg?third=1",alt:"Photo C"}])
     """
 }
+
+extension ReviewStreamingPrograms {
+  /// A focused layout regression, outside the six authored task scenes.
+  static let resizingCarousel = """
+    $expanded=false
+    detail=$expanded?"这是一段在组件挂载后增长的中文说明，用于验证标题、正文和操作区的真实测量高度。内容变化后，后续区段仍应从完整卡片下方开始，不应与价格、按钮重叠。保留足够的阅读空间，让换行由实际容器宽度决定。":"简短的初始说明。"
+    root=Stack([
+      CompositeCardBlock([a,b,c],"carousel",true),
+      InlineHeader("Following section"),
+      TextContent("The section stays below the complete carousel."),
+      Button("Grow details",@Set($expanded,!$expanded),"secondary")
+    ],"column","l")
+    a=CompositeCardItem("a",IconText(Icon("book"),"soft","m","一段可以完整阅读的长标题与内容","辅助信息应在实际宽度中自然换行。",true),[Text("text",detail)],{price:BoldText("number","100"),button:Button("First action")})
+    b=CompositeCardItem("b",IconText(Icon("clock"),"soft","m","第二张卡片标题","较短的辅助信息",true),[Text("text",detail+detail)],{price:BoldText("number","200"),button:Button("Second action")})
+    c=CompositeCardItem("c",IconText(Icon("image"),"soft","m","第三张卡片，用来检查切页后的边界","辅助信息在这里也可能比前两页更长一些。",true),[Text("text",detail)],{price:BoldText("number","300"),button:Button("Third action")})
+    """
+}

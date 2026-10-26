@@ -4,10 +4,10 @@ import PackageDescription
 let package = Package(
     name: "swift-ui",
     defaultLocalization: "en",
-    platforms: [.macOS(.v12), .iOS(.v15)],
-    products: [
-        .library(name: "OpenUISwiftUI", targets: ["OpenUISwiftUI"]),
-        .library(name: "OpenUIWeb", targets: ["OpenUIWeb"]),
+  platforms: [.macOS(.v13), .iOS(.v16)],
+  products: [
+    .library(name: "OpenUISwiftUI", targets: ["OpenUISwiftUI"]),
+    .library(name: "OpenUIWeb", targets: ["OpenUIWeb"]),
     ],
     dependencies: [
         .package(path: "../swift-lang"),
