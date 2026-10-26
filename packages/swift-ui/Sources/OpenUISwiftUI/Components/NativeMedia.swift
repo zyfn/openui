@@ -119,10 +119,12 @@ struct NativeRemoteImage: View {
   @ViewBuilder private func canvas<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
     let surface = Color.clear.overlay { content().accessibilityHidden(true) }.clipped().contentShape(Rectangle())
     switch layout {
-    case .aspect(let ratio): surface.aspectRatio(ratio, contentMode: .fit)
+    case .aspect(let ratio):
+      surface.aspectRatio(ratio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
     case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
     case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
-    case .intrinsic: surface.aspectRatio(previewAspectRatio, contentMode: .fit)
+    case .intrinsic:
+      surface.aspectRatio(previewAspectRatio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
     case .stretch:
       NativeStretchMediaLayout(aspectRatio: previewAspectRatio) { surface }
     }

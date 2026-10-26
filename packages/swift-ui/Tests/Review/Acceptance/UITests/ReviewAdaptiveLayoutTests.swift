@@ -13,7 +13,7 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     let stays = pagers.element(boundBy: 2)
     reveal(stays, in: app)
     stays.swipeLeft()
-    let button = stays.buttons["Select"].allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
+    let button = stays.buttons.matching(identifier: "Select").allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
     XCTAssertNotNil(button)
     button?.tap()
     XCTAssertTrue(app.staticTexts["Transit-side room selected · €160 / night"].waitForExistence(timeout: 5))

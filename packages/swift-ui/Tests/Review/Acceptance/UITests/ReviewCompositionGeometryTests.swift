@@ -73,6 +73,42 @@ final class ReviewCompositionGeometryTests: ReviewTestCase {
 }
 
 extension ReviewCompositionGeometryTests {
+  func testSavedImageFailureAndArgumentCorrectedReplayKeepTheMediaWidth() throws {
+    guard let url = Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json"),
+      (try String(contentsOf: url, encoding: .utf8)).contains("image-failure-original") else {
+      throw XCTSkip("Provide the saved image failure and corrected-argument replays")
+    }
+    for id in ["image-failure-original", "image-arguments-corrected"] {
+      let app = launch(id, inspect: true)
+      let pager = app.descendants(matching: .any)
+        .matching(identifier: "openui.card-block.composite.pager").element(boundBy: 1)
+      reveal(pager, in: app)
+      pager.swipeLeft()
+      pager.swipeLeft()
+      let price = app.staticTexts["价格未知"].firstMatch
+      XCTAssertTrue(price.waitForExistence(timeout: 5))
+      let photo = id == "image-failure-original"
+        ? app.images.matching(NSPredicate(format: "label CONTAINS %@", "TB1xRz01")).firstMatch
+        : app.images["雷峰塔"].firstMatch
+      XCTAssertTrue(photo.exists)
+      let tag = app.staticTexts["门票价格待查"].firstMatch
+      XCTAssertTrue(tag.exists)
+      let gap = price.frame.minY - tag.frame.maxY
+      let evidence = XCTAttachment(string: "image=\(photo.frame); pager=\(pager.frame); tag=\(tag.frame); footer=\(price.frame); gap=\(gap)")
+      evidence.name = id + "-geometry"
+      evidence.lifetime = .keepAlways
+      add(evidence)
+      capture(app, name: id)
+      XCTAssertGreaterThanOrEqual(photo.frame.width, pager.frame.width - 90)
+      XCTAssertLessThanOrEqual(gap, 64)
+      if id == "image-arguments-corrected" {
+        XCTAssertNotEqual(app.staticTexts["review.images"].label, "Images: 0",
+          "The corrected replay must decode the captured real image bytes")
+      }
+      app.terminate()
+    }
+  }
+
   func testVerticalDragStartingOnCarouselStillScrollsTheDocument() {
     let app = launch("scene-shopping", language: "en")
     let pager = app.descendants(matching: .any)
