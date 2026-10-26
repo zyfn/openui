@@ -3,6 +3,26 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
+  func testParisFewShotUsesTheSameSourceForCardsMapAndBudget() {
+    let app = launch("paris-fewshot-source-change", language: "en")
+    let description = app.staticTexts["Updated source record description"]
+    XCTAssertTrue(description.firstMatch.waitForExistence(timeout: 5))
+    let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
+    reveal(map, in: app)
+    let place = app.buttons["openui.map.place.louvre"]
+    XCTAssertTrue(place.waitForExistence(timeout: 5))
+    XCTAssertTrue(place.label.contains("Updated source record description"))
+    let price = app.staticTexts["€275"].firstMatch
+    reveal(price, in: app)
+    XCTAssertTrue(price.exists)
+    let total = app.staticTexts["€1042"].firstMatch
+    reveal(total, in: app)
+    XCTAssertTrue(total.exists, "Changing only the input room price must update the card and recommended total")
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "paris-source-change-recomputed-budget")
+    app.terminate()
+  }
+
   func testLearningVisualCardsAreCompactAndOpenTheirOwnRecords() throws {
     let app = launch("scene-learning", inspect: true, language: "en")
     let cong = app.images["Cong · full object"].firstMatch
@@ -37,7 +57,7 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
 
   func testOverviewFactsShareTheAvailableRowWidth() {
     let app = launch("scene-two-day-trip", language: "en")
-    let labels = ["2 people", "2 days", "4 places"].map { app.staticTexts[$0].firstMatch }
+    let labels = ["2 people", "2 days", "1 night"].map { app.staticTexts[$0].firstMatch }
     for label in labels { XCTAssertTrue(label.waitForExistence(timeout: 5)) }
     let available = app.windows.firstMatch.frame.width - 40
     let width = (available - 16) / 3

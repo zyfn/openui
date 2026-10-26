@@ -1,0 +1,63 @@
+root=Stack([heading,overview,itinerary,placesMap,transport,stays,budget,closing],"column","l")
+input={"provenance":{"kind":"mock-tool-results","prices":"simulated, not live offers","media":"illustrative local review assets","coordinates":"simulated fixture coordinates","urls":"supplied provider or collection entry pages, not reserved inventory","routes":"no navigation geometry supplied"},"trip":{"start":"2026-11-05","end":"2026-11-06","adults":2,"days":2,"nights":1,"rooms":1,"currency":"€"},"flightGroups":[{"id":"outbound","title":"去程 · 11月5日","route":"LHR → CDG","options":[{"id":"out1","carrier":"British Airways","departure":"08:00","arrival":"10:20","price":150,"stops":"直飞","duration":"1h 20m","detail":"经济舱","url":"https://www.britishairways.com/travel/home/public/en_gb/"},{"id":"out2","carrier":"Air France","departure":"09:30","arrival":"11:50","price":190,"stops":"直飞","duration":"1h 20m","detail":"经济舱","url":"https://www.airfrance.com/"},{"id":"out3","carrier":"KLM","departure":"08:00","arrival":"13:15","price":135,"stops":"中转 1 次","duration":"4h 15m","detail":"AMS 停留 1小时30分","url":"https://www.klm.com/"}]},{"id":"inbound","title":"返程 · 11月6日","route":"CDG → LHR","options":[{"id":"back1","carrier":"British Airways","departure":"18:30","arrival":"18:50","price":170,"stops":"直飞","duration":"1h 20m","detail":"经济舱","url":"https://www.britishairways.com/travel/home/public/en_gb/"},{"id":"back2","carrier":"Air France","departure":"20:00","arrival":"20:20","price":195,"stops":"直飞","duration":"1h 20m","detail":"经济舱","url":"https://www.airfrance.com/"},{"id":"back3","carrier":"KLM","departure":"13:30","arrival":"16:35","price":125,"stops":"中转 1 次","duration":"4h 05m","detail":"AMS 停留 1小时20分","url":"https://www.klm.com/"}]}],"stays":[{"id":"central","name":"左岸 · 花园双人房","image":"/stay-central.jpg","description":"花园朝向的双人房。","tags":["花园景观","含早餐"],"pricePerRoomNight":220,"url":"https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"},{"id":"outer","name":"近交通站 · 大床房","image":"/stay-transit.jpg","description":"靠近公共交通的城景大床房。","tags":["城景","大床"],"pricePerRoomNight":160,"url":"https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"},{"id":"riverside","name":"河畔 · 景观房","image":"/stay-central.jpg","description":"河景双人房，含早餐。","tags":["河景","含早餐"],"pricePerRoomNight":280,"url":"https://www.booking.com/searchresults.html?ss=Paris&checkin=2026-11-05&checkout=2026-11-06&group_adults=2&no_rooms=1"}],"places":[{"id":"louvre","name":"卢浮宫","image":"/paris-louvre.jpg","description":"法国国王昔日的宫殿，馆藏横跨近一万年的艺术史。","tags":["艺术","博物馆"],"unitPrice":32,"priceBasis":"非 EEA 成人","url":"https://ticket.louvre.fr/en","lat":48.8606,"lng":2.3376,"icon":"building.columns","booking":true},{"id":"germain","name":"圣日耳曼街区","image":"/paris-cafe.jpg","description":"文学咖啡馆、教堂与左岸街巷。","tags":["左岸","免费"],"unitPrice":0,"priceBasis":"公共街区","url":"https://parisjetaime.com/eng/article/a-walk-in-saint-germain-des-pres-a925","lat":48.8539,"lng":2.3332,"icon":"building.2","booking":false},{"id":"eiffel","name":"埃菲尔铁塔 · 二层","image":"/paris-eiffel.jpg","description":"电梯到二层，不含顶层。","tags":["电梯","二层"],"unitPrice":23.5,"priceBasis":"25 岁以上成人","url":"https://ticket.toureiffel.paris/en","lat":48.8584,"lng":2.2945,"icon":"building","booking":true},{"id":"cruise","name":"塞纳河观光游船","image":"/paris-eiffel.jpg","description":"一小时观光游船，含语音导览。","tags":["1 小时","语音导览"],"unitPrice":18,"priceBasis":"成人网络票","url":"https://www.bateauxparisiens.com/en/cruise-tours/guided-tour.html","lat":48.86039,"lng":2.29353,"icon":"ferry","booking":true},{"id":"cafe","name":"双叟咖啡馆","image":"/paris-cafe.jpg","description":"圣日耳曼广场的文学咖啡馆。","tags":["咖啡馆"],"unitPrice":null,"priceBasis":null,"url":"https://lesdeuxmagots.fr/en/","lat":48.85389,"lng":2.33306,"icon":"cup.and.saucer","booking":false}],"routes":[],"budgetAssumptions":{"food":160,"localTransport":80,"buffer":60}}
+trip=input.trip
+currency=trip.currency
+recommendedOutbound=input.flightGroups[0].options[0]
+recommendedReturn=input.flightGroups[1].options[0]
+recommendedStay=input.stays[0]
+flightCost=recommendedOutbound.price+recommendedReturn.price
+stayCost=recommendedStay.pricePerRoomNight*trip.rooms*trip.nights
+visitCost=(input.places[0].unitPrice+input.places[1].unitPrice+input.places[2].unitPrice+input.places[3].unitPrice)*trip.adults
+total=flightCost+stayCost+visitCost+input.budgetAssumptions.food+input.budgetAssumptions.localTransport+input.budgetAssumptions.buffer
+heading=Stack([TextContent("巴黎，两天一晚","large-heavy"),TextContent(trip.start+" — "+trip.end,"small")],"column","s")
+overview=Stack([
+ OverviewCardItem("people",IconText(Icon("users"),"neutral","m",trip.adults+" 人",null,true,"vertical")),
+ OverviewCardItem("days",IconText(Icon("calendar-days"),"neutral","m",trip.days+" 天",null,true,"vertical")),
+ OverviewCardItem("nights",IconText(Icon("moon"),"neutral","m",trip.nights+" 晚",null,true,"vertical"))
+],"row","s","stretch","start",false)
+itinerary=Stack([InlineHeader("两天这样走"),Tabs([
+ TabItem("day1","第一天 · 艺术与左岸",[
+ TextContent("抵达后先寄存行李；下午参观卢浮宫，再过河到圣日耳曼。","small"),
+ Stack([
+  Image(input.places[0].name,input.places[0].image),
+  Stack([TextContent(input.places[0].name,"small-heavy"),TagBlock(input.places[0].tags,"sm"),TextContent(input.places[0].description,"small"),
+    Stack([BoldText("number",currency+(input.places[0].unitPrice*trip.adults),input.places[0].priceBasis+" · "+trip.adults+" 人","text","lg"),
+      Buttons([Button(input.places[0].booking?"订":"详情",@OpenUrl(input.places[0].url),"primary",null,"small")])],"row","s","center","between",false)
+  ],"column","s","stretch","between",false)
+],"row","m","stretch","start",false),Separator(),Stack([
+  Image(input.places[1].name,input.places[1].image),
+  Stack([TextContent(input.places[1].name,"small-heavy"),TagBlock(input.places[1].tags,"sm"),TextContent(input.places[1].description,"small"),
+    Stack([BoldText("number",currency+(input.places[1].unitPrice*trip.adults),input.places[1].priceBasis+" · "+trip.adults+" 人","text","lg"),
+      Buttons([Button(input.places[1].booking?"订":"详情",@OpenUrl(input.places[1].url),"primary",null,"small")])],"row","s","center","between",false)
+  ],"column","s","stretch","between",false)
+],"row","m","stretch","start",false),Separator(),
+ ListBlock([ListItem(input.places[4].name,input.places[4].description,{src:input.places[4].image,alt:input.places[4].name})],"image")]),
+ TabItem("day2","第二天 · 铁塔与塞纳河",[
+ Stack([
+  Image(input.places[2].name,input.places[2].image),
+  Stack([TextContent(input.places[2].name,"small-heavy"),TagBlock(input.places[2].tags,"sm"),TextContent(input.places[2].description,"small"),
+    Stack([BoldText("number",currency+(input.places[2].unitPrice*trip.adults),input.places[2].priceBasis+" · "+trip.adults+" 人","text","lg"),
+      Buttons([Button(input.places[2].booking?"订":"详情",@OpenUrl(input.places[2].url),"primary",null,"small")])],"row","s","center","between",false)
+  ],"column","s","stretch","between",false)
+],"row","m","stretch","start",false),Separator(),Stack([
+  Image(input.places[3].name,input.places[3].image),
+  Stack([TextContent(input.places[3].name,"small-heavy"),TagBlock(input.places[3].tags,"sm"),TextContent(input.places[3].description,"small"),
+    Stack([BoldText("number",currency+(input.places[3].unitPrice*trip.adults),input.places[3].priceBasis+" · "+trip.adults+" 人","text","lg"),
+      Buttons([Button(input.places[3].booking?"订":"详情",@OpenUrl(input.places[3].url),"primary",null,"small")])],"row","s","center","between",false)
+  ],"column","s","stretch","between",false)
+],"row","m","stretch","start",false),
+ TextContent("午餐后取行李，计划 15:00 离开市区；为推荐的 18:30 航班留出接驳和安检时间。","small")])
+])],"column","m")
+placesMap=Stack([InlineHeader("都在这张地图上"),Map(@Each(input.places,"p",{id:p.id,title:p.name,lat:p.lat,lng:p.lng,imageSrc:p.image,subtitle:p.description,url:p.url,icon:p.icon}),input.routes,null,"regular","wgs84")],"column","m")
+transport=Stack([InlineHeader("往返交通"),TextContent("推荐直飞，给游览留时间；中转便宜一些，但总时长更长。以下均为当地时间。","small"),Tabs(@Each(input.flightGroups,"group",TabItem(group.id,group.title,[
+ CompositeCardBlock(@Each(group.options,"f",CompositeCardItem(f.id,IconText(Icon("plane"),"neutral","m",f.carrier,group.route,true),[
+ BoldText("text",f.departure+" → "+f.arrival,null,"text","lg"),TagBlock([f.stops,f.duration],"sm"),Text("text",f.detail)
+ ],{price:BoldText("number",currency+f.price,trip.adults+" 人单程","text","lg"),button:Button("订",@OpenUrl(f.url),"primary",null,"small")})),"carousel",true)
+])))],"column","m")
+stays=Stack([InlineHeader("住一晚，选一处落脚点"),CompositeCardBlock(@Each(input.stays,"h",CompositeCardItem(h.id,ImageTextLarge(h.image,h.name,h.name,null,true),[
+ TagBlock(h.tags,"sm"),Text("text",h.description)
+ ],{price:BoldText("number",currency+(h.pricePerRoomNight*trip.rooms*trip.nights),trip.rooms+" 间 · "+trip.nights+" 晚","text","lg"),button:Button("订",@OpenUrl(h.url),"primary",null,"small")})),"carousel",true)],"column","m")
+budget=Stack([InlineHeader("推荐方案预算"),BoldText("number",currency+total,trip.adults+" 人合计 · 含余量","text","lg"),PieChart([
+ "机票","住宿","餐饮","接驳与交通","门票","余量"
+ ],[flightCost,stayCost,input.budgetAssumptions.food,input.budgetAssumptions.localTransport,visitCost,input.budgetAssumptions.buffer],"donut")],"column","m")
+closing=Stack([TextContent("下一步先确认航班和房间库存，再预约入场时段；若更换航班，需相应调整抵达和离城安排。","small-heavy"),TextContent("模拟资料与示意图片，非实时库存；餐饮、交通和余量是明确的预算假设。","small")],"column","s")
