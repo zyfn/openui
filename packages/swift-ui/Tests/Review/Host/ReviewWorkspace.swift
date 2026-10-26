@@ -53,7 +53,7 @@ struct ReviewWorkspace: View {
       preconditionFailure("Unknown review program: \(requestedID). Prepare optional replay resources before selecting them.")
     }
     let state = OpenUIState(schema: library.library.toSchema())
-    if configuration.instant || ReviewCatalog.scenario(for: selected.id) == nil {
+    if configuration.instant {
       state.setSource(configuration.display.language.program(selected).source)
     }
     _state = StateObject(wrappedValue: state)
@@ -72,7 +72,7 @@ struct ReviewWorkspace: View {
         ReviewHeader(scenario: scenario, program: program, position: position,
           display: display, move: move, toggleTheme: toggleTheme,
           toggleBubble: toggleBubble, toggleLanguage: toggleLanguage, isManual: manualSource != nil,
-          isPlaying: scenario != nil && !state.isComplete,
+          isPlaying: manualSource == nil && !state.isComplete,
           replay: replay, restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
@@ -181,7 +181,7 @@ struct ReviewWorkspace: View {
     evidence.reset()
     purchasePreview = nil
     state.reset()
-    if configuration.instant || ReviewCatalog.scenario(for: item.id) == nil {
+    if configuration.instant {
       playbackGeneration += 1
       state.setSource(item.source)
     } else {
@@ -197,14 +197,14 @@ struct ReviewWorkspace: View {
     state.reset()
     evidence.beginExecution(source: program.source, values: state.snapshotState(),
       revision: state.sourceRevision, inspect: configuration.inspector)
-    if configuration.instant || scenario == nil {
+    if configuration.instant || manualSource != nil {
       playbackGeneration += 1
       state.setSource(program.source)
     }
     else { playbackGeneration += 1 }
   }
   private func play() async {
-    guard !configuration.instant, scenario != nil, manualSource == nil,
+    guard !configuration.instant, manualSource == nil,
       let source = program?.source else { return }
     let generation = playbackGeneration
     // Coalesce transport text at line boundaries. Large JSON input records
@@ -222,13 +222,11 @@ struct ReviewWorkspace: View {
     }
     if !pending.isEmpty { chunks.append(pending) }
     for chunk in chunks {
-      guard !Task.isCancelled, generation == playbackGeneration, scenario != nil,
-        manualSource == nil else { return }
+      guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
       state.push(chunk)
       try? await Task.sleep(nanoseconds: 250_000_000)
     }
-    guard !Task.isCancelled, generation == playbackGeneration, scenario != nil,
-      manualSource == nil else { return }
+    guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
     state.complete()
   }
   private func move(_ step: Int) {
