@@ -295,9 +295,9 @@ enum ReviewScenePrograms {
           ]),
           InlineHeader(\(q("把必要配件也算进去", "Include the essentials"))),
           Stack([
-            BoldText("number","¥"+total,\(q("相机与配件合计", "camera and essentials")),"text","lg"),
-            TextContent("¥"+(7500-total)+\(q(" 预算余量", " remaining")),"small-heavy")
-          ],"row","s","center","between",true),
+            OverviewCardItem("0",Text("text",\(q("合计 ¥", "Total ¥"))+total,null,"text","lg")),
+            OverviewCardItem("1",Text("text",\(q("剩余 ¥", "Left ¥"))+(7500-total),null,"text","lg"))
+          ],"row","s","stretch","start",false),
           EntityList([
             {left:\(q("当前套装", "Selected kit")),right:"¥"+camera,rightVariant:"number"},
             {left:\(q("电池与存储卡预留", "Battery and storage allowance")),right:"¥"+extras,rightVariant:"number"}
@@ -321,7 +321,8 @@ enum ReviewScenePrograms {
         root=Stack([
           TextContent(\(q("花费增加，主要不在房租", "Spending rose, but rent stayed flat")),"large-heavy"),
           TextContent(\(q("这份示例账单里，10 月比 9 月多花 ¥800：餐饮增加 ¥300、其他消费增加 ¥300、交通增加 ¥200。先调整前两项，不必把所有日常开销一起压缩。", "In this sample ledger, October rose ¥800 over September: food and other spending rose ¥300 each, and transport rose ¥200. Start with the first two rather than cutting every part of daily life."))),
-          TextContent(\(q("虚构账单 · 2026 年 8–10 月 · 不包含收入、资产或负债", "Synthetic ledger · August–October 2026 · excludes income, assets and debt")),"small"),
+          TextContent(\(q("2026 年 8–10 月 · 示例账单", "August–October 2026 · sample ledger")),"small"),
+          TagBlock([\(q("3 个月", "3 months")),\(q("4 类支出", "4 categories"))],"sm"),
           InlineHeader(\(q("三个月的变化", "Three months in view")),\(q("点选数据查看分类金额", "Tap a point to inspect category amounts"))),
           BarChart([
             \(q("8 月", "Aug")),
@@ -397,7 +398,12 @@ enum ReviewScenePrograms {
         perPerson=total/6
         root=Stack([
           TextContent(\(q("六个人，围着一张桌子", "Six friends around one table")),"large-heavy"),
-          TextContent(\(q("11 月 7 日 · 周六 17:00–21:00 · 每人不超过 ¥260", "7 November · Saturday 17:00–21:00 · up to ¥260 each")),"small"),
+          TextContent(\(q("11 月 7 日 · 周六 17:00–21:00", "7 November · Saturday 17:00–21:00")),"small"),
+          Stack([
+            OverviewCardItem("0",Text("text",\(q("6 人", "6 people")),null,"text","lg")),
+            OverviewCardItem("1",Text("text",\(q("4 小时", "4 hours")),null,"text","lg")),
+            OverviewCardItem("2",Text("text",\(q("上限 ¥260/人", "Max ¥260/person")),null,"text","lg"))
+          ],"row","s","stretch","start",false),
           InlineHeader(\(q("选一个能坐下来的地方", "A place to settle in"))),
           CompositeCardBlock([
             CompositeCardItem(
@@ -430,9 +436,9 @@ enum ReviewScenePrograms {
           ]),
           InlineHeader(\(q("选完场地，人均费用一起更新", "The split follows your venue choice"))),
           Stack([
-            BoldText("number","¥"+perPerson,\(q("每人分摊", "per person")),"text","lg"),
-            BoldText("number","¥"+total,\(q("六人合计", "total for six")),"text","lg")
-          ],"row","s","center","between",true),
+            OverviewCardItem("0",Text("text",\(q("人均 ¥", "Each ¥"))+perPerson,null,"text","lg")),
+            OverviewCardItem("1",Text("text",\(q("合计 ¥", "Total ¥"))+total,null,"text","lg"))
+          ],"row","s","stretch","start",false),
           SingleStackedBarChart([
             \(q("场地", "Venue")),
             \(q("餐食", "Dinner")),
