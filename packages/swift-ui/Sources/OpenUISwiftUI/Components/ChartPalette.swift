@@ -25,7 +25,7 @@ enum NativeChartPalette {
       if index < base.count { return base[index] }
       let hue = (0.43 + Double(index - base.count) * 0.61803398875)
         .truncatingRemainder(dividingBy: 1)
-      return Swatch(light: rgb(hue: hue, saturation: 0.48, brightness: 0.64),
+      return Swatch(light: rgb(hue: hue, saturation: 0.48, brightness: 0.62),
         dark: rgb(hue: hue, saturation: 0.32, brightness: 0.86))
     }
   }
