@@ -366,10 +366,12 @@ private struct NativeMapPresentation: View {
       topInset: close == nil ? 56 : toolbarTopPadding + 44 + 52,
       resetCamera: cameraReset)
       .frame(height: height)
+      .clipShape(RoundedRectangle(cornerRadius: mapRadius, style: .continuous))
+      .overlay(RoundedRectangle(cornerRadius: mapRadius, style: .continuous)
+        .strokeBorder(context.theme.border.opacity(0.6), lineWidth: 0.5))
       .overlay(alignment: .bottom) {
         contentPages.padding(.horizontal, contentPadding).padding(.bottom, bottomPadding)
       }
-      .clipShape(RoundedRectangle(cornerRadius: mapRadius, style: .continuous))
       .overlay(alignment: .topTrailing) {
         if let expand {
           Button(action: expand) {
@@ -384,8 +386,6 @@ private struct NativeMapPresentation: View {
       .overlay(alignment: .top) {
         if let close { toolbar(close: close).padding(.horizontal, 14).padding(.top, toolbarTopPadding) }
       }
-      .overlay(RoundedRectangle(cornerRadius: mapRadius, style: .continuous)
-        .strokeBorder(context.theme.border.opacity(0.6), lineWidth: 0.5))
       .frame(maxWidth: .infinity)
       .background(GeometryReader { geometry in
         Color.clear.preference(key: NativeMapSizeKey.self, value: [measurementScope: geometry.size.width])
@@ -445,7 +445,7 @@ private struct NativeMapPresentation: View {
         enabled: context.canInteract, identifier: "openui.map", showsControls: false,
         maximumHeight: maximumCardHeight,
         maximumPageWidth: contentIDs.count > 1 ? context.theme.maximumCarouselCardWidth : nil,
-        trailingPeek: 24, pageSpacing: 10) { id in
+        trailingPeek: 24, pageSpacing: 10, decorationOutset: 12) { id in
           if usesDefaultCard(id), let point = data.points.first(where: { $0.id == id }) {
             NativeMapPlaceCard(point: point, theme: context.theme, canInteract: context.canInteract,
               compact: context.string("size") == "compact" && imposedHeight == nil)
@@ -524,7 +524,7 @@ private struct NativeMapPlaceCard: View {
     }
     .frame(minHeight: photoSize, alignment: .center)
     .padding(padding).frame(maxWidth: .infinity, alignment: .leading)
-    .background(theme.controlSurface, in: RoundedRectangle(cornerRadius: theme.cornerRadius + 8, style: .continuous))
+    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: theme.cornerRadius + 8, style: .continuous))
     .overlay(RoundedRectangle(cornerRadius: theme.cornerRadius + 8, style: .continuous)
       .strokeBorder(theme.border.opacity(0.4), lineWidth: 0.5))
     .shadow(color: .black.opacity(0.10), radius: 10, y: 3)

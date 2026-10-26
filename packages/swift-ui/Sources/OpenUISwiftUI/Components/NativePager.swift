@@ -13,6 +13,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
   var maximumPageWidth: CGFloat? = nil
   var trailingPeek: CGFloat = 0
   var pageSpacing: CGFloat = 0
+  var decorationOutset: CGFloat = 0
   @ViewBuilder let content: (ID) -> Content
   @Namespace private var scope
   @State private var width: CGFloat = 0
@@ -35,8 +36,11 @@ struct NativePager<ID: Hashable, Content: View>: View {
     VStack(alignment: .leading, spacing: 0) {
       if let maximumHeight {
         // Only explicitly capped map previews need a vertical scroll viewport.
-        ScrollView(.vertical, showsIndicators: naturalHeight > maximumHeight) { strip }
-          .frame(height: min(max(1, naturalHeight), maximumHeight))
+        ScrollView(.vertical, showsIndicators: naturalHeight > maximumHeight) {
+          strip.padding(decorationOutset)
+        }
+          .frame(height: min(max(1, naturalHeight), maximumHeight) + 2 * decorationOutset)
+          .padding(-decorationOutset)
       } else {
         strip
       }
@@ -76,7 +80,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
         content(id).id(id).accessibilityHidden(!isCarousel && id != selection)
       }
     }
-    .clipped().contentShape(Rectangle())
+    .clipShape(NativePagerDecorationClip(outset: decorationOutset)).contentShape(Rectangle())
     .background(
       GeometryReader { measured in
         Color.clear.preference(key: NativePagerSizes.self, value: [scope: measured.size])
@@ -107,6 +111,13 @@ struct NativePager<ID: Hashable, Content: View>: View {
   private func select(_ next: Int) {
     guard enabled, ids.indices.contains(next) else { return }
     selection = ids[next]
+  }
+}
+
+private struct NativePagerDecorationClip: Shape {
+  let outset: CGFloat
+  func path(in rect: CGRect) -> Path {
+    Path(rect.insetBy(dx: -outset, dy: -outset))
   }
 }
 
