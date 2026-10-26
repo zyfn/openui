@@ -316,18 +316,11 @@ enum ReviewScenePrograms {
           TextContent(\(q("良渚，藏在玉里的秩序", "Liangzhu, a world held in jade")),"large-heavy"),
           TagBlock([\(q("新石器时代", "Neolithic")),\(q("玉器", "Jade")),\(q("馆藏阅读", "Collection study"))],"sm"),
           TextContent(\(q("看形状、比工艺，再区分证据与推断。", "Look at form and workmanship, then separate evidence from interpretation."))),
-          Stack([
-            Stack([
-              Image(\(q("玉琮全貌", "Cong · full object")),"/liangzhu-cong.jpg"),
-              TextContent(\(q("[玉琮](https://www.metmuseum.org/art/collection/search/72376)", "[Cong](https://www.metmuseum.org/art/collection/search/72376)")),"small-heavy"),
-              TextContent(\(q("约公元前 2400 年 · 高 25.4 cm", "About 2400 BCE · 25.4 cm high")),"small")
-            ],"column","xs"),
-            Stack([
-              Image(\(q("玉璧全貌", "Bi · full object")),"/liangzhu-bi.jpg"),
-              TextContent(\(q("[玉璧](https://www.metmuseum.org/art/collection/search/49371)", "[Bi](https://www.metmuseum.org/art/collection/search/49371)")),"small-heavy"),
-              TextContent(\(q("公元前三千纪中叶 · 约 15.6 cm", "Mid-third millennium BCE · about 15.6 cm")),"small")
-            ],"column","xs")
-          ],"row","m","start","start",false),
+          ImageGallery([
+            {src:"/liangzhu-cong.jpg",alt:\(q("玉琮全貌", "Cong · full object")),details:\(q("玉琮 · 约公元前 2400 年", "Cong · about 2400 BCE"))},
+            {src:"/liangzhu-bi.jpg",alt:\(q("玉璧全貌", "Bi · full object")),details:\(q("玉璧 · 公元前三千纪中叶", "Bi · mid-third millennium BCE"))}
+          ]),
+          TextContent(\(q("点击图片查看全貌并切换。馆藏记录：[玉琮](https://www.metmuseum.org/art/collection/search/72376) · [玉璧](https://www.metmuseum.org/art/collection/search/49371)", "Tap an image to view it in full and switch between objects. Collection records: [Cong](https://www.metmuseum.org/art/collection/search/72376) · [Bi](https://www.metmuseum.org/art/collection/search/49371)")),"small"),
           InlineHeader(\(q("一眼分清琮与璧", "Cong and bi, at a glance"))),
           Table([
             Col(\(q("观察", "Look for")),[\(q("外形", "Form")),\(q("中部", "Center")),\(q("纹饰", "Decoration"))]),

@@ -25,23 +25,26 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
 
   func testLearningVisualCardsAreCompactAndOpenTheirOwnRecords() throws {
     let app = launch("scene-learning", inspect: true, language: "en")
-    let cong = app.images["Cong · full object"].firstMatch
-    let bi = app.images["Bi · full object"].firstMatch
+    let cong = app.buttons["openui.gallery.image.0"]
+    let bi = app.buttons["openui.gallery.image.1"]
     reveal(cong, in: app)
     XCTAssertTrue(bi.exists)
     XCTAssertEqual(cong.frame.minY, bi.frame.minY, accuracy: 2)
-    XCTAssertLessThanOrEqual(cong.frame.height, 300)
-    XCTAssertGreaterThanOrEqual(bi.frame.minX, cong.frame.maxX + 6)
-    for (view, file) in [(cong, "liangzhu-cong"), (bi, "liangzhu-bi")] {
-      let size = try fixtureImageSize(file)
-      let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-        view.frame.height > 0 && abs(view.frame.width / view.frame.height - size.width / size.height) < 0.03
-      }, object: nil)
-      XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 8), .completed)
-      XCTAssertEqual(view.frame.width / view.frame.height, size.width / size.height, accuracy: 0.03,
-        "Observation images must preserve the complete object's source proportions")
-    }
-    capture(app, name: "learning-complete-objects-side-by-side")
+    XCTAssertEqual(cong.frame.width, bi.frame.width, accuracy: 2)
+    XCTAssertEqual(cong.frame.height, bi.frame.height, accuracy: 2)
+    XCTAssertLessThanOrEqual(cong.frame.height, 200)
+    let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: cong)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
+    capture(app, name: "learning-equal-gallery-previews")
+    let position = cong.frame.minY
+    cong.tap()
+    let close = app.buttons["openui.gallery.close"]
+    XCTAssertTrue(close.waitForExistence(timeout: 5))
+    app.buttons["openui.gallery.thumbnail.1"].tap()
+    XCTAssertTrue(app.staticTexts["2 / 2"].exists)
+    capture(app, name: "learning-gallery-full-object")
+    close.tap()
+    XCTAssertEqual(cong.frame.minY, position, accuracy: 3)
     for (label, target) in [("Cong", "72376"), ("Bi", "49371"), ("Same form, another era", "42751")] {
       let card = label == "Same form, another era"
         ? app.buttons[label].firstMatch : app.links[label].firstMatch
