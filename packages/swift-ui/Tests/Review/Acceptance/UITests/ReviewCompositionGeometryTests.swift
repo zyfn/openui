@@ -101,6 +101,13 @@ extension ReviewCompositionGeometryTests {
     var loaded: [String: CGSize] = [:]
     for mode in ["loaded", "loading", "unavailable"] {
       let app = launch("media-slot-geometry", media: mode)
+      if mode == "loaded" {
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+          !app.descendants(matching: .any).matching(identifier: "openui.media.loading")
+            .allElementsBoundByIndex.contains(where: { $0.isHittable })
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
+      }
       for name in ["Thumbnail slot", "Cover slot", "Backdrop slot"] {
         let image = app.images[name].firstMatch
         XCTAssertTrue(image.waitForExistence(timeout: 8))
@@ -115,6 +122,7 @@ extension ReviewCompositionGeometryTests {
         }
       }
       XCTAssertFalse(app.buttons["openui.media.retry"].exists)
+      XCTAssertFalse(app.staticTexts["Image unavailable"].exists)
       capture(app, name: "media-slot-" + mode)
       app.terminate()
     }
