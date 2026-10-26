@@ -11,6 +11,8 @@ struct ReviewHeader: View {
   let toggleBubble: () -> Void
   let toggleLanguage: () -> Void
   let isManual: Bool
+  let isPlaying: Bool
+  let replay: () -> Void
   let restoreSample: () -> Void
   let open: (ReviewPanel) -> Void
 
@@ -32,8 +34,10 @@ struct ReviewHeader: View {
       }.frame(maxWidth: .infinity)
       Button { move(1) } label: { Image(systemName: "chevron.right") }
         .disabled(position == nil).accessibilityLabel(language.text("下一场景")).accessibilityIdentifier("review.next")
-      Button { open(.source) } label: { Image(systemName: "chevron.left.forwardslash.chevron.right") }
-        .accessibilityLabel(language.text("编写 openui-lang")).accessibilityIdentifier("review.editor")
+      Button(action: replay) { Image(systemName: "arrow.clockwise") }
+        .accessibilityLabel(language.text("重新播放"))
+        .accessibilityValue(language.text(isPlaying ? "播放中" : "可重新播放"))
+        .accessibilityIdentifier("review.replay")
       Menu {
         Button(language.text("编写 openui-lang")) { open(.source) }
           .accessibilityIdentifier("review.open-editor")

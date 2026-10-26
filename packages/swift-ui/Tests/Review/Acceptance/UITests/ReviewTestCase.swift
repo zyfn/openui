@@ -29,6 +29,7 @@ class ReviewTestCase: XCTestCase {
       "--case", name, "--appearance", dark ? "dark" : "light", "-AppleLanguages", "(en)",
       "-AppleLocale", "en_US",
       "--width", width, "--theme", theme, "--language", language,
+      "--instant",
     ]
     if large { app.launchArguments.append("--large-text") }
     if inspect { app.launchArguments.append("--inspect") }
@@ -38,6 +39,11 @@ class ReviewTestCase: XCTestCase {
     XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 10))
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
     return app
+  }
+
+  func openEditor(in app: XCUIApplication) {
+    app.buttons["review.tools"].tap()
+    app.buttons["review.open-editor"].tap()
   }
 
   func reveal(_ element: XCUIElement, in app: XCUIApplication) {
@@ -101,7 +107,7 @@ class ReviewTestCase: XCTestCase {
   /// Paste inside the same app that copied the code. Reading the shared
   /// pasteboard from the test runner would trigger a cross-app privacy prompt.
   func assertCopiedCode(_ expected: String, in app: XCUIApplication) {
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     let editor = app.textViews["review.lang-input"]
     XCTAssertTrue(editor.waitForExistence(timeout: 3))
     app.buttons["review.editor-clear"].tap()

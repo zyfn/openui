@@ -138,13 +138,25 @@ private struct NativeStretchMediaLayout: Layout {
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
     let ideal = subviews.first?.sizeThatFits(.unspecified) ?? .zero
     let width = proposal.width.flatMap { $0.isFinite ? max(0, $0) : nil } ?? ideal.width
-    let height = proposal.height.flatMap { $0.isFinite ? max(0, $0) : nil }
+    let requested = proposal.height.flatMap { $0.isFinite ? max(0, $0) : nil }
       ?? width / max(aspectRatio, .leastNonzeroMagnitude)
+    let height = NativeInlineMediaSizing.height(width: width, requested: requested)
     return CGSize(width: width, height: height)
   }
 
   func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-    subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
+    subviews.first?.place(at: bounds.origin, anchor: .topLeading,
+      proposal: ProposedViewSize(width: bounds.width,
+        height: NativeInlineMediaSizing.height(width: bounds.width, requested: bounds.height)))
+  }
+}
+
+/// Inline media may follow ordinary copy height but should not become a long
+/// column merely because the adjacent paragraph grows. Covers use their own
+/// aspect layout and are unaffected.
+enum NativeInlineMediaSizing {
+  static func height(width: CGFloat, requested: CGFloat) -> CGFloat {
+    min(max(0, requested), max(0, width) * 1.65)
   }
 }
 

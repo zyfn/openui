@@ -36,6 +36,24 @@
       "license": "https://unsplash.com/license",
       "sha256": "9f4e07e04c022d79645b1b53d2972e23eced8fd8f17d429c91003ef02a391bef",
       "bytes": 386487
+    },
+    {
+      "file": "paris-louvre-day.jpg",
+      "url": "https://images.unsplash.com/photo-1656807721526-875863ed63cf?auto=format&fit=crop&w=1200&q=82&fm=jpg",
+      "author": "Chris Linnett",
+      "source": "https://unsplash.com/photos/kvS4jgAKMAI",
+      "license": "https://unsplash.com/license",
+      "sha256": "8479d276eb073b77e02c8b085a6ffaf2a607299f2c3d79218b56e61ab413b4b9",
+      "bytes": 189563
+    },
+    {
+      "file": "paris-cruise.jpg",
+      "url": "https://images.unsplash.com/photo-1570908129669-00d8c97a5322?auto=format&fit=crop&w=1200&q=82&fm=jpg",
+      "author": "Matteus Silva",
+      "source": "https://unsplash.com/photos/white-and-black-boat-on-sea-near-eiffel-tower-during-daytime-Xz6khwToVbc",
+      "license": "https://unsplash.com/license",
+      "sha256": "304fd8c0a1f0924ca8fb48e65913ed7099a284a80f0d1f34314b8f12fef83e46",
+      "bytes": 195749
     }
   ]
 }

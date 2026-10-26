@@ -58,7 +58,7 @@ struct ReviewCanvas: View {
         .dynamicTypeSize(display.largeText ? .accessibility2 : .large)
         .accessibilityElement(children: .contain).accessibilityIdentifier("review.canvas")
         .frame(maxWidth: .infinity)
-        if !state.errors.isEmpty {
+        if state.isComplete && !state.errors.isEmpty {
           Text(state.errors.map(\.message).joined(separator: "\n"))
             .foregroundStyle(.red).accessibilityIdentifier("review.errors")
         }
@@ -73,8 +73,8 @@ struct ReviewCanvas: View {
     // Only changing the DSL program replaces the renderer. Theme, appearance,
     // width and the preview bubble update values on the existing subtree.
     .id(programID)
-    .task(id: programID) {
-      if exportFull {
+    .task(id: state.isComplete) {
+      if exportFull && state.isComplete {
         await capture.export(programID: programID, language: display.language.rawValue,
           source: source, request: request, diagnostics: state.errors.map(\.message))
       }

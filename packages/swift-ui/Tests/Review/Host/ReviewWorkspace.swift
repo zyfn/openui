@@ -19,6 +19,7 @@ struct ReviewWorkspace: View {
   @State private var manualSource: String?
   @State private var manualRun = 0
   @State private var purchasePreview: ReviewPurchasePreview?
+  @State private var playbackGeneration = 0
 
   private var sample: ReviewProgram? { programs.first { $0.id == selected } }
   private var program: ReviewProgram? {
@@ -52,7 +53,9 @@ struct ReviewWorkspace: View {
       preconditionFailure("Unknown review program: \(requestedID). Prepare optional replay resources before selecting them.")
     }
     let state = OpenUIState(schema: library.library.toSchema())
-    state.setSource(configuration.display.language.program(selected).source)
+    if configuration.instant || ReviewCatalog.scenario(for: selected.id) == nil {
+      state.setSource(configuration.display.language.program(selected).source)
+    }
     _state = StateObject(wrappedValue: state)
     _selected = State(initialValue: selected.id)
     _display = State(initialValue: configuration.display)
@@ -69,7 +72,8 @@ struct ReviewWorkspace: View {
         ReviewHeader(scenario: scenario, program: program, position: position,
           display: display, move: move, toggleTheme: toggleTheme,
           toggleBubble: toggleBubble, toggleLanguage: toggleLanguage, isManual: manualSource != nil,
-          restoreSample: restoreSample, open: open)
+          isPlaying: scenario != nil && !state.isComplete,
+          replay: replay, restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
           programID: program?.id ?? selected, source: program?.source ?? "",
@@ -109,6 +113,7 @@ struct ReviewWorkspace: View {
         .accessibilityElement(children: .contain).accessibilityIdentifier("review.panel")
     }
     .onAppear(perform: connectEvidence)
+    .task(id: playbackGeneration) { await play() }
     .onChange(of: display.language) { _ in reloadLocalizedSample() }
     .alert(item: $purchasePreview) { preview in
       Alert(title: Text(display.language.text("下单预览")),
@@ -151,6 +156,7 @@ struct ReviewWorkspace: View {
     // cancelling or changing preview conditions never reaches this path.
     evidence.reset()
     purchasePreview = nil
+    playbackGeneration += 1
     state.reset()
     state.setSource(source)
     evidence.beginExecution(source: source, values: state.snapshotState(),
@@ -175,9 +181,42 @@ struct ReviewWorkspace: View {
     evidence.reset()
     purchasePreview = nil
     state.reset()
-    state.setSource(item.source)
+    if configuration.instant || ReviewCatalog.scenario(for: item.id) == nil {
+      playbackGeneration += 1
+      state.setSource(item.source)
+    } else {
+      playbackGeneration += 1
+    }
     evidence.beginExecution(source: item.source, values: state.snapshotState(),
       revision: state.sourceRevision, inspect: configuration.inspector)
+  }
+  private func replay() {
+    guard let program else { return }
+    evidence.reset()
+    purchasePreview = nil
+    state.reset()
+    evidence.beginExecution(source: program.source, values: state.snapshotState(),
+      revision: state.sourceRevision, inspect: configuration.inspector)
+    if configuration.instant || scenario == nil {
+      playbackGeneration += 1
+      state.setSource(program.source)
+    }
+    else { playbackGeneration += 1 }
+  }
+  private func play() async {
+    guard !configuration.instant, scenario != nil, manualSource == nil,
+      let source = program?.source else { return }
+    let generation = playbackGeneration
+    let characters = Array(source)
+    for start in stride(from: 0, to: characters.count, by: 160) {
+      guard !Task.isCancelled, generation == playbackGeneration, scenario != nil,
+        manualSource == nil else { return }
+      state.push(String(characters[start..<min(start + 160, characters.count)]))
+      try? await Task.sleep(nanoseconds: 60_000_000)
+    }
+    guard !Task.isCancelled, generation == playbackGeneration, scenario != nil,
+      manualSource == nil else { return }
+    state.complete()
   }
   private func move(_ step: Int) {
     let scenarios = ReviewCatalog.scenarios

@@ -21,7 +21,7 @@ final class ReviewSurfaceTests: ReviewTestCase {
         TextContent($variant)
       ],"column","m")
       """
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     let editor = app.textViews["review.lang-input"]
     XCTAssertTrue(editor.waitForExistence(timeout: 3))
     app.buttons["review.editor-clear"].tap()

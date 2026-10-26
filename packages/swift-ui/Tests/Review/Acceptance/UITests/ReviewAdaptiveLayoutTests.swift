@@ -104,16 +104,14 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     reveal(title, in: app)
     let pagers = app.descendants(matching: .any)
       .matching(identifier: "openui.card-block.composite.pager")
-    XCTAssertEqual(pagers.count, 2)
-    let stays = pagers.element(boundBy: 1)
-    reveal(stays, in: app)
+    XCTAssertEqual(pagers.count, 3)
+    let stays = pagers.element(boundBy: 2)
     stays.swipeLeft()
     let button = stays.buttons.matching(identifier: "Book").allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
     XCTAssertNotNil(button)
     button?.tap()
     XCTAssertTrue(app.staticTexts["review.opened-url"].label.hasPrefix("https://www.booking.com/searchresults.html"))
     let total = app.staticTexts["€987"].firstMatch
-    reveal(total, in: app)
     XCTAssertTrue(total.exists)
     capture(app, name: "trip-booking-link-fixed-budget")
     app.terminate()
@@ -144,7 +142,7 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     day.terminate()
 
     let two = launch("scene-two-day-trip", language: "en")
-    two.buttons["Day 2 · Tower and Seine"].tap()
+    two.buttons["Day 2 · Seine"].tap()
     let tower = two.staticTexts["€47"].firstMatch
     reveal(tower, in: two)
     XCTAssertTrue(tower.exists)

@@ -60,7 +60,7 @@ final class ReviewLanguageTests: ReviewTestCase {
       $n=1
       root=Stack([TextContent("Caller-owned content"),Button("Increment",@Set($n,$n+1)),TextContent(""+$n)])
       """
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     let editor = app.textViews["review.lang-input"]
     XCTAssertTrue(editor.waitForExistence(timeout: 3))
     app.buttons["review.editor-clear"].tap()
@@ -78,7 +78,7 @@ final class ReviewLanguageTests: ReviewTestCase {
     XCTAssertEqual(app.staticTexts["review.executed-source"].label, source)
     XCTAssertEqual(state.label, before)
     XCTAssertEqual(app.staticTexts["review.source-revision"].label, revision)
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     XCTAssertTrue(editor.waitForExistence(timeout: 3))
     XCTAssertEqual(editor.value as? String, source)
     XCTAssertTrue(app.buttons["Cancel"].exists)

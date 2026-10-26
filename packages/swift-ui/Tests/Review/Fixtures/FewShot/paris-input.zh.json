@@ -21,6 +21,8 @@
       "id": "outbound",
       "title": "去程 · 11月5日",
       "route": "LHR → CDG",
+      "origin": "LHR",
+      "destination": "CDG",
       "options": [
         {
           "id": "out1",
@@ -61,6 +63,8 @@
       "id": "inbound",
       "title": "返程 · 11月6日",
       "route": "CDG → LHR",
+      "origin": "CDG",
+      "destination": "LHR",
       "options": [
         {
           "id": "back1",
@@ -140,11 +144,11 @@
     {
       "id": "louvre",
       "name": "卢浮宫",
-      "image": "/paris-louvre.jpg",
+      "image": "/paris-louvre-day.jpg",
       "description": "法国国王昔日的宫殿，馆藏横跨近一万年的艺术史。",
       "tags": [
-        "艺术",
-        "博物馆"
+        "博物馆",
+        "非 EEA 票"
       ],
       "unitPrice": 32,
       "priceBasis": "非 EEA 成人",
@@ -177,8 +181,8 @@
       "image": "/paris-eiffel.jpg",
       "description": "电梯到二层，不含顶层。",
       "tags": [
-        "电梯",
-        "二层"
+        "二层",
+        "25 岁以上成人"
       ],
       "unitPrice": 23.5,
       "priceBasis": "25 岁以上成人",
@@ -191,7 +195,7 @@
     {
       "id": "cruise",
       "name": "塞纳河观光游船",
-      "image": "/paris-eiffel.jpg",
+      "image": "/paris-cruise.jpg",
       "description": "一小时观光游船，含语音导览。",
       "tags": [
         "1 小时",

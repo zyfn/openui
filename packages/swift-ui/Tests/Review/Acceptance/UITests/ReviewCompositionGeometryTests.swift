@@ -155,8 +155,8 @@ extension ReviewCompositionGeometryTests {
     let price = app.staticTexts["¥5,200"].firstMatch
     reveal(price, in: app)
     XCTAssertTrue(price.waitForExistence(timeout: 8))
-    let image = app.images["A · 轻装出发套装"].firstMatch
-    let description = app.staticTexts["轻量机身与标准变焦，适合全天随身。"].firstMatch
+    let image = app.images["Nikon Z50 · NIKKOR Z DX 16–50mm"].firstMatch
+    let description = app.staticTexts["20.9MP 机身配可收纳的 16–50mm 变焦，适合一天只带一支镜头。"].firstMatch
     let pager = app.descendants(matching: .any)
       .matching(identifier: "openui.card-block.composite.pager").firstMatch
     XCTAssertTrue(image.exists)

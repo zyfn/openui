@@ -2,6 +2,43 @@ import UIKit
 import XCTest
 
 final class ReviewStreamingTests: ReviewTestCase {
+  func testSceneUsesTheSdkStreamAndReplayRestartsIt() {
+    let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
+    app.launchArguments = ["--case", "scene-day-trip", "--language", "en", "-AppleLanguages", "(en)"]
+    app.launch()
+    let replay = app.buttons["review.replay"]
+    XCTAssertTrue(replay.waitForExistence(timeout: 10))
+    let ready = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 20), .completed)
+    XCTAssertTrue(app.staticTexts["Paris, at your own pace"].exists)
+    replay.tap()
+    let completedAgain = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
+    XCTAssertEqual(XCTWaiter.wait(for: [completedAgain], timeout: 20), .completed)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "scene-sdk-stream-replayed")
+    app.terminate()
+  }
+
+  func testChangingScenesStopsTheOldSdkStream() {
+    let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
+    app.launchArguments = ["--case", "scene-two-day-trip", "--language", "en", "-AppleLanguages", "(en)"]
+    app.launch()
+    let next = app.buttons["review.next"]
+    XCTAssertTrue(next.waitForExistence(timeout: 10))
+    next.tap()
+    XCTAssertEqual(app.staticTexts["review.scene-title"].label, "Choose a camera")
+    let replay = app.buttons["review.replay"]
+    let ready = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 20), .completed)
+    XCTAssertTrue(app.staticTexts["A camera worth taking with you"].exists)
+    XCTAssertFalse(app.staticTexts["Paris, two days and one night"].exists)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    app.terminate()
+  }
+
   private func stream(_ mode: String, language: String = "zh-Hans") -> XCUIApplication {
     continueAfterFailure = false
     let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")

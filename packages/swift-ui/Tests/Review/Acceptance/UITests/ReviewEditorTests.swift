@@ -108,7 +108,7 @@ final class ReviewEditorTests: ReviewTestCase {
       "Changing the manual program's available width must preserve its bound state")
     capture(app, name: "editor-manual-program-interaction")
 
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     let input = app.textViews["review.lang-input"]
     XCTAssertTrue(input.waitForExistence(timeout: 3))
     XCTAssertEqual(input.value as? String, first)
@@ -172,7 +172,7 @@ final class ReviewEditorTests: ReviewTestCase {
     XCTAssertTrue(app.buttons["已收藏"].exists)
     XCTAssertFalse(app.staticTexts["Unrun draft"].exists)
 
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     let input = app.textViews["review.lang-input"]
     XCTAssertTrue(input.waitForExistence(timeout: 3))
     XCTAssertEqual(input.value as? String, draft, "Closing the editor must not discard its draft")
@@ -196,7 +196,7 @@ final class ReviewEditorTests: ReviewTestCase {
     let diagnostic = error.label
     capture(app, name: "editor-core-diagnostic")
 
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     let input = app.textViews["review.lang-input"]
     XCTAssertTrue(input.waitForExistence(timeout: 3))
     XCTAssertEqual(input.value as? String, invalid)
@@ -217,7 +217,7 @@ final class ReviewEditorTests: ReviewTestCase {
     XCTAssertTrue(app.staticTexts["本周，留一点时间给自己"].waitForExistence(timeout: 5))
     XCTAssertFalse(app.staticTexts["Recovered program"].exists)
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     XCTAssertTrue(input.waitForExistence(timeout: 3))
     XCTAssertEqual(input.value as? String, recovered,
       "Restoring a sample does not delete the user's manual draft")
@@ -227,7 +227,7 @@ final class ReviewEditorTests: ReviewTestCase {
   }
 
   private func replaceDraft(with source: String, in app: XCUIApplication) {
-    app.buttons["review.editor"].tap()
+    openEditor(in: app)
     XCTAssertTrue(app.textViews["review.lang-input"].waitForExistence(timeout: 3))
     replaceOpenDraft(with: source, in: app)
   }
@@ -251,7 +251,7 @@ final class ReviewEditorTests: ReviewTestCase {
       predicate: NSPredicate(format: "exists == false"), object: app.buttons["review.editor-run"])
     XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
     let ready = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "hittable == true"), object: app.buttons["review.editor"])
+      predicate: NSPredicate(format: "hittable == true"), object: app.buttons["review.tools"])
     XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
   }
 

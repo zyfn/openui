@@ -32,6 +32,8 @@ from the listed image delivery URLs; they are not retouched or composited.
 - `paris-cafe.jpg` — Evan Buchholz. [Photo](https://unsplash.com/photos/a-street-corner-with-tables-and-chairs-under-an-awning-gp3y7I-RZb0); [license](https://unsplash.com/license).
 - `paris-breakfast.jpg` — Esra Nur Kalay. [Photo](https://www.pexels.com/photo/croissants-and-latte-on-top-of-a-marble-table-11764603/); [license](https://www.pexels.com/license/).
 - `paris-louvre.jpg` — Arda Can Yıldız. [Photo](https://unsplash.com/photos/a-large-glass-pyramid-sitting-in-the-middle-of-a-body-of-water-P3ozLoE4U8c); [license](https://unsplash.com/license).
+- `paris-louvre-day.jpg` — Chris Linnett. [Photo](https://unsplash.com/photos/kvS4jgAKMAI); [license](https://unsplash.com/license).
+- `paris-cruise.jpg` — Matteus Silva. [Photo](https://unsplash.com/photos/white-and-black-boat-on-sea-near-eiffel-tower-during-daytime-Xz6khwToVbc); [license](https://unsplash.com/license).
 
 Breakfast imagery illustrates food, not a claim about a named restaurant.
 Exact download URLs and SHA-256 hashes are recorded in `paris-sources.json`.

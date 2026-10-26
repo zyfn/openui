@@ -50,6 +50,7 @@ struct ReviewConfiguration {
   let streamingCase: String?
   let streamingAuto: Bool
   let exportFull: Bool
+  let instant: Bool
   let display: ReviewDisplayOptions
 
   init(arguments: [String] = ProcessInfo.processInfo.arguments) {
@@ -63,6 +64,7 @@ struct ReviewConfiguration {
     streamingCase = value("--stream-case")
     streamingAuto = arguments.contains("--stream-auto")
     exportFull = arguments.contains("--export-full")
+    instant = arguments.contains("--instant")
     display = ReviewDisplayOptions(
       language: ReviewLanguage(rawValue: value("--language")
         ?? UserDefaults.standard.string(forKey: "review.language") ?? "zh-Hans") ?? .chinese,

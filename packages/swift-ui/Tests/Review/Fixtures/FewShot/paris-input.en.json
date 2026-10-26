@@ -21,6 +21,8 @@
       "id": "outbound",
       "title": "Outbound · 5 Nov",
       "route": "LHR → CDG",
+      "origin": "LHR",
+      "destination": "CDG",
       "options": [
         {
           "id": "out1",
@@ -61,6 +63,8 @@
       "id": "inbound",
       "title": "Return · 6 Nov",
       "route": "CDG → LHR",
+      "origin": "CDG",
+      "destination": "LHR",
       "options": [
         {
           "id": "back1",
@@ -140,11 +144,11 @@
     {
       "id": "louvre",
       "name": "The Louvre",
-      "image": "/paris-louvre.jpg",
+      "image": "/paris-louvre-day.jpg",
       "description": "A former royal palace with collections spanning nearly 10,000 years.",
       "tags": [
-        "Art",
-        "Museum"
+        "Museum",
+        "Non-EEA fare"
       ],
       "unitPrice": 32,
       "priceBasis": "Non-EEA adult",
@@ -177,8 +181,8 @@
       "image": "/paris-eiffel.jpg",
       "description": "Elevator access to the second floor, excluding the summit.",
       "tags": [
-        "Elevator",
-        "Second floor"
+        "Second floor",
+        "Adult 25+"
       ],
       "unitPrice": 23.5,
       "priceBasis": "Adult over 24",
@@ -191,7 +195,7 @@
     {
       "id": "cruise",
       "name": "Seine sightseeing cruise",
-      "image": "/paris-eiffel.jpg",
+      "image": "/paris-cruise.jpg",
       "description": "One-hour sightseeing cruise with an audio guide.",
       "tags": [
         "1 hour",
