@@ -3,6 +3,27 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
+  func testHorizontalStayChoicesUpdateTheTripBudget() {
+    let app = launch("scene-two-day-trip", inspect: true, language: "en")
+    let title = app.staticTexts["Left Bank · garden double"].firstMatch
+    reveal(title, in: app)
+    let pagers = app.descendants(matching: .any)
+      .matching(identifier: "openui.card-block.composite.pager")
+    XCTAssertEqual(pagers.count, 3)
+    let stays = pagers.element(boundBy: 2)
+    reveal(stays, in: app)
+    stays.swipeLeft()
+    let button = stays.buttons["Select"].allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
+    XCTAssertNotNil(button)
+    button?.tap()
+    XCTAssertTrue(app.staticTexts["Transit-side room selected · €160 / night"].waitForExistence(timeout: 5))
+    let total = app.staticTexts["€927"].firstMatch
+    reveal(total, in: app)
+    XCTAssertTrue(total.exists)
+    capture(app, name: "trip-horizontal-selection-budget")
+    app.terminate()
+  }
+
   func testAttractionPlansExposePricesAndKeepBudgetTotalsConsistent() {
     let day = launch("scene-day-trip", inspect: true, language: "en")
     let museum = day.staticTexts["€64"].firstMatch
@@ -37,20 +58,20 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     two.terminate()
   }
 
-  func testBasicComposedStayKeepsAllCopyAndPriceToTheRightOfItsImage() {
-    let app = launch("scene-two-day-trip", language: "en")
-    let title = app.staticTexts["Left Bank · garden double"].firstMatch
+  func testBasicComposedAttractionKeepsAllCopyAndPriceToTheRightOfItsImage() {
+    let app = launch("scene-day-trip", language: "en")
+    let title = app.staticTexts["The Louvre"].firstMatch
     reveal(title, in: app)
-    let price = app.staticTexts["€220"].firstMatch
+    let price = app.staticTexts["€64"].firstMatch
     reveal(price, in: app)
-    let photo = app.images["Left Bank · garden double"].firstMatch
+    let photo = app.images["The Louvre"].firstMatch
     XCTAssertTrue(photo.exists)
     XCTAssertGreaterThan(photo.frame.width, 0)
     XCTAssertGreaterThanOrEqual(title.frame.minX, photo.frame.maxX + 8)
     XCTAssertGreaterThanOrEqual(price.frame.minX, photo.frame.maxX + 8)
     XCTAssertGreaterThanOrEqual(photo.frame.maxY + 2, price.frame.maxY)
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
-    capture(app, name: "basic-composition-stay-image-copy-footer")
+    capture(app, name: "basic-composition-attraction-image-copy-footer")
     app.terminate()
   }
 
