@@ -9,7 +9,7 @@ import AppKit
 
 enum NativeMediaStatus: Equatable { case loading, loaded, unavailable }
 enum NativeMediaLayout {
-  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic, stretch
+  case aspect(CGFloat, contentMode: ContentMode = .fill), thumbnail(CGSize), fit, fill, intrinsic, stretch
 }
 
 /// Shared native resource presentation. Resource states preserve the declared
@@ -77,13 +77,11 @@ struct NativeRemoteImage: View {
   }
   private func picture(_ image: Image) -> some View {
     Group {
-      if case .intrinsic = layout {
+      switch layout {
+      case .intrinsic, .fit, .aspect(_, .fit):
         canvas { image.resizable().scaledToFit() }
-      } else {
-        canvas {
-          if case .fit = layout { image.resizable().scaledToFit() }
-          else { image.resizable().scaledToFill() }
-        }
+      default:
+        canvas { image.resizable().scaledToFill() }
       }
     }
     .accessibilityElement(children: .ignore).accessibilityLabel(alt)
@@ -119,7 +117,7 @@ struct NativeRemoteImage: View {
   @ViewBuilder private func canvas<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
     let surface = Color.clear.overlay { content().accessibilityHidden(true) }.clipped().contentShape(Rectangle())
     switch layout {
-    case .aspect(let ratio):
+    case .aspect(let ratio, _):
       surface.aspectRatio(ratio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
     case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
     case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -179,6 +177,46 @@ private struct NativeGalleryImage: Identifiable {
   var key: NativeGalleryResourceID { .init(itemID: id, source: src, request: requestID) }
 }
 
+/// Small galleries are measured synchronously at their actual container width.
+/// Columns never outnumber the supplied images, so sparse galleries fill the row.
+private struct NativeGalleryGridLayout: Layout {
+  let minimumWidth: CGFloat
+  let gap: CGFloat
+  var maximumColumns: Int?
+
+  private func frames(_ proposal: ProposedViewSize, _ subviews: Subviews) -> (CGFloat, [CGRect]) {
+    let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? max(1, minimumWidth)
+    guard !subviews.isEmpty else { return (width, []) }
+    let columns = min(subviews.count, maximumColumns ?? subviews.count,
+      max(1, Int((width + gap) / max(1, minimumWidth + gap))))
+    let tileWidth = max(1, (width - gap * CGFloat(columns - 1)) / CGFloat(columns))
+    let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: tileWidth, height: nil)) }
+    var result: [CGRect] = []
+    var y: CGFloat = 0
+    for start in stride(from: 0, to: subviews.count, by: columns) {
+      let end = min(start + columns, subviews.count)
+      let rowHeight = sizes[start..<end].map(\.height).max() ?? 0
+      for index in start..<end {
+        result.append(CGRect(x: CGFloat(index - start) * (tileWidth + gap), y: y,
+          width: tileWidth, height: sizes[index].height))
+      }
+      y += rowHeight + gap
+    }
+    return (width, result)
+  }
+  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    let (width, frames) = frames(proposal, subviews)
+    return CGSize(width: width, height: frames.map(\.maxY).max() ?? 0)
+  }
+  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    let (_, frames) = frames(ProposedViewSize(width: bounds.width, height: nil), subviews)
+    for (view, frame) in zip(subviews, frames) {
+      view.place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+        anchor: .topLeading, proposal: ProposedViewSize(width: frame.width, height: nil))
+    }
+  }
+}
+
 struct NativeImageGallery: View {
   let context: OpenUIComponentContext
   @Environment(\.openUIResourceContext) private var resources
@@ -205,25 +243,19 @@ struct NativeImageGallery: View {
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
       if !visible.isEmpty {
-        LazyVGrid(
-          columns: typeSize.isAccessibilitySize
-            ? [GridItem(.flexible(), alignment: .topLeading)]
-            : [
-              GridItem(
-                .adaptive(minimum: context.theme.minimumCompactCardWidth), spacing: context.theme.contentSpacing,
-                alignment: .topLeading)
-            ],
-          alignment: .leading, spacing: context.theme.contentSpacing) {
+        NativeGalleryGridLayout(minimumWidth: context.theme.thumbnailSize,
+          gap: context.theme.contentSpacing, maximumColumns: typeSize.isAccessibilitySize ? 1 : nil) {
           ForEach(visible) { image in
             VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
               Button {
                 selected = image.key; preview = true
               } label: {
                 NativeRemoteImage(
-                  src: image.src, alt: image.alt, layout: .aspect(4 / 3),
+                  src: image.src, alt: image.alt, layout: .aspect(4 / 3, contentMode: .fit),
                   cachedImage: pictures[image.key], attempt: image.requestID.attempt,
                   onStatus: { record($0, image: $1, for: image.key) }
                 )
+                .background(context.theme.surface)
                 .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius))
               }
               .buttonStyle(.plain).disabled(!context.canInteract || pictures[image.key] == nil)

@@ -3,6 +3,24 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
+  func testLearningGalleryRemainsCompactInTheChatBubble() {
+    for bubble in [false, true] {
+      let app = launch("scene-learning", bubble: bubble, language: "en")
+      let first = app.buttons["openui.gallery.image.0"]
+      let second = app.buttons["openui.gallery.image.1"]
+      reveal(first, in: app)
+      XCTAssertTrue(second.exists)
+      XCTAssertEqual(first.frame.minY, second.frame.minY, accuracy: 2)
+      XCTAssertEqual(first.frame.width, second.frame.width, accuracy: 2)
+      let available = canvas(in: app).frame.width - (bubble ? 32 : 0)
+      XCTAssertEqual(second.frame.maxX - first.frame.minX, available, accuracy: 2,
+        "The same gallery should use its actual content width without leaving an empty column")
+      XCTAssertLessThan(first.frame.height, 200)
+      capture(app, name: bubble ? "learning-gallery-chat-bubble" : "learning-gallery-document")
+      app.terminate()
+    }
+  }
+
   func testParisFewShotUsesTheSameSourceForCardsMapAndBudget() {
     let app = launch("paris-fewshot-source-change", language: "en")
     let description = app.staticTexts["Updated source record description"]
