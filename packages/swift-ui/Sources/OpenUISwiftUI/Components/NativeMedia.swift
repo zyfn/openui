@@ -9,7 +9,7 @@ import AppKit
 
 enum NativeMediaStatus: Equatable { case loading, loaded, unavailable }
 enum NativeMediaLayout {
-  case aspect(CGFloat, contentMode: ContentMode = .fill), thumbnail(CGSize), fit, fill, intrinsic, stretch
+  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic, stretch
 }
 
 /// Shared native resource presentation. Resource states preserve the declared
@@ -78,7 +78,7 @@ struct NativeRemoteImage: View {
   private func picture(_ image: Image) -> some View {
     Group {
       switch layout {
-      case .intrinsic, .fit, .aspect(_, .fit):
+      case .intrinsic, .fit:
         canvas { image.resizable().scaledToFit() }
       default:
         canvas { image.resizable().scaledToFill() }
@@ -117,7 +117,7 @@ struct NativeRemoteImage: View {
   @ViewBuilder private func canvas<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
     let surface = Color.clear.overlay { content().accessibilityHidden(true) }.clipped().contentShape(Rectangle())
     switch layout {
-    case .aspect(let ratio, _):
+    case .aspect(let ratio):
       surface.aspectRatio(ratio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
     case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
     case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -237,7 +237,7 @@ struct NativeImageGallery: View {
                 selected = image.key; preview = true
               } label: {
                 NativeRemoteImage(
-                  src: image.src, alt: image.alt, layout: .aspect(4 / 3, contentMode: .fit),
+                  src: image.src, alt: image.alt, layout: .aspect(4 / 3),
                   cachedImage: pictures[image.key], attempt: image.requestID.attempt,
                   onStatus: { record($0, image: $1, for: image.key) }
                 )
