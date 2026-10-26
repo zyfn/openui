@@ -14,6 +14,10 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     XCTAssertGreaterThanOrEqual(bi.frame.minX, cong.frame.maxX + 6)
     for (view, file) in [(cong, "liangzhu-cong"), (bi, "liangzhu-bi")] {
       let size = try fixtureImageSize(file)
+      let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        view.frame.height > 0 && abs(view.frame.width / view.frame.height - size.width / size.height) < 0.03
+      }, object: nil)
+      XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 8), .completed)
       XCTAssertEqual(view.frame.width / view.frame.height, size.width / size.height, accuracy: 0.03,
         "Observation images must preserve the complete object's source proportions")
     }
