@@ -26,10 +26,12 @@ enum ReviewScenePrograms {
         total=80+20+40+activity
         root=Stack([
           TextContent(\(q("巴黎，一天也能从容", "Paris, at your own pace")),"large-heavy"),
-          OverviewCardBlock([
-            OverviewCardItem("dates",Text("text",\(q("出行日期", "Travel dates"))),MetricIndicatorInline(\(q("11 月 5 日", "5 Nov")),"2026")),
-            OverviewCardItem("party",Text("text",\(q("同行安排", "Travel party"))),MetricIndicatorInline(\(q("2 位成人", "2 adults")),\(q("一天 · 市内游", "1 day · city visit"))))
-          ],"grid",true),
+          TextContent(\(q("2026 年 11 月 5 日", "5 November 2026")),"small"),
+          Stack([
+            OverviewCardItem("party",Text("text",\(q("2 人", "2 people")),null,"text","lg")),
+            OverviewCardItem("duration",Text("text",\(q("1 天", "1 day")),null,"text","lg")),
+            OverviewCardItem("places",Text("text",\(q("3 处景点", "3 places")),null,"text","lg"))
+          ],"row","s","stretch","start",false),
           TextContent(\(q("上午看艺术，午后逛左岸，傍晚到铁塔附近乘船；把参观和休息串成一条路线。", "Art in the morning, the Left Bank after lunch, then a cruise near the tower. Keep time for breaks between visits."))),
           InlineHeader(\(q("值得停留的三个地方", "Three places worth your time"))),
           Stack([
@@ -112,10 +114,12 @@ enum ReviewScenePrograms {
         total=hotel+flights+160+80+visits+60
         root=Stack([
           TextContent(\(q("巴黎，两天一晚", "Paris, two days and one night")),"large-heavy"),
-          OverviewCardBlock([
-            OverviewCardItem("dates",Text("text",\(q("出行日期", "Travel dates"))),MetricIndicatorInline(\(q("11 月 5–6 日", "5–6 Nov")),"2026")),
-            OverviewCardItem("party",Text("text",\(q("同行安排", "Travel party"))),MetricIndicatorInline(\(q("2 位成人", "2 adults")),\(q("两天 · 一晚", "2 days · 1 night"))))
-          ],"grid",true),
+          TextContent(\(q("2026 年 11 月 5–6 日", "5–6 November 2026")),"small"),
+          Stack([
+            OverviewCardItem("party",Text("text",\(q("2 人", "2 people")),null,"text","lg")),
+            OverviewCardItem("duration",Text("text",\(q("2 天", "2 days")),null,"text","lg")),
+            OverviewCardItem("places",Text("text",\(q("4 处景点", "4 places")),null,"text","lg"))
+          ],"row","s","stretch","start",false),
           TextContent(\(q("第一天以卢浮宫和左岸为主；第二天集中在铁塔与塞纳河，下午留给返程。", "Spend day one at the Louvre and on the Left Bank. Keep day two around the tower and Seine, leaving the afternoon for your flight."))),
           InlineHeader(\(q("按天看景点", "Places to visit each day"))),
           Tabs([
