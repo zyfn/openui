@@ -451,53 +451,36 @@ enum ReviewScenePrograms {
       request = t("从玉琮和玉璧给我讲讲良渚历史，结合图片和馆藏资料，区分能观察到的证据与尚不能确定的解释，并给出出处。", "Teach me about Liangzhu history through jade cong and bi. Use images and collection records, explain what we can observe and what remains uncertain, and include sources.")
       source = """
         root=Stack([
-          TextContent(\(q("一块玉，为什么能讲出一个时代？", "What can a piece of jade tell us?")),"large-heavy"),
-          TextContent(\(q("从良渚玉琮开始，看形制、工艺与社会，再分清我们知道什么、还有什么不能确定。", "Begin with a Liangzhu cong: its form, workmanship and social setting, then separate evidence from what remains uncertain."))),
-          Image(\(q("良渚文化玉琮，约公元前 2400 年；大都会艺术博物馆，2004.52", "Liangzhu jade cong, about 2400 BCE; The Met, 2004.52")),"/liangzhu-cong.jpg"),
-          TextContent(\(q("图 1 · 这件玉琮属于新石器时代良渚文化。器身外方内圆，转角处有抽象面纹。[1]", "Fig. 1 · A Neolithic Liangzhu cong. Its squared exterior encloses a round tube; abstract masks mark the corners.[1]")),"small"),
-          InlineHeader(\(q("先看形状，再问用途", "Form, craft and use"))),
-          TextContent(\(q("把目光沿着转角向下移动：重复的纹饰让器物有了节奏。钻孔、打磨与抛光都需要投入工时，这种投入帮助我们理解它为什么珍贵。", "Follow the corners down the object and notice the repeated motifs. Boring, grinding and polishing required substantial labor: part of the reason such objects mattered."))),
-          ListBlock([
-            ListItem(\(q("轮廓：外方内圆", "Form: squared outside, round within")),\(q("先辨认器形；不要仅凭这个形状，就断言史前人有某套确定的宇宙观。", "Identify the form before attaching a definite prehistoric cosmology to it.")),null,null,null),
-            ListItem(\(q("证据：工艺与出土环境", "Evidence: craft and archaeological context")),\(q("精细加工与墓葬环境支持身份、地位或仪式用途的解释；具体意义仍有不确定性。[1][3]", "Workmanship and burial contexts support interpretations involving status or ritual, while precise meanings remain uncertain.[1][3]")),null,null,null)
-          ]),
-          InlineHeader(\(q("琮与璧，放在一起看", "Compare a cong and a bi"))),
-          ListBlock([
-            ListItem(\(q("玉琮 · 方形器身中的圆孔", "Cong · a round bore in a squared body")),\(q("约公元前 2400 年，高 25.4 cm。先看转角与层叠的纹饰。[1]", "About 2400 BCE, 25.4 cm high. Notice the corners and repeated motifs.[1]")),{src:"/liangzhu-cong.jpg",alt:\(q("玉琮 · 方形器身中的圆孔", "Cong · a round bore in a squared body"))},null,@OpenUrl("https://www.metmuseum.org/art/collection/search/72376")),
-            ListItem(\(q("玉璧 · 带孔的圆盘", "Bi · a disk with a central opening")),\(q("公元前三千纪中叶，直径约 15.6 cm。形式与玉琮不同，不能直接当作同一种器物。[2]", "Mid-third millennium BCE, about 15.6 cm across. Its disk form differs from a cong.[2]")),{src:"/liangzhu-bi.jpg",alt:\(q("玉璧 · 带孔的圆盘", "Bi · a disk with a central opening"))},null,@OpenUrl("https://www.metmuseum.org/art/collection/search/49371"))
-          ],"image"),
-          Table([
-            Col(\(q("观察轴", "Look for")),[
-              \(q("外形", "Form")),
-              \(q("工艺", "Workmanship")),
-              \(q("解释边界", "Limits of interpretation"))
-            ]),
-            Col(\(q("玉琮", "Cong")),[
-              \(q("方形外壁、圆孔", "Squared walls, round bore")),
-              \(q("钻孔、纹饰与抛光", "Boring, carving and polishing")),
-              \(q("常与身份、仪式联系", "Often linked to status or ritual"))
-            ]),
-            Col(\(q("玉璧", "Bi")),[
-              \(q("扁平圆盘、中央孔", "Flat disk, central hole")),
-              \(q("切割、研磨与抛光", "Cutting, grinding and polishing")),
-              \(q("具体用途仍需结合出土证据", "Specific uses require context"))
-            ])
-          ]),
-          InlineHeader(\(q("一个容易看错的地方", "An easy mistake to make"))),
-          Image(\(q("清代仿古玉琮；大都会艺术博物馆，21.175.114", "Qing-dynasty archaistic jade cong; The Met, 21.175.114")),"/object.jpg"),
-          TextContent(\(q("这件也是“琮”，但它是清代仿古玉器，不是良渚出土物。相似的形制可以跨越数千年；认年代，要看记录和考古信息。[4]", "This is also a cong, but it is a Qing-dynasty archaistic object, not a Liangzhu find. Similar forms can span millennia: dating needs collection and archaeological evidence.[4]"))),
+          TextContent(\(q("良渚，藏在玉里的秩序", "Liangzhu, a world held in jade")),"large-heavy"),
+          TagBlock([\(q("新石器时代", "Neolithic")),\(q("玉器", "Jade")),\(q("馆藏阅读", "Collection study"))],"sm"),
+          TextContent(\(q("一件方中有圆，一件圆中有孔。从玉琮和玉璧的形状出发，读懂工艺留下的证据，也保留对用途的疑问。", "A square body with a round bore; a disk with a central opening. Start with what these objects show, then distinguish evidence from interpretation."))),
+          Stack([
+            VisualCardBlock([VisualCardItem(BoldText("text",\(q("玉琮", "Cong")),\(q("约公元前 2400 年", "About 2400 BCE")),"text","lg"),"cong","/liangzhu-cong.jpg",Tag(\(q("良渚", "Liangzhu")),"sm"),\(q("玉琮", "Cong")))],"carousel",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/72376")),
+            VisualCardBlock([VisualCardItem(BoldText("text",\(q("玉璧", "Bi")),\(q("公元前三千纪中叶", "Mid-third millennium BCE")),"text","lg"),"bi","/liangzhu-bi.jpg",Tag(\(q("良渚", "Liangzhu")),"sm"),\(q("玉璧", "Bi")))],"carousel",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/49371"))
+          ],"row","s","stretch","start",false),
+          TextContent(\(q("图卡为裁切预览；点按查看完整馆藏图片与记录。", "Cropped previews. Tap either card for the complete collection image and record.")),"small"),
+          Stack([
+            Stack([
+              InlineHeader(\(q("琮：方与圆", "Cong: square and round"))),
+              TextContent(\(q("外壁方形，中心贯穿圆孔。转角有简化面纹，器身向下略收。此件高 25.4 cm。[1]", "Squared walls surround a round bore. Abstract masks mark the corners; the body tapers gently. This example is 25.4 cm high.[1]")),"small")
+            ],"column","s"),
+            Stack([
+              InlineHeader(\(q("璧：圆盘与孔", "Bi: disk and opening"))),
+              TextContent(\(q("扁平圆盘，中部开孔。馆方将此件定为公元前三千纪中叶，尺寸约 15.6 cm。[2]", "A flat disk with a central opening. The museum dates this example to the mid-third millennium BCE; it measures about 15.6 cm.[2]")),"small")
+            ],"column","s")
+          ],"row","m","start","start",false),
           Separator(),
-          InlineHeader(\(q("现在，试着自己解释", "Try explaining it yourself"))),
-          TextContent(\(q("如果看到一件没有标签的玉琮，哪些能靠眼睛观察，哪些必须查资料才能判断？", "If you encountered an unlabeled cong, what could you observe directly, and what would require research?"))),
-          TextContent(\(q("能观察：形状、纹饰与表面痕迹。需查证：年代、出土地、材质鉴定与具体用途。把观察和推断分开，比背一个结论更重要。", "Observable: form, decoration and surface marks. To research: date, findspot, material identification and use. Separate observation from inference."))),
-          InlineHeader(\(q("资料与图片出处", "Sources and image credits"))),
-          ListBlock([
-            ListItem(\(q("[1] 良渚玉琮 · 馆藏记录", "[1] Liangzhu cong · collection record")),\(q("www.metmuseum.org", "www.metmuseum.org")),null,null,@OpenUrl("https://www.metmuseum.org/art/collection/search/72376")),
-            ListItem(\(q("[2] 良渚玉璧 · 馆藏记录", "[2] Liangzhu bi · collection record")),\(q("www.metmuseum.org", "www.metmuseum.org")),null,null,@OpenUrl("https://www.metmuseum.org/art/collection/search/49371")),
-            ListItem(\(q("[3] 良渚文化 · 研究介绍", "[3] The Liangzhu culture · research introduction")),\(q("asia-archive.si.edu", "asia-archive.si.edu")),null,null,@OpenUrl("https://asia-archive.si.edu/learn/ancient-chinese-jades/the-liangzhu-culture/")),
-            ListItem(\(q("[4] 清代仿古玉琮 · 馆藏记录", "[4] Qing archaistic cong · collection record")),\(q("www.metmuseum.org", "www.metmuseum.org")),null,null,@OpenUrl("https://www.metmuseum.org/art/collection/search/42751"))
-          ]),
-          TextContent(\(q("根据馆方网页整理的固定讲解范例，不是现场搜索结果。图片为馆方开放获取资料；精确来源见记录。", "Authored from museum records, not a live search. Images are museum Open Access assets; sources are linked above.")),"small")
+          InlineHeader(\(q("精细工艺，指向怎样的社会？", "What does the workmanship suggest?"))),
+          TextContent(\(q("钻孔、研磨和抛光需要大量劳动。珍贵材料与精细工艺，支持财富、身份或仪式用途的解释；但器物的确切含义仍不明确。[1][2]", "Boring, grinding and polishing demanded substantial labor. Material and workmanship support interpretations of wealth, rank or ritual, but the precise meanings remain uncertain.[1][2]"))),
+          Stack([
+            Stack([InlineHeader(\(q("可以观察", "Observable"))),TextContent(\(q("形状、孔洞、纹饰与表面痕迹。", "Form, openings, decoration and surface marks.")),"small")],"column","xs"),
+            Stack([InlineHeader(\(q("需要查证", "Needs evidence"))),TextContent(\(q("年代、出土地、材质与具体用途。", "Date, findspot, material and specific use.")),"small")],"column","xs")
+          ],"row","m","start","start",false),
+          Separator(),
+          VisualCardBlock([VisualCardItem(BoldText("text",\(q("同形，不同时代", "Same form, another era")),\(q("清代仿古玉琮", "An archaistic cong from the Qing dynasty")),"text","lg"),"qing","/object.jpg",Tag(\(q("清代", "Qing dynasty")),"sm"),\(q("同形，不同时代", "Same form, another era")))],"grid",true,@OpenUrl("https://www.metmuseum.org/art/collection/search/42751")),
+          TextContent(\(q("这件玉琮制作于清代，高 12.7 cm，沿用了古代器形。相似轮廓不代表相同年代，必须回到馆藏与考古记录。[4]", "This 12.7 cm cong was made during the Qing dynasty in an ancient form. A similar outline does not establish a shared date: consult collection and archaeological records.[4]"))),
+          TextContent(\(q("记住这一点：先描述看见的，再解释它可能意味着什么。图像帮助观察，来源帮助判断。", "Describe what you can see before explaining what it might mean. Images support observation; sources support judgment.")),"small-heavy"),
+          TextContent(\(q("图片：大都会艺术博物馆开放获取馆藏；图卡直达原记录。本文为固定学习范例，并非实时搜索结果。", "Images: The Met Open Access collection. Each image card links to its record. This is an authored learning example, not a live search result.")),"small")
         ],"column","l")
         """
       sources = [

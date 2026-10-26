@@ -3,6 +3,29 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
+  func testLearningVisualCardsAreCompactAndOpenTheirOwnRecords() {
+    let app = launch("scene-learning", inspect: true, language: "en")
+    let cong = app.buttons["Cong"].firstMatch
+    let bi = app.buttons["Bi"].firstMatch
+    reveal(cong, in: app)
+    XCTAssertTrue(bi.exists)
+    XCTAssertEqual(cong.frame.minY, bi.frame.minY, accuracy: 2)
+    XCTAssertEqual(cong.frame.width, bi.frame.width, accuracy: 2)
+    XCTAssertLessThanOrEqual(cong.frame.height, 300)
+    XCTAssertGreaterThanOrEqual(bi.frame.minX, cong.frame.maxX + 6)
+    capture(app, name: "learning-paired-visual-cards")
+    for (label, target) in [("Cong", "72376"), ("Bi", "49371"), ("Same form, another era", "42751")] {
+      let card = app.buttons[label].firstMatch
+      reveal(card, in: app)
+      XCTAssertLessThanOrEqual(card.frame.height, 300)
+      card.tap()
+      XCTAssertEqual(app.staticTexts["review.opened-url"].label,
+        "https://www.metmuseum.org/art/collection/search/" + target)
+    }
+    capture(app, name: "learning-archaistic-card-and-conclusion")
+    app.terminate()
+  }
+
   func testOverviewFactsShareTheAvailableRowWidth() {
     let app = launch("scene-two-day-trip", language: "en")
     let labels = ["2 people", "2 days", "4 places"].map { app.staticTexts[$0].firstMatch }
