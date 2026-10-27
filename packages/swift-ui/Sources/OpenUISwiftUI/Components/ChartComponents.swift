@@ -35,6 +35,7 @@ struct NativeChartData {
   var slices: [Double]
   var scatter: [Scatter]
   var colorIndices: [Int] = []
+  init() { labels = []; series = []; slices = []; scatter = [] }
   init(context: OpenUIComponentContext) {
     labels = NativeValue.array(context.value("labels")).map { value in
       if case .string(let s) = value { return s.displayString }
@@ -116,37 +117,12 @@ struct NativeChartData {
   }
 }
 
-/// An unfinished stream can contain all category names before its numeric
-/// values. Wait for a coherent chart payload instead of drawing missing values
-/// as zero. Complete programs retain the upstream data coercion unchanged.
-enum NativeChartStreamReadiness {
-  static func canDraw(_ element: EvaluatedElement) -> Bool {
-    guard element.partial else { return true }
-    let name = element.typeName
-    if name == "ScatterChart" {
-      let datasets = NativeValue.array(PropValue.value(element, "datasets"))
-      return !datasets.isEmpty && datasets.allSatisfy { dataset in
-        NativeValue.array(NativeValue.prop(dataset, "points")).allSatisfy { point in
-          numeric(NativeValue.prop(point, "x")) && numeric(NativeValue.prop(point, "y"))
-        }
-      }
-    }
-    let labels = NativeValue.array(PropValue.value(element, "labels"))
-    guard !labels.isEmpty else { return false }
-    if ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name) {
-      let values = NativeValue.array(PropValue.value(element, "values"))
-      return values.count == labels.count && values.allSatisfy(numeric)
-    }
-    let series = NativeValue.array(PropValue.value(element, "series"))
-    return !series.isEmpty && series.allSatisfy { item in
-      let values = NativeValue.array(NativeValue.prop(item, "values"))
-      return values.count == labels.count && values.allSatisfy(numeric)
-    }
-  }
-
-  private static func numeric(_ value: Value?) -> Bool {
-    if case .number(let number) = value { return number.isFinite }
-    return false
+/// The parser can auto-close a partial numeric token. Keep the last completed
+/// chart during a stream instead of presenting that provisional number as fact.
+/// Complete inputs still use the upstream chart data rules unchanged.
+enum NativeChartStreamingPresentation {
+  static func data(current: NativeChartData, stable: NativeChartData?, partial: Bool) -> NativeChartData {
+    partial ? stable ?? NativeChartData() : current
   }
 }
 
@@ -160,11 +136,16 @@ struct NativeChart: View {
   @State private var inspected: Int?
   @State private var inspectionLocation = CGPoint.zero
   @State private var pinnedInspection = false
+  @State private var stableData: NativeChartData?
   @State private var axisMeasurements = NativeChartAxisMeasurements()
   @ScaledMetric(relativeTo: .caption) private var axisScale: CGFloat = 1
   @Namespace private var measurementScope
   private var name: String { context.element.typeName }
-  private var allData: NativeChartData { NativeChartData(context: context).prepared(for: name) }
+  private var currentData: NativeChartData { NativeChartData(context: context).prepared(for: name) }
+  private var allData: NativeChartData {
+    NativeChartStreamingPresentation.data(current: currentData, stable: stableData,
+      partial: context.element.partial)
+  }
   private var data: NativeChartData { allData.excluding(visibility.hidden, for: name) }
   private var palette: [Color] {
     context.theme.chartColors(forSeriesCount: legend.count)
@@ -202,11 +183,20 @@ struct NativeChart: View {
   /// Touch scrolling remains native until a deliberate press activates
   /// inspection. Desktop pointer dragging has no competing touch-scroll intent.
   @ViewBuilder var body: some View {
-    if allData.hasContent(for: name), NativeChartStreamReadiness.canDraw(context.element) {
-      chartBody
-    } else if name == "PieChart", context.isQueryLoading {
-      NativePieSkeleton(donut: context.string("variant") == "donut", semi: context.string("appearance") == "semiCircular")
+    Group {
+      if allData.hasContent(for: name) {
+        chartBody
+      } else if name == "PieChart", context.isQueryLoading {
+        NativePieSkeleton(donut: context.string("variant") == "donut", semi: context.string("appearance") == "semiCircular")
+      }
     }
+    .onAppear(perform: rememberStableData)
+    .onChange(of: context.element.partial) { _ in rememberStableData() }
+    .onChange(of: currentData.accessibilityRows) { _ in rememberStableData() }
+  }
+
+  private func rememberStableData() {
+    if !context.element.partial { stableData = currentData }
   }
 
   private var chartBody: some View {

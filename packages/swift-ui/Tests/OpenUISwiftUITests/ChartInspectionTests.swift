@@ -5,26 +5,20 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class ChartInspectionTests: XCTestCase {
-  func testStreamingChartsWaitForMatchingNumericDataWithoutChangingFinalSemantics() {
-    let labels: Value = .array(["Food", "Transport", "Activities", "Buffer"].map { .string(OpenUIString($0)) })
-    let partial = EvaluatedElement(typeName: "PieChart", props: [
-      ("labels", labels), ("values", .array([.number(80), .number(20), .number(100)]))
-    ], partial: true)
-    XCTAssertFalse(NativeChartStreamReadiness.canDraw(partial))
-    let ready = EvaluatedElement(typeName: "PieChart", props: [
-      ("labels", labels), ("values", .array([.number(80), .number(20), .number(100), .number(40)]))
-    ], partial: true)
-    XCTAssertTrue(NativeChartStreamReadiness.canDraw(ready))
-    let complete = EvaluatedElement(typeName: "PieChart", props: partial.props, partial: false)
-    XCTAssertTrue(NativeChartStreamReadiness.canDraw(complete),
-      "Presentation gating must not change completed upstream data behavior")
-    let bar = EvaluatedElement(typeName: "BarChart", props: [
-      ("labels", .array([.string("Mon"), .string("Tue")])),
-      ("series", .array([.element(EvaluatedElement(typeName: "Series", props: [
-        ("category", .string("Visits")), ("values", .array([.number(2)]))
-      ]))]))
-    ], partial: true)
-    XCTAssertFalse(NativeChartStreamReadiness.canDraw(bar))
+  func testStreamingChartsKeepOnlyCommittedNumbers() {
+    var current = NativeChartData()
+    current.labels = ["Food", "Transport", "Activities", "Buffer"]
+    current.slices = [80, 20, 100, 4]
+    let pending = NativeChartStreamingPresentation.data(current: current, stable: nil, partial: true)
+    XCTAssertFalse(pending.hasContent(for: "PieChart"))
+
+    var stable = current
+    stable.slices[3] = 40
+    let retained = NativeChartStreamingPresentation.data(current: current, stable: stable, partial: true)
+    XCTAssertEqual(retained.slices, [80, 20, 100, 40])
+    let finished = NativeChartStreamingPresentation.data(current: current, stable: stable, partial: false)
+    XCTAssertEqual(finished.slices, [80, 20, 100, 4],
+      "Complete input keeps the upstream data values even when they differ from an older snapshot")
   }
 
   @MainActor func testRealSdkStreamDoesNotPresentAnIncompletePieAsZero() throws {
@@ -33,12 +27,28 @@ final class ChartInspectionTests: XCTestCase {
     state.push("root=PieChart([\"Food\",\"Transport\",\"Activities\",\"Flexibility\"],[80,20,100")
     let incomplete = try XCTUnwrap(state.root)
     XCTAssertTrue(incomplete.partial)
-    XCTAssertFalse(NativeChartStreamReadiness.canDraw(incomplete))
+    let incompleteData = NativeChartData(context: .init(element: incomplete,
+      registry: library.registry, state: state))
+    XCTAssertFalse(NativeChartStreamingPresentation.data(current: incompleteData,
+      stable: nil, partial: incomplete.partial).hasContent(for: "PieChart"))
     state.push(",40],\"donut\")")
     let ready = try XCTUnwrap(state.root)
-    XCTAssertTrue(NativeChartStreamReadiness.canDraw(ready))
+    XCTAssertFalse(ready.partial)
+    let stable = NativeChartData(context: .init(element: ready,
+      registry: library.registry, state: state))
+    XCTAssertEqual(stable.slices, [80, 20, 100, 40])
     state.complete()
     XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+
+    state.reset()
+    state.push("root=PieChart([\"Only\"],[4")
+    let unfinishedNumber = try XCTUnwrap(state.root)
+    let tokenData = NativeChartData(context: .init(element: unfinishedNumber,
+      registry: library.registry, state: state))
+    XCTAssertEqual(tokenData.slices, [4], "The parser has a provisional numeric value")
+    XCTAssertFalse(NativeChartStreamingPresentation.data(current: tokenData,
+      stable: nil, partial: unfinishedNumber.partial).hasContent(for: "PieChart"),
+      "The renderer must not turn the provisional number into a chart")
   }
 
   func testYAxisTitleDoesNotOverlapTheHighestTick() {

@@ -154,5 +154,6 @@
 "下单预览" = "Purchase preview";
 "仅演示购买动作，未创建订单，也不会扣款。" = "Demonstration only. No order was created and no payment will be taken.";
 "重新播放" = "Replay";
+"回放速度" = "Playback speed";
 "播放中" = "Playing";
 "可重新播放" = "Ready to replay";

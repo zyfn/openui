@@ -20,6 +20,7 @@ struct ReviewWorkspace: View {
   @State private var manualRun = 0
   @State private var purchasePreview: ReviewPurchasePreview?
   @State private var playbackGeneration = 0
+  @State private var playbackRate = ReviewPlaybackRate.normal
 
   private var sample: ReviewProgram? { programs.first { $0.id == selected } }
   private var program: ReviewProgram? {
@@ -73,6 +74,7 @@ struct ReviewWorkspace: View {
           display: display, move: move, toggleTheme: toggleTheme,
           toggleBubble: toggleBubble, toggleLanguage: toggleLanguage, isManual: manualSource != nil,
           isPlaying: manualSource == nil && !state.isComplete,
+          playbackRate: playbackRate, setPlaybackRate: { playbackRate = $0 },
           replay: replay, restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
@@ -216,7 +218,7 @@ struct ReviewWorkspace: View {
     for chunk in chunks {
       guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
       state.push(chunk.text)
-      try? await Task.sleep(nanoseconds: chunk.delay)
+      try? await Task.sleep(nanoseconds: playbackRate.delay(chunk.delay))
     }
     guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
     state.complete()

@@ -85,8 +85,8 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
   }
 
   func testOverviewFactsShareTheAvailableRowWidth() {
-    let app = launch("scene-two-day-trip", language: "en")
-    let labels = ["2 people", "2 days", "1 night"].map { app.staticTexts[$0].firstMatch }
+    let app = launch("scene-day-trip", language: "en")
+    let labels = ["2 people", "1 day", "3 places"].map { app.staticTexts[$0].firstMatch }
     for label in labels { XCTAssertTrue(label.waitForExistence(timeout: 5)) }
     let available = app.windows.firstMatch.frame.width - 40
     let width = (available - 16) / 3
@@ -142,7 +142,7 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     day.terminate()
 
     let two = launch("scene-two-day-trip", language: "en")
-    two.buttons["Day 2 · Seine"].tap()
+    two.buttons["Day 2"].tap()
     let tower = two.staticTexts["€47"].firstMatch
     reveal(tower, in: two)
     XCTAssertTrue(tower.exists)
@@ -170,7 +170,7 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
 
   func testComposedAttractionActionsReachTheSharedTrailingEdge() {
     let app = launch("scene-two-day-trip", language: "en")
-    app.buttons["Day 2 · Seine"].tap()
+    app.buttons["Day 2"].tap()
     let canvasEdge = canvas(in: app).frame.maxX
     let book = app.buttons["Book"].firstMatch
     reveal(book, in: app)

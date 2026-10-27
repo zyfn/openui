@@ -2,6 +2,21 @@ import Foundation
 import OpenUISwiftUI
 import SwiftUI
 
+/// Review transport rate only. The SDK receives the same source chunks.
+enum ReviewPlaybackRate: Double, CaseIterable, Identifiable {
+  case half = 0.5, normal = 1, double = 2, quadruple = 4
+  var id: Double { rawValue }
+  var title: String {
+    switch self {
+    case .half: return "0.5×"
+    case .normal: return "1×"
+    case .double: return "2×"
+    case .quadruple: return "4×"
+    }
+  }
+  func delay(_ base: UInt64) -> UInt64 { UInt64(Double(base) / rawValue) }
+}
+
 /// A host-override check, not two SDK visual presets.
 enum ReviewVisualTheme: String, CaseIterable {
   case standard = "default"

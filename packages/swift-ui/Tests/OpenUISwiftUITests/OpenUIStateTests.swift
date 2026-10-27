@@ -43,12 +43,13 @@ final class OpenUIStateTests: XCTestCase {
         state.push("data = Query(\"load\", {}, {label: \"default\"})\nroot = Text(data.label)")
         state.runQuery(statementId: "data", tool: "load", args: .object([]))
         XCTAssertEqual(state.queryStates["data"]?.status, .idle)
+        let settled = expectation(description: "Query result rendered")
+        let subscription = state.$root.filter { root in
+            root.flatMap { PropValue.string($0, "text") } == "loaded"
+        }.prefix(1).sink { _ in settled.fulfill() }
         state.complete()
-        XCTAssertEqual(PropValue.string(state.root!, "text"), "default")
-        let settled = expectation(description: "Query settled")
-        let subscription = state.$queryStates.filter { $0["data"]?.status == .success }.prefix(1).sink { _ in settled.fulfill() }
-        state.runQuery(statementId: "data", tool: "load", args: .object([]))
         wait(for: [settled], timeout: 3)
+        XCTAssertEqual(state.queryStates["data"]?.status, .success)
         XCTAssertEqual(PropValue.string(state.root!, "text"), "loaded")
         withExtendedLifetime(subscription) {}
     }

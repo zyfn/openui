@@ -12,6 +12,8 @@ struct ReviewHeader: View {
   let toggleLanguage: () -> Void
   let isManual: Bool
   let isPlaying: Bool
+  let playbackRate: ReviewPlaybackRate
+  let setPlaybackRate: (ReviewPlaybackRate) -> Void
   let replay: () -> Void
   let restoreSample: () -> Void
   let open: (ReviewPanel) -> Void
@@ -41,6 +43,15 @@ struct ReviewHeader: View {
       Menu {
         Button(language.text("编写 openui-lang")) { open(.source) }
           .accessibilityIdentifier("review.open-editor")
+        Menu {
+          ForEach(ReviewPlaybackRate.allCases) { rate in
+            Button { setPlaybackRate(rate) } label: {
+              if rate == playbackRate { Label(rate.title, systemImage: "checkmark") }
+              else { Text(rate.title) }
+            }
+          }
+        } label: { Text(language.text("回放速度") + " · " + playbackRate.title) }
+          .accessibilityIdentifier("review.playback-rate")
         if isManual {
           Button(language.text("恢复目录样例"), action: restoreSample)
             .accessibilityIdentifier("review.restore-sample")

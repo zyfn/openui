@@ -2,6 +2,26 @@ import UIKit
 import XCTest
 
 final class ReviewTaskShowcaseTests: ReviewTestCase {
+  @objc func testTwoDayOverviewAndDailyViewsKeepTheMapIndependent() {
+    let app = launch("scene-two-day-trip", language: "en")
+    XCTAssertTrue(app.staticTexts["The two-day route"].exists)
+    XCTAssertTrue(app.staticTexts["Louvre → Saint-Germain"].exists)
+    app.buttons["Day 2"].tap()
+    XCTAssertFalse(app.staticTexts["The two-day route"].exists)
+    XCTAssertTrue(app.staticTexts["Day 2 · Tower and Seine"].exists)
+    XCTAssertTrue(app.staticTexts["€47"].exists)
+    let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
+    reveal(map, in: app)
+    XCTAssertTrue(map.exists, "The map remains its own section after the day view changes")
+    let overview = app.buttons["Overview"]
+    reveal(overview, in: app)
+    overview.tap()
+    XCTAssertTrue(app.staticTexts["The two-day route"].exists)
+    XCTAssertFalse(app.staticTexts["Day 2 · Tower and Seine"].exists)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    app.terminate()
+  }
+
   func testSpendingRangeChangesChartAndTotalTogether() {
     let app = launch("scene-spending", language: "en")
     XCTAssertTrue(app.staticTexts["¥6600"].exists)

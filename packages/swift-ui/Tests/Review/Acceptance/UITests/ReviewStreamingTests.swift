@@ -2,6 +2,23 @@ import UIKit
 import XCTest
 
 final class ReviewStreamingTests: ReviewTestCase {
+  @objc func testPlaybackSpeedIsAHostControlAndReplayStillCompletes() {
+    let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
+    app.launchArguments = ["--case", "scene-day-trip", "--language", "en", "-AppleLanguages", "(en)"]
+    app.launch()
+    app.buttons["review.tools"].tap()
+    let speed = app.descendants(matching: .any).matching(identifier: "review.playback-rate").firstMatch
+    XCTAssertTrue(speed.waitForExistence(timeout: 5))
+    speed.tap()
+    app.buttons["2×"].tap()
+    app.buttons["review.replay"].tap()
+    let ready = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: app.buttons["review.replay"])
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 25), .completed)
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    app.terminate()
+  }
+
   func testSixAuthoredCasesCompleteThroughTheDefaultSdkStream() {
     for id in ["scene-day-trip", "scene-two-day-trip", "scene-shopping",
                "scene-spending", "scene-gathering", "scene-learning"] {
@@ -68,7 +85,9 @@ final class ReviewStreamingTests: ReviewTestCase {
     let ready = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
     XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed)
-    XCTAssertTrue(app.buttons["Day 1 · Art"].isEnabled)
+    XCTAssertTrue(app.buttons["Overview"].isEnabled)
+    XCTAssertTrue(app.buttons["Day 1"].isEnabled)
+    XCTAssertTrue(app.buttons["Day 2"].isEnabled)
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
     app.terminate()
   }
