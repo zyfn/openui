@@ -21,31 +21,9 @@ OpenUIRenderer(state: state, registry: components.registry)
 
 Generate the model's prompt with `components.prompt(...)` and export the actual definition with `components.toSpec()`. The server and the other platform use that contract. Component parameter order stays explicit and follows the upstream positional language.
 
-`OpenUIComponentLibrary.prompt` adds concise native composition guidance via
-the official `PromptOptions.additionalRules` and `examples` hooks, then calls
-the unchanged core generator. It covers parent-width layout, wrapping rows,
-responsive card grids, action hierarchy, explicit media direction and table
-scrolling. Three small, executable examples show open text flow, optional media
-and text from one source with responsive peers, and mixed cells with local
-disclosure, rather than fixed business templates. SDK examples are selected from their core-lexer component
-references against the actual spec; binding examples are omitted when bindings
-are disabled. The caller's text, preamble, flags and tools remain intact, and
-applying the same guidance twice does not duplicate it.
-
-Hosts exporting a `LibrarySpec` directly can use the same text-only helper:
-
-```swift
-let spec = components.toSpec() // Use the final generation subset.
-let options = OpenUINativePrompt.options(for: spec, extending: hostPromptOptions)
-let prompt = generateSystemPrompt(library: spec, promptOptions: options)
-```
-
-Direct `Library.prompt` / `generateSystemPrompt` calls remain unchanged and do
-not include native advice unless supplied these options. Documentation alone
-does not reach a model: the host must export and send the resulting prompt.
-The helper only filters its own examples; hosts still curate their own prose
-and upstream group notes when selecting a subset. Create the options from the
-final spec each time rather than reusing expanded options across different scopes.
+`OpenUIComponentLibrary.prompt` forwards options to the shared-core prompt generator.
+Use `components.prompt()` for the standard prompt, or pass the official
+`PromptOptions` when the caller explicitly needs additional rules or examples.
 
 ## Control the model's component scope
 
@@ -65,10 +43,7 @@ generation.componentGroups = generation.componentGroups?.map { group in
     return group
 }
 let spec = generation.toSpec()
-let prompt = generateSystemPrompt(
-    library: spec,
-    promptOptions: OpenUINativePrompt.options(for: spec)
-)
+let prompt = generateSystemPrompt(library: spec)
 let state = OpenUIState(schema: generation.toSchema())
 OpenUIRenderer(state: state, registry: installed.registry)
 ```

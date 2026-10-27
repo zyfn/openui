@@ -39,16 +39,4 @@ enum NativeTableCellContent {
         return cells
     }
 
-    static func guidance(registered: Set<String>, policy: OpenUITableCellPolicy) -> String {
-        let available = (policy.allowedComponents ?? registered).intersection(registered).sorted().joined(separator: ", ")
-        let detail = registered.contains("Popover") && policy.allowedComponents?.contains("Popover") != false
-            ? " Use Popover for contextual explanations." : ""
-        return """
-            Table cells are read-only comparisons: use plain text/numbers or these registered \
-            components only: \(available). This limit applies recursively to nested cell content. \
-            Keep explanations brief and charts compact. Place inputs, forms, submit \
-            actions, card shells, maps, web pages, galleries and navigation outside the table; \
-            unsupported cell components are not rendered.\(detail)
-            """
-    }
 }

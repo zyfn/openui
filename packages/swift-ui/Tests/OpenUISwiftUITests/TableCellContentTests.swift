@@ -53,26 +53,6 @@ final class TableCellContentTests: XCTestCase {
         XCTAssertEqual(actual.params.map(\.schema), upstream.params.map(\.schema))
     }
 
-    func testPromptCellGuidanceFollowsInstalledCapabilities() throws {
-        let base = try OpenUIStandardComponents.library()
-        let standard = OpenUINativePrompt.options(for: base.toSpec(), tableCellPolicy: .readOnly).additionalRules ?? []
-        let standardCells = try XCTUnwrap(standard.first { $0.hasPrefix("Table cells are read-only") })
-        XCTAssertTrue(standardCells.contains("BarChart"))
-        XCTAssertFalse(standardCells.contains("SVG"))
-        XCTAssertFalse(standardCells.contains("Popover"))
-
-        let embedded = try installingPresentation(into: base)
-        let reduced = try embedded.extending(removing: ["LineChart", "Image"])
-        let rules = OpenUINativePrompt.options(for: reduced.toSpec(), tableCellPolicy: .readOnly).additionalRules ?? []
-        let reducedCells = try XCTUnwrap(rules.first { $0.hasPrefix("Table cells are read-only") })
-        XCTAssertTrue(reducedCells.contains("SVG"))
-        XCTAssertTrue(reducedCells.contains("Popover"))
-        XCTAssertFalse(reducedCells.contains("LineChart"))
-        XCTAssertFalse(reducedCells.contains("Image"))
-        let prompt = reduced.prompt(OpenUINativePrompt.options(for: reduced.toSpec(), tableCellPolicy: .readOnly))
-        XCTAssertTrue(prompt.contains(reducedCells))
-    }
-
     #if os(macOS)
     @MainActor func testNestedTableFieldsNeverMountWhileOutsideFieldStillInitializes() throws {
         _ = NSApplication.shared

@@ -79,8 +79,7 @@ public struct OpenUIComponentLibrary {
         return OpenUIComponentLibrary(library: extended, registry: next)
     }
 
-    /// Generate the shared-core prompt. Native presentation guidance is opt-in
-    /// through OpenUINativePrompt.options, like other host PromptOptions.
+    /// Generate the prompt using the shared-core library and caller options.
     public func prompt(_ options: PromptOptions = PromptOptions()) -> String {
         library.prompt(options)
     }

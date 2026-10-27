@@ -111,13 +111,14 @@ the same reduced registry recursively through Stack, arrays and Popover. A custo
 policy can name another registered subset. Outside this opt-in subtree the full
 component library remains available; the language and Col contract are unchanged.
 
-Prompt generation forwards the supplied core options without hidden additions.
-Native layout guidance is explicit and can use the same Table policy:
+Prompt generation forwards the supplied core options without hidden additions:
 
 ```swift
-let options = OpenUINativePrompt.options(for: installed.toSpec(), tableCellPolicy: .readOnly)
-let prompt = installed.prompt(options)
+let prompt = installed.prompt()
 ```
+
+Hosts that opt into a narrower table policy should make their own generation
+policy consistent with the rendering policy.
 
 Native Layout handles measured baseline, stretch and main-axis distribution on
 the minimum supported iOS 16/macOS 13 versions. There is one layout implementation;
