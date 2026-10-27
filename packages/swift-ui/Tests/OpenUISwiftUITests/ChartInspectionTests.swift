@@ -5,6 +5,42 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class ChartInspectionTests: XCTestCase {
+  func testStreamingChartsWaitForMatchingNumericDataWithoutChangingFinalSemantics() {
+    let labels: Value = .array(["Food", "Transport", "Activities", "Buffer"].map { .string(OpenUIString($0)) })
+    let partial = EvaluatedElement(typeName: "PieChart", props: [
+      ("labels", labels), ("values", .array([.number(80), .number(20), .number(100)]))
+    ], partial: true)
+    XCTAssertFalse(NativeChartStreamReadiness.canDraw(partial))
+    let ready = EvaluatedElement(typeName: "PieChart", props: [
+      ("labels", labels), ("values", .array([.number(80), .number(20), .number(100), .number(40)]))
+    ], partial: true)
+    XCTAssertTrue(NativeChartStreamReadiness.canDraw(ready))
+    let complete = EvaluatedElement(typeName: "PieChart", props: partial.props, partial: false)
+    XCTAssertTrue(NativeChartStreamReadiness.canDraw(complete),
+      "Presentation gating must not change completed upstream data behavior")
+    let bar = EvaluatedElement(typeName: "BarChart", props: [
+      ("labels", .array([.string("Mon"), .string("Tue")])),
+      ("series", .array([.element(EvaluatedElement(typeName: "Series", props: [
+        ("category", .string("Visits")), ("values", .array([.number(2)]))
+      ]))]))
+    ], partial: true)
+    XCTAssertFalse(NativeChartStreamReadiness.canDraw(bar))
+  }
+
+  @MainActor func testRealSdkStreamDoesNotPresentAnIncompletePieAsZero() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=PieChart([\"Food\",\"Transport\",\"Activities\",\"Flexibility\"],[80,20,100")
+    let incomplete = try XCTUnwrap(state.root)
+    XCTAssertTrue(incomplete.partial)
+    XCTAssertFalse(NativeChartStreamReadiness.canDraw(incomplete))
+    state.push(",40],\"donut\")")
+    let ready = try XCTUnwrap(state.root)
+    XCTAssertTrue(NativeChartStreamReadiness.canDraw(ready))
+    state.complete()
+    XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+  }
+
   func testYAxisTitleDoesNotOverlapTheHighestTick() {
     let measurements = NativeChartAxisMeasurements(lineHeight: 18)
     let layout = NativeChartLayout(size: CGSize(width: 318, height: 220), measurements: measurements, hasYAxisTitle: true)

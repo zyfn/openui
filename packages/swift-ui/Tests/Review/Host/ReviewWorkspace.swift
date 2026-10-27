@@ -208,8 +208,8 @@ struct ReviewWorkspace: View {
       let source = program?.source else { return }
     let generation = playbackGeneration
     // Let the request occupy the conversation before its answer starts. The
-    // first source characters are then delivered in small real SDK pushes;
-    // later complete records arrive faster, including large JSON tool data.
+    // raw source then arrives in ordinary bounded transport chunks; no syntax
+    // or component name changes how the SDK receives it.
     try? await Task.sleep(nanoseconds: 700_000_000)
     let chunks = ReviewPlaybackTransport.chunks(source)
     assert(chunks.map(\.text).joined() == source)
@@ -256,49 +256,11 @@ enum ReviewPlaybackTransport {
   }
 
   static func chunks(_ source: String) -> [Chunk] {
-    let lines = source.components(separatedBy: "\n")
-    // Long programs still reveal their heading character by character, but
-    // use fewer later parser evaluations so replay stays responsive.
-    let bodyWidth = source.count > 8_000 ? 320 : 160
-    let bodyDelay: UInt64 = source.count > 8_000 ? 95_000_000 : 130_000_000
-    var output: [Chunk] = []
-    var prefixCount = 0
-    for (index, line) in lines.enumerated() {
-      let piece = line + (index < lines.count - 1 ? "\n" : "")
-      let expression = line.split(separator: "=", maxSplits: 1).last?
-        .trimmingCharacters(in: .whitespaces)
-      if piece.count < 240 && expression?.hasPrefix("\"") == true {
-        // Scalar text assignments can fill an already-mounted styled slot.
-        // Their real partial values are the clearest view of SDK streaming.
-        let characters = Array(piece)
-        for slice in stride(from: 0, to: characters.count, by: 2) {
-          output.append(Chunk(text: String(characters[slice..<min(slice + 2, characters.count)]),
-            delay: 110_000_000))
-        }
-        prefixCount += piece.count
-      } else if prefixCount < 320 && piece.count < 1_000 {
-        let characters = Array(piece)
-        for slice in stride(from: 0, to: characters.count, by: 8) {
-          output.append(Chunk(text: String(characters[slice..<min(slice + 8, characters.count)]),
-            delay: 115_000_000))
-        }
-        prefixCount += piece.count
-      } else {
-        prefixCount = 320
-        if piece.count > 1_000 && (expression?.hasPrefix("{") == true || expression?.hasPrefix("[") == true) {
-          // Preserve a large data record as one transport packet. Components
-          // and prose still grow through the same SDK parser below.
-          output.append(Chunk(text: piece, delay: bodyDelay))
-        } else {
-          let characters = Array(piece)
-          for slice in stride(from: 0, to: characters.count, by: bodyWidth) {
-            output.append(Chunk(text: String(characters[slice..<min(slice + bodyWidth, characters.count)]),
-              delay: bodyDelay))
-          }
-        }
-      }
+    let characters = Array(source)
+    return stride(from: 0, to: characters.count, by: 256).map { offset in
+      Chunk(text: String(characters[offset..<min(offset + 256, characters.count)]),
+        delay: 90_000_000)
     }
-    return output
   }
 }
 

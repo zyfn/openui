@@ -116,6 +116,40 @@ struct NativeChartData {
   }
 }
 
+/// An unfinished stream can contain all category names before its numeric
+/// values. Wait for a coherent chart payload instead of drawing missing values
+/// as zero. Complete programs retain the upstream data coercion unchanged.
+enum NativeChartStreamReadiness {
+  static func canDraw(_ element: EvaluatedElement) -> Bool {
+    guard element.partial else { return true }
+    let name = element.typeName
+    if name == "ScatterChart" {
+      let datasets = NativeValue.array(PropValue.value(element, "datasets"))
+      return !datasets.isEmpty && datasets.allSatisfy { dataset in
+        NativeValue.array(NativeValue.prop(dataset, "points")).allSatisfy { point in
+          numeric(NativeValue.prop(point, "x")) && numeric(NativeValue.prop(point, "y"))
+        }
+      }
+    }
+    let labels = NativeValue.array(PropValue.value(element, "labels"))
+    guard !labels.isEmpty else { return false }
+    if ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name) {
+      let values = NativeValue.array(PropValue.value(element, "values"))
+      return values.count == labels.count && values.allSatisfy(numeric)
+    }
+    let series = NativeValue.array(PropValue.value(element, "series"))
+    return !series.isEmpty && series.allSatisfy { item in
+      let values = NativeValue.array(NativeValue.prop(item, "values"))
+      return values.count == labels.count && values.allSatisfy(numeric)
+    }
+  }
+
+  private static func numeric(_ value: Value?) -> Bool {
+    if case .number(let number) = value { return number.isFinite }
+    return false
+  }
+}
+
 /// Canvas renders chart families on the package's supported platforms. All chart families
 /// use actual plotted geometry, with axes, legends, pointer inspection and
 /// complete VoiceOver data, including negative and degenerate domains.
@@ -168,7 +202,7 @@ struct NativeChart: View {
   /// Touch scrolling remains native until a deliberate press activates
   /// inspection. Desktop pointer dragging has no competing touch-scroll intent.
   @ViewBuilder var body: some View {
-    if allData.hasContent(for: name) {
+    if allData.hasContent(for: name), NativeChartStreamReadiness.canDraw(context.element) {
       chartBody
     } else if name == "PieChart", context.isQueryLoading {
       NativePieSkeleton(donut: context.string("variant") == "donut", semi: context.string("appearance") == "semiCircular")

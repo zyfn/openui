@@ -20,6 +20,22 @@ final class StreamingPresentationTests: XCTestCase {
         XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
     }
 
+    @MainActor func testReferencedStyledTextGrowsWithAnUnfinishedScalarAssignment() throws {
+        let library = try OpenUIStandardComponents.library()
+        let state = OpenUIState(schema: library.library.toSchema())
+        state.push("root=Stack([heading],\"column\",\"l\")\nheading=TextContent(title,\"large-heavy\")\ntitle=\"Pa")
+        let first = try XCTUnwrap(state.root)
+        let heading = try XCTUnwrap(PropValue.children(first).first)
+        XCTAssertEqual(PropValue.string(heading, "text"), "Pa")
+        state.push("ris")
+        let updated = try XCTUnwrap(state.root)
+        let growing = try XCTUnwrap(PropValue.children(updated).first)
+        XCTAssertEqual(PropValue.string(growing, "text"), "Paris")
+        state.push("\"\n")
+        state.complete()
+        XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+    }
+
     @MainActor func testFullBufferStreamingAndItsFinalSnapshotDoNotReplaceNativePresentation() throws {
         let library = try OpenUIStandardComponents.library()
         let state = OpenUIState(schema: library.library.toSchema())
