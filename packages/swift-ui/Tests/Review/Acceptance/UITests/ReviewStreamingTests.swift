@@ -2,16 +2,36 @@ import UIKit
 import XCTest
 
 final class ReviewStreamingTests: ReviewTestCase {
+  func testSixAuthoredCasesCompleteThroughTheDefaultSdkStream() {
+    for id in ["scene-day-trip", "scene-two-day-trip", "scene-shopping",
+               "scene-spending", "scene-gathering", "scene-learning"] {
+      let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
+      app.launchArguments = ["--case", id, "--language", "en", "-AppleLanguages", "(en)"]
+      app.launch()
+      XCTAssertTrue(app.staticTexts["review.user-request"].waitForExistence(timeout: 10), id)
+      let ready = XCTNSPredicateExpectation(
+        predicate: NSPredicate(format: "value == %@", "Ready to replay"),
+        object: app.buttons["review.replay"])
+      XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 45), .completed, id)
+      XCTAssertFalse(app.staticTexts["review.errors"].exists, id)
+      app.terminate()
+    }
+  }
+
   func testSceneUsesTheSdkStreamAndReplayRestartsIt() {
     let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
     app.launchArguments = ["--case", "scene-day-trip", "--language", "en", "-AppleLanguages", "(en)"]
     app.launch()
     let replay = app.buttons["review.replay"]
     XCTAssertTrue(replay.waitForExistence(timeout: 10))
+    XCTAssertTrue(app.staticTexts["review.user-request"].exists)
     let ready = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
     XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 20), .completed)
     XCTAssertTrue(app.staticTexts["Paris, at your own pace"].exists)
+    let ending = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "€240 for two")).firstMatch
+    XCTAssertTrue(ending.exists)
+    XCTAssertTrue(ending.isHittable, "The document should follow the latest SDK-rendered content")
     replay.tap()
     let completedAgain = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)

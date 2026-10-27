@@ -207,24 +207,16 @@ struct ReviewWorkspace: View {
     guard !configuration.instant, manualSource == nil,
       let source = program?.source else { return }
     let generation = playbackGeneration
-    // Coalesce transport text at line boundaries. Large JSON input records
-    // arrive intact, while every update still passes through SDK push/complete.
-    var chunks: [String] = []
-    var pending = ""
-    let lines = source.components(separatedBy: "\n")
-    for (index, line) in lines.enumerated() {
-      let piece = line + (index < lines.count - 1 ? "\n" : "")
-      if !pending.isEmpty && pending.count + piece.count > 1_800 {
-        chunks.append(pending)
-        pending = ""
-      }
-      pending += piece
-    }
-    if !pending.isEmpty { chunks.append(pending) }
+    // Let the request occupy the conversation before its answer starts. The
+    // first source characters are then delivered in small real SDK pushes;
+    // later complete records arrive faster, including large JSON tool data.
+    try? await Task.sleep(nanoseconds: 700_000_000)
+    let chunks = ReviewPlaybackTransport.chunks(source)
+    assert(chunks.map(\.text).joined() == source)
     for chunk in chunks {
       guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
-      state.push(chunk)
-      try? await Task.sleep(nanoseconds: 250_000_000)
+      state.push(chunk.text)
+      try? await Task.sleep(nanoseconds: chunk.delay)
     }
     guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
     state.complete()
@@ -252,6 +244,52 @@ struct ReviewWorkspace: View {
       purchasePreview = ReviewPurchasePreview(event: event)
     }
     state.onActionEvaluation = configuration.inspector ? { [evidence] in evidence.recordEvaluation($0) } : nil
+  }
+}
+
+/// Review-only transport timing. Every delivered byte is appended to the one
+/// original program through OpenUIState.push; no synthetic UI text is shown.
+enum ReviewPlaybackTransport {
+  struct Chunk {
+    let text: String
+    let delay: UInt64
+  }
+
+  static func chunks(_ source: String) -> [Chunk] {
+    let lines = source.components(separatedBy: "\n")
+    // Long programs still reveal their heading character by character, but
+    // use fewer later parser evaluations so replay stays responsive.
+    let bodyWidth = source.count > 8_000 ? 320 : 160
+    let bodyDelay: UInt64 = source.count > 8_000 ? 95_000_000 : 130_000_000
+    var output: [Chunk] = []
+    var prefixCount = 0
+    for (index, line) in lines.enumerated() {
+      let piece = line + (index < lines.count - 1 ? "\n" : "")
+      if prefixCount < 320 && piece.count < 1_000 {
+        let characters = Array(piece)
+        for slice in stride(from: 0, to: characters.count, by: 8) {
+          output.append(Chunk(text: String(characters[slice..<min(slice + 8, characters.count)]),
+            delay: 115_000_000))
+        }
+        prefixCount += piece.count
+      } else {
+        prefixCount = 320
+        let expression = line.split(separator: "=", maxSplits: 1).last?
+          .trimmingCharacters(in: .whitespaces)
+        if piece.count > 1_000 && (expression?.hasPrefix("{") == true || expression?.hasPrefix("[") == true) {
+          // Preserve a large data record as one transport packet. Components
+          // and prose still grow through the same SDK parser below.
+          output.append(Chunk(text: piece, delay: bodyDelay))
+        } else {
+          let characters = Array(piece)
+          for slice in stride(from: 0, to: characters.count, by: bodyWidth) {
+            output.append(Chunk(text: String(characters[slice..<min(slice + bodyWidth, characters.count)]),
+              delay: bodyDelay))
+          }
+        }
+      }
+    }
+    return output
   }
 }
 

@@ -9,7 +9,10 @@ public enum OpenUIStandardComponents {
         let implementations = OpenUISelectionComponents.components + OpenUIFormComponents.components
             + OpenUIDisplayComponents.components + OpenUIContentComponents.components
             + OpenUIChartComponents.components + [
-            OpenUIReference.component("Stack") { OpenUIStack(context: $0, wrapJustifyBetweenAsStart: true) },
+            OpenUIReference.component("Stack") {
+                OpenUIStack(context: $0, wrapJustifyBetweenAsStart: true)
+                    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
+            },
             OpenUIReference.component("TextContent") { context in
                 NativeMarkdownText(text: context.string("text") ?? "", mode: .textContent,
                     style: .textContent(context.string("size"), theme: context.theme))

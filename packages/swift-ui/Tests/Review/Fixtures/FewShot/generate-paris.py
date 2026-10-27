@@ -28,6 +28,8 @@ for language in ('zh', 'en'):
   ],{{price:BoldText("number",currency+f.price,null,"text","lg"),button:Button({t('订','Book')},@OpenUrl(f.url),"primary",null,"small")}}
 )),"carousel",true)'''
     source=f'''root=Stack([heading,overview,itinerary,placesMap,transport,stays,budget,closing],"column","l")
+heading=Stack([TextContent(headline,"large-heavy"),TextContent({t('11 月 5–6 日 · 两位成人','5–6 November 2026 · two adults')},"small")],"column","s")
+headline={t('巴黎，两天一晚','Paris, two days and one night')}
 input={json.dumps(data,ensure_ascii=False,separators=(',',':'))}
 trip=input.trip
 currency=trip.currency
@@ -41,7 +43,6 @@ flightCost=recommendedOutbound.price+recommendedReturn.price
 stayCost=recommendedStay.pricePerRoomNight*trip.rooms*trip.nights
 visitCost=(input.places[0].unitPrice+input.places[1].unitPrice+input.places[2].unitPrice+input.places[3].unitPrice)*trip.adults
 total=flightCost+stayCost+visitCost+input.budgetAssumptions.food+input.budgetAssumptions.localTransport+input.budgetAssumptions.buffer
-heading=Stack([TextContent({t('巴黎，两天一晚','Paris, two days and one night')},"large-heavy"),TextContent({t('11 月 5–6 日 · 两位成人','5–6 November 2026 · two adults')},"small")],"column","s")
 overview=Stack([
  OverviewCardItem("people",IconText(Icon("users"),"neutral","m",trip.adults+{t(' 人',' people')},null,true,"vertical")),
  OverviewCardItem("days",IconText(Icon("calendar-days"),"neutral","m",trip.days+{t(' 天',' days')},null,true,"vertical")),

@@ -642,7 +642,8 @@ struct NativeCardItem: View {
         if let source = artworkSource {
           ZStack {
             Color.black
-          NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .fill)
+          NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .fill,
+            showsFailureSymbol: false)
           LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)], startPoint: .top, endPoint: .bottom)
         }.allowsHitTesting(false)
         }

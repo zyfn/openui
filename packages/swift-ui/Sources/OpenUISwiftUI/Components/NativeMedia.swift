@@ -18,6 +18,7 @@ struct NativeRemoteImage: View {
   let src: String?
   var alt = ""
   var layout: NativeMediaLayout = .aspect(4 / 3)
+  var showsFailureSymbol = true
   var cachedImage: Image?
   var attempt = 0
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
@@ -95,7 +96,7 @@ struct NativeRemoteImage: View {
         theme.surface
         if loading {
           ProgressView().controlSize(.small).tint(theme.secondary)
-        } else {
+        } else if showsFailureSymbol {
           Image(systemName: "photo").font(.body).foregroundStyle(theme.secondary.opacity(0.55))
         }
       }

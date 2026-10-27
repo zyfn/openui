@@ -4,6 +4,22 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class StreamingPresentationTests: XCTestCase {
+    @MainActor func testPartialTextIsRenderedByTheSdkBeforeCompletion() throws {
+        let library = try OpenUIStandardComponents.library()
+        let state = OpenUIState(schema: library.library.toSchema())
+        state.push("root=Stack([TextContent(\"Paris, at")
+        let firstRoot = try XCTUnwrap(state.root)
+        let firstText = try XCTUnwrap(PropValue.children(firstRoot).first)
+        XCTAssertEqual(PropValue.string(firstText, "text"), "Paris, at")
+        XCTAssertFalse(state.isComplete)
+        state.push(" your own pace\",\"large-heavy\")],\"column\",\"l\")")
+        state.complete()
+        let finalRoot = try XCTUnwrap(state.root)
+        let finalText = try XCTUnwrap(PropValue.children(finalRoot).first)
+        XCTAssertEqual(PropValue.string(finalText, "text"), "Paris, at your own pace")
+        XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+    }
+
     @MainActor func testFullBufferStreamingAndItsFinalSnapshotDoNotReplaceNativePresentation() throws {
         let library = try OpenUIStandardComponents.library()
         let state = OpenUIState(schema: library.library.toSchema())

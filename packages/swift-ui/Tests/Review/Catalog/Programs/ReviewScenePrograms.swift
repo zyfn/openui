@@ -21,11 +21,13 @@ enum ReviewScenePrograms {
       title = t("规划一次一日游", "One day in Paris")
       request = t("11 月 5 日两个人在巴黎玩一天。想看艺术、逛左岸，别太赶；吃饭和预算也帮我安排。", "We have one day in Paris on 5 November. Art, a slow Left Bank afternoon, somewhere to eat—and a budget for two?")
       source = """
+        root=Stack([heading,body],"column","l")
+        heading=TextContent(headline,"large-heavy")
+        headline=\(q("巴黎，一天也能从容", "Paris, at your own pace"))
         $place="louvre"
         activity=64+36
         total=80+20+40+activity
-        root=Stack([
-          TextContent(\(q("巴黎，一天也能从容", "Paris, at your own pace")),"large-heavy"),
+        body=Stack([
           TextContent(\(q("2026 年 11 月 5 日", "5 November 2026")),"small"),
           Stack([
             OverviewCardItem("party",IconText(Icon("users"),"neutral","m",\(q("2 人", "2 people")),null,true,"vertical")),
@@ -109,11 +111,13 @@ enum ReviewScenePrograms {
       title = t("选购一台旅行相机", "Choose a camera")
       request = t("想买台轻便的旅行相机，拍街景和人像。连配件不超过 ¥7,500，你会选哪套？", "I want a light travel camera for streets and portraits. Which kit would you pick under ¥7,500, including the essentials?")
       source = """
+        root=Stack([heading,body],"column","l")
+        heading=TextContent(headline,"large-heavy")
+        headline=\(q("把预算花在愿意带出门的相机上", "A camera worth taking with you"))
         camera=5200
         extras=400
         total=camera+extras
-        root=Stack([
-          TextContent(\(q("把预算花在愿意带出门的相机上", "A camera worth taking with you")),"large-heavy"),
+        body=Stack([
           TextContent(\(q("¥7,500 包含相机与配件。优先比较两套轻便的 APS-C 变焦组合，把重量、取景方式和剩余预算放在一起看。", "With ¥7,500 for a camera and essentials, compare two compact APS-C zoom kits by carry weight, framing and the money left over."))),
           CompositeCardBlock([
             CompositeCardItem("light",
@@ -166,14 +170,16 @@ enum ReviewScenePrograms {
       title = t("分析消费与预算", "Spending review")
       request = t("这是我 8–10 月的账单：房租每月 ¥3,000，餐饮 1500/1500/1800，交通 500/400/600，其他 600/900/1200。哪里涨了？11 月想控制在 ¥6,000。", "Here’s my Aug–Oct ledger. Rent was ¥3,000 monthly; food 1500/1500/1800, transport 500/400/600, other 600/900/1200. What went up, and can November stay under ¥6,000?")
       source = """
+        root=Stack([heading,body],"column","l")
+        heading=TextContent(headline,"large-heavy")
+        headline=\(q("花费增加，主要不在房租", "Spending rose, but rent stayed flat"))
         $period="october"
         food=$period=="quarter"?4800:1800
         transport=$period=="quarter"?1500:600
         home=$period=="quarter"?9000:3000
         other=$period=="quarter"?2700:1200
         total=food+transport+home+other
-        root=Stack([
-          TextContent(\(q("花费增加，主要不在房租", "Spending rose, but rent stayed flat")),"large-heavy"),
+        body=Stack([
           TextContent(\(q("10 月比 9 月多花 ¥800；住房没有变化，增量来自餐饮、交通和其他消费。", "October was ¥800 above September. Housing stayed flat; food, transport and other spending account for the increase."))),
           TagBlock([\(q("8–10 月", "Aug–Oct")),\(q("3 个月", "3 months")),\(q("4 类支出", "4 categories"))],"sm"),
           InlineHeader(\(q("三个月的变化", "Three months in view")),\(q("点选数据查看分类金额", "Tap a point to inspect category amounts"))),
@@ -212,14 +218,16 @@ enum ReviewScenePrograms {
       title = t("组织一次朋友聚会", "An evening together")
       request = t("11 月 7 日晚六个人聚一聚，17:00–21:00。找个能坐下聊天的地方，安排晚餐，人均别超过 ¥260。", "Six friends together on 7 November, 17:00–21:00. Find somewhere we can talk over dinner and keep it under ¥260 each.")
       source = """
+        root=Stack([heading,body],"column","l")
+        heading=TextContent(headline,"large-heavy")
+        headline=\(q("六个人，围着一张桌子", "Six friends around one table"))
         $venue="studio"
         space=$venue=="studio"?480:720
         food=720
         extras=120
         total=space+food+extras
         perPerson=total/6
-        root=Stack([
-          TextContent(\(q("六个人，围着一张桌子", "Six friends around one table")),"large-heavy"),
+        body=Stack([
           TextContent(\(q("11 月 7 日 · 周六 17:00–21:00", "7 November · Saturday 17:00–21:00")),"small"),
           TagBlock([\(q("6 人", "6 people")),\(q("4 小时", "4 hours")),\(q("上限 ¥260/人", "Up to ¥260 each"))],"sm"),
           InlineHeader(\(q("选一个能坐下来的地方", "A place to settle in"))),
@@ -268,8 +276,10 @@ enum ReviewScenePrograms {
       title = t("图文学习一段历史", "Liangzhu history")
       request = t("从玉琮和玉璧讲讲良渚吧。我想看图和馆藏出处，也想知道哪些是证据，哪些还只是推测。", "Teach me Liangzhu through jade cong and bi. Show the objects and museum sources, and separate what we can observe from what we infer.")
       source = """
-        root=Stack([
-          TextContent(\(q("良渚，藏在玉里的秩序", "Liangzhu, a world held in jade")),"large-heavy"),
+        root=Stack([heading,body],"column","l")
+        heading=TextContent(headline,"large-heavy")
+        headline=\(q("良渚，藏在玉里的秩序", "Liangzhu, a world held in jade"))
+        body=Stack([
           TagBlock([\(q("新石器时代", "Neolithic")),\(q("玉器", "Jade")),\(q("馆藏阅读", "Collection study"))],"sm"),
           TextContent(\(q("看形状、比工艺，再区分证据与推断。", "Look at form and workmanship, then separate evidence from interpretation."))),
           ImageGallery([

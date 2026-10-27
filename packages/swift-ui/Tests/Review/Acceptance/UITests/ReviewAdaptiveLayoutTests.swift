@@ -168,6 +168,24 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     app.terminate()
   }
 
+  func testComposedAttractionActionsReachTheSharedTrailingEdge() {
+    let app = launch("scene-two-day-trip", language: "en")
+    app.buttons["Day 2 · Seine"].tap()
+    let canvasEdge = canvas(in: app).frame.maxX
+    let book = app.buttons["Book"].firstMatch
+    reveal(book, in: app)
+    let firstEdge = book.frame.maxX
+    XCTAssertEqual(firstEdge, canvasEdge, accuracy: 24,
+      "The text column should use the remaining row width, not its intrinsic title width")
+    let secondBook = app.buttons.matching(identifier: "Book").element(boundBy: 1)
+    reveal(secondBook, in: app)
+    XCTAssertEqual(secondBook.frame.maxX, firstEdge, accuracy: 3,
+      "Different copy lengths should keep the action on one trailing edge")
+    XCTAssertFalse(app.staticTexts["review.errors"].exists)
+    capture(app, name: "attraction-shared-trailing-edge")
+    app.terminate()
+  }
+
   func testRepresentativeCompositionsAtAvailableWidth() throws {
     let scenarios = try XCTUnwrap(try matrixReport()["scenarios"] as? [[String: Any]])
     for scenario in scenarios {

@@ -124,7 +124,7 @@ final class ReviewLayoutTests: ReviewTestCase {
     app.terminate()
   }
 
-  @objc func testNativeThumbnailFollowsChangingText() {
+  @objc func testImageListKeepsAStableThumbnailAsCopyChanges() {
     let app = launch("adaptive-images")
     let photo = app.descendants(matching: .any).matching(
       NSPredicate(format: "label == %@", "自适应缩略图")
@@ -138,21 +138,21 @@ final class ReviewLayoutTests: ReviewTestCase {
       return
     }
     let title = app.staticTexts["内容会变化"]
-    let short = app.staticTexts["看一处细节。"]
-    let settled = XCTNSPredicateExpectation(
-      predicate: NSPredicate { _, _ in
-        photo.frame.height <= max(44, short.frame.maxY - title.frame.minY) + 2
-      }, object: nil)
-    XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 3), .completed)
+    XCTAssertTrue(app.staticTexts["看一处细节。"].exists)
     let original = photo.frame.size
+    XCTAssertEqual(original.width, original.height, accuracy: 2)
+    XCTAssertLessThanOrEqual(photo.frame.maxX + 10, title.frame.minX)
     capture(app, name: "image-row-short-copy")
     app.buttons["展开文字"].tap()
-    let expanded = XCTNSPredicateExpectation(
-      predicate: NSPredicate { _, _ in
-        photo.frame.height > original.height + 20
-      }, object: nil)
-    XCTAssertEqual(XCTWaiter.wait(for: [expanded], timeout: 3), .completed)
+    let expanded = app.staticTexts.matching(
+      NSPredicate(format: "label BEGINSWITH %@", "留意人物的姿态")
+    ).firstMatch
+    XCTAssertTrue(expanded.waitForExistence(timeout: 3))
+    XCTAssertEqual(photo.frame.width, original.width, accuracy: 2)
+    XCTAssertEqual(photo.frame.height, original.height, accuracy: 2,
+      "One image list must keep a shared thumbnail size when item copy grows")
     XCTAssertLessThanOrEqual(photo.frame.maxX + 10, title.frame.minX)
+    XCTAssertLessThanOrEqual(expanded.frame.maxX, canvas(in: app).frame.maxX + 2)
     capture(app, name: "image-row-expanded-copy")
     app.buttons["收起文字"].tap()
     let collapsed = XCTNSPredicateExpectation(

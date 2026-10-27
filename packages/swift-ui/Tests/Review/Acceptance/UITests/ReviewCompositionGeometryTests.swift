@@ -223,7 +223,10 @@ extension ReviewCompositionGeometryTests {
   }
 
   func testMediaSlotGeometrySurvivesLoadingAndFailure() throws {
-    guard Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json") != nil else {
+    guard let url = Bundle(for: Self.self).url(forResource: "ReviewExamples", withExtension: "json"),
+      let data = try? Data(contentsOf: url),
+      let examples = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+      examples.contains(where: { $0["id"] as? String == "media-slot-geometry" }) else {
       throw XCTSkip("Provide the media slot fixture")
     }
     var loaded: [String: CGSize] = [:]
@@ -236,7 +239,7 @@ extension ReviewCompositionGeometryTests {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
       }
-      for name in ["Thumbnail slot", "Cover slot", "Backdrop slot"] {
+      for name in ["Thumbnail slot", "Cover slot"] {
         let image = app.images[name].firstMatch
         XCTAssertTrue(image.waitForExistence(timeout: 8))
         if mode == "loaded" {
@@ -248,6 +251,18 @@ extension ReviewCompositionGeometryTests {
             image.frame.height, reference.height, accuracy: 2,
             "Resource state must not replace the declared image slot with a text block")
         }
+      }
+      // A VisualCard backdrop is decorative and deliberately absent from the
+      // accessibility image tree. Its readable foreground keeps its slot.
+      let visualBody = app.staticTexts["Visual body"]
+      reveal(visualBody, in: app)
+      XCTAssertTrue(visualBody.exists)
+      if mode == "loaded" {
+        loaded["Visual body"] = visualBody.frame.size
+      } else {
+        let reference = try XCTUnwrap(loaded["Visual body"])
+        XCTAssertEqual(visualBody.frame.width, reference.width, accuracy: 2)
+        XCTAssertEqual(visualBody.frame.height, reference.height, accuracy: 2)
       }
       XCTAssertFalse(app.buttons["openui.media.retry"].exists)
       XCTAssertFalse(app.staticTexts["Image unavailable"].exists)
