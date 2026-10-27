@@ -15,7 +15,7 @@ public enum OpenUINativePrompt {
         }) else { return original }
         var options = original
         var rules = [
-            "Organize content around the user's task and the relationships between its objects. Give each fact one main presentation, use supplied facts, and omit unavailable media. Examples illustrate composition rather than facts to repeat.",
+            "Organize content around the user's task and the relationships between its objects. Give each fact one main presentation, use supplied facts, and omit unavailable media. Emit visible section definitions in reading order: a late forward reference can insert content above earlier output. Examples illustrate composition rather than facts to repeat.",
             "Design for the parent container's available width and text size, not a phone model. Prefer an open vertical reading flow; reserve large-heavy for the main heading and normal text for explanations.",
             "Stack(items,\"row\") keeps its children in one row; wrap=true allows independent peers to flow onto another row. Text wrapping alone does not wrap the row. Keep related details in one child column when they should stay together beside another object. Choose direction, alignment and wrapping from that relationship, without inventing width or height fields."
         ]
@@ -32,7 +32,7 @@ public enum OpenUINativePrompt {
             rules.append("ImageText with horizontal layout stays horizontal; it does not automatically turn vertical. Its thumbnail keeps the declared size while text wraps in the remaining width. Use its title and subtitle for that image's copy; unrelated body or footer slots do not become part of that text column.")
         }
         if names.contains("Image") {
-            rules.append("Image uses source proportions in ordinary flow. In a nonwrapping horizontal parent with align=\"stretch\", it fills the row height with proportional cropping. Put all accompanying details and actions in a sibling content column when they belong beside the image; let that content grow naturally rather than setting a fixed card height.")
+            rules.append("Image uses source proportions in ordinary flow. In a horizontal parent with align=\"stretch\", it uses the shared inline crop while copy can grow independently. Put all accompanying details and actions in a sibling content column when they belong beside the image; let that content grow naturally rather than setting a fixed card height.")
         }
         if names.contains("ImageBlock") {
             let completeImage = names.contains("Image") ? " Use Image when the complete source must remain visible." : ""

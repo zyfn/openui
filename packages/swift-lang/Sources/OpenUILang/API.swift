@@ -9,7 +9,7 @@ final class CoreParser: Parser {
         parser = runtime.sync { runtime.core("createParser", [runtime.json(runtime.schemaJSON(schema)), schema.rootComponent as Any]) }
     }
     public func parse(_ input: String) -> ParseResult { core.sync {
-        if splitStatements(tokenize(input)).contains(where: { expressionExceedsLimits($0.tokens) }) { return limitedParseResult() }
+        if sourceExceedsLimits(input) { return limitedParseResult() }
         return core.parseResult(parser.invokeMethod("parse", withArguments: [stripMessageMarkers(input)]))
     } }
 }

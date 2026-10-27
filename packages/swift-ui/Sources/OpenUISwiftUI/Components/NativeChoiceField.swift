@@ -65,7 +65,7 @@ struct NativeChoiceField: View {
             NativeChoiceSelection.toggle(
               key, value: field.value, single: NativeChoiceSelection.isSingle(context)))
         } label: {
-          choice(item, selected: selected)
+          choice(item, selected: selected).openUIControlTarget(alignment: .leading)
         }.buttonStyle(.plain).disabled(
           !context.canInteract || PropValue.value(item, "disabled") == .boolean(true)
         )
@@ -80,8 +80,8 @@ struct NativeChoiceField: View {
       if cards { context.render(PropValue.value(item, "topContent") ?? .null) }
       HStack(spacing: 6) {
         if !cards { context.render(PropValue.value(item, "icon") ?? .null) }
-        Text(PropValue.string(item, cards ? "title" : "label") ?? "").font(
-          .body.weight(cards || selected ? .medium : .regular)
+        Text(PropValue.string(item, cards ? "title" : "label") ?? "").openUIFont(
+          context.theme.typography.body.weight(cards || selected ? .medium : .regular)
         )
         .fixedSize(horizontal: false, vertical: true)
         if cards {
@@ -91,7 +91,7 @@ struct NativeChoiceField: View {
         }
       }
       if cards, let subtitle = PropValue.string(item, "subtitle") {
-        Text(subtitle).font(.subheadline).foregroundStyle(context.theme.secondary)
+        Text(subtitle).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
           .fixedSize(horizontal: false, vertical: true)
       }
     }.padding(cards ? 14 : 10).frame(

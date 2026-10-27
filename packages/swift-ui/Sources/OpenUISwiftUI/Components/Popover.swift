@@ -24,7 +24,7 @@ private struct NativeContextPopover: View {
     @State private var presented = false
     var body: some View {
         Button { presented.toggle() } label: {
-            context.slot("trigger").frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+            context.slot("trigger").openUIControlTarget().contentShape(Rectangle())
         }
             .buttonStyle(.plain).disabled(!context.canInteract)
             .accessibilityLabel(context.string("label") ?? "Details")

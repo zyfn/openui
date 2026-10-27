@@ -9,7 +9,7 @@ import AppKit
 
 enum NativeMediaStatus: Equatable { case loading, loaded, unavailable }
 enum NativeMediaLayout {
-  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic, stretch
+  case aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic
 }
 
 /// Shared native resource presentation. Resource states preserve the declared
@@ -97,7 +97,7 @@ struct NativeRemoteImage: View {
         if loading {
           ProgressView().controlSize(.small).tint(theme.secondary)
         } else if showsFailureSymbol {
-          Image(systemName: "photo").font(.body).foregroundStyle(theme.secondary.opacity(0.55))
+          Image(systemName: "photo").openUIFont(theme.typography.body).foregroundStyle(theme.secondary.opacity(0.55))
         }
       }
     }
@@ -110,8 +110,8 @@ struct NativeRemoteImage: View {
     .accessibilityAddTraits(.isImage)
     .accessibilityIdentifier(loading ? "openui.media.loading" : "openui.media.unavailable")
   }
-  // Source proportions determine ordinary image height. Explicitly stretched
-  // images receive their bounds from the parent instead.
+  // Standalone images retain their source proportions; inline and cover media
+  // use their shared visual roles in every resource state.
   private var previewAspectRatio: CGFloat {
     NativeMediaPreview.aspectRatio(sourceSize: imageSize)
   }
@@ -124,40 +124,7 @@ struct NativeRemoteImage: View {
     case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
     case .intrinsic:
       surface.aspectRatio(previewAspectRatio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
-    case .stretch:
-      NativeStretchMediaLayout(aspectRatio: previewAspectRatio) { surface }
     }
-  }
-}
-
-/// Keep a natural measurement until the parent supplies both dimensions. A
-/// stretched row can then crop the image into its measured cross-axis extent
-/// without making that row collapse or relying on a fixed image/text ratio.
-private struct NativeStretchMediaLayout: Layout {
-  let aspectRatio: CGFloat
-
-  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-    let ideal = subviews.first?.sizeThatFits(.unspecified) ?? .zero
-    let width = proposal.width.flatMap { $0.isFinite ? max(0, $0) : nil } ?? ideal.width
-    let requested = proposal.height.flatMap { $0.isFinite ? max(0, $0) : nil }
-      ?? width / max(aspectRatio, .leastNonzeroMagnitude)
-    let height = NativeInlineMediaSizing.height(width: width, requested: requested)
-    return CGSize(width: width, height: height)
-  }
-
-  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-    subviews.first?.place(at: bounds.origin, anchor: .topLeading,
-      proposal: ProposedViewSize(width: bounds.width,
-        height: NativeInlineMediaSizing.height(width: bounds.width, requested: bounds.height)))
-  }
-}
-
-/// Inline media may follow ordinary copy height but should not become a long
-/// column merely because the adjacent paragraph grows. Covers use their own
-/// aspect layout and are unaffected.
-enum NativeInlineMediaSizing {
-  static func height(width: CGFloat, requested: CGFloat) -> CGFloat {
-    min(max(0, requested), max(0, width) * 1.65)
   }
 }
 
@@ -265,7 +232,7 @@ struct NativeImageGallery: View {
                   : pictures[image.key] == nil ? Text("Loading image", bundle: NativeControlResources.bundle) : Text("")
               )
               .accessibilityIdentifier("openui.gallery.image.\(image.index)")
-              if let details = image.details { Text(details).font(context.theme.typography.caption).foregroundStyle(context.theme.secondary) }
+              if let details = image.details { Text(details).openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary) }
             }
           }
         }
@@ -280,6 +247,7 @@ struct NativeImageGallery: View {
               preview = true
             } label: {
               Text("Show all photos", bundle: NativeControlResources.bundle)
+                .openUIFont(context.theme.typography.actionCompact).openUIControlTarget(alignment: .leading)
             }
             .disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.showAll")
           }
@@ -287,11 +255,14 @@ struct NativeImageGallery: View {
           if !failed.isEmpty {
             Button {
               for image in failed { retries[image.id, default: 0] += 1 }
-            } label: { Text("Retry", bundle: NativeControlResources.bundle) }
+            } label: {
+              Text("Retry", bundle: NativeControlResources.bundle)
+                .openUIFont(context.theme.typography.actionCompact).openUIControlTarget()
+            }
               .accessibilityIdentifier("openui.gallery.retry")
               .disabled(!context.canInteract)
           }
-        }.font(context.theme.typography.caption)
+        }
       }
     }
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery")
@@ -320,15 +291,25 @@ private struct NativeGalleryPreview: View {
   let record: (NativeMediaStatus, Image?, NativeGalleryResourceID) -> Void
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openUITheme) private var theme
+  @Environment(\.openUIResourceContext) private var resources
+  @Environment(\.openURL) private var openURL
   private var image: NativeGalleryImage? { images.first { $0.key == selected } }
   var body: some View {
     VStack(alignment: .leading, spacing: theme.spacing("m")) {
       HStack {
-        Text("All photos", bundle: NativeControlResources.bundle).font(theme.typography.heading)
+        Text("All photos", bundle: NativeControlResources.bundle).openUIFont(theme.typography.heading)
         Spacer()
-        if let image { Text("\(image.index + 1) / \(images.count)").font(theme.typography.detail).foregroundStyle(theme.secondary) }
+        if let image { Text("\(image.index + 1) / \(images.count)").openUIFont(theme.typography.detail).foregroundStyle(theme.secondary) }
+        if let image, let destination = resources.request(for: image.src)?.url {
+          Button { openURL(destination) } label: {
+            Image(systemName: "arrow.up.right.square").openUIFont(theme.typography.actionRegular).openUIControlTarget()
+          }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Open original image", bundle: NativeControlResources.bundle))
+            .accessibilityIdentifier("openui.gallery.open-original")
+        }
         Button { dismiss() } label: { Image(systemName: "xmark") }
-          .buttonStyle(.plain).frame(minWidth: 44, minHeight: 44).disabled(false)
+          .buttonStyle(.plain).openUIControlTarget().disabled(false)
           .keyboardShortcut(.cancelAction).accessibilityLabel(Text("Close gallery", bundle: NativeControlResources.bundle))
           .accessibilityIdentifier("openui.gallery.close")
       }
@@ -337,8 +318,8 @@ private struct NativeGalleryPreview: View {
           NativeRemoteImage(src: image.src, alt: image.alt, layout: .fit,
             cachedImage: pictures[image.key], onStatus: { record($0, $1, image.key) })
         }.accessibilityIdentifier("openui.gallery.preview.image")
-        if !image.alt.isEmpty { Text(image.alt).font(theme.typography.detail) }
-        if let details = image.details { Text(details).font(theme.typography.caption).foregroundStyle(theme.secondary) }
+        if !image.alt.isEmpty { Text(image.alt).openUIFont(theme.typography.detail) }
+        if let details = image.details { Text(details).openUIFont(theme.typography.caption).foregroundStyle(theme.secondary) }
       }
       ScrollView(.horizontal) {
         HStack(spacing: theme.contentSpacing) {

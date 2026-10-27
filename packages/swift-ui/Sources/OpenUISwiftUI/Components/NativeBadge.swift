@@ -12,14 +12,14 @@ struct NativeBadgeColors {
       foreground = theme.canvas
       background = theme.foreground
     case "info":
-      foreground = .blue
-      background = Color.blue.opacity(0.12)
+      foreground = theme.info
+      background = theme.info.opacity(0.12)
     case "success":
-      foreground = .green
-      background = Color.green.opacity(0.12)
+      foreground = theme.success
+      background = theme.success.opacity(0.12)
     case "warning":
-      foreground = .orange
-      background = Color.orange.opacity(0.12)
+      foreground = theme.warning
+      background = theme.warning.opacity(0.12)
     case "danger":
       foreground = theme.error
       background = theme.error.opacity(0.12)
@@ -37,20 +37,20 @@ struct NativeTagPill<Icon: View>: View {
   let variant: String?
   let theme: OpenUITheme
   @ViewBuilder var icon: Icon
-  @ScaledMetric(relativeTo: .caption) private var scale: CGFloat = 1
+  @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
 
   private var density: CGFloat { size == "sm" ? 2 / 3 : size == "lg" ? 4 / 3 : 1 }
-  private var font: Font { size == "sm" ? theme.typography.caption : size == "lg" ? theme.typography.body : theme.typography.detail }
+  private var font: OpenUIFont { size == "sm" ? theme.typography.label : size == "lg" ? theme.typography.body : theme.typography.detail }
   private var colors: NativeBadgeColors { NativeBadgeColors(variant: variant, theme: theme) }
 
   var body: some View {
     HStack(spacing: theme.contentSpacing / 2 * density * scale) {
-      icon.environment(\.openUIIconSize, 14 * scale)
+      icon.environment(\.openUIIconSize, font.size)
       Text(text).fixedSize(horizontal: false, vertical: true)
     }
-    .font(font.weight(.medium))
+    .openUIFont(font.weight(theme.typography.label.weight))
     .padding(.horizontal, theme.contentSpacing * density * scale)
-    .padding(.vertical, theme.contentSpacing / 3 * density * scale)
+    .padding(.vertical, theme.spacing("xs") * (size == "lg" ? 1.5 : 1) * scale)
     .foregroundStyle(colors.foreground)
     .background(colors.background, in: RoundedRectangle(cornerRadius: theme.controlCornerRadius))
     .accessibilityElement(children: .combine)

@@ -94,7 +94,7 @@ private struct OpenUINativeFormControl: View {
         VStack(alignment: .leading, spacing: 8) {
             layout
             if let hint = context.string("hint"), !hint.isEmpty {
-                Text(hint).font(.footnote).foregroundStyle(context.theme.secondary)
+                Text(hint).openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -119,7 +119,7 @@ private struct OpenUINativeFormControl: View {
     }
     private var label: some View {
         Text(context.string("label") ?? "")
-            .font(compact ? .body : .body.weight(.medium))
+            .openUIFont(context.theme.typography.body.weight(compact ? .regular : .medium))
             .foregroundStyle(context.theme.foreground)
             .fixedSize(horizontal: false, vertical: true)
     }

@@ -12,8 +12,17 @@ public struct OpenUITheme {
     public var accentForeground: Color? = nil
     public var controlSurface = NativeControlPalette.adaptive(light: 0xFFFFFF, dark: 0x1C1E22)
     public var error = NativeControlPalette.error
+    public var info = NativeControlPalette.info
+    public var success = NativeControlPalette.success
+    public var warning = NativeControlPalette.warning
     public var controlCornerRadius: CGFloat = 10
     public var cornerRadius: CGFloat = 16
+    public var overlayCornerRadius: CGFloat = 24
+    #if os(iOS)
+    public var minimumControlTargetSize: CGFloat = 44
+    #else
+    public var minimumControlTargetSize: CGFloat = 24
+    #endif
     public var cardPadding: CGFloat = 16
     public var typography = OpenUITypography()
     public var motion = OpenUIMotion()
@@ -22,6 +31,7 @@ public struct OpenUITheme {
     public var compactThumbnailSize: CGFloat = 80
     public var inlineThumbnailSize: CGFloat = 40
     public var minimumTextColumnWidth: CGFloat = 160
+    public var inlineMediaAspectRatio: CGFloat = 4 / 5
     public var coverAspectRatio: CGFloat = 3 / 2
     public var maximumCarouselCardWidth: CGFloat = 320
     public var carouselPeek: CGFloat = 32
@@ -288,7 +298,10 @@ public struct OpenUIActionSurface<Content: View>: View {
                 }
             }
         } label: {
-            content.contentShape(Rectangle())
+            Group {
+                if useNativeStyle { content }
+                else { content.openUIControlTarget(alignment: .leading) }
+            }.contentShape(Rectangle())
                 .opacity(showsProgress && performing ? 0 : 1)
                 .overlay {
                     if showsProgress && performing { ProgressView().controlSize(.small) }

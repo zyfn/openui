@@ -6,6 +6,30 @@
     @testable import OpenUISwiftUI
 
     final class NativeRenderingTests: XCTestCase {
+        @MainActor func testNativeAndRichTextBothRespondToTheSameThemeFont() throws {
+            _ = NSApplication.shared
+            let library = try OpenUIStandardComponents.library()
+            func height(_ source: String, theme: OpenUITheme) throws -> CGFloat {
+                let state = OpenUIState(schema: library.library.toSchema())
+                state.setSource(source)
+                XCTAssertTrue(state.errors.isEmpty)
+                let renderer = ImageRenderer(content:
+                    OpenUIRenderer(state: state, registry: library.registry).openUITheme(theme))
+                renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
+                return try XCTUnwrap(renderer.nsImage).size.height
+            }
+            let ordinary = OpenUITheme()
+            var enlarged = ordinary
+            enlarged.typography.body.size = 25
+            enlarged.typography.detail.size = 23
+            for source in ["root=TextContent(\"One line\",\"default\")",
+                           "root=BoldText(\"text\",\"One line\",null,\"text\",\"md\")",
+                           "root=ListBlock([ListItem(\"One line\",\"Supporting line\")],\"number\")"] {
+                XCTAssertGreaterThan(try height(source, theme: enlarged), try height(source, theme: ordinary) + 3,
+                    "The same theme must reach both ordinary and rich text: \(source)")
+            }
+        }
+
         @MainActor func testNumberListIgnoresOptionalItemImages() throws {
             _ = NSApplication.shared
             guard #available(macOS 13, *) else { throw XCTSkip("ImageRenderer requires macOS 13") }

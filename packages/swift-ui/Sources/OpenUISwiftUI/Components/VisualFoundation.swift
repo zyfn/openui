@@ -1,19 +1,91 @@
 import SwiftUI
 
-/// Shared visual roles, expressed as scalable system fonts. They are renderer
-/// values rather than additional language fields or content-classification rules.
-public struct OpenUITypography {
-    public var display: Font = .title.weight(.semibold)
-    public var title: Font = .title3.weight(.semibold)
-    public var heading: Font = .headline.weight(.semibold)
-    public var body: Font = .body
-    public var detail: Font = .subheadline
-    public var caption: Font = .caption
-    public var metric: Font = .title.weight(.semibold).monospacedDigit()
-    public var inlineMetric: Font = .title3.weight(.semibold).monospacedDigit()
-    public var actionCompact: Font = .footnote.weight(.medium)
-    public var actionRegular: Font = .subheadline.weight(.semibold)
+/// One font description for both native text and Markdown/KaTeX text. Scaling
+/// belongs to the receiving view's environment, never a process-wide screen.
+public struct OpenUIFont: Equatable {
+    public var size: CGFloat
+    public var weight: Font.Weight
+    public var family: String?
+    public var design: Font.Design
+    public var monospacedDigits = false
+    public init(size: CGFloat, weight: Font.Weight = .regular,
+                family: String? = nil, design: Font.Design = .default) {
+        self.size = size; self.weight = weight; self.family = family; self.design = design
+    }
+    public func weight(_ value: Font.Weight) -> Self { var copy = self; copy.weight = value; return copy }
+    public func monospacedDigit() -> Self { var copy = self; copy.monospacedDigits = true; return copy }
+    public func nativeFont(scale: CGFloat = 1) -> Font {
+        let font = family.map { Font.custom($0, fixedSize: size * scale).weight(weight) }
+            ?? .system(size: size * scale, weight: weight, design: design)
+        return monospacedDigits ? font.monospacedDigit() : font
+    }
+}
+
+/// Shared semantic roles. Official component size enums map into these roles;
+/// they do not add language fields or classify business content.
+public struct OpenUITypography: Equatable {
+    public var family: String?
+    public var lineSpacing: CGFloat = 0.15
+    public var display = OpenUIFont(size: 28, weight: .semibold)
+    public var title = OpenUIFont(size: 20, weight: .semibold)
+    public var heading = OpenUIFont(size: 17, weight: .semibold)
+    public var body = OpenUIFont(size: 17)
+    public var detail = OpenUIFont(size: 15)
+    public var label = OpenUIFont(size: 14, weight: .medium)
+    public var caption = OpenUIFont(size: 13)
+    public var metric = OpenUIFont(size: 28, weight: .semibold).monospacedDigit()
+    public var inlineMetric = OpenUIFont(size: 20, weight: .semibold).monospacedDigit()
+    public var actionCompact = OpenUIFont(size: 14, weight: .medium)
+    public var actionRegular = OpenUIFont(size: 15, weight: .semibold)
+    public var code = OpenUIFont(size: 17, design: .monospaced)
     public init() {}
+
+    func inline(_ size: String?) -> OpenUIFont {
+        switch size {
+        case "xs": return caption
+        case "md": return body
+        case "lg": return title.weight(body.weight)
+        default: return detail
+        }
+    }
+    func field(_ size: String?) -> OpenUIFont { size == "small" ? detail : body }
+    func resolve(_ font: OpenUIFont) -> OpenUIFont {
+        var resolved = font
+        resolved.family = font.family ?? (font.design == .monospaced ? nil : family)
+        return resolved
+    }
+}
+
+private struct OpenUIInheritedFontKey: EnvironmentKey { static let defaultValue: OpenUIFont? = nil }
+extension EnvironmentValues {
+    var openUIInheritedFont: OpenUIFont? {
+        get { self[OpenUIInheritedFontKey.self] }
+        set { self[OpenUIInheritedFontKey.self] = newValue }
+    }
+}
+private struct OpenUIFontModifier: ViewModifier {
+    let font: OpenUIFont
+    @Environment(\.openUITheme) private var theme
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+    func body(content: Content) -> some View {
+        content.font(theme.typography.resolve(font).nativeFont(scale: scale))
+            .lineSpacing(font.size * theme.typography.lineSpacing * scale)
+            .environment(\.openUIInheritedFont, font)
+    }
+}
+private struct OpenUIControlTarget: ViewModifier {
+    let alignment: Alignment
+    @Environment(\.openUITheme) private var theme
+    func body(content: Content) -> some View {
+        content.frame(minWidth: theme.minimumControlTargetSize, minHeight: theme.minimumControlTargetSize,
+                      alignment: alignment).contentShape(Rectangle())
+    }
+}
+extension View {
+    public func openUIFont(_ font: OpenUIFont) -> some View { modifier(OpenUIFontModifier(font: font)) }
+    public func openUIControlTarget(alignment: Alignment = .center) -> some View {
+        modifier(OpenUIControlTarget(alignment: alignment))
+    }
 }
 
 /// Shared feedback timing. Views still honor the nearest Reduce Motion setting.
@@ -46,5 +118,24 @@ struct NativeCardSurface: ViewModifier {
                     .strokeBorder(bordered ? theme.border : .clear, lineWidth: theme.cardBorderWidth)
                     .allowsHitTesting(false)
             }
+    }
+}
+
+/// Floating previews share one surface treatment; a compact tooltip keeps the
+/// content-card radius while a place preview uses the larger overlay radius.
+struct NativeOverlaySurface: ViewModifier {
+    let theme: OpenUITheme
+    var material = false
+    var compact = false
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: compact ? theme.cornerRadius : theme.overlayCornerRadius, style: .continuous)
+    }
+    func body(content: Content) -> some View {
+        content.background {
+            if material { shape.fill(.thinMaterial) }
+            else { shape.fill(theme.controlSurface) }
+        }
+        .overlay(shape.strokeBorder(theme.border.opacity(0.45), lineWidth: theme.cardBorderWidth))
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
     }
 }

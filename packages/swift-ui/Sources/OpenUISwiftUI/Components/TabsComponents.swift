@@ -88,11 +88,11 @@ private struct NativeTabsView: View {
                     ForEach(panels) { panel in
                         Button { nativeSelection.wrappedValue = panel.id } label: {
                             Text(panel.label)
-                                .font(context.theme.typography.detail.weight(active?.id == panel.id ? .semibold : .regular))
+                                .openUIFont(context.theme.typography.detail.weight(active?.id == panel.id ? .semibold : .regular))
                                 .foregroundStyle(active?.id == panel.id ? context.theme.foreground : context.theme.secondary)
                                 .lineLimit(1).fixedSize(horizontal: true, vertical: false)
                                 .padding(.horizontal, 12).padding(.vertical, 10)
-                                .frame(minWidth: 44, minHeight: 44)
+                                .openUIControlTarget()
                                 .background(active?.id == panel.id ? context.theme.surface : .clear, in: Capsule())
                         }
                         .buttonStyle(.plain)

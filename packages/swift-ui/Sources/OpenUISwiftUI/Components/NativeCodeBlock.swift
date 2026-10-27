@@ -75,11 +75,11 @@ struct NativeCodeBlockContent: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack(spacing: 12) {
-        Text(source.language.displayString).font(theme.typography.caption).foregroundStyle(theme.secondary)
+        Text(source.language.displayString).openUIFont(theme.typography.caption).foregroundStyle(theme.secondary)
         Spacer(minLength: 0)
         Button(action: copy) {
           Image(systemName: copied ? "checkmark" : "doc.on.doc")
-            .font(theme.typography.detail)
+            .openUIFont(theme.typography.detail)
             .frame(width: 44, height: 44).contentShape(Rectangle())
         }.buttonStyle(.plain)
           .accessibilityLabel(Text(copied ? "Copied to clipboard" : "Copy code", bundle: NativeControlResources.bundle))
@@ -87,7 +87,7 @@ struct NativeCodeBlockContent: View {
           .accessibilityIdentifier("openui.code.copy")
       }
       ScrollView(.horizontal) {
-        codeText.font(.system(.body, design: .monospaced)).textSelection(.enabled)
+        codeText.openUIFont(theme.typography.code).textSelection(.enabled)
           .fixedSize(horizontal: true, vertical: false)
           .accessibilityIdentifier("openui.code.content")
       }

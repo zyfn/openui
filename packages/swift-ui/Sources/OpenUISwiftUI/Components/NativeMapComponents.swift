@@ -344,9 +344,9 @@ private struct NativeMapPresentation: View {
     }
   }
   private var hasContent: Bool { selection.map(contentIDs.contains) == true }
-  private let contentPadding: CGFloat = 14
+  private var contentPadding: CGFloat { context.theme.cardPadding }
   private var bottomPadding: CGFloat { contentBottomPadding }
-  private var mapRadius: CGFloat { close == nil ? context.theme.cornerRadius + 4 : 0 }
+  private var mapRadius: CGFloat { close == nil ? context.theme.cornerRadius : 0 }
   private var height: CGFloat {
     imposedHeight ?? max(hasContent ? 240 : 160,
       NativeMapViewport.height(width: width, size: context.string("size")))
@@ -375,7 +375,7 @@ private struct NativeMapPresentation: View {
       .overlay(alignment: .topTrailing) {
         if let expand {
           Button(action: expand) {
-            Image(systemName: "arrow.up.left.and.arrow.down.right").font(.subheadline.weight(.semibold))
+            Image(systemName: "arrow.up.left.and.arrow.down.right").openUIFont(context.theme.typography.actionRegular)
               .frame(width: 40, height: 40).background(context.theme.controlSurface, in: Circle())
               .shadow(color: .black.opacity(0.08), radius: 5, y: 2)
               .frame(width: 44, height: 44).contentShape(Circle())
@@ -424,7 +424,7 @@ private struct NativeMapPresentation: View {
         }
       }.modifier(NativeMapToolbarSurface(theme: context.theme)).disabled(!context.canInteract)
     }
-    .font(.body.weight(.semibold)).foregroundStyle(context.theme.foreground)
+    .openUIFont(context.theme.typography.body.weight(.semibold)).foregroundStyle(context.theme.foreground)
     .buttonStyle(.plain)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("openui.map.toolbar")
@@ -484,7 +484,7 @@ private struct NativeMapPlaceCard: View {
   @Environment(\.openURL) private var openURL
   private var destination: URL? { resources.request(for: point.url)?.url }
   private var photoSize: CGFloat { compact ? 44 : 64 }
-  private var padding: CGFloat { compact ? 10 : 14 }
+  private var padding: CGFloat { compact ? theme.spacing("s") : theme.cardPadding }
 
   var body: some View {
     Group {
@@ -497,38 +497,35 @@ private struct NativeMapPlaceCard: View {
     .accessibilityIdentifier("openui.map.place." + point.id.displayString)
   }
   private var label: some View {
-    HStack(alignment: .center, spacing: 12) {
+    HStack(alignment: .center, spacing: theme.contentSpacing) {
       if let source = point.imageSrc, !source.isEmpty {
         NativeRemoteImage(src: source, alt: point.title, layout: .thumbnail(CGSize(width: photoSize, height: photoSize)))
-          .clipShape(RoundedRectangle(cornerRadius: theme.mediaCornerRadius + 4, style: .continuous))
+          .clipShape(RoundedRectangle(cornerRadius: theme.mediaCornerRadius, style: .continuous))
       } else {
         Image(systemName: point.icon ?? "location.fill")
-          .font(.title3.weight(.medium)).foregroundStyle(theme.accent)
+          .openUIFont(theme.typography.title.weight(.medium)).foregroundStyle(theme.accent)
           .frame(width: 40, height: 40)
           .background(theme.surface, in: RoundedRectangle(cornerRadius: theme.mediaCornerRadius))
           .accessibilityHidden(true)
       }
-      VStack(alignment: .leading, spacing: 5) {
-        Text(point.title).font((compact ? theme.typography.detail : theme.typography.body).weight(.semibold))
+      VStack(alignment: .leading, spacing: theme.spacing("xs")) {
+        Text(point.title).openUIFont((compact ? theme.typography.detail : theme.typography.body).weight(.semibold))
           .lineLimit(compact ? 1 : 2)
           .foregroundStyle(theme.foreground)
         if let subtitle = point.subtitle, !subtitle.isEmpty {
-          Text(subtitle).font(compact ? theme.typography.caption : theme.typography.detail)
+          Text(subtitle).openUIFont(compact ? theme.typography.caption : theme.typography.detail)
             .lineLimit(compact ? 1 : 2).foregroundStyle(theme.secondary)
         }
       }.frame(maxWidth: .infinity, alignment: .leading)
       if destination != nil {
-        Image(systemName: "arrow.up.right").font(theme.typography.caption.weight(.semibold))
+        Image(systemName: "arrow.up.right").openUIFont(theme.typography.caption.weight(.semibold))
           .foregroundStyle(theme.secondary).accessibilityHidden(true)
       }
     }
     .frame(minHeight: photoSize, alignment: .center)
     .padding(padding).frame(maxWidth: .infinity, alignment: .leading)
-    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: theme.cornerRadius + 8, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: theme.cornerRadius + 8, style: .continuous)
-      .strokeBorder(theme.border.opacity(0.4), lineWidth: 0.5))
-    .shadow(color: .black.opacity(0.10), radius: 10, y: 3)
-    .contentShape(RoundedRectangle(cornerRadius: theme.cornerRadius + 8, style: .continuous))
+    .modifier(NativeOverlaySurface(theme: theme, material: true))
+    .contentShape(RoundedRectangle(cornerRadius: theme.overlayCornerRadius, style: .continuous))
   }
 }
 

@@ -1,6 +1,19 @@
 // Bounded recursive work: model output must not exhaust the native call stack.
 import Foundation
 
+/// Keep tokenization and statement splitting in the shared realm. Re-encoding
+/// every token into JavaScript just to split it adds work to every stream push.
+func sourceExceedsLimits(_ source: String) -> Bool {
+    let core = SharedCore.shared
+    return core.sync {
+        let tokens = core.core("tokenize", [source])
+        let statements = core.core("split", [tokens])
+        return core.items(statements).contains { statement in
+            expressionExceedsLimits(core.items(statement.forProperty("tokens")).map(core.token))
+        }
+    }
+}
+
 func expressionExceedsLimits(_ tokens: [Token]) -> Bool {
     var depth = 0, operators = 0
     for token in tokens {

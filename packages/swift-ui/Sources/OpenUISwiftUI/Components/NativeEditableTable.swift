@@ -70,7 +70,7 @@ struct NativeEditableTable: View {
         VStack(spacing: 0) {
           HStack(spacing: 0) {
             ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
-              Text(NativeValue.string(column, "header") ?? "").font(.subheadline.weight(.semibold))
+              Text(NativeValue.string(column, "header") ?? "").openUIFont(context.theme.typography.detail.weight(.semibold))
                 .frame(width: width(index), alignment: .leading).padding(12)
             }
           }.background(context.theme.surface)
@@ -110,7 +110,7 @@ struct NativeEditableTable: View {
           Button(action: save) { Text("Save Changes", bundle: NativeControlResources.bundle) }
             .buttonStyle(
               NativeActionButtonStyle(theme: context.theme, variant: "primary", size: "small"))
-        }.font(.subheadline).disabled(!context.canInteract || saving)
+        }.openUIFont(context.theme.typography.detail).disabled(!context.canInteract || saving)
       }
     }
     .onAppear { draft.load(source) }

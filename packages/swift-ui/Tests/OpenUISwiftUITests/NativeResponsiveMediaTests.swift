@@ -3,11 +3,6 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class NativeResponsiveMediaTests: XCTestCase {
-    func testInlineImageFillsOrdinaryRowsWithoutFollowingUnlimitedCopyHeight() {
-        XCTAssertEqual(NativeInlineMediaSizing.height(width: 112, requested: 126), 126)
-        XCTAssertEqual(NativeInlineMediaSizing.height(width: 112, requested: 300), 184.8, accuracy: 0.001)
-        XCTAssertEqual(NativeInlineMediaSizing.height(width: 80, requested: 300), 132)
-    }
     func testPreviewGeometryRetainsEveryValidSourceAspectRatio() {
         for size in [CGSize(width: 1600, height: 900), CGSize(width: 1200, height: 1600),
                      CGSize(width: 1200, height: 1800), CGSize(width: 1200, height: 12000)] {

@@ -34,6 +34,9 @@ enum NativeControlText {
 }
 
 enum NativeControlPalette {
+    static var info: Color { adaptive(light: 0x4753A5, dark: 0xAAB6F4) }
+    static var success: Color { adaptive(light: 0x256B54, dark: 0x8BD2B3) }
+    static var warning: Color { adaptive(light: 0x865A16, dark: 0xE7C380) }
     static func adaptive(light: UInt32, dark: UInt32) -> Color {
         func channels(_ hex: UInt32) -> (CGFloat, CGFloat, CGFloat) {
             (CGFloat((hex >> 16) & 255) / 255, CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255)
@@ -64,25 +67,6 @@ enum NativeControlPalette {
             Color.primary
         #endif
     }
-    // Supporting copy remains readable on the white chat canvas. Resolve the
-    // color independently of the foreground inherited by a Button label.
-    static var secondary: Color {
-        #if canImport(UIKit)
-            Color(uiColor: UIColor { traits in
-                traits.userInterfaceStyle == .dark
-                    ? UIColor(red: 0.68, green: 0.68, blue: 0.70, alpha: 1)
-                    : UIColor(red: 0.39, green: 0.39, blue: 0.40, alpha: 1)
-            })
-        #elseif canImport(AppKit)
-            Color(nsColor: NSColor(name: nil) { appearance in
-                appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                    ? NSColor(srgbRed: 0.68, green: 0.68, blue: 0.70, alpha: 1)
-                    : NSColor(srgbRed: 0.39, green: 0.39, blue: 0.40, alpha: 1)
-            })
-        #else
-            Color.secondary
-        #endif
-    }
     static let error: Color = {
         #if canImport(UIKit)
             Color(
@@ -100,16 +84,6 @@ enum NativeControlPalette {
             Color.red
         #endif
     }()
-    static var surface: Color {
-        #if canImport(UIKit)
-            Color(uiColor: .secondarySystemGroupedBackground)
-        #elseif canImport(AppKit)
-            Color(nsColor: .textBackgroundColor)
-        #else
-            Color.primary.opacity(0.04)
-        #endif
-    }
-
     static func foreground(on color: Color, scheme: ColorScheme) -> Color {
         var red: CGFloat = 0
         var green: CGFloat = 0
@@ -219,10 +193,10 @@ struct NativeFieldSurface: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content.font(size == "small" ? theme.typography.detail : theme.typography.body).foregroundStyle(theme.foreground)
+        content.openUIFont(theme.typography.field(size)).foregroundStyle(theme.foreground)
             .padding(.horizontal, standalone ? (textEditor ? 11 : 16) : 0)
             .padding(.vertical, standalone ? verticalInset : 0)
-            .frame(minHeight: standalone ? height * sizeScale : presentation == .inline ? inlineHeight : nil)
+            .frame(minHeight: max(theme.minimumControlTargetSize, standalone ? height * sizeScale : presentation == .inline ? inlineHeight : 0))
             .background(
                 standalone ? theme.surface : .clear,
                 in: RoundedRectangle(cornerRadius: theme.controlCornerRadius, style: .continuous)
@@ -266,7 +240,7 @@ struct NativeActionButtonStyle: ButtonStyle {
         return variant == "primary" ? accent : theme.surface
     }
     private var resolvedSize: String { size ?? (formActions || density == .regular ? "medium" : "small") }
-    private var font: Font {
+    private var font: OpenUIFont {
         switch resolvedSize {
         case "extra-small": return theme.typography.caption.weight(.medium)
         case "small": return theme.typography.actionCompact
@@ -297,16 +271,10 @@ struct NativeActionButtonStyle: ButtonStyle {
             return (resolvedSize == "large" ? 36 : resolvedSize == "extra-small" ? 24 : resolvedSize == "small" ? 28 : 32) * unit
         #endif
     }
-    private var minimumTouchSize: CGFloat {
-        #if os(iOS)
-            44
-        #else
-            0
-        #endif
-    }
+    private var minimumControlTargetSize: CGFloat { theme.minimumControlTargetSize }
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(font)
+            .openUIFont(font)
             .foregroundStyle(foreground).tint(foreground)
             .padding(.horizontal, horizontalInset)
             .padding(.vertical, verticalInset * unit)
@@ -321,7 +289,7 @@ struct NativeActionButtonStyle: ButtonStyle {
                     .strokeBorder(theme.accent, lineWidth: 2).padding(-3).opacity(focused && enabled ? 1 : 0)
             )
             // Keep a native touch target without inflating the visible capsule.
-            .frame(minWidth: minimumTouchSize, minHeight: minimumTouchSize)
+            .frame(minWidth: minimumControlTargetSize, minHeight: minimumControlTargetSize)
             .contentShape(Rectangle())
             .animation(reduceMotion ? nil : .easeOut(duration: theme.motion.pressDuration), value: configuration.isPressed)
     }

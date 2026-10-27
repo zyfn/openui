@@ -8,19 +8,20 @@ import AppKit
 #endif
 
 struct NativeRichTextStyle {
-  var scale: CGFloat = 1
-  var weight: Font.Weight = .regular
+  var font: OpenUIFont?
   var numeric = false
   var color: Color?
   static func textContent(_ size: String?, theme: OpenUITheme) -> Self {
-    let scale: CGFloat
+    let font: OpenUIFont?
     switch size {
-    case "small", "small-heavy": scale = 15 / 17
-    case "large": scale = 20 / 17
-    case "large-heavy": scale = 28 / 17
-    default: scale = 1
+    case "small": font = theme.typography.detail
+    case "small-heavy": font = theme.typography.detail.weight(theme.typography.heading.weight)
+    case "large": font = theme.typography.title.weight(theme.typography.body.weight)
+    case "large-heavy": font = theme.typography.display
+    case "default": font = theme.typography.body
+    default: font = nil
     }
-    return .init(scale: scale, weight: size?.hasSuffix("heavy") == true ? .semibold : .regular,
+    return .init(font: font,
       color: size == "small" ? theme.secondary : theme.foreground)
   }
 }
@@ -32,12 +33,13 @@ struct NativeMarkdownText: View {
   var mode = NativeRichTextMode.markdown
   var style = NativeRichTextStyle()
   @Environment(\.openUITheme) private var theme
+  @Environment(\.openUIInheritedFont) private var inheritedFont
   @Environment(\.openUIResourceContext) private var resources
   @Environment(\.cardSources) private var sources
   @Environment(\.openURL) private var openURL
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.multilineTextAlignment) private var textAlignment
-  @ScaledMetric(relativeTo: .body) private var bodySize = FontProperties.defaultSize
+  @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
   @StateObject private var math = NativeMathRenderer()
   @State private var prepared: String?
   @State private var preparedRequest: NativeRichTextRequest?
@@ -50,7 +52,8 @@ struct NativeMarkdownText: View {
     default: return .leading
     }
   }
-  private var mathSize: CGFloat { bodySize * style.scale }
+  private var font: OpenUIFont { theme.typography.resolve(style.font ?? inheritedFont ?? theme.typography.body) }
+  private var mathSize: CGFloat { font.size * scale }
   private var mathColor: String { NativeMathColor.css(foreground, scheme: colorScheme) }
   private var request: NativeRichTextRequest {
     .init(source: OpenUIString(text), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
@@ -61,22 +64,30 @@ struct NativeMarkdownText: View {
       baseURL: resources.baseURL, imageBaseURL: resources.baseURL)
       .markdownTextStyle {
         ForegroundColor(foreground)
-        FontSize(FontProperties.defaultSize * style.scale)
-        FontWeight(style.weight)
-        FontDigitVariant(style.numeric ? .monospaced : .normal)
+        FontFamily(font.family.map(FontProperties.Family.custom) ?? .system(font.design))
+        FontSize(font.size)
+        FontWeight(font.weight)
+        FontDigitVariant(style.numeric || font.monospacedDigits ? .monospaced : .normal)
       }
       .markdownTextStyle(\.link) { ForegroundColor(theme.accent) }
+      .markdownTextStyle(\.strong) { FontWeight(theme.typography.heading.weight) }
       .markdownSoftBreakMode(mode == .markdown ? .space : .lineBreak)
       .markdownBlockStyle(\.paragraph) { configuration in
         configuration.label.fixedSize(horizontal: false, vertical: true)
           .frame(maxWidth: .infinity, alignment: frameAlignment)
-          .relativeLineSpacing(.em(0.15))
+          .relativeLineSpacing(.em(theme.typography.lineSpacing))
           .markdownMargin(top: 0, bottom: mode == .inline ? 0 : theme.contentSpacing)
       }
+      .markdownBlockStyle(\.heading1) { heading($0.label, role: theme.typography.display) }
+      .markdownBlockStyle(\.heading2) { heading($0.label, role: theme.typography.title) }
+      .markdownBlockStyle(\.heading3) { heading($0.label, role: theme.typography.heading) }
+      .markdownBlockStyle(\.heading4) { heading($0.label, role: theme.typography.heading) }
+      .markdownBlockStyle(\.heading5) { heading($0.label, role: theme.typography.detail.weight(.semibold)) }
+      .markdownBlockStyle(\.heading6) { heading($0.label, role: theme.typography.caption.weight(.semibold)) }
       .markdownBlockStyle(\.codeBlock) { configuration in
         NativeCodeBlockContent(code: OpenUIString(configuration.content.trimmingCharacters(in: .whitespacesAndNewlines)),
           language: OpenUIString(NativeMarkdownCode.language(configuration.language)), theme: theme)
-          .markdownMargin(top: 8, bottom: 8)
+          .markdownMargin(top: theme.spacing("s"), bottom: theme.spacing("s"))
       }
       .markdownTheme(.basic)
       .markdownImageProvider(NativeMarkdownImageProvider(math: math, fontSize: mathSize, color: mathColor))
@@ -116,6 +127,16 @@ struct NativeMarkdownText: View {
         }
       }
       .onDisappear { math.cancel() }
+  }
+  private func heading<Content: View>(_ content: Content, role: OpenUIFont) -> some View {
+    let resolved = theme.typography.resolve(role)
+    return content.markdownTextStyle {
+      FontFamily(resolved.family.map(FontProperties.Family.custom) ?? .system(resolved.design))
+      FontSize(.em(resolved.size / font.size))
+      FontWeight(resolved.weight)
+    }
+    .fixedSize(horizontal: false, vertical: true)
+    .markdownMargin(top: theme.spacing("m"), bottom: theme.spacing("s"))
   }
 }
 
@@ -176,6 +197,7 @@ private struct NativeMarkdownInlineImages: InlineImageProvider {
 }
 
 private struct NativeMathBlock: View {
+  @Environment(\.openUITheme) private var theme
   let descriptor: NativeMathDescriptor
   let renderer: NativeMathRenderer
   let fontSize: CGFloat
@@ -194,7 +216,7 @@ private struct NativeMathBlock: View {
           .accessibilityElement(children: .ignore).accessibilityLabel(descriptor.tex)
           .accessibilityAddTraits(.isImage).accessibilityIdentifier("openui.math.rendered")
       } else if failed {
-        Text(descriptor.tex).font(.system(.body, design: .monospaced)).textSelection(.enabled)
+        Text(descriptor.tex).openUIFont(theme.typography.code).textSelection(.enabled)
           .accessibilityIdentifier("openui.math.fallback")
       } else { ProgressView().frame(minHeight: fontSize * 1.5).accessibilityIdentifier("openui.math.loading") }
     }.task(id: key) {

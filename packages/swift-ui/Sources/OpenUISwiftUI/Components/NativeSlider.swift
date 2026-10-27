@@ -120,7 +120,7 @@ struct NativeSliderField: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
-      if fieldLabel == nil { Text(label).font(context.theme.typography.detail) }
+      if fieldLabel == nil { Text(label).openUIFont(context.theme.typography.detail) }
       if configuration.valid {
         if !context.isStreaming {
           HStack(alignment: .top, spacing: 12) {
@@ -170,7 +170,7 @@ struct NativeSliderField: View {
           HStack {
             Text(jsNumberString(draft.values[index])).monospacedDigit()
             Spacer(minLength: 8)
-            Image(systemName: "chevron.up.chevron.down").font(.caption)
+            Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.typography.caption)
           }.padding(10).frame(minHeight: 44).background(context.theme.surface, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
         }.buttonStyle(.plain).accessibilityIdentifier("openui.slider.choice.\(field.name.displayString).\(index)")
       } else {
@@ -180,7 +180,7 @@ struct NativeSliderField: View {
           .padding(10).frame(minHeight: 44).background(context.theme.surface, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
           .accessibilityIdentifier("openui.slider.input.\(field.name.displayString).\(index)")
         if let error = configuration.error(for: draft.values, index: index) {
-          Text(error).font(context.theme.typography.caption).foregroundStyle(context.theme.error)
+          Text(error).openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.error)
             .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
         }
       }

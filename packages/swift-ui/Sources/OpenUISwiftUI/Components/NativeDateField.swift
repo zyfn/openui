@@ -97,7 +97,7 @@ struct NativeDateField: View {
     }
     private func dateControl(_ title: String, part: NativeDatePart) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            if range { Text(title).font(.subheadline).foregroundStyle(context.theme.secondary) }
+            if range { Text(title).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary) }
             Button {
                 request = NativeDateRequest(
                     part: part, label: title, date: date(part) ?? Date(), context: context)
@@ -112,7 +112,7 @@ struct NativeDateField: View {
                         Text("Select date", bundle: NativeControlResources.bundle).foregroundStyle(context.theme.secondary)
                     }
                     if fieldPresentation != .inline { Spacer(minLength: 8) }
-                    Image(systemName: "calendar").font(.subheadline).foregroundStyle(context.theme.secondary)
+                    Image(systemName: "calendar").openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
                 }.frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading).modifier(
                     NativeFieldSurface(theme: context.theme))
             }.buttonStyle(.plain).disabled(!context.canInteract).accessibilityLabel(title)
@@ -178,7 +178,7 @@ struct NativeCalendarEditor: View {
                     .buttonStyle(NativeActionButtonStyle(theme: theme, variant: "tertiary", size: "small"))
                     .keyboardShortcut(.cancelAction).accessibilityIdentifier("openui.date.cancel")
                 Spacer(minLength: 0)
-                Text(request.label).font(.headline).foregroundStyle(theme.foreground).multilineTextAlignment(
+                Text(request.label).openUIFont(theme.typography.heading).foregroundStyle(theme.foreground).multilineTextAlignment(
                     .center)
                 Spacer(minLength: 0)
                 Button {
@@ -202,6 +202,6 @@ struct NativeCalendarEditor: View {
                         .padding(.bottom, 12)
                 }
             }
-        }.font(.body).foregroundStyle(theme.foreground).background(theme.controlSurface)
+        }.openUIFont(theme.typography.body).foregroundStyle(theme.foreground).background(theme.controlSurface)
     }
 }

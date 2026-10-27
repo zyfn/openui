@@ -11,12 +11,15 @@ final class StreamingPresentationTests: XCTestCase {
         let firstRoot = try XCTUnwrap(state.root)
         let firstText = try XCTUnwrap(PropValue.children(firstRoot).first)
         XCTAssertEqual(PropValue.string(firstText, "text"), "Paris, at")
+        XCTAssertNotEqual(PropValue.string(firstText, "size"), "large-heavy",
+            "A later positional style argument cannot be known before it arrives")
         XCTAssertFalse(state.isComplete)
         state.push(" your own pace\",\"large-heavy\")],\"column\",\"l\")")
         state.complete()
         let finalRoot = try XCTUnwrap(state.root)
         let finalText = try XCTUnwrap(PropValue.children(finalRoot).first)
         XCTAssertEqual(PropValue.string(finalText, "text"), "Paris, at your own pace")
+        XCTAssertEqual(PropValue.string(finalText, "size"), "large-heavy")
         XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
     }
 
@@ -27,10 +30,13 @@ final class StreamingPresentationTests: XCTestCase {
         let first = try XCTUnwrap(state.root)
         let heading = try XCTUnwrap(PropValue.children(first).first)
         XCTAssertEqual(PropValue.string(heading, "text"), "Pa")
+        XCTAssertEqual(PropValue.string(heading, "size"), "large-heavy")
         state.push("ris")
         let updated = try XCTUnwrap(state.root)
         let growing = try XCTUnwrap(PropValue.children(updated).first)
         XCTAssertEqual(PropValue.string(growing, "text"), "Paris")
+        XCTAssertEqual(PropValue.string(growing, "size"), "large-heavy",
+            "Declaring typography before leaf text keeps streaming text in one style")
         state.push("\"\n")
         state.complete()
         XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")

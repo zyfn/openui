@@ -137,13 +137,14 @@ private struct NativeEmbeddedContent: View {
     private var unavailable: some View {
         HStack(spacing: 8) {
             Label(svg ? "SVG unavailable" : "Web content unavailable", systemImage: "rectangle.slash")
-                .font(context.theme.typography.caption)
+                .openUIFont(context.theme.typography.caption)
             Spacer(minLength: 0)
             if request != nil {
-                Button("Retry") { failed = false; attempt += 1 }
-                    .buttonStyle(.plain).font(context.theme.typography.caption).frame(minHeight: 44)
+                Button { failed = false; attempt += 1 } label: {
+                    Text("Retry").openUIFont(context.theme.typography.actionCompact).openUIControlTarget()
+                }.buttonStyle(.plain)
             }
-        }.foregroundStyle(context.theme.secondary).padding(10)
+        }.foregroundStyle(context.theme.secondary).padding(context.theme.contentSpacing)
           .background(context.theme.surface, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
     }
 }

@@ -5,6 +5,26 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class NativeDesignTests: XCTestCase {
+    func testCustomTypographyReachesEveryTextSizeWithoutSeparateNumericConstants() {
+        var theme = OpenUITheme()
+        theme.typography.body.size = 21
+        theme.typography.detail.size = 18
+        theme.typography.display.size = 32
+        theme.typography.display.weight = .bold
+        theme.typography.family = "Example typeface"
+        XCTAssertEqual(NativeRichTextStyle.textContent("default", theme: theme).font?.size, 21)
+        XCTAssertEqual(NativeRichTextStyle.textContent("small", theme: theme).font?.size, 18)
+        XCTAssertEqual(NativeRichTextStyle.textContent("large-heavy", theme: theme).font?.size, 32)
+        XCTAssertEqual(NativeRichTextStyle.textContent("large-heavy", theme: theme).font?.weight, .bold)
+        XCTAssertEqual(theme.typography.inline("md").size, 21)
+        XCTAssertEqual(theme.typography.inline("sm").size, 18)
+        XCTAssertEqual(theme.typography.resolve(theme.typography.detail).family, "Example typeface")
+        let override = OpenUIFont(size: 18, family: "Object typeface")
+        XCTAssertEqual(theme.typography.resolve(override).family, "Object typeface")
+        XCTAssertNil(theme.typography.resolve(theme.typography.code).family,
+            "A prose font override must not remove the code role's fixed-width face")
+    }
+
     func testAccentForegroundChoosesReadableContrastForLightAndDarkAccents() {
         XCTAssertTrue(NativeControlPalette.prefersDarkForeground(red: 1, green: 1, blue: 1))
         XCTAssertTrue(NativeControlPalette.prefersDarkForeground(red: 1, green: 0.9, blue: 0.2))

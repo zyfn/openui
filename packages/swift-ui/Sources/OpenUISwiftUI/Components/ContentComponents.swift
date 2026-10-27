@@ -52,11 +52,11 @@ struct NativeHeading: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       if let title = context.string(compact ? "heading" : "title") {
-        Text(title).font(compact ? context.theme.typography.title : context.theme.typography.heading).accessibilityAddTraits(
+        Text(title).openUIFont(compact ? context.theme.typography.title : context.theme.typography.heading).accessibilityAddTraits(
           .isHeader)
       }
       if let detail = context.string(compact ? "description" : "subtitle") {
-        Text(detail).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+        Text(detail).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
       }
     }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -81,9 +81,9 @@ struct NativeMarkdown: View {
 private func semanticColor(_ variant: String?, theme: OpenUITheme) -> Color {
   switch variant {
   case "danger", "error": return theme.error
-  case "success": return .green
-  case "warning": return .orange
-  case "info": return .blue
+  case "success": return theme.success
+  case "warning": return theme.warning
+  case "info": return theme.info
   default: return theme.secondary
   }
 }
@@ -105,9 +105,9 @@ struct NativeCallout: View {
           )
           .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
           VStack(alignment: .leading, spacing: 4) {
-            if let title = context.string("title") { Text(title).font(context.theme.typography.heading) }
+            if let title = context.string("title") { Text(title).openUIFont(context.theme.typography.heading) }
             if let detail = context.string("description") {
-              NativeMarkdownText(text: detail, style: .init(scale: 15 / 17, color: context.theme.secondary))
+              NativeMarkdownText(text: detail, style: .init(font: context.theme.typography.detail, color: context.theme.secondary))
             }
           }
           Spacer(minLength: 0)
@@ -176,14 +176,15 @@ struct NativeInlineText: View {
   let bold: Bool
   private var style: NativeRichTextStyle {
     let size = context.string("size") ?? "sm"
-    return .init(scale: size == "xs" ? 12 / 17 : size == "lg" ? 20 / 17 : size == "md" ? 1 : 15 / 17,
-      weight: bold ? .semibold : .regular, numeric: context.string("variant") == "number")
+    let font = context.theme.typography.inline(size)
+    return .init(font: bold ? font.weight(context.theme.typography.heading.weight) : font,
+      numeric: context.string("variant") == "number")
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       NativeMarkdownText(text: context.string("value") ?? "", mode: .inline, style: style)
       if let sub = context.string("subtext") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(scale: 15 / 17, color: subtextColor(sub)))
+        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.typography.detail, color: subtextColor(sub)))
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -255,9 +256,9 @@ struct NativeMediaText: View {
   private var words: some View {
     VStack(alignment: .leading, spacing: 4) {
       NativeMarkdownText(text: context.string("title") ?? "", mode: .inline,
-        style: .init(weight: context.flag("bold") == true ? .semibold : .regular))
+        style: .init(font: context.theme.typography.body.weight(context.flag("bold") == true ? .semibold : .regular)))
       if let sub = context.string("subtitle") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(scale: 15 / 17, color: context.theme.secondary))
+        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.typography.detail, color: context.theme.secondary))
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -332,15 +333,15 @@ struct NativeEntityList: View {
   private func row(_ value: Value, kind: RowKind) -> some View {
     let small = context.string("size") == "small"
     let numeric = NativeValue.string(value, "rightVariant") == "number"
-    let scale: CGFloat = small ? 15 / 17 : 1
+    let font = small ? context.theme.typography.detail : context.theme.typography.body
     let color = kind == .header ? context.theme.secondary : context.theme.foreground
     return NativeLabelValueLayout(
       gap: context.theme.spacing("m"), minimumLabelWidth: context.theme.minimumTextColumnWidth
     ) {
       NativeMarkdownText(text: NativeValue.string(value, "left") ?? "", mode: .inline,
-        style: .init(scale: scale, weight: kind == .body ? .regular : .semibold, color: color))
+        style: .init(font: font.weight(kind == .body ? .regular : .semibold), color: color))
       NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
-        style: .init(scale: kind == .footer ? 20 / 17 : scale, weight: .semibold, numeric: numeric, color: color))
+        style: .init(font: (kind == .footer ? context.theme.typography.title : font).weight(.semibold), numeric: numeric, color: color))
       .multilineTextAlignment(.trailing)
     }
     .padding(.vertical, context.theme.spacing(small ? "xs" : "s")).textSelection(.enabled)
@@ -386,7 +387,7 @@ struct NativeListBlock: View {
         }
         HStack(alignment: .top, spacing: context.theme.contentSpacing) {
           if !imageList {
-            Text("\(index + 1)").font(context.theme.typography.detail.monospacedDigit()).foregroundStyle(
+            Text("\(index + 1)").openUIFont(context.theme.typography.detail.monospacedDigit()).foregroundStyle(
               context.theme.secondary
             ).frame(minWidth: 22)
           }
@@ -455,18 +456,18 @@ struct NativeListItem: View {
   private var words: some View {
     HStack(alignment: .center, spacing: context.theme.contentSpacing) {
       VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
-        Text(context.string("title") ?? "").font(presentation.compact
+        Text(context.string("title") ?? "").openUIFont(presentation.compact
           ? context.theme.typography.detail.weight(.semibold) : context.theme.typography.heading)
         if let detail = context.string("subtitle") {
-          Text(detail).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+          Text(detail).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
         }
         if hasAction, let label = context.string("actionLabel"), !label.isEmpty {
-          Text(label).font(context.theme.typography.actionCompact)
+          Text(label).openUIFont(context.theme.typography.actionCompact)
             .foregroundStyle(context.theme.secondary).padding(.top, 2).accessibilityHidden(true)
         }
       }.frame(maxWidth: .infinity, alignment: .leading)
       if hasAction {
-        Image(systemName: "chevron.right").font(context.theme.typography.caption.weight(.semibold))
+        Image(systemName: "chevron.right").openUIFont(context.theme.typography.caption.weight(.semibold))
           .foregroundStyle(context.theme.secondary).accessibilityHidden(true)
       }
     }.fixedSize(horizontal: false, vertical: true)
@@ -474,15 +475,27 @@ struct NativeListItem: View {
 }
 struct NativeSteps: View {
   let context: OpenUIComponentContext
+  @Environment(\.displayScale) private var displayScale
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      ForEach(Array(context.children("items").enumerated()), id: \.element.id) { index, item in
+    let items = context.children("items")
+    VStack(alignment: .leading, spacing: 0) {
+      ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
         HStack(alignment: .top, spacing: 12) {
-          Text("\(index + 1)").font(context.theme.typography.detail.weight(.semibold)).frame(width: 28, height: 28)
+          Text("\(index + 1)").openUIFont(context.theme.typography.detail.weight(.semibold)).frame(width: 28, height: 28)
             .background(context.theme.surface, in: Circle())
           VStack(alignment: .leading, spacing: 6) {
-            Text(NativeValue.string(item.value, "title") ?? "").font(context.theme.typography.heading)
-            NativeMarkdownText(text: NativeValue.string(item.value, "details") ?? "")
+            Text(NativeValue.string(item.value, "title") ?? "").openUIFont(context.theme.typography.heading)
+            NativeMarkdownText(text: NativeValue.string(item.value, "details") ?? "",
+              style: .init(font: context.theme.typography.detail, color: context.theme.secondary))
+          }
+        }
+        .padding(.bottom, index < items.count - 1 ? context.theme.spacing("m") : 0)
+        .background(alignment: .topLeading) {
+          if index < items.count - 1 {
+            Rectangle().fill(context.theme.border)
+              .frame(width: 1 / displayScale)
+              .padding(.top, 32).offset(x: 14)
+              .accessibilityHidden(true)
           }
         }
       }
@@ -528,12 +541,12 @@ struct NativeModal: View {
       .sheet(isPresented: presented) {
         VStack(alignment: .leading, spacing: 16) {
           HStack {
-            Text(context.string("title") ?? "").font(.headline).accessibilityAddTraits(.isHeader)
+            Text(context.string("title") ?? "").openUIFont(context.theme.typography.heading).accessibilityAddTraits(.isHeader)
             Spacer()
             Button {
               presented.wrappedValue = false
             } label: {
-              Image(systemName: "xmark")
+              Image(systemName: "xmark").openUIFont(context.theme.typography.actionRegular).openUIControlTarget()
             }
             .buttonStyle(.plain).keyboardShortcut(.cancelAction)
             .accessibilityLabel(Text("Close", bundle: NativeControlResources.bundle))
@@ -561,6 +574,7 @@ struct NativeCardItem: View {
   let context: OpenUIComponentContext
   let kind: String
   @Environment(\.openUICardIsAction) private var isAction
+  @Environment(\.colorScheme) private var colorScheme
   private var artworkSource: String? {
     guard ["Visual", "Context"].contains(kind), let source = context.string("bgImageSrc"),
       !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
@@ -572,13 +586,16 @@ struct NativeCardItem: View {
       theme.foreground = .white
       theme.secondary = .white.opacity(0.86)
       theme.surface = .black.opacity(0.55)
+      theme.controlSurface = .black.opacity(0.75)
+      theme.metricSurface = .black.opacity(0.55)
+      theme.border = .white.opacity(0.2)
       theme.canvas = .black
     }
     return theme
   }
   @ViewBuilder private var actionIndicator: some View {
     if isAction {
-      Image(systemName: "chevron.right").font(context.theme.typography.actionCompact)
+      Image(systemName: "chevron.right").openUIFont(context.theme.typography.actionCompact)
         .foregroundStyle(contentTheme.secondary).accessibilityHidden(true)
     }
   }
@@ -606,11 +623,11 @@ struct NativeCardItem: View {
         }
         context.slot("bottom").frame(maxWidth: .infinity, alignment: .center)
       case "Context":
-        context.slot("title").font(context.theme.typography.caption)
+        context.slot("title").openUIFont(context.theme.typography.caption)
           .foregroundStyle(contentTheme.secondary)
         if artworkSource != nil { Spacer(minLength: context.theme.contentSpacing) }
         if let body = context.string("body") {
-          NativeMarkdownText(text: body, mode: .inline, style: .init(scale: 15 / 17, weight: .semibold))
+          NativeMarkdownText(text: body, mode: .inline, style: .init(font: context.theme.typography.detail.weight(.semibold)))
         }
       case "Visual":
         context.slot("tag")
@@ -655,6 +672,7 @@ struct NativeCardItem: View {
         : context.string("bgColor") == "gray" ? context.theme.surface : nil,
       bordered: artworkSource == nil && kind != "Overview" && context.string("bgColor") != "gray"))
     .environment(\.openUIActionDensity, .compact)
+    .environment(\.colorScheme, artworkSource == nil ? colorScheme : .dark)
     .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
   }
 }

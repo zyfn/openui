@@ -9,7 +9,9 @@ struct OpenUINativeField: View {
     @Environment(\.openUIFieldLabel) private var fieldLabel
     @Environment(\.locale) private var locale
     @Environment(\.openUIFieldPresentation) private var presentation
-    @ScaledMetric(relativeTo: .body) private var lineHeight: CGFloat = 22
+    @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
+    private var inputFont: OpenUIFont { context.theme.typography.field(context.string("size")) }
+    private var lineHeight: CGFloat { inputFont.size * (1.2 + context.theme.typography.lineSpacing) * textScale }
     @FocusState private var focused: Bool
     @State private var localError: String?
     @State private var registration = UUID()
@@ -58,7 +60,7 @@ struct OpenUINativeField: View {
             control.accessibilityIdentifier("openui.field.\(field.name.displayString)")
             if let error {
                 Label(error, systemImage: "exclamationmark.circle.fill")
-                    .font(.footnote).foregroundStyle(context.theme.error)
+                    .openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.error)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("openui.error.\(field.name.displayString)")
             }
@@ -94,11 +96,11 @@ struct OpenUINativeField: View {
             .modifier(NativeFieldSurface(theme: context.theme, focused: focused))
         case .textArea:
             ZStack(alignment: .topLeading) {
-                TextEditor(text: field.text).font(.body).openUIEditorBackground().focused($focused)
+                TextEditor(text: field.text).openUIFont(inputFont).openUIEditorBackground().focused($focused)
                     .frame(minHeight: CGFloat(min(20, max(2, context.number("rows") ?? 4))) * lineHeight)
                     .accessibilityLabel(label)
                 if field.text.wrappedValue.isEmpty {
-                    Text(placeholder).font(.body).foregroundStyle(context.theme.secondary)
+                    Text(placeholder).openUIFont(inputFont).foregroundStyle(context.theme.secondary)
                         .padding(.horizontal, 5).padding(.vertical, 8).allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
@@ -119,7 +121,7 @@ struct OpenUINativeField: View {
                             field.selected.wrappedValue.isEmpty
                                 ? context.theme.secondary : context.theme.foreground)
                     if presentation != .inline { Spacer(minLength: 8) }
-                    Image(systemName: "chevron.up.chevron.down").font(.footnote.weight(.semibold)).foregroundStyle(
+                    Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.typography.caption.weight(.semibold)).foregroundStyle(
                         context.theme.secondary)
                 }.frame(maxWidth: .infinity, alignment: .leading)
                     .modifier(NativeFieldSurface(theme: context.theme, size: context.string("size")))
@@ -145,7 +147,7 @@ struct OpenUINativeField: View {
                         } label: {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                                    .font(.body).foregroundStyle(
+                                    .openUIFont(context.theme.typography.body).foregroundStyle(
                                         selected ? context.theme.accent : context.theme.secondary
                                     )
                                     .padding(.top, 2)
@@ -168,9 +170,9 @@ struct OpenUINativeField: View {
                 ForEach(options) { option in
                     Toggle(isOn: field.toggle(option.value)) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(option.label).font(.body).foregroundStyle(context.theme.foreground)
+                            Text(option.label).openUIFont(context.theme.typography.body).foregroundStyle(context.theme.foreground)
                             if !option.description.isEmpty {
-                                Text(option.description).font(.footnote).foregroundStyle(
+                                Text(option.description).openUIFont(context.theme.typography.caption).foregroundStyle(
                                     context.theme.secondary)
                             }
                         }.fixedSize(horizontal: false, vertical: true)
@@ -188,9 +190,9 @@ struct OpenUINativeField: View {
     private var inputPrompt: Text { Text(placeholder).foregroundColor(context.theme.secondary) }
     private func optionLabel(_ option: NativeFieldOption) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(option.label).font(.body).foregroundStyle(context.theme.foreground)
+            Text(option.label).openUIFont(context.theme.typography.body).foregroundStyle(context.theme.foreground)
             if !option.description.isEmpty {
-                Text(option.description).font(.footnote).foregroundStyle(context.theme.secondary)
+                Text(option.description).openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
             }
         }.fixedSize(horizontal: false, vertical: true)
     }
@@ -245,7 +247,7 @@ private struct NativeCheckboxStyle: ToggleStyle {
         } label: {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                    .font(.body).foregroundStyle(configuration.isOn ? theme.accent : theme.secondary).padding(
+                    .openUIFont(theme.typography.body).foregroundStyle(configuration.isOn ? theme.accent : theme.secondary).padding(
                         .top, 2)
                 configuration.label.frame(maxWidth: .infinity, alignment: .leading)
             }.frame(minHeight: 44).modifier(NativeFieldSurface(theme: theme))

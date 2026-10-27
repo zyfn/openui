@@ -15,6 +15,7 @@ final class NativeRichTextEngine: @unchecked Sendable {
 
   private func call(_ name: String, _ arguments: [Any]) throws -> String? {
     lock.lock(); defer { lock.unlock() }
+    try Task.checkCancellation()
     if context == nil {
       guard let url = NativeControlResources.bundle.url(forResource: "rich-text", withExtension: "js"),
         let source = try? String(contentsOf: url, encoding: .utf8), let candidate = JSContext()

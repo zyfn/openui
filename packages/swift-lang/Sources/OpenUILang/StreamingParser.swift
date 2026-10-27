@@ -36,6 +36,6 @@ final class CoreStreamParser: StreamParser {
         }
     }
     private var withinBudget: Bool {
-        !splitStatements(tokenize(source)).contains { expressionExceedsLimits($0.tokens) }
+        !sourceExceedsLimits(source)
     }
 }

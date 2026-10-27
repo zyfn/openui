@@ -5,7 +5,7 @@ enum OpenUIDisplayComponents {
     static var components: [OpenUIComponent] {
         return [
             OpenUIReference.component("Label") {
-                Text($0.string("text") ?? "").font(.subheadline.weight(.medium))
+                Text($0.string("text") ?? "").openUIFont($0.theme.typography.detail.weight(.medium))
             },
             OpenUIReference.component("Separator") { context in NativeSeparator(context: context) },
             OpenUIReference.component("CodeBlock") { NativeCodeBlock(context: $0) },
@@ -61,11 +61,11 @@ private struct NativeMetric: View {
     }
     private var value: some View {
         Text(context.string("value") ?? "")
-            .font(inline ? context.theme.typography.inlineMetric : context.theme.typography.metric).monospacedDigit()
+            .openUIFont(inline ? context.theme.typography.inlineMetric : context.theme.typography.metric).monospacedDigit()
     }
     @ViewBuilder private var details: some View {
         if let previous = context.string("previousValue") {
-            Text(previous).strikethrough().font(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
+            Text(previous).strikethrough().openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
         }
         if case .object(let trend) = context.value("trend"), case .number(let number) = trend["value"],
             number.isFinite,
@@ -75,10 +75,10 @@ private struct NativeMetric: View {
                 number.formatted(.number.precision(.fractionLength(0...2))) + "%",
                 systemImage: direction == "down" ? "arrow.down" : "arrow.up"
             )
-            .font(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
+            .openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
         }
         if let subtext = context.string("subtext") {
-            Text(subtext).font(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+            Text(subtext).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
         }
     }
 }
@@ -123,7 +123,7 @@ private struct NativeAccordion: View {
                     ) {
                         context.render(PropValue.value(item, "content") ?? .null).padding(.top, 6)
                     } label: {
-                        Text(PropValue.string(item, "trigger") ?? "").font(context.theme.typography.heading)
+                        Text(PropValue.string(item, "trigger") ?? "").openUIFont(context.theme.typography.heading)
                     }
                     .padding(context.theme.cardPadding)
                     .modifier(NativeCardSurface(theme: context.theme))
@@ -203,7 +203,7 @@ private struct NativeDataTable: View {
             minimum: minimumWidth, gap: columnGap
         ) {
             ForEach(columns) { column in
-                Text(column.title).font(context.theme.typography.detail.weight(.semibold))
+                Text(column.title).openUIFont(context.theme.typography.detail.weight(.semibold))
                     .foregroundStyle(context.theme.secondary)
                     .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

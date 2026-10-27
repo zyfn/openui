@@ -83,9 +83,10 @@ private struct NativeContentImage: View {
     let context: OpenUIComponentContext
     var body: some View {
         NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "",
-            layout: context.stretchesVertically ? .stretch : .intrinsic)
+            layout: context.stretchesVertically ? .aspect(context.theme.inlineMediaAspectRatio) : .intrinsic)
             // Suggest a media width when a row measures its children. Grid card
-            // widths are unrelated; the parent still controls the final bounds.
+            // widths are unrelated; the parent still controls the final width.
+            // Inline crops share a visual role rather than following copy height.
             .frame(idealWidth: context.theme.thumbnailSize)
             .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
     }
