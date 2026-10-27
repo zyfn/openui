@@ -6,7 +6,10 @@ import Foundation
 func sourceExceedsLimits(_ source: String) -> Bool {
     let core = SharedCore.shared
     return core.sync {
-        let tokens = core.core("tokenize", [source])
+        // Apply the very same fence/comment handling as the shared parser.
+        // Comment contents must not count toward expression complexity.
+        let cleaned = core.call("preprocess", [source])
+        let tokens = core.core("tokenize", [cleaned])
         let statements = core.core("split", [tokens])
         return core.items(statements).contains { statement in
             expressionExceedsLimits(core.items(statement.forProperty("tokens")).map(core.token))

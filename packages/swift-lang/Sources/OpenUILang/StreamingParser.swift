@@ -24,9 +24,11 @@ final class CoreStreamParser: StreamParser {
     }
     @discardableResult func set(_ fullText: String, complete: Bool = false) -> ParseResult {
         core.sync {
-            source = fullText
+            // Guard the same selected content passed to the shared parser.
+            // Subsequent appends extend this content, not discarded attempts.
+            source = stripMessageMarkers(fullText)
             guard withinBudget else { return limitedParseResult() }
-            return core.parseResult(parser.invokeMethod("set", withArguments: [stripMessageMarkers(fullText), complete]))
+            return core.parseResult(parser.invokeMethod("set", withArguments: [source, complete]))
         }
     }
     func getResult(complete: Bool = false) -> ParseResult {
