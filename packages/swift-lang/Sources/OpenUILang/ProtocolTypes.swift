@@ -360,8 +360,18 @@ public struct MutationStatementInfo: Sendable {
 }
 
 public struct ParseResult: Sendable {
-    public var root: ElementNode?
-    public var rootExpression: ASTNode?
+    private var nativeRoot: ElementNode?
+    private var nativeExpression: ASTNode?
+    private var rootOverridden: Bool
+    private var expressionOverridden: Bool
+    public var root: ElementNode? {
+        get { rootOverridden ? nativeRoot : coreSnapshot?.root }
+        set { nativeRoot = newValue; rootOverridden = true }
+    }
+    public var rootExpression: ASTNode? {
+        get { expressionOverridden ? nativeExpression : coreSnapshot?.expression }
+        set { nativeExpression = newValue; expressionOverridden = true }
+    }
     public var meta: ParseMeta
     /// $name → materialized default value.
     public var stateDeclarations: [(String, Materialized)]
@@ -370,6 +380,27 @@ public struct ParseResult: Sendable {
     /// Keeps the original lang-core value for evaluation within its serialized
     /// JavaScript realm. Native fields remain the public typed representation.
     var coreSnapshot: CoreParseSnapshot? = nil
+
+    init(root: ElementNode?, rootExpression: ASTNode?, meta: ParseMeta,
+         stateDeclarations: [(String, Materialized)], queryStatements: [QueryStatementInfo],
+         mutationStatements: [MutationStatementInfo]) {
+        nativeRoot = root; nativeExpression = rootExpression
+        rootOverridden = true; expressionOverridden = true
+        self.meta = meta; self.stateDeclarations = stateDeclarations
+        self.queryStatements = queryStatements; self.mutationStatements = mutationStatements
+    }
+    init(snapshot: CoreParseSnapshot, meta: ParseMeta,
+         stateDeclarations: [(String, Materialized)], queryStatements: [QueryStatementInfo],
+         mutationStatements: [MutationStatementInfo]) {
+        nativeRoot = nil; nativeExpression = nil
+        rootOverridden = false; expressionOverridden = false
+        coreSnapshot = snapshot
+        self.meta = meta; self.stateDeclarations = stateDeclarations
+        self.queryStatements = queryStatements; self.mutationStatements = mutationStatements
+    }
+    func usesSnapshot(_ snapshot: CoreParseSnapshot) -> Bool {
+        !rootOverridden && !expressionOverridden && coreSnapshot === snapshot
+    }
 }
 
 // MARK: - Actions

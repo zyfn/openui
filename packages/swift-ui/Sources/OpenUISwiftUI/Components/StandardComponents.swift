@@ -49,7 +49,12 @@ struct OpenUICardSurface: ViewModifier {
 }
 
 private struct OpenUIStretchHeightKey: EnvironmentKey { static let defaultValue = false }
+private struct OpenUIMediaLayoutPendingKey: EnvironmentKey { static let defaultValue = false }
 extension EnvironmentValues {
+    var openUIMediaLayoutPending: Bool {
+        get { self[OpenUIMediaLayoutPendingKey.self] }
+        set { self[OpenUIMediaLayoutPendingKey.self] = newValue }
+    }
     var openUIStretchHeight: Bool {
         get { self[OpenUIStretchHeightKey.self] }
         set { self[OpenUIStretchHeightKey.self] = newValue }
@@ -62,6 +67,9 @@ private struct OpenUIStack: View {
     var wrapJustifyBetweenAsStart = false
     private var gap: CGFloat { context.theme.spacing(context.string("gap")) }
     private var children: [OpenUIRenderChild] { context.children() }
+    private var mediaLayoutPending: Bool {
+        context.isStreaming && context.element.partial && !["row", "column"].contains(context.string("direction") ?? "")
+    }
 
     var body: some View {
         OpenUIFlexLayout(
@@ -73,6 +81,7 @@ private struct OpenUIStack: View {
             ForEach(children) { child in
                 context.render(child.value)
                     .environment(\.openUIStretchHeight, context.string("direction") == "row" && stretches)
+                    .environment(\.openUIMediaLayoutPending, mediaLayoutPending)
             }
         }
     }

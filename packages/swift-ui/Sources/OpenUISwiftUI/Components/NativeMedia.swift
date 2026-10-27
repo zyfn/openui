@@ -22,6 +22,7 @@ struct NativeRemoteImage: View {
   var cachedImage: Image?
   var attempt = 0
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
+  @Environment(\.openUIMediaLayoutPending) private var layoutPending
   @State private var phase: AsyncImagePhase = .empty
   @State private var imageSize: CGSize?
   @State private var loadedRequest: NativeResourceRequestID?
@@ -31,7 +32,11 @@ struct NativeRemoteImage: View {
 
   var body: some View {
     Group {
-      if let cachedImage {
+      // Positional layout arguments can arrive after children. Keep fetching,
+      // but do not present pixels at a temporary, guessed container size.
+      if layoutPending {
+        Color.clear.frame(width: 0, height: 0).accessibilityHidden(true)
+      } else if let cachedImage {
         picture(cachedImage).onAppear { onStatus?(.loaded, cachedImage) }
       } else if resources.request(for: src) != nil {
         Group {

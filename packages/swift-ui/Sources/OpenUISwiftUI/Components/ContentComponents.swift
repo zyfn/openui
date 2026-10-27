@@ -747,6 +747,8 @@ struct NativeCardBlock: View {
         }
       }
     }
+    .environment(\.openUIMediaLayoutPending,
+      context.isStreaming && context.element.partial && !["grid", "carousel"].contains(context.string("layout") ?? ""))
   }
   @ViewBuilder private func item(_ item: OpenUIRenderChild, index: Int) -> some View {
     if let value = context.value("action"), value != .null {

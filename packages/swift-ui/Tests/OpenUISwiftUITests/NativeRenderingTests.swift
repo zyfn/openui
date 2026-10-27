@@ -6,6 +6,29 @@
     @testable import OpenUISwiftUI
 
     final class NativeRenderingTests: XCTestCase {
+        @MainActor func testPendingPositionalLayoutDoesNotPresentAFullWidthInlineImage() throws {
+            _ = NSApplication.shared
+            let library = try OpenUIStandardComponents.library()
+            let state = OpenUIState(schema: library.library.toSchema())
+            func height() throws -> CGFloat {
+                let renderer = ImageRenderer(content: OpenUIRenderer(state: state, registry: library.registry))
+                renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
+                return try XCTUnwrap(renderer.nsImage).size.height
+            }
+            state.push("root=Stack([Image(\"Photo\",null),TextContent(\"Copy grows")
+            let pending = try height()
+            XCTAssertLessThan(pending, 100, "A missing row argument must not temporarily produce a full-width photo")
+            state.push(" beside the image\")],\"row\",\"m\",\"stretch\",\"start\",false)")
+            state.complete()
+            XCTAssertTrue(state.errors.isEmpty)
+            XCTAssertGreaterThan(try height(), pending)
+            XCTAssertLessThan(try height(), 240)
+            state.reset()
+            state.push("root=Stack([Stack([Image(\"Photo\",null),TextContent(\"Known local row\")],\"row\",\"m\",\"stretch\",\"start\",false)")
+            XCTAssertGreaterThan(try height(), 100,
+                "A resolved local row must show its media without waiting for the whole outer response")
+        }
+
         @MainActor func testNativeAndRichTextBothRespondToTheSameThemeFont() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()
