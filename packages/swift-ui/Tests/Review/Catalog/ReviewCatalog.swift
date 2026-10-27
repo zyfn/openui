@@ -17,8 +17,6 @@ struct ReviewScenario: Identifiable {
   let variants: [ReviewProgram]
 }
 
-enum ReviewPrograms {}
-
 /// One owning tree: programs belong to scenarios, with no parallel ID registry.
 enum ReviewCatalog {
   static let scenarios: [ReviewScenario] = [
@@ -29,14 +27,8 @@ enum ReviewCatalog {
     .init(id: "gathering", title: "组织一次朋友聚会", purpose: "场地、晚餐、流程与费用分摊", variants: [ReviewScenePrograms.program("scene-gathering")!]),
     .init(id: "learning", title: "图文学习一段历史", purpose: "器物、图像、证据与延伸阅读", variants: [ReviewScenePrograms.program("scene-learning")!]),
   ]
-  // Existing fixtures remain addressable for focused regression runs and the
-  // component browser. They are not additional choices in the scene directory.
-  static let regressionPrograms = ReviewPrograms.layout + ReviewPrograms.reading
-    + ReviewPrograms.actions + ReviewPrograms.forms + ReviewPrograms.structuredData
-    + ReviewPrograms.charts + ReviewPrograms.structure + ReviewPrograms.spatial
-  static var programs: [ReviewProgram] { scenarios.flatMap(\.variants) + regressionPrograms }
+  static var programs: [ReviewProgram] { scenarios.flatMap(\.variants) }
   static func isBuiltIn(_ id: String) -> Bool { programs.contains { $0.id == id } }
-  static func isRegression(_ id: String) -> Bool { regressionPrograms.contains { $0.id == id } }
   static func scenario(for programID: String) -> ReviewScenario? {
     scenarios.first { $0.variants.contains { $0.id == programID } }
   }
@@ -71,7 +63,4 @@ struct ReviewCoverage {
     return entries.map(\.name).filter { references.contains($0) }
   }
   var missing: [String] { entries.map(\.name).filter { !represented.contains($0) } }
-  func examples(for name: String, in programs: [ReviewProgram]) -> [ReviewProgram] {
-    programs.filter { namesByProgram[$0.id]?.contains(name) == true }
-  }
 }

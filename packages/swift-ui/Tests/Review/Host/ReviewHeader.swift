@@ -29,7 +29,7 @@ struct ReviewHeader: View {
           .font(.headline).lineLimit(1).minimumScaleFactor(0.8)
           .accessibilityIdentifier("review.scene-title")
         if let position {
-          Text("\(position + 1) / \(ReviewCatalog.scenarios.count)")
+          Text("\(position + 1) / \(ReviewCatalog.scenarios.count) · \(playbackRate.title)")
             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
             .accessibilityIdentifier("review.scene-position")
         }
@@ -50,8 +50,11 @@ struct ReviewHeader: View {
               else { Text(rate.title) }
             }
           }
+          Text("Tokenizer: " + (ReviewTokenStreams.bundled?.encoding ?? "unavailable"))
         } label: { Text(language.text("回放速度") + " · " + playbackRate.title) }
+          .buttonStyle(.plain)
           .accessibilityIdentifier("review.playback-rate")
+          .disabled(isManual)
         if isManual {
           Button(language.text("恢复目录样例"), action: restoreSample)
             .accessibilityIdentifier("review.restore-sample")
@@ -67,8 +70,6 @@ struct ReviewHeader: View {
             .accessibilityIdentifier("review.conditions-menu")
         }
         Section {
-          Button(language.text("组件目录")) { open(.components) }
-            .accessibilityIdentifier("review.open-components")
           Button(language.text("覆盖与核心验收")) { open(.coverage) }
           Button(language.text("运行诊断")) { open(.diagnostics) }
         }

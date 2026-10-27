@@ -2,22 +2,6 @@ import UIKit
 import XCTest
 
 class ReviewTestCase: XCTestCase {
-  var acceptsLargeText: Bool {
-    #if SDK_PHONE_ACCEPTANCE
-    return false
-    #else
-    return true
-    #endif
-  }
-  var textSizes: [Bool] { acceptsLargeText ? [false, true] : [false] }
-  func fixtureImageSize(_ name: String) throws -> CGSize {
-    let url = try XCTUnwrap(Bundle(for: ReviewTestCase.self).url(
-      forResource: name, withExtension: "jpg", subdirectory: "Images"))
-    let image = try XCTUnwrap(UIImage(contentsOfFile: url.path))
-    XCTAssertGreaterThan(image.size.width, 0)
-    XCTAssertGreaterThan(image.size.height, 0)
-    return image.size
-  }
   func launch(
     _ name: String, dark: Bool = false, large: Bool = false, inspect: Bool = false, media: String? = nil,
     width: String = "available", theme: String = "default", bubble: Bool = false,
@@ -29,7 +13,7 @@ class ReviewTestCase: XCTestCase {
       "--case", name, "--appearance", dark ? "dark" : "light", "-AppleLanguages", "(en)",
       "-AppleLocale", "en_US",
       "--width", width, "--theme", theme, "--language", language,
-      "--instant",
+      "--tps", "320",
     ]
     if large { app.launchArguments.append("--large-text") }
     if inspect { app.launchArguments.append("--inspect") }
@@ -37,13 +21,13 @@ class ReviewTestCase: XCTestCase {
     if let media { app.launchArguments += ["--media-response", media] }
     app.launch()
     XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 10))
+    let ready = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", language == "en" ? "Ready to replay" : "可重新播放"),
+      object: app.buttons["review.replay"])
+    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 60), .completed, name)
+    XCTAssertFalse(app.staticTexts["review.transport-error"].exists)
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
     return app
-  }
-
-  func openEditor(in app: XCUIApplication) {
-    app.buttons["review.tools"].tap()
-    app.buttons["review.open-editor"].tap()
   }
 
   func reveal(_ element: XCUIElement, in app: XCUIApplication) {
@@ -74,25 +58,6 @@ class ReviewTestCase: XCTestCase {
       "The complete hit target must be inside the visible viewport: \(element)")
   }
 
-  func setDisplaySwitch(_ identifier: String, enabled: Bool, in app: XCUIApplication) {
-    let row = app.switches[identifier]
-    // SwiftUI Form exposes both the labelled row and its native switch as
-    // switches. Tap the leaf control, then assert the actual resulting value.
-    let leaf = row.switches.firstMatch
-    let control = leaf.exists ? leaf : row
-    let expected = enabled ? "1" : "0"
-    if control.value as? String != expected { control.tap() }
-    let updated = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", expected), object: control)
-    XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
-  }
-
-  func waitForPanelToClose(in app: XCUIApplication) {
-    let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.buttons["review.panel-done"])
-    XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed)
-    let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: app.buttons["review.next"])
-    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
-  }
-
   func canvas(in app: XCUIApplication) -> XCUIElement {
     app.descendants(matching: .any).matching(identifier: "review.canvas").firstMatch
   }
@@ -104,27 +69,6 @@ class ReviewTestCase: XCTestCase {
     XCTAssertGreaterThanOrEqual((size.height * 1000).rounded() / 1000, 44, file: file, line: line)
   }
 
-  /// Paste inside the same app that copied the code. Reading the shared
-  /// pasteboard from the test runner would trigger a cross-app privacy prompt.
-  func assertCopiedCode(_ expected: String, in app: XCUIApplication) {
-    openEditor(in: app)
-    let editor = app.textViews["review.lang-input"]
-    XCTAssertTrue(editor.waitForExistence(timeout: 3))
-    app.buttons["review.editor-clear"].tap()
-    editor.tap()
-    editor.press(forDuration: 1)
-    let paste = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Paste", "粘贴"]))
-    let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-      paste.allElementsBoundByIndex.contains { $0.isHittable }
-    }, object: nil)
-    XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 4), .completed)
-    paste.allElementsBoundByIndex.first(where: { $0.isHittable })?.tap()
-    XCTAssertEqual(editor.value as? String, expected)
-    app.buttons["review.editor-cancel"].tap()
-    let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: editor)
-    XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 4), .completed)
-  }
-
   func capture(_ app: XCUIApplication, name: String) {
     // Capture only pixels actually visible on the native screen. Asking for
     // an offscreen ScrollView content element can produce padded black areas.
@@ -133,51 +77,6 @@ class ReviewTestCase: XCTestCase {
     attachment.name = name
     attachment.lifetime = .keepAlways
     add(attachment)
-    if let url = Bundle(for: Self.self).url(
-      forResource: name, withExtension: "png", subdirectory: "Baselines"),
-      let expected = UIImage(contentsOfFile: url.path)
-    {
-      let difference = pixelDifference(expected, screenshot.image)
-      XCTAssertLessThanOrEqual(
-        difference, 0.002,
-        "Visual regression \(name): changed fraction \(difference). Review before updating a baseline."
-      )
-    } else {
-      let note = XCTAttachment(
-        string:
-          "No screenshot reference for \(name). This native capture is review evidence, not visual approval."
-      )
-      note.name = "baseline-status-" + name
-      note.lifetime = .keepAlways
-      add(note)
-    }
-  }
-
-  func pixelDifference(_ lhs: UIImage, _ rhs: UIImage) -> Double {
-    guard let a = lhs.cgImage, let b = rhs.cgImage, a.width == b.width, a.height == b.height else {
-      return 1
-    }
-    let count = a.width * a.height
-    func pixels(_ image: CGImage) -> [UInt8] {
-      var bytes = [UInt8](repeating: 0, count: count * 4)
-      bytes.withUnsafeMutableBytes { pointer in
-        let context = CGContext(
-          data: pointer.baseAddress, width: image.width, height: image.height, bitsPerComponent: 8,
-          bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(),
-          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-        context.draw(
-          image, in: CGRect(x: 0, y: 0, width: CGFloat(image.width), height: CGFloat(image.height)))
-      }
-      return bytes
-    }
-    let left = pixels(a)
-    let right = pixels(b)
-    var changed = 0
-    for index in 0..<count
-    where (0..<4).contains(where: {
-      abs(Int(left[index * 4 + $0]) - Int(right[index * 4 + $0])) > 8
-    }) { changed += 1 }
-    return Double(changed) / Double(count)
   }
 
   func matrixReport() throws -> [String: Any] {

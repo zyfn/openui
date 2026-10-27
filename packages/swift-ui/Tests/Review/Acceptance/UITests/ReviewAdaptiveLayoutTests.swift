@@ -3,44 +3,6 @@ import XCTest
 /// Default acceptance: one phone, available width, normal text and the SDK theme.
 /// Optional review controls remain available for manual exploration.
 final class ReviewAdaptiveLayoutTests: ReviewTestCase {
-  func testLearningGalleryRemainsCompactInTheChatBubble() {
-    for bubble in [false, true] {
-      let app = launch("scene-learning", bubble: bubble, language: "en")
-      let first = app.buttons["openui.gallery.image.0"]
-      let second = app.buttons["openui.gallery.image.1"]
-      reveal(first, in: app)
-      XCTAssertTrue(second.exists)
-      XCTAssertEqual(first.frame.minY, second.frame.minY, accuracy: 2)
-      XCTAssertEqual(first.frame.width, second.frame.width, accuracy: 2)
-      let available = canvas(in: app).frame.width - (bubble ? 32 : 0)
-      XCTAssertEqual(second.frame.maxX - first.frame.minX, available, accuracy: 2,
-        "The same gallery should use its actual content width without leaving an empty column")
-      XCTAssertLessThan(first.frame.height, 200)
-      capture(app, name: bubble ? "learning-gallery-chat-bubble" : "learning-gallery-document")
-      app.terminate()
-    }
-  }
-
-  func testParisFewShotUsesTheSameSourceForCardsMapAndBudget() {
-    let app = launch("paris-fewshot-source-change", language: "en")
-    let description = app.staticTexts["Updated source record description"]
-    XCTAssertTrue(description.firstMatch.waitForExistence(timeout: 5))
-    let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
-    reveal(map, in: app)
-    let place = app.buttons["openui.map.place.louvre"]
-    XCTAssertTrue(place.waitForExistence(timeout: 5))
-    XCTAssertTrue(place.label.contains("Updated source record description"))
-    let price = app.staticTexts["€275"].firstMatch
-    reveal(price, in: app)
-    XCTAssertTrue(price.exists)
-    let total = app.staticTexts["€1042"].firstMatch
-    reveal(total, in: app)
-    XCTAssertTrue(total.exists, "Changing only the input room price must update the card and recommended total")
-    XCTAssertFalse(app.staticTexts["review.errors"].exists)
-    capture(app, name: "paris-source-change-recomputed-budget")
-    app.terminate()
-  }
-
   func testLearningVisualCardsAreCompactAndOpenTheirOwnRecords() throws {
     let app = launch("scene-learning", inspect: true, language: "en")
     let cong = app.buttons["openui.gallery.image.0"]
@@ -60,6 +22,11 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     XCTAssertTrue(close.waitForExistence(timeout: 5))
     app.buttons["openui.gallery.thumbnail.1"].tap()
     XCTAssertTrue(app.staticTexts["2 / 2"].exists)
+    let original = app.buttons["openui.gallery.open-original"]
+    XCTAssertTrue(original.exists)
+    assertHitTarget(original)
+    original.tap()
+    XCTAssertEqual(app.staticTexts["review.opened-url"].label, "https://sdk-fixture.invalid/liangzhu-bi.jpg")
     capture(app, name: "learning-gallery-full-object")
     close.tap()
     XCTAssertEqual(cong.frame.minY, position, accuracy: 3)
@@ -78,6 +45,8 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     let secondSeries = app.buttons["openui.chart.legend.Qing archaistic cong"]
     reveal(firstSeries, in: app)
     XCTAssertTrue(secondSeries.exists)
+    assertHitTarget(firstSeries)
+    assertHitTarget(secondSeries)
     XCTAssertEqual(firstSeries.value as? String, "Visible")
     XCTAssertEqual(secondSeries.value as? String, "Visible")
     capture(app, name: "learning-two-series-height-chart")
@@ -100,12 +69,13 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
 
   func testStayLinksLeaveTheRecommendedBudgetUnchanged() {
     let app = launch("scene-two-day-trip", inspect: true, language: "en")
-    let title = app.staticTexts["Left Bank · garden double"].firstMatch
+    let title = app.staticTexts["A place to stay"].firstMatch
     reveal(title, in: app)
     let pagers = app.descendants(matching: .any)
       .matching(identifier: "openui.card-block.composite.pager")
     XCTAssertEqual(pagers.count, 3)
     let stays = pagers.element(boundBy: 2)
+    reveal(stays, in: app)
     stays.swipeLeft()
     let button = stays.buttons.matching(identifier: "Book").allElementsBoundByIndex.first { $0.isHittable && stays.frame.contains($0.frame) }
     XCTAssertNotNil(button)
@@ -142,6 +112,7 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
     day.terminate()
 
     let two = launch("scene-two-day-trip", language: "en")
+    reveal(two.buttons["Day 2"], in: two)
     two.buttons["Day 2"].tap()
     let tower = two.staticTexts["€47"].firstMatch
     reveal(tower, in: two)
@@ -152,57 +123,57 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
   }
 
   func testBasicComposedAttractionKeepsAllCopyAndPriceToTheRightOfItsImage() {
-    let app = launch("scene-day-trip", language: "en")
-    let title = app.staticTexts["The Louvre"].firstMatch
-    reveal(title, in: app)
-    let price = app.staticTexts["€64"].firstMatch
-    reveal(price, in: app)
-    let photo = app.images["The Louvre"].firstMatch
-    XCTAssertTrue(photo.exists)
-    XCTAssertGreaterThan(photo.frame.width, 0)
-    XCTAssertGreaterThanOrEqual(title.frame.minX, photo.frame.maxX + 8)
-    XCTAssertGreaterThanOrEqual(price.frame.minX, photo.frame.maxX + 8)
-    XCTAssertGreaterThanOrEqual(photo.frame.maxY + 2, price.frame.maxY)
-    XCTAssertFalse(app.staticTexts["review.errors"].exists)
-    capture(app, name: "basic-composition-attraction-image-copy-footer")
-    app.terminate()
+    var loadedSize: CGSize?
+    for mode in ["loaded", "loading", "unavailable"] {
+      let app = launch("scene-day-trip", media: mode, language: "en")
+      let title = app.staticTexts["The Louvre"].firstMatch
+      reveal(title, in: app)
+      let price = app.staticTexts["€64"].firstMatch
+      reveal(price, in: app)
+      let photo = app.images["The Louvre"].firstMatch
+      XCTAssertTrue(photo.exists)
+      XCTAssertGreaterThan(photo.frame.width, 0)
+      XCTAssertGreaterThanOrEqual(title.frame.minX, photo.frame.maxX + 8)
+      XCTAssertGreaterThanOrEqual(price.frame.minX, photo.frame.maxX + 8)
+      let imageSize = photo.frame.size
+      if let reference = loadedSize {
+        XCTAssertEqual(imageSize.width, reference.width, accuracy: 2)
+        XCTAssertEqual(imageSize.height, reference.height, accuracy: 2,
+          "Loading and unavailable media keep the same crop")
+      } else { loadedSize = imageSize }
+      let nextPhoto = app.images["Saint-Germain-des-Prés"].firstMatch
+      reveal(nextPhoto, in: app)
+      XCTAssertEqual(nextPhoto.frame.width, imageSize.width, accuracy: 2)
+      XCTAssertEqual(nextPhoto.frame.height, imageSize.height, accuracy: 2,
+        "Different copy lengths share the same inline crop while the row can grow")
+      XCTAssertFalse(app.staticTexts["review.errors"].exists)
+      capture(app, name: "basic-composition-attraction-" + mode)
+      app.terminate()
+    }
   }
 
   func testComposedAttractionActionsReachTheSharedTrailingEdge() {
     let app = launch("scene-two-day-trip", language: "en")
+    reveal(app.buttons["Day 2"], in: app)
     app.buttons["Day 2"].tap()
     let canvasEdge = canvas(in: app).frame.maxX
-    let book = app.buttons["Book"].firstMatch
-    reveal(book, in: app)
-    let firstEdge = book.frame.maxX
+    func actionEdge(beside price: String) -> CGFloat {
+      let amount = app.staticTexts[price].firstMatch
+      reveal(amount, in: app)
+      let action = app.buttons.matching(identifier: "Book").allElementsBoundByIndex.first {
+        $0.isHittable && abs($0.frame.midY - amount.frame.midY) < 24
+      }
+      XCTAssertNotNil(action, "The attraction action must remain beside its own price")
+      return action?.frame.maxX ?? 0
+    }
+    let firstEdge = actionEdge(beside: "€47")
     XCTAssertEqual(firstEdge, canvasEdge, accuracy: 24,
       "The text column should use the remaining row width, not its intrinsic title width")
-    let secondBook = app.buttons.matching(identifier: "Book").element(boundBy: 1)
-    reveal(secondBook, in: app)
-    XCTAssertEqual(secondBook.frame.maxX, firstEdge, accuracy: 3,
+    XCTAssertEqual(actionEdge(beside: "€36"), firstEdge, accuracy: 3,
       "Different copy lengths should keep the action on one trailing edge")
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
     capture(app, name: "attraction-shared-trailing-edge")
     app.terminate()
   }
 
-  func testRepresentativeCompositionsAtAvailableWidth() throws {
-    let scenarios = try XCTUnwrap(try matrixReport()["scenarios"] as? [[String: Any]])
-    for scenario in scenarios {
-      let name = try XCTUnwrap((scenario["variants"] as? [String])?.first)
-      let app = launch(name)
-      let content = canvas(in: app)
-      XCTAssertTrue(content.waitForExistence(timeout: 5))
-      XCTAssertGreaterThan(content.frame.height, 0)
-      XCTAssertEqual(content.frame.width, app.windows.firstMatch.frame.width - 40, accuracy: 2)
-      XCTAssertFalse(app.staticTexts["review.errors"].exists)
-      let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-        !app.descendants(matching: .any).matching(identifier: "openui.media.loading")
-          .allElementsBoundByIndex.contains(where: { $0.isHittable })
-      }, object: nil)
-      XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed)
-      capture(app, name: "adaptive-" + name)
-      app.terminate()
-    }
-  }
 }

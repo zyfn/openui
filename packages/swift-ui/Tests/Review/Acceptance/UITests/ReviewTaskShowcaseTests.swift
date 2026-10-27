@@ -4,11 +4,36 @@ import XCTest
 final class ReviewTaskShowcaseTests: ReviewTestCase {
   @objc func testTwoDayOverviewAndDailyViewsKeepTheMapIndependent() {
     let app = launch("scene-two-day-trip", language: "en")
-    XCTAssertTrue(app.staticTexts["The two-day route"].exists)
-    XCTAssertTrue(app.staticTexts["Louvre → Saint-Germain"].exists)
-    app.buttons["Day 2"].tap()
-    XCTAssertFalse(app.staticTexts["The two-day route"].exists)
-    XCTAssertTrue(app.staticTexts["Day 2 · Tower and Seine"].exists)
+    let heading = app.staticTexts["Your two-day itinerary"]
+    let summary = app.staticTexts["Day 1 · Art and the Left Bank"]
+    XCTAssertTrue(app.images["openui.icon.move-right"].firstMatch.exists,
+      "Flight cards should expose a direction between departure and arrival")
+    reveal(heading, in: app)
+    XCTAssertTrue(summary.exists)
+    XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@",
+      "10:20 arrival, the Louvre in the afternoon")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@",
+      "18:30 return from CDG")).firstMatch.exists)
+    XCTAssertLessThan(app.staticTexts["Flights, each way"].frame.minY, heading.frame.minY)
+    XCTAssertLessThan(heading.frame.maxY, app.buttons["Overview"].frame.minY,
+      "The itinerary title should introduce the view switcher")
+    let firstDay = app.buttons["Day 1"]
+    reveal(firstDay, in: app)
+    firstDay.tap()
+    XCTAssertFalse(summary.exists)
+    XCTAssertTrue(heading.exists)
+    XCTAssertTrue(app.staticTexts["5 November · Art and the Left Bank"].exists)
+    XCTAssertTrue(app.staticTexts["10:20 arrival at CDG. Transfer to the Left Bank, leave bags and have lunch."].exists)
+    XCTAssertTrue(app.staticTexts["After dinner, check in: Left Bank · garden double"].exists)
+    XCTAssertTrue(app.staticTexts["Food & a pause"].exists)
+    capture(app, name: "trip-day-one-reading-hierarchy")
+    let secondDay = app.buttons["Day 2"]
+    reveal(secondDay, in: app)
+    secondDay.tap()
+    XCTAssertFalse(summary.exists)
+    XCTAssertTrue(app.staticTexts["6 November · Tower and Seine"].exists)
+    XCTAssertTrue(app.staticTexts["08:30 check out, arrange bag storage and head to the tower."].exists)
+    XCTAssertTrue(app.staticTexts["After lunch, collect bags and leave for CDG at 15:00 for the 18:30 flight."].exists)
     XCTAssertTrue(app.staticTexts["€47"].exists)
     let map = app.descendants(matching: .any).matching(identifier: "openui.map.canvas").firstMatch
     reveal(map, in: app)
@@ -16,8 +41,11 @@ final class ReviewTaskShowcaseTests: ReviewTestCase {
     let overview = app.buttons["Overview"]
     reveal(overview, in: app)
     overview.tap()
-    XCTAssertTrue(app.staticTexts["The two-day route"].exists)
-    XCTAssertFalse(app.staticTexts["Day 2 · Tower and Seine"].exists)
+    XCTAssertTrue(summary.exists)
+    XCTAssertFalse(app.staticTexts["6 November · Tower and Seine"].exists)
+    XCTAssertEqual(app.descendants(matching: .any)
+      .matching(identifier: "openui.card-block.composite.pager").count, 3,
+      "Two flight groups and one stay group remain shared across all day views")
     XCTAssertFalse(app.staticTexts["review.errors"].exists)
     app.terminate()
   }
@@ -25,6 +53,22 @@ final class ReviewTaskShowcaseTests: ReviewTestCase {
   func testSpendingRangeChangesChartAndTotalTogether() {
     let app = launch("scene-spending", language: "en")
     XCTAssertTrue(app.staticTexts["¥6600"].exists)
+    let chart = app.descendants(matching: .any)
+      .matching(identifier: "openui-chart-BarChart").firstMatch
+    reveal(chart, in: app)
+    let documentHeight = canvas(in: app).frame.height
+    chart.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.45)).tap()
+    let tooltip = app.descendants(matching: .any)
+      .matching(identifier: "openui-chart-inspection").firstMatch
+    XCTAssertTrue(tooltip.waitForExistence(timeout: 5))
+    XCTAssertEqual(canvas(in: app).frame.height, documentHeight, accuracy: 2,
+      "Chart details stay anchored instead of inserting another document row")
+    capture(app, name: "spending-anchored-chart-details")
+    let donut = app.descendants(matching: .any)
+      .matching(identifier: "openui-chart-PieChart").firstMatch
+    chart.swipeUp()
+    reveal(donut, in: app)
+    XCTAssertTrue(donut.isHittable, "Chart inspection must not trap document scrolling")
     let quarter = app.buttons["Three-month total"]
     reveal(quarter, in: app)
     quarter.tap()

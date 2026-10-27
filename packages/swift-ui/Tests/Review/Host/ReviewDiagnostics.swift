@@ -146,7 +146,6 @@ struct ReviewEvidenceFooter: View {
       Text(evidence.lastAction).accessibilityIdentifier("review.lastAction")
       Text(evidence.openedURL.isEmpty ? "No URL opened" : evidence.openedURL)
         .accessibilityIdentifier("review.opened-url")
-      Text(ReviewProjection.lastRowLabels(state.root)).accessibilityIdentifier("review.tableLastRow")
       Text(evidence.snapshot).font(.caption.monospaced()).accessibilityIdentifier("review.state")
       debugValue("review.state-current", ReviewEvidence.serialize(state.snapshotState()))
       debugValue("review.state-history", evidence.historyJSON)

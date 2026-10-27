@@ -2,21 +2,6 @@ import Foundation
 import OpenUISwiftUI
 import SwiftUI
 
-/// Review transport rate only. The SDK receives the same source chunks.
-enum ReviewPlaybackRate: Double, CaseIterable, Identifiable {
-  case half = 0.5, normal = 1, double = 2, quadruple = 4
-  var id: Double { rawValue }
-  var title: String {
-    switch self {
-    case .half: return "0.5×"
-    case .normal: return "1×"
-    case .double: return "2×"
-    case .quadruple: return "4×"
-    }
-  }
-  func delay(_ base: UInt64) -> UInt64 { UInt64(Double(base) / rawValue) }
-}
-
 /// A host-override check, not two SDK visual presets.
 enum ReviewVisualTheme: String, CaseIterable {
   case standard = "default"
@@ -62,10 +47,8 @@ struct ReviewConfiguration {
   let programID: String?
   let inspector: Bool
   let audit: Bool
-  let streamingCase: String?
-  let streamingAuto: Bool
   let exportFull: Bool
-  let instant: Bool
+  let playbackRate: ReviewPlaybackRate
   let display: ReviewDisplayOptions
 
   init(arguments: [String] = ProcessInfo.processInfo.arguments) {
@@ -76,10 +59,8 @@ struct ReviewConfiguration {
     programID = value("--case")
     inspector = arguments.contains("--inspect")
     audit = arguments.contains("--audit-matrix")
-    streamingCase = value("--stream-case")
-    streamingAuto = arguments.contains("--stream-auto")
     exportFull = arguments.contains("--export-full")
-    instant = arguments.contains("--instant")
+    playbackRate = value("--tps").flatMap(Int.init).flatMap(ReviewPlaybackRate.init(rawValue:)) ?? .normal
     display = ReviewDisplayOptions(
       language: ReviewLanguage(rawValue: value("--language")
         ?? UserDefaults.standard.string(forKey: "review.language") ?? "zh-Hans") ?? .chinese,
@@ -91,12 +72,11 @@ struct ReviewConfiguration {
 }
 
 enum ReviewPanel: String, Identifiable {
-  case scenarios, components, conditions, coverage, diagnostics, source
+  case scenarios, conditions, coverage, diagnostics, source
   var id: String { rawValue }
   var title: String {
     switch self {
     case .scenarios: return "场景目录"
-    case .components: return "组件目录"
     case .conditions: return "预览条件"
     case .coverage: return "覆盖与核心验收"
     case .diagnostics: return "运行诊断"

@@ -9,29 +9,15 @@ final class ReviewImageMonitor: ObservableObject {
 
 /// Review-app-only transport for offline image resources. The SDK renderer is unchanged.
 final class ReviewImageProtocol: URLProtocol, @unchecked Sendable {
-  private static let lock = NSLock()
-  private static var attempts: [String: Int] = [:]
   private var delayed: DispatchWorkItem?
-  private static let sourceImages = [
-    "https://dimg04.c-ctrip.com/images/100i0m000000dvuquABAF_W_640_10000.jpg?proc=autoorient": "detail.jpg",
-    "https://www.mct.gov.cn/whzx/whyw/201907/W020190716601079239508.jpg": "object.jpg",
-  ]
   override class func canInit(with request: URLRequest) -> Bool {
-    request.url?.host == "sdk-fixture.invalid" || sourceImages[request.url?.absoluteString ?? ""] != nil
-      || (request.url?.host == "www.google.com" && request.url?.path == "/s2/favicons"
-          && request.url?.query?.contains("domain=sdk-fixture.invalid") == true)
+    request.url?.host == "sdk-fixture.invalid"
   }
   override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
   override func startLoading() {
     let args = ProcessInfo.processInfo.arguments
     let mode = args.firstIndex(of: "--media-response").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
-    let key = request.url?.absoluteString ?? ""
-    Self.lock.lock()
-    Self.attempts[key, default: 0] += 1
-    let attempt = Self.attempts[key, default: 0]
-    Self.lock.unlock()
-    if mode == "unavailable" || (mode == "partial" && request.url?.lastPathComponent == "object.jpg")
-      || (mode == "retry" && attempt == 1) {
+    if mode == "unavailable" {
       client?.urlProtocol(self, didFailWithError: URLError(.cannotLoadFromNetwork))
       return
     }
@@ -42,8 +28,7 @@ final class ReviewImageProtocol: URLProtocol, @unchecked Sendable {
     } else { deliver() }
   }
   private func deliver() {
-    let filename = Self.sourceImages[request.url?.absoluteString ?? ""]
-      ?? request.url?.lastPathComponent ?? ""
+    let filename = request.url?.lastPathComponent ?? ""
     let asset = URL(fileURLWithPath: filename)
     guard let url = request.url,
       let file = Bundle.main.url(

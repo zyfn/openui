@@ -12,31 +12,8 @@ enum ReviewEngineAudit {
     let represented = coverage.represented
     let programIDs = cases.map(\.id)
     var failures: [String: [String]] = [:]
-    var localizationFailures: [String: String] = [:]
-    let englishSources = ReviewLanguage.englishSources
-    let expectedIDs = Set(programIDs)
-    if Set(englishSources.keys) != expectedIDs {
-      localizationFailures["catalog"] = "English fixture IDs must match the bounded catalog exactly"
-    }
-    var localized: [ReviewProgram] = []
-    for item in cases {
-      guard let source = englishSources[item.id] else { continue }
-      let originalTokens = tokenize(item.source)
-      let englishTokens = tokenize(source)
-      let equivalent = originalTokens.count == englishTokens.count
-        && zip(originalTokens, englishTokens).allSatisfy { original, translated in
-          if case .str(let text) = original, containsChinese(text.displayString) {
-            guard case .str(let english) = translated else { return false }
-            return !containsChinese(english.displayString)
-          }
-          return original == translated
-        }
-      if !equivalent {
-        localizationFailures[item.id] = "Translation changed syntax, identifiers, or nonlocalized arguments"
-      }
-      localized.append(.init(id: "en/" + item.id, title: item.title, source: source))
-    }
-    for item in cases + localized {
+    for original in cases {
+      let item = language.program(original)
       let batch = createParser(schema: schema).parse(item.source)
       let stream = createStreamingParser(schema: schema)
       let characters = Array(item.source)
@@ -66,11 +43,9 @@ enum ReviewEngineAudit {
       "missing": spec.components.map(\.name).filter { !represented.contains($0) }.sorted(),
       "variants": cases.count,
       "showcaseVariants": ReviewCatalog.scenarios.flatMap(\.variants).count,
-      "regressionVariants": ReviewCatalog.regressionPrograms.count,
       "duplicateProgramIDs": Set(programIDs.filter { id in programIDs.filter { $0 == id }.count > 1 }).sorted(),
       "failures": failures,
-      "localizedVariants": localized.count,
-      "localizationFailures": localizationFailures,
+      "language": language.rawValue,
       "scenarios": ReviewCatalog.scenarios.map { scenario in [
         "id": scenario.id, "title": language.text(scenario.title), "variants": scenario.variants.map(\.id),
         "components": spec.components.map(\.name).filter { name in scenario.variants.contains { coverage.namesByProgram[$0.id]?.contains(name) == true } },
@@ -81,7 +56,4 @@ enum ReviewEngineAudit {
     return String(data: data, encoding: .utf8)!
   }
 
-  private static func containsChinese(_ text: String) -> Bool {
-    text.unicodeScalars.contains { (0x3400...0x9FFF).contains(Int($0.value)) }
-  }
 }

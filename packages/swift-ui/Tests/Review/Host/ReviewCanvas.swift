@@ -42,9 +42,8 @@ struct ReviewCanvas: View {
           }
           VStack(alignment: .leading, spacing: 0) {
             CardSourceProvider(sources: sources) {
-              ReviewRenderedProgram(library: library, state: state, programID: programID)
+              OpenUIRenderer(state: state, registry: library.registry)
             }
-              .openUITableCellPolicy(programID.hasPrefix("scene-") ? .unrestricted : .readOnly)
               .openUITheme(display.theme.sdkTheme)
               .openUIResourceContext(OpenUIResourceContext(baseURL: URL(string: "https://sdk-fixture.invalid/")))
               .environment(\.openURL, OpenURLAction { url in
@@ -91,55 +90,5 @@ struct ReviewCanvas: View {
         }
       }
     }
-  }
-}
-
-private struct ReviewRenderedProgram: View {
-  let library: OpenUIComponentLibrary
-  @ObservedObject var state: OpenUIState
-  let programID: String
-
-  var body: some View {
-    if let root = state.root, ["review-table", "review-table-card"].contains(programID),
-      let element = ReviewProjection.find(.element(root), matching: { node in
-        programID == "review-table" ? node.typeName == "Table"
-          : node.typeName == "Card" && ReviewProjection.find(.element(node), matching: { $0.typeName == "Table" }) != nil
-      }) {
-      if programID == "review-table-card" {
-        RenderNode(element: element, registry: library.registry).environmentObject(state).font(.body)
-          .accessibilityElement(children: .contain).accessibilityIdentifier("review.tableCard")
-      } else {
-        RenderNode(element: element, registry: library.registry).environmentObject(state).font(.body)
-      }
-    } else { OpenUIRenderer(state: state, registry: library.registry) }
-  }
-}
-
-/// Saved-source diagnostics project evaluated nodes without rewriting data.
-enum ReviewProjection {
-  static func lastRowLabels(_ root: EvaluatedElement?) -> String {
-    guard let root, let table = find(.element(root), matching: { $0.typeName == "Table" }) else { return "[]" }
-    let labels = PropValue.children(table, "columns").compactMap { column -> String? in
-      guard case .array(let values) = PropValue.value(column, "data"), let last = values.last else { return nil }
-      switch last {
-      case .string(let value): return value.displayString
-      case .number(let value): return jsNumberString(value)
-      default: return nil
-      }
-    }
-    return String(data: (try? JSONSerialization.data(withJSONObject: labels)) ?? Data(), encoding: .utf8) ?? "[]"
-  }
-  static func find(_ value: Value, matching predicate: (EvaluatedElement) -> Bool) -> EvaluatedElement? {
-    switch value {
-    case .element(let node):
-      if predicate(node) { return node }
-      for (_, value) in node.props { if let match = find(value, matching: predicate) { return match } }
-    case .array(let values):
-      for value in values { if let match = find(value, matching: predicate) { return match } }
-    case .object(let fields):
-      for field in fields { if let match = find(field.value, matching: predicate) { return match } }
-    default: break
-    }
-    return nil
   }
 }

@@ -19,11 +19,7 @@ enum ReviewLanguage: String, CaseIterable {
   }()
 
   static let englishSources: [String: String] = {
-    guard let url = englishBundle.url(forResource: "Programs", withExtension: "json"),
-      let data = try? Data(contentsOf: url),
-      let sources = try? JSONDecoder().decode([String: String].self, from: data)
-    else { preconditionFailure("Missing English review programs") }
-    var localized = sources
+    var localized: [String: String] = [:]
     for id in ReviewScenePrograms.ids {
       localized[id] = ReviewScenePrograms.program(id, english: true)?.source
     }

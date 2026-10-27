@@ -14,6 +14,11 @@ func option(_ flag: String) -> String? {
   guard let index = args.firstIndex(of: flag), index + 1 < args.count else { return nil }
   return args[index + 1]
 }
+for obsolete in ["--review-program", "--review-examples", "--stream-program", "--baselines-dir"]
+where args.contains(obsolete) {
+  print("Removed review mode: \(obsolete). Use the six scenarios or the in-app Lang editor.")
+  exit(2)
+}
 let output =
   option("--output").map { URL(fileURLWithPath: $0).standardizedFileURL }
   ?? repository.appendingPathComponent("work/component-visual-review")
@@ -21,7 +26,7 @@ let prepareOnly = args.contains("--prepare-only")
 let buildStamp = String(Int(Date().timeIntervalSince1970))
 guard prepareOnly || option("--simulator") != nil else {
   print(
-    "Usage: swift packages/swift-ui/scripts/visual-tests.swift --simulator <UDID> [--output <directory>] [--suite adaptive|quick|full] [--only-testing <Class/method>] [--review-program <file.openui>] [--review-examples <file.json>]\nUse --prepare-only to generate a project for Xcode or XcodeBuildMCP."
+    "Usage: swift packages/swift-ui/scripts/visual-tests.swift --simulator <UDID> [--output <directory>] [--suite scenarios] [--only-testing <Class/method>]\nUse --prepare-only to generate a project for Xcode or XcodeBuildMCP."
   )
   exit(2)
 }
@@ -78,18 +83,22 @@ let hostFiles = ["Catalog", "Host", "Fixtures"].flatMap { swiftFiles(in: review.
   + [review.appendingPathComponent("Acceptance/EngineAudit.swift")]
 let testFiles = swiftFiles(in: review.appendingPathComponent("Acceptance/UITests"))
 var sourceReferences: [String] = []
+var sourceReferencesByPath: [String: String] = [:]
 func sourceBuilds(_ urls: [URL], target: String) -> [String] {
   urls.map { url in
-    let ref = object(
-      "file:" + url.path,
-      "isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = \(quote(url.path)); sourceTree = \"<absolute>\";"
-    )
-    sourceReferences.append(ref)
+    let ref: String
+    if let existing = sourceReferencesByPath[url.path] { ref = existing }
+    else {
+      ref = object("file:" + url.path,
+        "isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = \(quote(url.path)); sourceTree = \"<absolute>\";")
+      sourceReferencesByPath[url.path] = ref
+      sourceReferences.append(ref)
+    }
     return object("build:" + target + url.path, "isa = PBXBuildFile; fileRef = \(ref);")
   }
 }
 let hostSources = sourceBuilds(hostFiles, target: "host")
-let testSources = sourceBuilds(testFiles, target: "test")
+let testSources = sourceBuilds(testFiles + [review.appendingPathComponent("Host/ReviewPlaybackTransport.swift")], target: "test")
 let hostProduct = object(
   "host-product",
   "isa = PBXFileReference; explicitFileType = wrapper.application; path = ComponentVisualHost.app; sourceTree = BUILT_PRODUCTS_DIR;"
@@ -98,18 +107,6 @@ let testProduct = object(
   "test-product",
   "isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = ComponentVisualUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR;"
 )
-let baselineDirectory =
-  option("--baselines-dir").map { URL(fileURLWithPath: $0).standardizedFileURL }
-  ?? review.appendingPathComponent("Fixtures/Baselines")
-guard baselineDirectory.lastPathComponent == "Baselines", files.fileExists(atPath: baselineDirectory.path) else {
-  print("--baselines-dir must point to an existing Baselines directory")
-  exit(2)
-}
-let baselines = object(
-  "baseline-folder",
-  "isa = PBXFileReference; lastKnownFileType = folder; path = \(quote(baselineDirectory.path)); sourceTree = \"<absolute>\";"
-)
-let baselineBuild = object("baseline-build", "isa = PBXBuildFile; fileRef = \(baselines);")
 let images = object(
   "image-fixtures",
   "isa = PBXFileReference; lastKnownFileType = folder; path = \(quote(imageDirectory.path)); sourceTree = \"<absolute>\";"
@@ -124,15 +121,14 @@ let localizationBuild = object("review-localization-build", "isa = PBXBuildFile;
 // Replay a saved program without committing conversation data to the SDK.
 var reviewResources: [String] = []
 var reviewReferences: [String] = []
-if let path = option("--review-program") {
-  let program = output.appendingPathComponent("ReviewProgram.openui")
-  try Data(contentsOf: URL(fileURLWithPath: path)).write(to: program, options: .atomic)
-  let reference = object(
-    "review-program", "isa = PBXFileReference; lastKnownFileType = text; path = \(quote(program.path)); sourceTree = \"<absolute>\";")
-  reviewReferences.append(reference)
-  reviewResources.append(object("review-program-build", "isa = PBXBuildFile; fileRef = \(reference);"))
+let tokenStreams = output.appendingPathComponent("ReviewTokenStreams.json")
+if !files.fileExists(atPath: tokenStreams.path) {
+  try Data(#"{"encoding":"o200k_base","byteLengths":{}}"#.utf8).write(to: tokenStreams)
 }
-// Boundary programs are test resources, outside the finite design catalog.
+let tokensReference = object("token-streams", "isa = PBXFileReference; lastKnownFileType = text.json; path = \(quote(tokenStreams.path)); sourceTree = \"<absolute>\";")
+reviewReferences.append(tokensReference)
+reviewResources.append(object("token-streams-build", "isa = PBXBuildFile; fileRef = \(tokensReference);"))
+// The bilingual two-day task sources are the only bundled program resources.
 var additionalPrograms: [[String: Any]] = []
 let boundaryPrograms = review.appendingPathComponent("Fixtures/Programs")
 if files.fileExists(atPath: boundaryPrograms.path) {
@@ -148,10 +144,6 @@ if files.fileExists(atPath: boundaryPrograms.path) {
     additionalPrograms.append(example)
   }
 }
-if let path = option("--review-examples") {
-  let supplied = try JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: path))) as! [[String: Any]]
-  additionalPrograms += supplied
-}
 if !additionalPrograms.isEmpty {
   let examples = output.appendingPathComponent("ReviewExamples.json")
   try JSONSerialization.data(withJSONObject: additionalPrograms, options: [.sortedKeys]).write(to: examples)
@@ -159,16 +151,9 @@ if !additionalPrograms.isEmpty {
   reviewReferences.append(reference)
   reviewResources.append(object("review-examples-build", "isa = PBXBuildFile; fileRef = \(reference);"))
 }
-if let path = option("--stream-program") {
-  let program = output.appendingPathComponent("StreamProgram.openui")
-  try Data(contentsOf: URL(fileURLWithPath: path)).write(to: program, options: .atomic)
-  let reference = object("stream-program", "isa = PBXFileReference; lastKnownFileType = text; path = \(quote(program.path)); sourceTree = \"<absolute>\";")
-  reviewReferences.append(reference)
-  reviewResources.append(object("stream-program-build", "isa = PBXBuildFile; fileRef = \(reference);"))
-}
 let sourceGroup = object(
   "sources",
-  "isa = PBXGroup; name = Sources; children = \(array(sourceReferences + [baselines, images, localization] + reviewReferences)); sourceTree = \"<group>\";"
+  "isa = PBXGroup; name = Sources; children = \(array(sourceReferences + [images, localization] + reviewReferences)); sourceTree = \"<group>\";"
 )
 let productGroup = object(
   "products",
@@ -212,7 +197,7 @@ let frameworkPhase = object(
 )
 let resourcePhase = object(
   "test-resources",
-  "isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = \(array([baselineBuild, testImageBuild] + reviewResources)); runOnlyForDeploymentPostprocessing = 0;"
+  "isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = \(array([testImageBuild] + reviewResources)); runOnlyForDeploymentPostprocessing = 0;"
 )
 let hostResources = object(
   "host-resources",
@@ -339,10 +324,8 @@ var command = [
   output.appendingPathComponent("DerivedData").path, "-resultBundlePath", result.path,
   "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=NO",
 ]
-if args.contains("--phone-only") {
-  command.append("SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG SDK_PHONE_ACCEPTANCE")
-}
-let classPattern = try NSRegularExpression(pattern: #"final\s+class\s+(\w+)\s*:\s*ReviewTestCase"#)
+command.append("SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG SDK_PHONE_ACCEPTANCE")
+let classPattern = try NSRegularExpression(pattern: #"final\s+class\s+(\w+)\s*:\s*(?:ReviewTestCase|XCTestCase)"#)
 let methodPattern = try NSRegularExpression(pattern: #"\bfunc\s+(test[A-Za-z0-9_]+)\s*\("#)
 var discoveredTests = Set<String>()
 for file in testFiles {
@@ -355,39 +338,10 @@ for file in testFiles {
   }
 }
 var expectedTests = discoveredTests
-var skippedTests = Set<String>()
-if args.contains("--phone-only") {
-  for test in ["ReviewMapTests/testNativeMapAccessibleTextKeepsMarkersVisible", "ReviewLayoutTests/testAccessibleTextRemainsScrollable"] {
-    expectedTests.remove(test)
-    skippedTests.insert(test)
-    command.append("-skip-testing:ComponentVisualUITests/" + test)
-  }
-}
-var requestedTests = option("--only-testing")
-if let suite = option("--suite") ?? (requestedTests == nil ? "adaptive" : nil) {
-  guard requestedTests == nil, ["adaptive", "quick", "full"].contains(suite) else {
-    print("Use --suite adaptive|quick|full or --only-testing, not both")
-    exit(2)
-  }
-  if suite == "adaptive" {
-    requestedTests = [
-      "ReviewAdaptiveLayoutTests",
-      "ReviewFullLibraryParityTests",
-      "ReviewStandardPresentationTests",
-      "ReviewLayoutTests/testNativeCardChildrenReflowWhenLayoutAndCopyChange",
-      "ReviewMapTests/testDefaultPlaceCardsUseSuppliedFactsAndSynchronizeWithIconMarkers",
-      "ReviewMapTests/testNativeMapMarkerSelectionAndExpansion",
-      "ReviewResourceAndEmbeddedTests/testSVGAndWebContentRenderInTheExistingMediaComposition",
-    ].joined(separator: ",")
-  }
-  if suite == "quick" {
-    requestedTests = [
-      "testCatalogAndEngineIntegrity",
-      "testRepresentativeAdaptiveCompositions",
-      "testScenarioNavigationAndVariants",
-      "testDisplayConditionsPreserveProgramState",
-    ].map { "ReviewCatalogTests/" + $0 }.joined(separator: ",")
-  }
+let requestedTests = option("--only-testing")
+if let suite = option("--suite"), suite != "scenarios" || requestedTests != nil {
+  print("Use --suite scenarios or --only-testing, not both")
+  exit(2)
 }
 if let only = requestedTests {
   let selections = only.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter
@@ -410,7 +364,6 @@ if let only = requestedTests {
     command.append("-only-testing:ComponentVisualUITests/" + selection)
   }
 }
-expectedTests.subtract(skippedTests)
 print("Expected native tests: \(expectedTests.sorted().joined(separator: ", "))")
 // Stable system chrome on the selected test simulator. This is simulator
 // configuration, not modification of captured pixels.

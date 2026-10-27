@@ -1,6 +1,7 @@
 import OpenUILang
 import OpenUISwiftUI
 import SwiftUI
+import Combine
 
 @MainActor
 struct ReviewWorkspace: View {
@@ -8,9 +9,11 @@ struct ReviewWorkspace: View {
   @Environment(\.horizontalSizeClass) private var sizeClass
   private let library: OpenUIComponentLibrary
   private let programs: [ReviewProgram]
-  private let coverage: ReviewCoverage
   private let configuration: ReviewConfiguration
-  @StateObject private var state: OpenUIState
+  // The canvas observes render updates. The surrounding navigation needs only
+  // completion changes, so a token update does not rebuild an open tools menu.
+  @State private var state: OpenUIState
+  @State private var isComplete = false
   @StateObject private var evidence = ReviewEvidence()
   @State private var selected: String
   @State private var display: ReviewDisplayOptions
@@ -21,6 +24,8 @@ struct ReviewWorkspace: View {
   @State private var purchasePreview: ReviewPurchasePreview?
   @State private var playbackGeneration = 0
   @State private var playbackRate = ReviewPlaybackRate.normal
+  @State private var playbackControl = ReviewPlaybackRateControl()
+  @State private var playbackError: String?
 
   private var sample: ReviewProgram? { programs.first { $0.id == selected } }
   private var program: ReviewProgram? {
@@ -40,32 +45,25 @@ struct ReviewWorkspace: View {
   init(library: OpenUIComponentLibrary, configuration: ReviewConfiguration) {
     self.library = library
     self.configuration = configuration
-    var programs = ReviewCatalog.programs + ReviewCatalog.importedPrograms()
-    if let url = Bundle.main.url(forResource: "ReviewProgram", withExtension: "openui"),
-      let source = try? String(contentsOf: url, encoding: .utf8) {
-      programs += ["review", "review-table", "review-table-card"].map {
-        ReviewProgram(id: $0, title: "原样回放", source: source)
-      }
-    }
+    let programs = ReviewCatalog.programs
     self.programs = programs
-    self.coverage = ReviewCoverage(spec: library.toSpec(), programs: programs)
     let requestedID = configuration.programID.flatMap { $0.isEmpty ? nil : $0 } ?? "scene-day-trip"
     guard let selected = programs.first(where: { $0.id == requestedID }) else {
       preconditionFailure("Unknown review program: \(requestedID). Prepare optional replay resources before selecting them.")
     }
     let state = OpenUIState(schema: library.library.toSchema())
-    if configuration.instant {
-      state.setSource(configuration.display.language.program(selected).source)
-    }
-    _state = StateObject(wrappedValue: state)
+    _state = State(initialValue: state)
+    _isComplete = State(initialValue: state.isComplete)
     _selected = State(initialValue: selected.id)
     _display = State(initialValue: configuration.display)
+    _playbackRate = State(initialValue: configuration.playbackRate)
+    _playbackControl = State(initialValue: ReviewPlaybackRateControl(configuration.playbackRate))
   }
 
   var body: some View {
     HStack(spacing: 0) {
       if sizeClass == .regular {
-        ReviewScenarioList(programs: programs, selected: selected, select: select)
+        ReviewScenarioList(selected: selected, select: select)
           .frame(width: 250)
         Divider()
       }
@@ -73,8 +71,8 @@ struct ReviewWorkspace: View {
         ReviewHeader(scenario: scenario, program: program, position: position,
           display: display, move: move, toggleTheme: toggleTheme,
           toggleBubble: toggleBubble, toggleLanguage: toggleLanguage, isManual: manualSource != nil,
-          isPlaying: manualSource == nil && !state.isComplete,
-          playbackRate: playbackRate, setPlaybackRate: { playbackRate = $0 },
+          isPlaying: manualSource == nil && !isComplete,
+          playbackRate: playbackRate, setPlaybackRate: { playbackRate = $0; playbackControl.set($0) },
           replay: replay, restoreSample: restoreSample, open: open)
         Divider()
         ReviewCanvas(library: library, state: state, evidence: evidence,
@@ -82,6 +80,10 @@ struct ReviewWorkspace: View {
           display: display, inspector: configuration.inspector,
           sources: program?.sources ?? [], request: program?.request,
           exportFull: configuration.exportFull)
+        if let playbackError {
+          Text(playbackError).font(.footnote).foregroundStyle(.red).padding()
+            .accessibilityIdentifier("review.transport-error")
+        }
       }
     }
     .background(Color(uiColor: .systemBackground))
@@ -115,6 +117,7 @@ struct ReviewWorkspace: View {
         .accessibilityElement(children: .contain).accessibilityIdentifier("review.panel")
     }
     .onAppear(perform: connectEvidence)
+    .onReceive(state.$isComplete.removeDuplicates()) { isComplete = $0 }
     .task(id: playbackGeneration) { await play() }
     .onChange(of: display.language) { _ in reloadLocalizedSample() }
     .alert(item: $purchasePreview) { preview in
@@ -127,8 +130,7 @@ struct ReviewWorkspace: View {
 
   @ViewBuilder private func panelContent(_ item: ReviewPanel) -> some View {
     switch item {
-    case .scenarios: ReviewScenarioList(programs: programs, selected: selected, select: select)
-    case .components: ReviewComponentBrowser(coverage: coverage, programs: programs, select: select)
+    case .scenarios: ReviewScenarioList(selected: selected, select: select)
     case .conditions: ReviewConditions(display: $display)
     case .coverage: ReviewCoveragePanel(library: library)
     case .diagnostics: ReviewDiagnostics(state: state, evidence: evidence)
@@ -183,12 +185,7 @@ struct ReviewWorkspace: View {
     evidence.reset()
     purchasePreview = nil
     state.reset()
-    if configuration.instant {
-      playbackGeneration += 1
-      state.setSource(item.source)
-    } else {
-      playbackGeneration += 1
-    }
+    playbackGeneration += 1
     evidence.beginExecution(source: item.source, values: state.snapshotState(),
       revision: state.sourceRevision, inspect: configuration.inspector)
   }
@@ -199,29 +196,44 @@ struct ReviewWorkspace: View {
     state.reset()
     evidence.beginExecution(source: program.source, values: state.snapshotState(),
       revision: state.sourceRevision, inspect: configuration.inspector)
-    if configuration.instant || manualSource != nil {
+    if manualSource != nil {
       playbackGeneration += 1
       state.setSource(program.source)
     }
     else { playbackGeneration += 1 }
   }
   private func play() async {
-    guard !configuration.instant, manualSource == nil,
+    guard manualSource == nil,
       let source = program?.source else { return }
     let generation = playbackGeneration
+    playbackError = nil
     // Let the request occupy the conversation before its answer starts. The
-    // raw source then arrives in ordinary bounded transport chunks; no syntax
-    // or component name changes how the SDK receives it.
+    // raw source then arrives on an independent token-paced network clock.
     try? await Task.sleep(nanoseconds: 700_000_000)
-    let chunks = ReviewPlaybackTransport.chunks(source)
-    assert(chunks.map(\.text).joined() == source)
-    for chunk in chunks {
-      guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
-      state.push(chunk.text)
-      try? await Task.sleep(nanoseconds: playbackRate.delay(chunk.delay))
-    }
     guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
-    state.complete()
+    guard let lengths = ReviewTokenStreams.bundled?.lengths(for: source),
+      let transport = try? ReviewPlaybackTransport(source: source, tokenByteLengths: lengths) else {
+      playbackError = display.language.text("回放 token 数据缺失，请重新生成测试资源。")
+      return
+    }
+    let control = playbackControl
+    let sender = Task.detached(priority: .userInitiated) { await transport.produce(rate: control) }
+    defer { sender.cancel() }
+    var received = ""
+    while !Task.isCancelled, generation == playbackGeneration, manualSource == nil {
+      let batch = await transport.take()
+      guard !Task.isCancelled, generation == playbackGeneration, manualSource == nil else { return }
+      if !batch.text.isEmpty {
+        received += batch.text
+        state.push(batch.text)
+      }
+      if batch.complete {
+        assert(Data(received.utf8) == Data(source.utf8))
+        state.complete()
+        return
+      }
+      try? await Task.sleep(nanoseconds: 20_000_000)
+    }
   }
   private func move(_ step: Int) {
     let scenarios = ReviewCatalog.scenarios
@@ -246,23 +258,6 @@ struct ReviewWorkspace: View {
       purchasePreview = ReviewPurchasePreview(event: event)
     }
     state.onActionEvaluation = configuration.inspector ? { [evidence] in evidence.recordEvaluation($0) } : nil
-  }
-}
-
-/// Review-only transport timing. Every delivered byte is appended to the one
-/// original program through OpenUIState.push; no synthetic UI text is shown.
-enum ReviewPlaybackTransport {
-  struct Chunk {
-    let text: String
-    let delay: UInt64
-  }
-
-  static func chunks(_ source: String) -> [Chunk] {
-    let characters = Array(source)
-    return stride(from: 0, to: characters.count, by: 256).map { offset in
-      Chunk(text: String(characters[offset..<min(offset + 256, characters.count)]),
-        delay: 90_000_000)
-    }
   }
 }
 

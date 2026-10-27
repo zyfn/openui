@@ -122,12 +122,12 @@ enum ReviewScenePrograms {
           CompositeCardBlock([
             CompositeCardItem("light",
               ImageTextLarge("/camera-light.jpg","Nikon Z50 · NIKKOR Z DX 16–50mm","Nikon Z50 · 16–50mm",null,true),
-              [TagBlock([\(q("优先推荐", "Recommended")),"DX / APS-C","395 g"],"sm"),Text("text",\(q("20.9MP 机身配可收纳的 16–50mm 变焦，适合一天只带一支镜头。", "20.9MP body with a retracting 16–50mm zoom: one lens for an unhurried day out.")),null,"text","xs")],
+              [TagBlock([\(q("优先推荐", "Recommended")),"DX / APS-C","395 g"],"sm"),Text("text",\(q("20.9MP 机身配可收纳的 16–50mm 变焦，适合一天只带一支镜头。", "20.9MP body with a retracting 16–50mm zoom: one lens for an unhurried day out.")),null,"text","sm")],
               {price:BoldText("number","¥5,200",null,"text","lg"),button:Button(\(q("查看商品", "View product")),@OpenUrl("https://www.nikonusa.com/p/z-50/1632"),"primary",null,"small")}
             ),
             CompositeCardItem("portrait",
               ImageTextLarge("/camera-dark.jpg","Sony α6400 · E PZ 16–50mm","Sony α6400 · 16–50mm",null,true),
-              [TagBlock(["APS-C","403 g",\(q("快速对焦", "Fast autofocus"))],"sm"),Text("text",\(q("24.2MP 机身与电动变焦；更适合想拍运动中的人物与街景。", "24.2MP body and power zoom, with strong autofocus for moving people and street scenes.")),null,"text","xs")],
+              [TagBlock(["APS-C","403 g",\(q("快速对焦", "Fast autofocus"))],"sm"),Text("text",\(q("24.2MP 机身与电动变焦；更适合想拍运动中的人物与街景。", "24.2MP body and power zoom, with strong autofocus for moving people and street scenes.")),null,"text","sm")],
               {price:BoldText("number","¥6,800",null,"text","lg"),button:Button(\(q("查看商品", "View product")),@OpenUrl("https://electronics.sony.com/imaging/interchangeable-lens-cameras/aps-c/p/ilce6400-b"),"primary",null,"small")}
             )
           ],"carousel",true),
@@ -181,7 +181,7 @@ enum ReviewScenePrograms {
         total=food+transport+home+other
         body=Stack([
           TextContent(\(q("10 月比 9 月多花 ¥800；住房没有变化，增量来自餐饮、交通和其他消费。", "October was ¥800 above September. Housing stayed flat; food, transport and other spending account for the increase."))),
-          TagBlock([\(q("8–10 月", "Aug–Oct")),\(q("3 个月", "3 months")),\(q("4 类支出", "4 categories"))],"sm"),
+          TagBlock([\(q("8–10 月", "Aug–Oct")),\(q("3 个月", "3 months")),\(q("4 类支出", "4 categories"))],"md"),
           InlineHeader(\(q("三个月的变化", "Three months in view")),\(q("点选数据查看分类金额", "Tap a point to inspect category amounts"))),
           BarChart([
             \(q("8 月", "Aug")),
@@ -229,19 +229,19 @@ enum ReviewScenePrograms {
         perPerson=total/6
         body=Stack([
           TextContent(\(q("11 月 7 日 · 周六 17:00–21:00", "7 November · Saturday 17:00–21:00")),"small"),
-          TagBlock([\(q("6 人", "6 people")),\(q("4 小时", "4 hours")),\(q("上限 ¥260/人", "Up to ¥260 each"))],"sm"),
+          TagBlock([\(q("6 人", "6 people")),\(q("4 小时", "4 hours")),\(q("上限 ¥260/人", "Up to ¥260 each"))],"md"),
           InlineHeader(\(q("选一个能坐下来的地方", "A place to settle in"))),
           CompositeCardBlock([
             CompositeCardItem(
               "offer-0",
               ImageTextLarge("/venue-daylight.jpg",\(q("临窗共享长桌", "Window-side shared table")),\(q("临窗共享长桌", "Window-side shared table")),null,true),
-              [TagBlock([\(q("自然采光", "Natural light")), \(q("共享长桌", "Shared table"))],"sm"),Text("text",\(q("六人共享长桌，可自带餐食。", "A shared table for six; bring your own food.")),null,"text","xs")],
+              [TagBlock([\(q("自然采光", "Natural light")), \(q("共享长桌", "Shared table"))],"sm"),Text("text",\(q("六人共享长桌，可自带餐食。", "A shared table for six; bring your own food.")),null,"text","sm")],
               {price:BoldText("number","¥480",null,"text","lg"),button:Button(\(q("预订", "Book")),Action([@Set($venue,"studio"),@ToAssistant(\(q("预览购买：六人长桌空间四小时", "Preview purchase: Four-hour table space for six")),{reviewPurchase:true,item:\(q("六人长桌空间四小时", "Four-hour table space for six")),price:"¥480"})]),"primary",null,"small")}
             ),
             CompositeCardItem(
               "offer-1",
               ImageTextLarge("/venue-private.jpg",\(q("安静独立包间", "Quiet private room")),\(q("安静独立包间", "Quiet private room")),null,true),
-              [TagBlock([\(q("独立包间", "Private room")), \(q("安静私密", "Quiet and private"))],"sm"),Text("text",\(q("六人独立空间，适合安静聊天。", "A private space for six, with room to talk.")),null,"text","xs")],
+              [TagBlock([\(q("独立包间", "Private room")), \(q("安静私密", "Quiet and private"))],"sm"),Text("text",\(q("六人独立空间，适合安静聊天。", "A private space for six, with room to talk.")),null,"text","sm")],
               {price:BoldText("number","¥720",null,"text","lg"),button:Button(\(q("预订", "Book")),Action([@Set($venue,"private"),@ToAssistant(\(q("预览购买：六人独立空间四小时", "Preview purchase: Four-hour private space for six")),{reviewPurchase:true,item:\(q("六人独立空间四小时", "Four-hour private space for six")),price:"¥720"})]),"primary",null,"small")}
             )
           ],"carousel",true),
@@ -280,7 +280,7 @@ enum ReviewScenePrograms {
         heading=TextContent(headline,"large-heavy")
         headline=\(q("良渚，藏在玉里的秩序", "Liangzhu, a world held in jade"))
         body=Stack([
-          TagBlock([\(q("新石器时代", "Neolithic")),\(q("玉器", "Jade")),\(q("馆藏阅读", "Collection study"))],"sm"),
+          TagBlock([\(q("新石器时代", "Neolithic")),\(q("玉器", "Jade")),\(q("馆藏阅读", "Collection study"))],"md"),
           TextContent(\(q("看形状、比工艺，再区分证据与推断。", "Look at form and workmanship, then separate evidence from interpretation."))),
           ImageGallery([
             {src:"/liangzhu-cong.jpg",alt:\(q("玉琮全貌", "Cong · full object")),details:\(q("玉琮 · 约公元前 2400 年", "Cong · about 2400 BCE"))},

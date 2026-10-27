@@ -1,186 +1,58 @@
 # Native SDK review
 
-This is a review application for the installed SwiftUI component library.
-The host and tests use the SDK renderer and bundled lang-core directly. They do
-not maintain another component schema, parser or business-specific renderer.
+Six authored personal-agent tasks share one native review host:
 
-## Six task scenes
+| Task | Main composition and interaction |
+| --- | --- |
+| One day in Paris | Place rows, booking links, independent map and budget |
+| Two days in Paris | Flight and hotel carousels, overview/day tabs, map and budget |
+| Choose a camera | Product cards, comparison and product links |
+| Spending review | Stacked bars, category shares and period selection |
+| An evening together | Venue cards, selection and shared cost |
+| Learn through objects | Image gallery, linked visual cards and comparison chart |
 
-Each page completes one personal-agent task, rather than demonstrating a
-component category. The six authored examples are a one-day visit, a two-day
-trip with one hotel night, a camera purchase decision, a spending review,
-a gathering for six and an illustrated introduction to Liangzhu jades.
+The request appears first. Saved Lang bytes then arrive on an independent,
+configurable token clock and go through `OpenUIState.push` and `complete`.
+The public `OpenUIRenderer` renders the complete root. The host adds scrolling,
+navigation, an editor and diagnostics; it never extracts or rearranges SDK nodes.
+These are authored examples, not live model responses or live inventory.
 
-Travel times, flights, accommodation, products, gathering venues and prices are
-explicitly illustrative. Stay choices update the two-day total;
-camera choices update the remaining budget; venue choices update the gathering
-total and per-person cost. Product candidates use the official
-`CompositeCardBlock` / `CompositeCardItem` structure: an image header,
-descriptive body and price/button footer. Cameras and hotels use peeking
-carousels; venue candidates use a responsive grid. A single offer uses `Card`
-rather than duplicating an item to satisfy a CardBlock's two-item minimum.
-Simple itinerary rows retain `ListBlock` / `ListItem`. The one-day itinerary is
-a fixed authored plan without the former walk/cruise switch. Outbound and
-return flights remain separate cards with dates, local times, durations,
-one-way prices for two and independent booking actions.
-The two one-way prices sum to the flight allocation in the trip budget.
-Their standard `ToAssistant` action is intercepted only
-by the review host to show a preview alert. Selecting a stay, camera or venue
-also updates the ordinary Lang state used by its budget. No order is created and no commerce
-component, action dialect or scenario-specific renderer is added to the SDK.
+## Files
 
-The history explanation uses museum records, labeled photographs and linked
-sources. It distinguishes a Neolithic cong from a Qing archaistic object;
-it is an authored example of organizing researched material, not a live search.
-Photograph provenance is in `Fixtures/Images/paris-sources.json` and
-`Fixtures/Images/learning-sources.json`; commercial-offer illustrations are
-documented in `Fixtures/Images/task-photos.json`. Flight rows use routes and local
-departure/arrival times without a photo. Travel budgets
-combine interactive charts with a short breakdown. Each page combines SDK components and has no
-secondary example picker. The header contains scene navigation and the source
-editor; language, theme, bubble and diagnostics controls are in the tools menu.
-The original 25 fixtures remain available to targeted regressions and component
-inspection without appearing as extra scene-directory entries.
+- `Catalog/`: the six task definitions.
+- `Host/`: one workspace, request bubble, TPS replay, manual Lang input and diagnostics.
+- `Fixtures/`: licensed offline images and the two-day task data/source generator.
+- `Acceptance/`: six-task batch/streaming audit and native tests of these tasks.
+- `Tools/`: offline token-boundary preparation for the same six sources.
 
-All of this code is compiled into the review app, not OpenUISwiftUI. The SDK
-contains no scene selector, language toggle, mock data or test-only rendering.
+The older component catalog, 25 variants, standalone query/streaming pages,
+external projection fixtures and quick/full/stress test matrices have been removed.
+Parser, protocol and renderer unit tests remain in their package test targets.
+The six tasks do not claim exhaustive component coverage.
 
-## Responsibilities
+## Prepare and run
 
-```text
-Review/
-├── Catalog/       Composition families, variants and registration coverage
-│   └── Programs/  Ordinary OpenUI Lang programs
-├── Host/          Preview, scene navigation, source editor and diagnostics
-├── Acceptance/    Core audit and Swift/XCUITest interaction assertions
-│   └── UITests/   Shared support and focused behavioral suites
-└── Fixtures/      Offline resources, boundary programs and approved baselines
-```
-
-`Catalog` obtains component names and parameters from the installed LibrarySpec.
-Tokenized references establish registration coverage. An external replay does not
-increase the fixed matrix's coverage. Data helpers are covered within their real
-parent components rather than displayed as standalone views.
-
-`Host` owns one `OpenUIState` per workspace. Changing a program replaces that state;
-changing width, theme, appearance or the surrounding bubble preserves the current
-program and its local interactions. The header keeps scene names, previous/next
-navigation and variant selection accessible. Component search, source, conditions
-and diagnostics have separate entries. The bubble toggle only simulates a generic
-chat host surface and is not a component or protocol field.
-
-The tools menu switches the host and built-in examples between Simplified
-Chinese and English. Foundation bundle localization supplies host copy;
-English samples are ordinary DSL resources, not a renderer translation layer.
-Changing language restarts the selected catalog sample. Manual drafts and imported
-replays retain their exact source. The language choice is remembered by the host;
-`--language zh-Hans|en` overrides it for reproducible runs.
-
-Advanced preview conditions offer available width, 320pt and 240pt.
-The default fills the available content area with the host's 20pt reading margins.
-The opt-in full stress matrix alternates width constraints. Its narrow
-stress captures should not be presented as the default full-width appearance.
-
-The source editor retains an in-memory draft separately from executed source.
-Run submits the draft unchanged to the SDK. A single enclosing `openui-lang` fence
-may be removed, but mixed prose is not searched for a program or rewritten. Core
-errors are displayed without falling back to a sample. Cancel preserves the draft
-and live state. Restoring a sample does not delete a manual draft.
-
-## Bounded matrix
-
-| Family | Variants | Representative boundaries |
-| --- | ---: | --- |
-| Adaptive layout | 3 | Direction, wrapping, intrinsic size and nested media |
-| Reading and media | 4 | Summaries, gallery, loading, failure, retry and return |
-| Cards and actions | 3 | Hierarchy, density, explicit sizes and click ownership |
-| Input and feedback | 4 | Choices, validation, dates, draft/save and presentations |
-| Mixed tables | 2 | Component cells, measured rows and horizontal scrolling |
-| Charts and metrics | 3 | Trends, shares, distributions and interactive details |
-| Content and navigation | 3 | Hierarchy, grouping, tabs, steps and rich text |
-| Spatial selection | 3 | Default/custom map cards, routes, tabs and shared selection |
-
-Eight families contain 25 variants. Empty/single/multiple media, content changes
-and selections are exercised by updating the same programs. Container constraints
-are test inputs, not new SDK breakpoints. Boundary programs remain outside this
-count so negative coverage does not inflate the visual catalog.
-
-## Run
-
-Use a dedicated simulator; do not share it with another acceptance run.
+Run from the repository root, using a dedicated iPhone simulator:
 
 ```sh
-swift packages/swift-ui/scripts/visual-tests.swift \
-  --simulator <dedicated-simulator-UDID> --suite full --phone-only \
-  --package-tests --output work/component-review/phone
+swift packages/swift-ui/scripts/visual-tests.swift --prepare-only --output ../openui-tests
+python3 -m venv ../openui-tests/.review-tokens-venv
+../openui-tests/.review-tokens-venv/bin/pip install -r packages/swift-ui/scripts/review-token-requirements.txt
+swift build --package-path packages/swift-ui
+../openui-tests/.review-tokens-venv/bin/python packages/swift-ui/scripts/review-tokens.py --output ../openui-tests
+swift packages/swift-ui/scripts/visual-tests.swift --simulator <UDID> --suite scenarios --output ../openui-tests
 ```
 
-| Option | Meaning |
-| --- | --- |
-| `--suite quick` | Core integrity, representative families and workspace controls |
-| `--suite full` | All selected native methods and all 25 composition variants |
-| `--only-testing Class/method` | A focused regression; mutually exclusive with suite |
-| `--phone-only` | Phone acceptance without wide-screen or broad large-text sweeps |
-| `--package-tests` | Run the package-level checks too |
-| `--prepare-only` | Generate a project for Xcode or XcodeBuildMCP |
-| `--baselines-dir path/Baselines` | Compare with a versioned native screenshot reference set |
-| `--stream-program file.openui` | Replay an unchanged saved streaming source |
-| `--review-program file.openui` | Inspect an external program and its table geometry |
-| `--review-examples file.json` | Add external exported guidance examples |
+Open the generated `ComponentVisualReview.xcodeproj` to explore the same host.
+All six scenes default to SDK streaming. The tools menu controls 20/40/80/160/320
+TPS and retains manual language, bubble and appearance options. Automated acceptance
+uses phone available width, normal text and the default SDK theme. There is no
+wide-screen, large-text, language or theme matrix.
 
-The host accepts `--case`, `--language zh-Hans|en`, `--theme default|accent`, `--bubble`,
-`--width available|standard|narrow`, `--appearance light|dark` and `--large-text`.
-These flags affect the review host only. External-source methods explicitly skip
-when their optional input is absent; report these skips with the acceptance scope.
-
-Each authored task includes its corresponding user request above the response.
-Launch the host with `--case <scene-id> --language en --export-full` to export
-the complete default state to its Documents/Exports directory. The export keeps
-the source, user request, original native window captures and an offset manifest,
-then joins the visible content strips into `full-content.png`. It does not resize
-SDK layouts or retouch pixels. Other tab/carousel selections require separate
-captures. These authored examples are not live Agent acceptance evidence.
-
-## Default acceptance scope
-
-The default suite is `--suite adaptive`: an iPhone at its available container
-width, normal text and the SDK theme, with representative combinations and key
-interactions. It does not exercise language switching, bubble variants, theme
-switching or fixed-width variants. These controls remain available in the manual
-review host. Older stress cases are opt-in through `--suite full` or
-`--only-testing`; they are not part of the default acceptance gate.
-
-## Assertions and evidence
-
-- **Core integrity:** every variant has a valid complete root; the final chunked
-  result agrees with the shared streaming/batch behavior expected by the fixture.
-  Both language versions are checked. Shared-core tokens must match exactly except
-  for translated Chinese string literals, preserving names, arguments and state IDs.
-- **Composition:** all installed registrations occur in valid containing programs;
-  layout measures actual content and keeps the final table row reachable.
-- **Interaction:** one action writes state once, async results respect source
-  replacement, and view identities survive appends and appearance changes.
-- **Streaming:** incomplete form writes and business actions remain read-only;
-  local tab, disclosure, carousel and table browsing stay available. Tabs follows
-  growing content and Accordion follows new items until a manual value change.
-  Table derives its safe visible page without discarding current-page state.
-  Replacement resets local state. Original source is replayed without asking a
-  model to regenerate it.
-- **Resources:** initial loading, appends, retry, relative/encoded URLs and gallery
-  previews use the same SDK resource context.
-- **Contextual UI:** chart details appear inside the chart presentation without
-  inserting document rows; map markers, internal cards and fullscreen return stay
-  synchronized. Read-only table policy is explicitly installed by the review host.
-- **Manual execution:** attachments retain source, ActionPlan evaluation, before/
-  after state and write counts. A later passing replay does not prove the cause of
-  an earlier failure when its original runtime evidence is missing.
-
-Screenshots document native output; they do not independently prove aesthetics.
-Structural checks and approved pixel comparisons are distinct. The runner exports
-an xcresult bundle, bounded logs, attachments and its last result path into the
-chosen output directory. Avoid changing source during a recorded acceptance run.
-
-The `resizing-carousel` streaming fixture checks mounted content growth without
-adding another task scene. Saved sources can be replayed with `--stream-auto`;
-the original program bytes remain unchanged. Geometry checks cover footer/section
-separation, narrow snippets and image-slot stability across resource states.
+`--only-testing Class/method` selects a focused check within this same chain.
+`--package-tests` additionally runs the separate SDK unit tests. Regenerate token
+resources whenever a scene's source changes; stale/missing resources fail visibly.
+`o200k_base` is a reproducible test tokenizer, not a claim about a model's private
+tokenization. Tests assert UTF-8 identity, delivery timing, complete rendering,
+geometry and real SDK actions. Native screenshots are evidence, not automatic
+visual approval. Test data and transport remain outside SDK Sources.

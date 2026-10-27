@@ -155,5 +155,6 @@
 "仅演示购买动作，未创建订单，也不会扣款。" = "Demonstration only. No order was created and no payment will be taken.";
 "重新播放" = "Replay";
 "回放速度" = "Playback speed";
+"回放 token 数据缺失，请重新生成测试资源。" = "Replay token data is missing. Regenerate the review resources.";
 "播放中" = "Playing";
 "可重新播放" = "Ready to replay";
