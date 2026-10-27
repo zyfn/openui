@@ -265,7 +265,18 @@ enum ReviewPlaybackTransport {
     var prefixCount = 0
     for (index, line) in lines.enumerated() {
       let piece = line + (index < lines.count - 1 ? "\n" : "")
-      if prefixCount < 320 && piece.count < 1_000 {
+      let expression = line.split(separator: "=", maxSplits: 1).last?
+        .trimmingCharacters(in: .whitespaces)
+      if piece.count < 240 && expression?.hasPrefix("\"") == true {
+        // Scalar text assignments can fill an already-mounted styled slot.
+        // Their real partial values are the clearest view of SDK streaming.
+        let characters = Array(piece)
+        for slice in stride(from: 0, to: characters.count, by: 2) {
+          output.append(Chunk(text: String(characters[slice..<min(slice + 2, characters.count)]),
+            delay: 110_000_000))
+        }
+        prefixCount += piece.count
+      } else if prefixCount < 320 && piece.count < 1_000 {
         let characters = Array(piece)
         for slice in stride(from: 0, to: characters.count, by: 8) {
           output.append(Chunk(text: String(characters[slice..<min(slice + 8, characters.count)]),
@@ -274,8 +285,6 @@ enum ReviewPlaybackTransport {
         prefixCount += piece.count
       } else {
         prefixCount = 320
-        let expression = line.split(separator: "=", maxSplits: 1).last?
-          .trimmingCharacters(in: .whitespaces)
         if piece.count > 1_000 && (expression?.hasPrefix("{") == true || expression?.hasPrefix("[") == true) {
           // Preserve a large data record as one transport packet. Components
           // and prose still grow through the same SDK parser below.
