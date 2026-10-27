@@ -32,10 +32,11 @@ struct NativeRemoteImage: View {
 
   var body: some View {
     Group {
-      // Positional layout arguments can arrive after children. Keep fetching,
-      // but do not present pixels at a temporary, guessed container size.
-      if layoutPending {
-        Color.clear.frame(width: 0, height: 0).accessibilityHidden(true)
+      // Fetch while positional layout arguments arrive. A bounded skeleton
+      // communicates progress without exposing pixels at a guessed large size.
+      if layoutPending && needsContainerSize {
+        placeholder(loading: !pendingRequestFailed, pendingLayout: true)
+          .onAppear { onStatus?(pendingRequestFailed ? .unavailable : .loading, nil) }
       } else if let cachedImage {
         picture(cachedImage).onAppear { onStatus?(.loaded, cachedImage) }
       } else if resources.request(for: src) != nil {
@@ -55,6 +56,13 @@ struct NativeRemoteImage: View {
       guard cachedImage == nil else { return }
       if requestID.request == nil { onStatus?(.unavailable, nil) } else { await load() }
     }
+  }
+  private var pendingRequestFailed: Bool {
+    loadedRequest == requestID && phase.error != nil
+  }
+  private var needsContainerSize: Bool {
+    if case .thumbnail = layout { return false }
+    return true
   }
   private var requestID: NativeResourceRequestID {
     .init(request: resources.request(for: src), loader: ObjectIdentifier(resources.loader), attempt: attempt)
@@ -85,9 +93,9 @@ struct NativeRemoteImage: View {
     Group {
       switch layout {
       case .intrinsic, .fit:
-        canvas { image.resizable().scaledToFit() }
+        canvas { image.resizable().scaledToFit().modifier(NativeMediaReveal()) }
       default:
-        canvas { image.resizable().scaledToFill() }
+        canvas { image.resizable().scaledToFill().modifier(NativeMediaReveal()) }
       }
     }
     .accessibilityElement(children: .ignore).accessibilityLabel(alt)
@@ -95,14 +103,16 @@ struct NativeRemoteImage: View {
   }
   private var loading: some View { placeholder(loading: true) }
   private var unavailable: some View { placeholder(loading: false) }
-  private func placeholder(loading: Bool) -> some View {
-    canvas {
-      ZStack {
-        theme.surface
-        if loading {
-          ProgressView().controlSize(.small).tint(theme.secondary)
-        } else if showsFailureSymbol {
-          Image(systemName: "photo").openUIFont(theme.typography.body).foregroundStyle(theme.secondary.opacity(0.55))
+  private func placeholder(loading: Bool, pendingLayout: Bool = false) -> some View {
+    canvas(pendingLayout: pendingLayout) {
+      if loading {
+        NativeMediaSkeleton()
+      } else {
+        ZStack {
+          theme.surface
+          if showsFailureSymbol {
+            Image(systemName: "photo").openUIFont(theme.typography.body).foregroundStyle(theme.secondary.opacity(0.55))
+          }
         }
       }
     }
@@ -120,16 +130,28 @@ struct NativeRemoteImage: View {
   private var previewAspectRatio: CGFloat {
     NativeMediaPreview.aspectRatio(sourceSize: imageSize)
   }
-  @ViewBuilder private func canvas<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+  @ViewBuilder private func canvas<Content: View>(pendingLayout: Bool = false, @ViewBuilder _ content: () -> Content) -> some View {
     let surface = Color.clear.overlay { content().accessibilityHidden(true) }.clipped().contentShape(Rectangle())
-    switch layout {
-    case .aspect(let ratio):
-      surface.aspectRatio(ratio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
-    case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
-    case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
-    case .intrinsic:
-      surface.aspectRatio(previewAspectRatio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
+    if pendingLayout {
+      // Width is unresolved; use the existing thumbnail role as an upper bound.
+      // Explicit thumbnail slots already have known geometry and bypass this.
+      surface.aspectRatio(pendingAspectRatio, contentMode: .fit)
+        .frame(idealWidth: theme.thumbnailSize, maxWidth: theme.thumbnailSize)
+        .fixedSize(horizontal: false, vertical: true)
+    } else {
+      switch layout {
+      case .aspect(let ratio):
+        surface.aspectRatio(ratio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
+      case .thumbnail(let size): surface.frame(width: size.width, height: size.height)
+      case .fit, .fill: surface.frame(maxWidth: .infinity, maxHeight: .infinity)
+      case .intrinsic:
+        surface.aspectRatio(previewAspectRatio, contentMode: .fit).fixedSize(horizontal: false, vertical: true)
+      }
     }
+  }
+  private var pendingAspectRatio: CGFloat {
+    if case .aspect(let ratio) = layout { return ratio }
+    return theme.coverAspectRatio
   }
 }
 

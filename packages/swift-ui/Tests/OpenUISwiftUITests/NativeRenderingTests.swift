@@ -17,7 +17,8 @@
             }
             state.push("root=Stack([Image(\"Photo\",null),TextContent(\"Copy grows")
             let pending = try height()
-            XCTAssertLessThan(pending, 100, "A missing row argument must not temporarily produce a full-width photo")
+            XCTAssertGreaterThan(pending, 80, "The waiting media must have a visible skeleton rather than zero-size blank space")
+            XCTAssertLessThan(pending, 160, "A missing row argument must not temporarily produce a full-width photo")
             state.push(" beside the image\")],\"row\",\"m\",\"stretch\",\"start\",false)")
             state.complete()
             XCTAssertTrue(state.errors.isEmpty)

@@ -132,6 +132,13 @@ final class ReviewAdaptiveLayoutTests: ReviewTestCase {
       reveal(price, in: app)
       let photo = app.images["The Louvre"].firstMatch
       XCTAssertTrue(photo.exists)
+      if mode == "loading" {
+        XCTAssertEqual(photo.value as? String, "Loading image",
+          "Loading uses the shared image skeleton, with a real accessible resource status")
+      } else if mode == "unavailable" {
+        XCTAssertEqual(photo.value as? String, "Image unavailable",
+          "A failed request must stop showing the animated loading state")
+      }
       XCTAssertGreaterThan(photo.frame.width, 0)
       XCTAssertGreaterThanOrEqual(title.frame.minX, photo.frame.maxX + 8)
       XCTAssertGreaterThanOrEqual(price.frame.minX, photo.frame.maxX + 8)
