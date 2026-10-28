@@ -6,6 +6,26 @@
     @testable import OpenUISwiftUI
 
     final class NativeRenderingTests: XCTestCase {
+        @MainActor func testVisiblePartialTextKeepsGrowingBeforeItsParentCloses() throws {
+            _ = NSApplication.shared
+            let library = try OpenUIStandardComponents.library()
+            let state = OpenUIState(schema: library.library.toSchema())
+            func height() throws -> CGFloat {
+                let renderer = ImageRenderer(content: OpenUIRenderer(state: state, registry: library.registry))
+                renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
+                return try XCTUnwrap(renderer.nsImage).size.height
+            }
+            state.push("root=Stack([TextContent(\"A visible sentence.")
+            let first = try height()
+            state.push(String(repeating: " More text arrives while the parent layout is still open.", count: 8))
+            XCTAssertFalse(state.isComplete)
+            XCTAssertGreaterThan(try height(), first + 40,
+                "Partial text must grow visibly; a constant parent skeleton cannot replace the response")
+            state.push("\")],\"column\",\"m\")")
+            state.complete()
+            XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+        }
+
         @MainActor func testPendingPositionalLayoutDoesNotPresentAFullWidthInlineImage() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()

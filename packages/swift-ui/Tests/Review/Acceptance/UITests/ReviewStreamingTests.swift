@@ -52,14 +52,26 @@ final class ReviewStreamingTests: ReviewTestCase {
 
   func testSceneUsesTheSdkStreamAndReplayRestartsIt() {
     let app = XCUIApplication(bundleIdentifier: "dev.swiftui.component-review")
-    app.launchArguments = ["--case", "scene-day-trip", "--language", "en", "--tps", "320", "-AppleLanguages", "(en)"]
+    app.launchArguments = ["--case", "scene-day-trip", "--language", "en", "--tps", "160", "-AppleLanguages", "(en)"]
     app.launch()
     let replay = app.buttons["review.replay"]
     XCTAssertTrue(replay.waitForExistence(timeout: 10))
     XCTAssertTrue(app.staticTexts["review.user-request"].exists)
+    var sawBodyBeforeCompletion = false
     let ready = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "value == %@", "Ready to replay"), object: replay)
+      predicate: NSPredicate { _, _ in
+        if replay.value as? String != "Ready to replay",
+           app.staticTexts["5 November 2026"].exists,
+           app.staticTexts["The Louvre"].firstMatch.exists,
+           app.staticTexts["A former royal palace. Enter by the glass pyramid and focus on the Denon wing."].exists {
+          if !sawBodyBeforeCompletion { self.capture(app, name: "scene-real-body-before-stream-completion") }
+          sawBodyBeforeCompletion = true
+        }
+        return replay.value as? String == "Ready to replay"
+      }, object: nil)
     XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 60), .completed)
+    XCTAssertTrue(sawBodyBeforeCompletion,
+      "Date, a real attraction and its description must render before the SDK stream completes; a page-level skeleton is insufficient")
     XCTAssertTrue(app.staticTexts["Paris, at your own pace"].exists)
     let ending = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "€240 for two")).firstMatch
     XCTAssertTrue(ending.exists)

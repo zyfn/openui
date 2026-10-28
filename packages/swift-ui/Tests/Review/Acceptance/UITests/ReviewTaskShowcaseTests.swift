@@ -82,6 +82,17 @@ final class ReviewTaskShowcaseTests: ReviewTestCase {
 
   func testProductLinkUsesTheSdkAction() {
     let app = launch("scene-shopping", inspect: true, language: "en")
+    let pager = app.descendants(matching: .any)
+      .matching(identifier: "openui.card-block.composite.pager").firstMatch
+    let image = app.images["Nikon Z50 · NIKKOR Z DX 16–50mm"].firstMatch
+    reveal(image, in: app)
+    XCTAssertEqual(image.frame.minX, pager.frame.minX, accuracy: 2,
+      "A direct banner header should meet its card edge without an extra inset")
+    XCTAssertLessThanOrEqual(image.frame.width, 320)
+    let title = app.staticTexts["Nikon Z50 · 16–50mm"].firstMatch
+    XCTAssertGreaterThan(title.frame.minX, image.frame.minX + 8,
+      "Title and body keep their reading inset when the cover reaches the card edge")
+    capture(app, name: "shopping-banner-card-edge")
     let button = app.buttons["View product"].firstMatch
     reveal(button, in: app)
     button.tap()

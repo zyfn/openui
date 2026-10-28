@@ -23,7 +23,15 @@ shutil.copytree(review / 'Fixtures/Localization', tools / 'Localization')
 objects = []
 for name in ('COpenUIRegExp', 'OpenUILang', 'OpenUISwiftUI', 'MarkdownUI',
              'NetworkImage', 'cmark_gfm', 'cmark_gfm_extensions'):
-    objects.extend(str(path) for path in (build / f'{name}.build').rglob('*.o'))
+    target_build = build / f'{name}.build'
+    file_map = target_build / 'output-file-map.json'
+    if file_map.exists():
+        # SwiftPM may leave .o files from removed sources in an incremental
+        # build. Link only the current target outputs, never stale objects.
+        outputs = json.loads(file_map.read_text()).values()
+        objects.extend(entry['object'] for entry in outputs if 'object' in entry)
+    else:
+        objects.extend(str(path) for path in target_build.rglob('*.o'))
 assert objects, 'Build the macOS Swift package before exporting review sources'
 executable = tools / 'ReviewTokenExport'
 subprocess.run(['swiftc', '-parse-as-library', '-target', target,
