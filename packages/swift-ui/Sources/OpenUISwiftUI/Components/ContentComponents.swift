@@ -195,7 +195,16 @@ struct NativeInlineText: View {
     return context.theme.secondary
   }
 }
+private struct NativeCardHeaderInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
+extension EnvironmentValues {
+  fileprivate var openUICardHeaderInset: CGFloat {
+    get { self[NativeCardHeaderInsetKey.self] }
+    set { self[NativeCardHeaderInsetKey.self] = newValue }
+  }
+}
+
 struct NativeMediaText: View {
+  @Environment(\.openUICardHeaderInset) private var cardHeaderInset
   enum Media { case icon, thumbnail, banner }
   let context: OpenUIComponentContext
   let media: Media
@@ -212,7 +221,9 @@ struct NativeMediaText: View {
           NativeRemoteImage(
             src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
             layout: .aspect(context.theme.coverAspectRatio))
-            .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: cardHeaderInset > 0 ? 0 : context.theme.mediaCornerRadius, style: .continuous))
+            .padding(.horizontal, -cardHeaderInset)
+            .padding(.top, -cardHeaderInset)
           words
         }.frame(maxWidth: .infinity, alignment: .leading)
       } else {
@@ -575,6 +586,10 @@ struct NativeCardItem: View {
   let kind: String
   @Environment(\.openUICardIsAction) private var isAction
   @Environment(\.colorScheme) private var colorScheme
+  private var bannerHeaderInset: CGFloat {
+    guard case .element(let header) = context.value("header"), header.typeName == "ImageTextLarge" else { return 0 }
+    return context.theme.cardPadding
+  }
   private var artworkSource: String? {
     guard ["Visual", "Context"].contains(kind), let source = context.string("bgImageSrc"),
       !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
@@ -640,7 +655,7 @@ struct NativeCardItem: View {
           }
         }
       default:
-        context.slot("header")
+        context.slot("header").environment(\.openUICardHeaderInset, bannerHeaderInset)
         context.slot("body")
         if let footer = context.value("footer"), footer != .null {
           NativeCompositeFooter(context: context, footer: footer)
