@@ -334,7 +334,7 @@ struct NativeEntityList: View {
     let small = context.string("size") == "small"
     let numeric = NativeValue.string(value, "rightVariant") == "number"
     let font = small ? context.theme.typography.detail : context.theme.typography.body
-    let color = kind == .header ? context.theme.secondary : context.theme.foreground
+    let color = context.theme.foreground
     return NativeLabelValueLayout(
       gap: context.theme.spacing("m"), minimumLabelWidth: context.theme.minimumTextColumnWidth
     ) {

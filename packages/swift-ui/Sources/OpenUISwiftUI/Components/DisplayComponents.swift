@@ -203,8 +203,9 @@ private struct NativeDataTable: View {
             minimum: minimumWidth, gap: columnGap
         ) {
             ForEach(columns) { column in
-                Text(column.title).openUIFont(context.theme.typography.detail.weight(.semibold))
-                    .foregroundStyle(context.theme.secondary)
+                Text(column.title).openUIFont(context.theme.typography.body.weight(.semibold))
+                    .foregroundStyle(context.theme.foreground)
+                    .accessibilityAddTraits(.isHeader)
                     .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
