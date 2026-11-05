@@ -19,7 +19,7 @@ final class CoreStreamParser: StreamParser {
         core.sync {
             source += chunk
             guard withinBudget else { return limitedParseResult() }
-            return core.parseResult(parser.invokeMethod("push", withArguments: [chunk, complete]))
+            return core.parseResult(core.call("orderedStreamResult", [parser.invokeMethod("push", withArguments: [chunk, complete])!, complete]))
         }
     }
     @discardableResult func set(_ fullText: String, complete: Bool = false) -> ParseResult {
@@ -28,13 +28,13 @@ final class CoreStreamParser: StreamParser {
             // Subsequent appends extend this content, not discarded attempts.
             source = stripMessageMarkers(fullText)
             guard withinBudget else { return limitedParseResult() }
-            return core.parseResult(parser.invokeMethod("set", withArguments: [source, complete]))
+            return core.parseResult(core.call("orderedStreamResult", [parser.invokeMethod("set", withArguments: [source, complete])!, complete]))
         }
     }
     func getResult(complete: Bool = false) -> ParseResult {
         core.sync {
             guard withinBudget else { return limitedParseResult() }
-            return core.parseResult(parser.invokeMethod("getResult", withArguments: [complete]))
+            return core.parseResult(core.call("orderedStreamResult", [parser.invokeMethod("getResult", withArguments: [complete])!, complete]))
         }
     }
     private var withinBudget: Bool {

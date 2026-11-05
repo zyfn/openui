@@ -1,10 +1,10 @@
 {
   "upstream": "f08a660535e55b5b2a24a0eb68568edaf9e4fe4b",
   "sourceTree": "bf6be546007f96c87689c7b47c29e1f09175f6f6",
-  "sha256": "d622d3fbec383a17876ab599a4ab61d369626285a8a694eb89ce6ed18b6b24b2",
-  "bytes": 721447,
+  "sha256": "b25404bb2beca3661e78e2bf48fdce9ab982b3dcaa9b38dbf88f5923f700782d",
+  "bytes": 724223,
   "lockSha256": "1c8c81dc00c8717afd390d204c683bf1851baf01f0ed9b9f395d01b43b5a497e",
-  "adapterSha256": "6f0662e54f36d7d86f040f7b9f84b39e037ba09436f9fa507fdc5393add99161",
+  "adapterSha256": "85cb483b04a200dbcced130c1d8fc49830e7e18f106adff51feff8c0937487c6",
   "telemetry": "excluded at build time: native host has no process, fetch or install telemetry",
   "bridge": "opaque captures resolve through upstream EvaluationContext.resolveRef; core-created ActionPlan objects retain provenance; host-authored plans execute at the native boundary",
   "authoring": {
@@ -34,6 +34,20 @@
     "materialization depth/node budgets"
   ],
   "adaptations": [
+    {
+      "id": "ordered-rendering",
+      "category": "native-option",
+      "locations": [
+        "scripts/ordered-streaming.ts",
+        "scripts/ordered-streaming-compat.mjs",
+        "Sources/OpenUILang/ProtocolTypes.swift",
+        "Sources/OpenUILang/StreamingParser.swift"
+      ],
+      "reason": "A native caller can opt into source-ordered progressive publication without dropping unresolved array slots",
+      "observable": "Ready children prefix only; pending is private identity distinct from actual null, empty collections and unselected branches; default mode retains stock behavior",
+      "verification": "Forward/nested/Each/state/null controls, original model chunks, complete-tree equivalence and native replay",
+      "removal": "Equivalent ordered-streaming semantics verified in upstream"
+    },
     {
       "id": "packaging",
       "category": "platform-bridge",
@@ -203,6 +217,11 @@
     }
   ],
   "retainedPatches": [
+    {
+      "module": "native ordered publication (parser/materialize, evaluator, evaluate-prop)",
+      "reason": "Opt-in LibrarySchema.orderedRendering retains unresolved source positions and publishes only the ready children prefix. Private pending is distinct from null; no source or wire syntax is changed.",
+      "removal": "Upstream supplies equivalent source-ordered progressive publication with explicit null and inactive-branch semantics."
+    },
     {
       "module": "parser/serialize.ts",
       "reason": "Pinned serializer loses grouping and fails to quote nonidentifier keys during editing round trips.",

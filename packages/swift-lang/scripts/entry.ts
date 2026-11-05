@@ -1,4 +1,6 @@
 import { capture, hasCapture, capturedValue, nativePlan, isNativePlan, evaluationContext } from './captures';
+import * as orderedStreaming from './ordered-streaming';
+export { streamResult as orderedStreamResult, isPending as orderedPending } from './ordered-streaming';
 export { capture, hasCapture, capturedValue, nativePlan };
 export { sourceComplete, tagNativeSource } from './readiness';
 import * as core from '../../lang-core/src/index';
@@ -25,6 +27,7 @@ export const isAST = isASTNode;
 export const api = core;
 export const fences = stripFences;
 export const library = (schema: any, bindings: Record<string, string[]>) => ({
+  __swiftOrderedRendering: schema.__swiftOrderedRendering === true,
   components: Object.fromEntries(
     Object.entries(schema.$defs ?? {}).map(([name, def]: [string, any]) => [
       name,
@@ -45,21 +48,27 @@ export const library = (schema: any, bindings: Record<string, string[]>) => ({
 });
 export const store = core.createStore;
 export const evaluate = (node: any, ctx: any, lib: any) =>
-  core.evaluate(node, evaluationContext(ctx), { library: lib });
+  core.evaluate(node, orderedStreaming.evaluation(evaluationContext(ctx), lib), { library: lib });
 export const root = (
   result: any,
   ctx: any,
   lib: any,
   store: any,
   errors: any[],
-) => core.evaluateRoot(result, { ctx: evaluationContext(ctx), library: lib, store, errors });
+) => {
+  const context = orderedStreaming.evaluation(evaluationContext(ctx), lib, result);
+  return orderedStreaming.publishRoot(core.evaluateRoot(result, { ctx: context, library: lib, store, errors }), context);
+};
 export const element = (
   node: any,
   ctx: any,
   lib: any,
   store: any,
   errors: any[],
-) => core.evaluateElementProps(node, { ctx: evaluationContext(ctx), library: lib, store, errors });
+) => {
+  const context = orderedStreaming.evaluation(evaluationContext(ctx), lib);
+  return orderedStreaming.publishRoot(core.evaluateElementProps(node, { ctx: context, library: lib, store, errors }), context);
+};
 export const expression = (text: string) =>
   core.parseExpression(core.tokenize(text));
 export const number = (value: any) => Number(value);

@@ -700,6 +700,8 @@ public struct FunctionSchema: Sendable {
 public struct LibrarySchema: Sendable {
     // Copies share the prepared immutable library until either copy is edited.
     var coreLibraryCache = CoreLibraryCache()
+    /// Native publication policy; not part of the model-facing DSL/schema.
+    public var orderedRendering = false { didSet { coreLibraryCache = CoreLibraryCache() } }
     var wireSchema: JSONValue? = nil { didSet { coreLibraryCache = CoreLibraryCache() } }
     /// Component name → params (positional order).
     /// Prefer editing Library with extend() and recompiling. These mutable

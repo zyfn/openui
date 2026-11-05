@@ -219,6 +219,9 @@ final class SharedCore {
         guard level < 256 else { return .null }
         if js.isUndefined { return .undefined }; if js.isNull { return .null }
         if js.isString { return .string(string(js)) }; if js.isBoolean { return .boolean(js.toBool()) }; if js.isNumber { return .number(js.toDouble()) }
+        // A direct native expression can be pending. Never turn the private
+        // marker into an application-authored empty object (or a real null).
+        if call("orderedPending", [js]).toBool() { return .undefined }
         let id = Int(call("identity", [js]).toInt32())
         if let obj = decoded[id]?.object {
             if let a = obj as? OpenUIArray { return .array(a) }; if let o = obj as? OpenUIObject { return .object(o) }
@@ -370,7 +373,9 @@ extension SharedCore {
         ])
     }
     func schemaJSON(_ schema: LibrarySchema) -> JSONValue {
-        if let wire = schema.wireSchema { return wire }
+        if let wire = schema.wireSchema {
+            return schema.orderedRendering ? SchemaDocument.setting(wire, "__swiftOrderedRendering", .boolean(true)) : wire
+        }
         var fields: [JSONField] = [
             .init(key: "$defs", value: .object(schema.components.keys.sorted().map { .init(key: $0, value: parameters(schema.components[$0]!)) })),
             .init(key: "properties", value: .object(schema.components.keys.sorted().map { .init(key: $0, value: .object([.init(key: "$ref", value: .string("#/$defs/" + $0))])) }))
@@ -383,6 +388,7 @@ extension SharedCore {
             })))
         }
         if let root = schema.rootComponent { fields.append(.init(key: "root", value: .string(root))) }
+        if schema.orderedRendering { fields.append(.init(key: "__swiftOrderedRendering", value: .boolean(true))) }
         return .object(fields)
     }
     func library(_ schema: LibrarySchema) -> JSValue {

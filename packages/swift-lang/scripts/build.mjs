@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { readiness } from './readiness-compat.mjs';
+import { orderedStreaming } from './ordered-streaming-compat.mjs';
 import {
   serializer,
   replaceOnce,
@@ -46,7 +47,7 @@ const result = await build({
       name: 'native-compatibility',
       setup(b) {
         b.onLoad({ filter: /\/parser\/materialize\.ts$/ }, (args) => ({
-          contents: readiness(materializer(readFileSync(args.path, 'utf8')), 'materialize', join(here, 'readiness.ts')),
+          contents: orderedStreaming(readiness(materializer(readFileSync(args.path, 'utf8')), 'materialize', join(here, 'readiness.ts')), 'materialize', join(here, 'ordered-streaming.ts')),
           loader: 'ts',
         }));
         b.onLoad({ filter: /\/utils\/validation\.ts$/ }, (args) => ({
@@ -66,8 +67,9 @@ const result = await build({
           ['expressions', /\/parser\/expressions\.ts$/],
           ['evaluator', /\/runtime\/evaluator\.ts$/],
           ['evaluate-tree', /\/runtime\/evaluate-tree\.ts$/],
+          ['evaluate-prop', /\/runtime\/evaluate-prop\.ts$/],
         ]) b.onLoad({filter}, (args) => ({
-          contents: readiness(readFileSync(args.path, 'utf8'), kind, join(here, 'readiness.ts')),
+          contents: orderedStreaming(readiness(readFileSync(args.path, 'utf8'), kind, join(here, 'readiness.ts')), kind, join(here, 'ordered-streaming.ts')),
           loader: 'ts',
         }));
 
@@ -78,7 +80,7 @@ const result = await build({
       setup(b) {
         b.onLoad({ filter: /\/parser\/parser\.ts$/ }, (args) => ({
           contents:
-            readiness(readFileSync(args.path, 'utf8'), 'parser', join(here, 'readiness.ts')) +
+            orderedStreaming(readiness(readFileSync(args.path, 'utf8'), 'parser', join(here, 'readiness.ts')), 'parser', join(here, 'ordered-streaming.ts')) +
             '\nexport {preprocess as nativePreprocess};',
           loader: 'ts',
         }));
@@ -164,7 +166,7 @@ writeFileSync(
         .digest('hex'),
       adapterSha256: createHash('sha256')
         .update(
-          ['entry.ts', 'captures.ts', 'authoring.ts', 'compat.mjs', 'readiness.ts', 'readiness-compat.mjs', 'adaptations.json', 'patches/serializer-roundtrip.patch', 'build.mjs']
+          ['entry.ts', 'captures.ts', 'authoring.ts', 'compat.mjs', 'readiness.ts', 'readiness-compat.mjs', 'ordered-streaming.ts', 'ordered-streaming-compat.mjs', 'adaptations.json', 'patches/serializer-roundtrip.patch', 'build.mjs']
             .map((name) => readFileSync(join(here, name), 'utf8'))
             .join('\n'),
         )
@@ -188,6 +190,11 @@ writeFileSync(
       ],
       adaptations: JSON.parse(readFileSync(join(here, 'adaptations.json'), 'utf8')),
       retainedPatches: [
+        {
+          module: 'native ordered publication (parser/materialize, evaluator, evaluate-prop)',
+          reason: 'Opt-in LibrarySchema.orderedRendering retains unresolved source positions and publishes only the ready children prefix. Private pending is distinct from null; no source or wire syntax is changed.',
+          removal: 'Upstream supplies equivalent source-ordered progressive publication with explicit null and inactive-branch semantics.',
+        },
         {
           module: 'parser/serialize.ts',
           reason: 'Pinned serializer loses grouping and fails to quote nonidentifier keys during editing round trips.',

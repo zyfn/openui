@@ -116,3 +116,19 @@ dragging. Fractional-origin rounding is an explicit repair of an upstream UI
 defect. On non-divisible ranges, the dragged value may clamp to the maximum;
 the discrete list includes complete steps. Continuous text input still accepts
 off-step numeric drafts and validates their range, as in the reference wrapper.
+# Ordered native publication
+
+`LibrarySchema.orderedRendering` is an opt-in native policy. It retains unresolved
+references as the existing internal `Ph` AST, propagates a private pending identity
+through evaluation, and publishes only the ready prefix of a flow's `children`.
+A current incomplete text/container can be visible; a later sibling cannot overtake
+its unresolved predecessor. Missing streamed state defaults remain pending until
+declared or the stream terminates. Explicit null, inactive branches, and resolved
+empty Each input keep their existing meaning. Publication uses the same evaluated
+values, without source rewriting, estimated geometry, or a retained previous UI.
+
+The model-facing library spec and DSL do not contain this option or the pending
+identity. Default mode remains unchanged. The source tree of lang-core stays pinned;
+checked native compatibility transforms and their hashes are recorded in the bundle
+manifest. Native snapshot inspection should distinguish parser materialization from
+the published `evaluateRoot` / `OpenUIState.root` tree.
