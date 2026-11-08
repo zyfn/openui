@@ -5557,7 +5557,7 @@
         "description": "Group of switch toggles"
       },
       "SwitchItem": {
-        "signature": "SwitchItem(label?: string, description?: string, name: string, defaultChecked?: boolean)",
+        "signature": "SwitchItem(label: string, description: string, name: string, defaultChecked?: boolean)",
         "description": "Individual switch toggle"
       },
       "ChipItem": {
@@ -5649,23 +5649,23 @@
         "description": "Item in a ListBlock — displays a title with an optional subtitle and image. When action is provided, the item becomes clickable."
       },
       "Text": {
-        "signature": "Text(variant?: \"text\" | \"number\", value: string, subtext?: string, subtextVariant?: \"text\" | \"number\" | \"metric\", size?: \"xs\" | \"sm\" | \"md\" | \"lg\")",
+        "signature": "Text(variant: \"text\" | \"number\", value: string, subtext?: string, subtextVariant?: \"text\" | \"number\" | \"metric\", size?: \"xs\" | \"sm\" | \"md\" | \"lg\")",
         "description": "Plain text line with optional subtext. variant 'number' uses tabular number styling; subtextVariant 'metric' colors a leading +/- subtext green/red."
       },
       "BoldText": {
-        "signature": "BoldText(variant?: \"text\" | \"number\", value: string, subtext?: string, subtextVariant?: \"text\" | \"number\" | \"metric\", size?: \"xs\" | \"sm\" | \"md\" | \"lg\")",
+        "signature": "BoldText(variant: \"text\" | \"number\", value: string, subtext?: string, subtextVariant?: \"text\" | \"number\" | \"metric\", size?: \"xs\" | \"sm\" | \"md\" | \"lg\")",
         "description": "Emphasized (bold) text line with optional subtext. variant 'number' uses tabular number styling; subtextVariant 'metric' colors a leading +/- subtext green/red."
       },
       "IconText": {
-        "signature": "IconText(icon: Icon, iconVariant?: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\" | \"inverted\" | \"filled\" | \"soft\", iconSize?: \"xs\" | \"s\" | \"m\" | \"l\" | \"xl\" | \"sm\" | \"md\" | \"lg\", title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\")",
+        "signature": "IconText(icon: Icon, iconVariant: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\" | \"inverted\" | \"filled\" | \"soft\", iconSize: \"xs\" | \"s\" | \"m\" | \"l\" | \"xl\" | \"sm\" | \"md\" | \"lg\", title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\")",
         "description": "An icon badge with a title and optional subtitle, laid out horizontally or vertically. iconVariant sets the badge color."
       },
       "ImageText": {
-        "signature": "ImageText(src: string, alt?: string, title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\", imageSize?: number)",
+        "signature": "ImageText(src: string, alt: string, title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\", imageSize?: number)",
         "description": "A small square image (thumbnail/avatar) with a title and optional subtitle. src must be a real image URL."
       },
       "ImageTextLarge": {
-        "signature": "ImageTextLarge(src: string, alt?: string, title: string, subtitle?: string, bold?: boolean)",
+        "signature": "ImageTextLarge(src: string, alt: string, title: string, subtitle?: string, bold?: boolean)",
         "description": "A full-width banner image above a bold title and optional subtitle. src must be a real image URL."
       },
       "MetricIndicatorInline": {
@@ -5677,7 +5677,7 @@
         "description": "Headline metric value with an optional struck-through previousValue, a +/- percentage trend, and subtext below."
       },
       "SnippetCardItem": {
-        "signature": "SnippetCardItem(id?: string, lhs: IconText | ImageText, rhs?: Text | BoldText)",
+        "signature": "SnippetCardItem(id: string, lhs: IconText | ImageText, rhs?: Text | BoldText)",
         "description": "One row-style snippet card: a label on the left (IconText or ImageText) and an optional value on the right (Text or BoldText)."
       },
       "SnippetCardBlock": {
@@ -5685,7 +5685,7 @@
         "description": "A responsive grid of compact label/value cards (2 per row) for showing several short facts side by side; optionally clickable with a shared action."
       },
       "OverviewCardItem": {
-        "signature": "OverviewCardItem(id?: string, top: IconText | ImageText | Text, bottom?: MetricIndicatorInline)",
+        "signature": "OverviewCardItem(id: string, top: IconText | ImageText | Text, bottom?: MetricIndicatorInline)",
         "description": "One overview card: a heading slot at the top (IconText, ImageText or Text) and an optional MetricIndicatorInline at the bottom."
       },
       "OverviewCardBlock": {
@@ -5693,7 +5693,7 @@
         "description": "A grid or horizontal carousel of compact overview cards, each with a heading (icon/image/text) on top and an inline metric below; optionally clickable with a shared action."
       },
       "ContextCardItem": {
-        "signature": "ContextCardItem(id?: string, title: string | Tag, body?: string, bgColor?: \"gray\", bgImageSrc?: string, bgImageAlt?: string)",
+        "signature": "ContextCardItem(id: string, title: string | Tag, body?: string, bgColor?: \"gray\", bgImageSrc?: string, bgImageAlt?: string)",
         "description": "A single card inside a ContextCardBlock: a title (plain string or Tag), an optional markdown body, and an optional gray tint or background image."
       },
       "ContextCardBlock": {
@@ -5717,7 +5717,7 @@
         "description": "A grid or carousel of photo-first cards: a full-bleed background image with a tag on top and a bold text panel at the bottom; an optional action makes every card clickable."
       },
       "Modal": {
-        "signature": "Modal(title: string, open?: $binding<boolean>, children: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock)[], size?: \"sm\" | \"md\" | \"lg\")",
+        "signature": "Modal(title: string, open: $binding<boolean>, children: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock)[], size?: \"sm\" | \"md\" | \"lg\")",
         "description": "Modal dialog. open is a reactive $boolean binding — set to true to open, X/Escape/backdrop auto-closes. Put Form with buttons inside children."
       }
     },

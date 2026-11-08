@@ -12,9 +12,9 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 const here = dirname(fileURLToPath(import.meta.url)),
   root = resolve(here, '../../..');
-// The 1.0.2 checkout changes only release files and excluded telemetry relative
-// to the previous pin; parser/runtime/authoring sources are byte-identical.
-const pin = 'bf6be546007f96c87689c7b47c29e1f09175f6f6';
+// The pinned checkout adds the positional-omittability rule to the signature
+// printer plus its regression test; parser/runtime sources are unchanged.
+const pin = '053f51d4da2f151c36581f80cfd125d1fb6aa8af';
 if (
   execFileSync('git', ['rev-parse', 'HEAD:packages/lang-core'], {
     cwd: root,
