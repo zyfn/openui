@@ -114,19 +114,13 @@ struct NativeTabsView: View {
             }
             .overlay(alignment: .trailing) {
                 if showsOverflowHint {
-                    HStack(spacing: 0) {
-                        LinearGradient(colors: [context.theme.background.opacity(0), context.theme.background],
-                            startPoint: .leading, endPoint: .trailing)
-                            .frame(width: 24)
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(context.theme.textNeutralSecondary)
-                            .padding(.trailing, 4)
-                            .accessibilityLabel(Text("More tabs", bundle: NativeControlResources.bundle))
-                            .accessibilityIdentifier("openui.tabs.overflow")
-                    }
-                    .background(context.theme.background)
-                    .allowsHitTesting(false)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(context.theme.textNeutralSecondary)
+                        .padding(.trailing, 4)
+                        .accessibilityLabel(Text("More tabs", bundle: NativeControlResources.bundle))
+                        .accessibilityIdentifier("openui.tabs.overflow")
+                        .allowsHitTesting(false)
                 }
             }
             .onChange(of: selected) { value in
