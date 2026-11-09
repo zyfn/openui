@@ -32,8 +32,8 @@ final class ReferenceCatalogTests: XCTestCase {
       return group
     }
     XCTAssertNotNil(installed.registry["EditableTable"])
-    XCTAssertEqual(installed.library.components.count, 82)
-    XCTAssertEqual(generation.components.count, 81)
+    XCTAssertEqual(installed.library.components.count, 84)
+    XCTAssertEqual(generation.components.count, 83)
     XCTAssertFalse(generation.toSpec().components.contains { $0.name == "EditableTable" })
     XCTAssertFalse(
       generation.componentGroups?.contains { $0.components.contains("EditableTable") } ?? true)
@@ -64,9 +64,9 @@ final class ReferenceCatalogTests: XCTestCase {
     XCTAssertEqual(restored.rows.first?.id, "row-a")
   }
 
-  func testAll82RenderersUseThePinnedUpstreamDefinitions() throws {
+  func testAll84RenderersUseThePinnedUpstreamDefinitions() throws {
     let library = try OpenUIStandardComponents.library()
-    XCTAssertEqual(library.library.components.count, 82)
+    XCTAssertEqual(library.library.components.count, 84)
     XCTAssertEqual(library.library.components.map(\.name), OpenUIReference.definitions.map(\.name))
     for expected in OpenUIReference.definitions {
       let actual = try XCTUnwrap(library.library.components.first { $0.name == expected.name })

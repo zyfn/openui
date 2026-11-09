@@ -5387,6 +5387,41 @@
           }
         }
       ]
+    },
+    {
+      "name": "FollowUpBlock",
+      "description": "List of clickable follow-up suggestions placed at the end of a response",
+      "params": [
+        {
+          "name": "items",
+          "required": true,
+          "hasDefault": false,
+          "defaultValue": null,
+          "isBindable": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/FollowUpItem"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FollowUpItem",
+      "description": "Clickable follow-up suggestion — when clicked, sends text as user message",
+      "params": [
+        {
+          "name": "text",
+          "required": true,
+          "hasDefault": false,
+          "defaultValue": null,
+          "isBindable": false,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
     }
   ],
   "spec": {
@@ -5719,6 +5754,14 @@
       "Modal": {
         "signature": "Modal(title: string, open: $binding<boolean>, children: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock)[], size?: \"sm\" | \"md\" | \"lg\")",
         "description": "Modal dialog. open is a reactive $boolean binding — set to true to open, X/Escape/backdrop auto-closes. Put Form with buttons inside children."
+      },
+      "FollowUpBlock": {
+        "signature": "FollowUpBlock(items: FollowUpItem[])",
+        "description": "List of clickable follow-up suggestions placed at the end of a response"
+      },
+      "FollowUpItem": {
+        "signature": "FollowUpItem(text: string)",
+        "description": "Clickable follow-up suggestion — when clicked, sends text as user message"
       }
     },
     "componentGroups": [
@@ -6171,6 +6214,12 @@
         },
         "Modal": {
           "$ref": "#/$defs/Modal"
+        },
+        "FollowUpBlock": {
+          "$ref": "#/$defs/FollowUpBlock"
+        },
+        "FollowUpItem": {
+          "$ref": "#/$defs/FollowUpItem"
         }
       },
       "required": [
@@ -6255,7 +6304,9 @@
         "CompositeCardBlock",
         "VisualCardItem",
         "VisualCardBlock",
-        "Modal"
+        "Modal",
+        "FollowUpBlock",
+        "FollowUpItem"
       ],
       "additionalProperties": false,
       "$defs": {
@@ -9769,6 +9820,35 @@
           ],
           "additionalProperties": false,
           "description": "Modal dialog. open is a reactive $boolean binding — set to true to open, X/Escape/backdrop auto-closes. Put Form with buttons inside children."
+        },
+        "FollowUpBlock": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/FollowUpItem"
+              }
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false,
+          "description": "List of clickable follow-up suggestions placed at the end of a response"
+        },
+        "FollowUpItem": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false,
+          "description": "Clickable follow-up suggestion — when clicked, sends text as user message"
         }
       }
     }
@@ -9780,7 +9860,8 @@
       "Example 3 — Form with validation:\n\nroot = Stack([title, form])\ntitle = TextContent(\"Contact Us\", \"large-heavy\")\nform = Form(\"contact\", btns, [nameField, emailField, countryField, msgField])\nnameField = FormControl(\"Name\", Input(\"name\", \"Your name\", \"text\", { required: true, minLength: 2 }))\nemailField = FormControl(\"Email\", Input(\"email\", \"you@example.com\", \"email\", { required: true, email: true }))\ncountryField = FormControl(\"Country\", Select(\"country\", countryOpts, \"Select...\", { required: true }))\nmsgField = FormControl(\"Message\", TextArea(\"message\", \"Tell us more...\", 4, { required: true, minLength: 10 }))\ncountryOpts = [SelectItem(\"us\", \"United States\"), SelectItem(\"uk\", \"United Kingdom\"), SelectItem(\"de\", \"Germany\")]\nbtns = Buttons([Button(\"Submit\", @ToAssistant(\"Submit\"), \"primary\"), Button(\"Cancel\", @ToAssistant(\"Cancel\"), \"secondary\")])",
       "Example 4 — Tabs with mixed content:\n\nroot = Stack([title, tabs])\ntitle = TextContent(\"React vs Vue\", \"large-heavy\")\ntabs = Tabs([tabReact, tabVue])\ntabReact = TabItem(\"react\", \"React\", reactContent)\ntabVue = TabItem(\"vue\", \"Vue\", vueContent)\nreactContent = [TextContent(\"React is a library by Meta for building UIs.\"), Callout(\"info\", \"Note\", \"React uses JSX syntax.\")]\nvueContent = [TextContent(\"Vue is a progressive framework by Evan You.\"), Callout(\"success\", \"Tip\", \"Vue has a gentle learning curve.\")]",
       "Example 5 — KPI and product cards:\n\nroot = Stack([kpiHeader, kpiBlock, productsHeader, productCards])\nkpiHeader = InlineHeader(\"This Month\", \"Key account metrics\")\nkpiBlock = SnippetCardBlock([kpi1, kpi2, kpi3])\nkpi1 = SnippetCardItem(\"revenue\", kpi1lhs, kpi1rhs)\nkpi1lhs = IconText(kpi1icon, \"neutral\", \"m\", \"Revenue\", \"Month to date\", false, \"horizontal\")\nkpi1icon = Icon(\"circle-dollar-sign\", \"finance\")\nkpi1rhs = BoldText(\"number\", \"$48,200\", \"+8.1%\", \"metric\")\nkpi2 = SnippetCardItem(\"active-users\", kpi2lhs, kpi2rhs)\nkpi2lhs = IconText(kpi2icon, \"neutral\", \"m\", \"Active Users\", \"This month\", false, \"horizontal\")\nkpi2icon = Icon(\"users\", \"people\")\nkpi2rhs = BoldText(\"number\", \"1,204\", \"+3.4%\", \"metric\")\nkpi3 = SnippetCardItem(\"churn\", kpi3lhs, kpi3rhs)\nkpi3lhs = IconText(kpi3icon, \"neutral\", \"m\", \"Churn\", \"This month\", false, \"horizontal\")\nkpi3icon = Icon(\"user-minus\", \"people\")\nkpi3rhs = BoldText(\"number\", \"1.8%\", \"-0.3%\", \"metric\")\nproductsHeader = InlineHeader(\"Top Products\", \"By units sold\")\nproductCards = CompositeCardBlock([p1, p2])\np1 = CompositeCardItem(\"widget-pro\", p1header, [p1body], p1footer)\np1header = IconText(p1icon, \"neutral\", \"m\", \"Widget Pro\", \"Best seller\", true, \"horizontal\")\np1icon = Icon(\"package\", \"shopping\")\np1body = MetricIndicatorInline(\"2,410 units\", \"Sold this month\", { direction: \"up\", value: 12 })\np1footer = { price: BoldText(\"text\", \"$29.00\"), button: p1btn }\np1btn = Button(\"View Details\", @ToAssistant(\"Show details for Widget Pro\"), \"secondary\")\np2 = CompositeCardItem(\"widget-mini\", p2header, [p2body], p2footer)\np2header = IconText(p2icon, \"neutral\", \"m\", \"Widget Mini\", \"New arrival\", true, \"horizontal\")\np2icon = Icon(\"box\", \"shopping\")\np2body = MetricIndicatorInline(\"980 units\", \"Sold this month\", { direction: \"up\", value: 4 })\np2footer = { price: BoldText(\"text\", \"$14.00\"), button: p2btn }\np2btn = Button(\"View Details\", @ToAssistant(\"Show details for Widget Mini\"), \"secondary\")",
-      "Example 6 — Editable table and a selection form:\n\nroot = Stack([tableHeader, editTable, formHeader, prefsForm])\ntableHeader = InlineHeader(\"Team Roster\", \"Click a cell to edit\")\neditTable = EditableTable(\"roster\", [colName, colRole, colStart], [row1, row2])\ncolName = { type: \"text\", key: \"name\", header: \"Name\" }\ncolRole = { type: \"select\", key: \"role\", header: \"Role\", options: [roleEng, roleDesign] }\nroleEng = { value: \"eng\", label: \"Engineering\" }\nroleDesign = { value: \"design\", label: \"Design\" }\ncolStart = { type: \"date-single\", key: \"start\", header: \"Start Date\" }\nrow1 = { id: \"1\", values: [\"Alex Kim\", \"eng\", \"2024-01-15\"] }\nrow2 = { id: \"2\", values: [\"Jamie Lee\", \"design\", \"2024-03-02\"] }\nformHeader = InlineHeader(\"Preferences\", \"Tell us how you like to work\")\nprefsForm = Form(\"prefs\", formButtons, [fc1, fc2])\nfc1 = FormControl(\"Working Style\", styleCards, \"Pick the one that fits best\")\nstyleCards = OptionCards(\"style\", \"single\", [style1, style2])\nstyle1 = OptionCard(\"focused\", \"Deep Focus\", \"Long uninterrupted blocks\", style1icon)\nstyle1icon = Icon(\"target\", \"tools\")\nstyle2 = OptionCard(\"collab\", \"Collaborative\", \"Frequent pairing and syncs\", style2icon)\nstyle2icon = Icon(\"users\", \"people\")\nfc2 = FormControl(\"Tools\", toolChips, \"Select all that apply\")\ntoolChips = Chips(\"tools\", \"multiple\", [tool1, tool2, tool3])\ntool1 = ChipItem(\"figma\", \"Figma\", tool1icon)\ntool1icon = Icon(\"figma\", \"design\")\ntool2 = ChipItem(\"slack\", \"Slack\", tool2icon)\ntool2icon = Icon(\"message-square\", \"communication\")\ntool3 = ChipItem(\"notion\", \"Notion\", tool3icon)\ntool3icon = Icon(\"notebook\", \"text\")\nformButtons = Buttons([Button(\"Save\", @ToAssistant(\"Save preferences\"), \"primary\")])"
+      "Example 6 — Editable table and a selection form:\n\nroot = Stack([tableHeader, editTable, formHeader, prefsForm])\ntableHeader = InlineHeader(\"Team Roster\", \"Click a cell to edit\")\neditTable = EditableTable(\"roster\", [colName, colRole, colStart], [row1, row2])\ncolName = { type: \"text\", key: \"name\", header: \"Name\" }\ncolRole = { type: \"select\", key: \"role\", header: \"Role\", options: [roleEng, roleDesign] }\nroleEng = { value: \"eng\", label: \"Engineering\" }\nroleDesign = { value: \"design\", label: \"Design\" }\ncolStart = { type: \"date-single\", key: \"start\", header: \"Start Date\" }\nrow1 = { id: \"1\", values: [\"Alex Kim\", \"eng\", \"2024-01-15\"] }\nrow2 = { id: \"2\", values: [\"Jamie Lee\", \"design\", \"2024-03-02\"] }\nformHeader = InlineHeader(\"Preferences\", \"Tell us how you like to work\")\nprefsForm = Form(\"prefs\", formButtons, [fc1, fc2])\nfc1 = FormControl(\"Working Style\", styleCards, \"Pick the one that fits best\")\nstyleCards = OptionCards(\"style\", \"single\", [style1, style2])\nstyle1 = OptionCard(\"focused\", \"Deep Focus\", \"Long uninterrupted blocks\", style1icon)\nstyle1icon = Icon(\"target\", \"tools\")\nstyle2 = OptionCard(\"collab\", \"Collaborative\", \"Frequent pairing and syncs\", style2icon)\nstyle2icon = Icon(\"users\", \"people\")\nfc2 = FormControl(\"Tools\", toolChips, \"Select all that apply\")\ntoolChips = Chips(\"tools\", \"multiple\", [tool1, tool2, tool3])\ntool1 = ChipItem(\"figma\", \"Figma\", tool1icon)\ntool1icon = Icon(\"figma\", \"design\")\ntool2 = ChipItem(\"slack\", \"Slack\", tool2icon)\ntool2icon = Icon(\"message-square\", \"communication\")\ntool3 = ChipItem(\"notion\", \"Notion\", tool3icon)\ntool3icon = Icon(\"notebook\", \"text\")\nformButtons = Buttons([Button(\"Save\", @ToAssistant(\"Save preferences\"), \"primary\")])",
+      "Example 5 — Table with follow-ups:\n\nroot = Card([title, tbl, followUps])\ntitle = TextContent(\"Top Languages\", \"large-heavy\")\ntbl = Table([Col(\"Language\", langs), Col(\"Users (M)\", users), Col(\"Year\", years)])\nlangs = [\"Python\", \"JavaScript\", \"Java\"]\nusers = [15.7, 14.2, 12.1]\nyears = [1991, 1995, 1995]\nfollowUps = FollowUpBlock([fu1, fu2])\nfu1 = FollowUpItem(\"Tell me more about Python\")\nfu2 = FollowUpItem(\"Show me a JavaScript comparison\")"
     ],
     "additionalRules": [
       "When asked about data, generate realistic/plausible data",
@@ -9797,7 +9878,8 @@
       "EntityList size='small' (no header/footer) is only for use inside a CompositeCardItem body; use size='default' everywhere else.",
       "Image URLs must be real (from a tool result or the user) — never invent or template an image URL.",
       "Always pass a category to Icon — it enables a topical fallback when the exact icon name is unavailable.",
-      "EditableTable requires the consuming app to persist edits — use it only when the user or app explicitly asks for an editable table; default to Table for read-only data."
+      "EditableTable requires the consuming app to persist edits — use it only when the user or app explicitly asks for an editable table; default to Table for read-only data.",
+      "Use FollowUpBlock at the END of a Card to suggest what the user can do or ask next."
     ]
   },
   "sources": {

@@ -99,6 +99,29 @@
                 "Number indicators must not turn into image rows when optional image data is present")
         }
 
+        @MainActor func testFollowUpChipsRenderAndSynthesizeContinueConversation() throws {
+            _ = NSApplication.shared
+            guard #available(macOS 13, *) else { throw XCTSkip("ImageRenderer requires macOS 13") }
+            let library = try OpenUIStandardComponents.library()
+            let state = OpenUIState(schema: library.library.toSchema())
+            state.setSource("root=FollowUpBlock([a,b])\na=FollowUpItem(\"Tell me more\")\nb=FollowUpItem(\"Show a comparison\")")
+            XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+            let renderer = ImageRenderer(content:
+                OpenUIRenderer(state: state, registry: library.registry)
+                    .environment(\.locale, Locale(identifier: "en_US"))
+                    .preferredColorScheme(.light).background(Color.white))
+            renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
+            renderer.scale = 1
+            _ = try XCTUnwrap(renderer.cgImage)
+            let action = NativeFollowUpItem.action(for: "Tell me more")
+            guard case .object(let fields) = action else {
+                return XCTFail("follow-up action must be an object")
+            }
+            let byKey = Dictionary(uniqueKeysWithValues: fields.fields.map { ($0.key.displayString, $0.value) })
+            XCTAssertEqual(byKey["type"], .string(OpenUIString("continue_conversation")))
+            XCTAssertEqual(byKey["message"], .string(OpenUIString("Tell me more")))
+        }
+
         @MainActor func testCompactCardDoesNotFillAnUnrequestedParentHeight() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()

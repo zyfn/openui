@@ -875,3 +875,43 @@ struct NativeCardBlock: View {
     }
   }
 }
+
+struct NativeFollowUpBlock: View {
+  let context: OpenUIComponentContext
+  var body: some View {
+    NativeWrappingRow(gap: context.theme.spacing("s")) {
+      ForEach(context.children("items")) { item in
+        context.render(item.value)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+struct NativeFollowUpItem: View {
+  let context: OpenUIComponentContext
+  private var text: String { context.string("text") ?? "" }
+  var body: some View {
+    OpenUIActionSurface(context: context, message: text, action: Self.action(for: text)) {
+      Text(text)
+        .fixedSize(horizontal: false, vertical: true)
+        .openUIFont(context.theme.textLabelSm)
+        .foregroundStyle(context.theme.textNeutralPrimary)
+        .padding(.horizontal, context.theme.spacing("m"))
+        .padding(.vertical, context.theme.spacing("s"))
+        .background(context.theme.sunk, in: Capsule(style: .continuous))
+        .overlay(
+          Capsule(style: .continuous).strokeBorder(context.theme.borderDefault,
+            lineWidth: context.presentation.borderWidth))
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(text)
+    .accessibilityIdentifier("openui.followup")
+  }
+  static func action(for text: String) -> Value {
+    .object(OpenUIObject([
+      ObjectField(key: OpenUIString("type"), value: .string(OpenUIString("continue_conversation"))),
+      ObjectField(key: OpenUIString("message"), value: .string(OpenUIString(text))),
+    ]))
+  }
+}

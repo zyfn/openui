@@ -49,6 +49,8 @@ enum OpenUIContentComponents {
       OpenUIReference.component("EntityList") { NativeEntityList(context: $0) },
       OpenUIReference.component("ListBlock") { NativeListBlock(context: $0) },
       OpenUIReference.component("ListItem") { NativeListItem(context: $0) },
+      OpenUIReference.component("FollowUpBlock") { NativeFollowUpBlock(context: $0) },
+      OpenUIReference.component("FollowUpItem") { NativeFollowUpItem(context: $0) },
       OpenUIReference.component("Steps") { NativeSteps(context: $0) },
       OpenUIReference.component("StepsItem") { _ in EmptyView() },
       OpenUIReference.component("Carousel") { NativeCarousel(context: $0) },
