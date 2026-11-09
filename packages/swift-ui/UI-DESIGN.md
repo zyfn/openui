@@ -133,8 +133,8 @@ bottom. Carousel cards keep their natural extent. EntityList text values use the
 ordinary body role; explicit number values and totals keep their emphasized
 roles. Short values remain at the row's trailing edge; a stacked text value
 reads from the leading edge. Read-only body rows use spaceS above and below,
-while headers/totals retain their group spacing. Table retains its column grid. Supporting callout
-copy uses the detail text role. These defaults preserve the supplied structure
+while headers/totals retain their group spacing. Table retains its column grid. Callout
+copy uses the body text role. These defaults preserve the supplied structure
 and data rather than classifying business content or reordering a response.
 
 SingleStackedBarChart uses the shared native strip thickness, theme spacing and
@@ -169,8 +169,9 @@ content controls inside the item surface; no nested Button is introduced.
 Callout and TextCallout use a quiet quote treatment: a 3pt neutral leading rule,
 16pt body copy and an optional emphasized title, without a status icon. The variant
 remains an accessibility value; visible binding and the existing auto-dismiss
-behavior are unchanged. Reading disclosure labels align with their body. Large failed media slots show
-a brief localized status; small thumbnails retain a distinct status glyph.
+behavior are unchanged. Reading disclosure labels align with their body. Failed media uses
+a neutral photo glyph and a localized status when the complete copy fits. Small
+slots and very large text retain the glyph and accessible unavailable status.
 
 ### Density and mounted controls
 
@@ -200,7 +201,8 @@ with 12/14/16pt text for sm/md/lg. Tabs use a selected capsule with a neutral fi
 and the shared selection border. Accordion
 is a continuous open disclosure list, not one card per section. Generic Card
 uses a padded foreground panel with a quiet border by default; clear keeps its
-transparent side-inset layout, and sunk keeps its recessed surface. This is a
+transparent side-inset layout, and sunk keeps its recessed surface without a
+grouping border or outer shadow. Editable/focus/error boundaries inside it remain. This is a
 native presentation choice; the existing variants and layout parameters are
 unchanged. Composite object cards remain independent surfaces.
 
@@ -227,11 +229,21 @@ unchanged. Native unit checks and consuming-app visual checks have distinct scop
 ### Reading
 
 Reading leading is filled only when both lineHeight and lineSpacing are omitted:
-body/code 1.50, detail 1.45, caption 1.40, object title 1.35, section 1.30 and
+body/code 1.50, detail 1.45, caption 1.40, object title/field label 1.35, section 1.30 and
 display/control/metric 1.25. A complete host font keeps its family, size, weight,
 tracking, digit setting and explicit leading. Native Text and Markdown receive
 the same resolved font. Measured native line height replaces fixed 1.2 estimates
-for constrained metric and text-editor content. Links are underlined by default.
+for constrained metric, text-editor and chart-label content. Links are underlined by default.
+
+Known supporting slots share a complete native recipe: 14pt regular, secondary
+ink and detail leading. This includes subtext at every parent size, list subtitles,
+image-gallery details, hints and choice descriptions. Field errors use the same
+reading scale with error ink, including Slider errors. Short source/position
+metadata keeps the 12pt caption role. Field/disclosure labels use the existing
+16pt medium label token; actions use their existing 14/16pt medium tokens.
+Native Text, rich text and measurement consume the same resolved font, and
+complete host font overrides still win. TextContent small/small-heavy remain
+primary ink: a declared size does not classify a sentence's importance.
 
 ### Surfaces and states
 
@@ -251,7 +263,9 @@ for constrained metric and text-editor content. Links are underlined by default.
 
 Primary/secondary ink and boundaries strengthen under the native high-contrast
 appearance. Semantic status hues and the independent chart palette remain.
-Cards default to borderDefault, with cardBorderColor as an independent override.
+Ordinary cards default to borderDefault, with cardBorderColor as an independent override.
+Clear and sunk content surfaces have no grouping stroke; sunk uses its subtle
+fill without an outer shadow. This does not remove a child control's boundary.
 Choice markers, selected borders and focus use interactiveAccentDefault. Focus is
 2pt and remains outside image clipping. Disabled fields and choices use explicit
 state colors, without a second SDK-wide opacity multiplication. Floating surfaces
@@ -263,6 +277,26 @@ Object/fact/choice insets are 12pt. Generic Card variants share 16pt insets; cle
 retains zero vertical padding. Fact-card groups add no outer padding: parent Stack
 gap controls their relationship to neighbors. Object footer gap is 8pt. Markdown
 block margins are collapsed by MarkdownUI; they are not extra component insets.
+
+Unspecified ImageText thumbnails prefer 80pt and may reduce toward 64pt to
+preserve the local text-column budget. The Layout proposal belongs to each row,
+not a process-wide screen. Explicit imageSize and horizontal/vertical direction
+keep their meaning; they are not rewritten to satisfy the preferred budget.
+Vertical unspecified thumbnails use their preferred size when it fits. Source
+cropping and original-image viewing remain unchanged. Gallery navigation retains
+its separate 80pt compact-thumbnail metric.
+
+IconText normalizes filled/soft to neutral before resolving both ink and layout.
+Every variant reserves the same glyph-size-plus-inset column. Neutral icons are
+unplated; info/success/warning/danger keep their semantic glyph ink without a
+colored plate. Inverted keeps its contrasting surface. The SDK does not infer
+status from icon names or text and does not rewrite authored variants.
+
+Informational Tag vertical insets use 2/4/4pt (space3xs/space2xs/space2xs) for
+sm/md/lg. Reading sizes remain 12/14/16pt and horizontal insets are unchanged.
+Long wrapped labels limit their corner radius to stay within the painted area;
+radiusFull remains an upper bound for host customization. Follow-up actions use
+the compact medium label role and keep an independent minimum control target.
 
 Images/code use 8pt corners, inputs 10pt, Context 12pt, fact/choice cards 14pt,
 Composite/Visual/generic cards 16pt and overlays 24pt. Text actions use capsules,

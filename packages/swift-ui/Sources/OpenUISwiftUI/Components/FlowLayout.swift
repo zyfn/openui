@@ -211,6 +211,23 @@ enum OpenUIWrappedFlexRows {
 
 enum NativeMediaRowAxis { case horizontal, vertical }
 
+/// Only an unspecified thumbnail may trade image width for reading space.
+/// All values are local presentation hints; authored imageSize stays fixed.
+struct NativeAdaptiveThumbnail {
+    let preferred: CGFloat
+    let minimum: CGFloat
+    let readingWidth: CGFloat
+
+    func side(in width: CGFloat, gap: CGFloat, axis: NativeMediaRowAxis) -> CGFloat {
+        let preferred = preferred.isFinite && preferred > 0 ? preferred : OpenUIPresentation.defaults.inlineThumbnailSize
+        guard width.isFinite, width > 0 else { return preferred }
+        if axis == .vertical { return min(preferred, width) }
+        let minimum = minimum.isFinite ? min(preferred, max(1, minimum)) : preferred
+        let copy = readingWidth.isFinite ? max(0, readingWidth) : 0
+        return min(preferred, max(minimum, width - max(0, gap) - copy))
+    }
+}
+
 /// Resolve once for a list, so every item keeps the same media column and axis.
 /// Thresholds are visual roles supplied by the theme, not device breakpoints.
 struct NativeListMediaLayout {
@@ -289,6 +306,7 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
     var axis: NativeMediaRowAxis
     var gap: CGFloat
     var centered = false
+    var adaptiveThumbnail: NativeAdaptiveThumbnail? = nil
     @ViewBuilder var media: Media
     @ViewBuilder var copy: Copy
     @Environment(\.openUITheme) private var theme
@@ -321,7 +339,8 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
         .accessibilityElement(children: .contain).accessibilityIdentifier("openui.media-row")
     }
     private var row: some View {
-        NativeMediaRowLayout(fallbackWidth: max(1, width), gap: gap, axis: axis, centered: centered) {
+        NativeMediaRowLayout(fallbackWidth: max(1, width), gap: gap, axis: axis, centered: centered,
+                            adaptiveThumbnail: adaptiveThumbnail) {
             media
             copy
         }
@@ -337,6 +356,7 @@ private struct NativeMediaRowLayout: Layout {
     let gap: CGFloat
     let axis: NativeMediaRowAxis
     let centered: Bool
+    let adaptiveThumbnail: NativeAdaptiveThumbnail?
 
     private func measured(_ proposal: ProposedViewSize, _ subviews: Subviews) -> NativeMediaRowPlacement.Result {
         let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? fallbackWidth
@@ -344,7 +364,12 @@ private struct NativeMediaRowLayout: Layout {
             let size = subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)) ?? .zero
             return .init(media: .zero, text: CGRect(origin: .zero, size: size), size: size, stacked: true)
         }
-        return NativeMediaRowPlacement.measure(width: width, media: subviews[0].sizeThatFits(.unspecified),
+        let mediaProposal: ProposedViewSize
+        if let adaptiveThumbnail {
+            let side = adaptiveThumbnail.side(in: width, gap: gap, axis: axis)
+            mediaProposal = .init(width: side, height: side)
+        } else { mediaProposal = .unspecified }
+        return NativeMediaRowPlacement.measure(width: width, media: subviews[0].sizeThatFits(mediaProposal),
             gap: gap, axis: axis, centered: centered) { subviews[1].sizeThatFits(ProposedViewSize(width: $0, height: nil)) }
     }
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

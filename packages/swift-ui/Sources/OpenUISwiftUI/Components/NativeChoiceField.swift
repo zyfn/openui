@@ -105,7 +105,7 @@ struct NativeChoiceField: View {
       HStack(spacing: context.theme.spacing("xs")) {
         if !cards { context.render(PropValue.value(item, "icon") ?? .null) }
         Text(PropValue.string(item, cards ? "title" : "label") ?? "").openUIFont(
-          cards ? context.theme.textBodyDefaultHeavy : context.theme.textLabelDefaultHeavy, role: .control
+          cards ? context.theme.textBodyDefaultHeavy : context.theme.textLabelDefaultHeavy, role: cards ? .title : .control
         )
         .foregroundStyle(isDisabled(item) ? context.theme.componentStyle.disabledText : context.theme.textNeutralPrimary)
         .fixedSize(horizontal: false, vertical: true)
@@ -117,8 +117,8 @@ struct NativeChoiceField: View {
         }
       }
       if cards, let subtitle = PropValue.string(item, "subtitle") {
-        Text(subtitle).openUIFont(context.theme.textBodySm, role: .detail)
-          .foregroundStyle(isDisabled(item) ? context.theme.componentStyle.disabledText : context.theme.textNeutralSecondary)
+        Text(subtitle).nativeTextStyle(context.theme.textStyle(.supporting),
+          color: isDisabled(item) ? context.theme.componentStyle.disabledText : nil)
           .fixedSize(horizontal: false, vertical: true)
       }
     }

@@ -150,7 +150,7 @@ struct NativeChart: View {
       semi: context.string("appearance") == "semiCircular", palette: palette,
       secondary: context.theme.textNeutralSecondary, border: context.theme.borderDefault,
       gridColor: context.presentation.chartGrid, axisColor: context.presentation.chartAxis,
-      canvasColor: context.theme.background, labelFont: context.theme.textBodySm.nativeFont(scale: axisScale),
+      canvasColor: context.theme.background, labelFont: context.theme.textStyle(.supporting).font.nativeFont(scale: axisScale),
       inspected: inspected, axisScale: axisScale,
       singleStackedBarThickness: context.presentation.singleStackedBarThickness * axisScale,
       axisMeasurements: axisMeasurements,
@@ -158,16 +158,17 @@ struct NativeChart: View {
   }
   private var measuredAxisLabels: some View {
     let labels = drawing.axisLabels
+    let style = context.theme.textStyle(.supporting)
     return HStack(spacing: 0) {
       ForEach(Array((labels.left + labels.bottom).enumerated()), id: \.offset) { index, label in
-        Text(label).openUIFont(context.theme.textBodySm, role: .detail).monospacedDigit()
+        Text(label).nativeTextStyle(style).monospacedDigit()
           .lineLimit(1).fixedSize()
           .background(GeometryReader { geometry in
             Color.clear.preference(key: NativeChartAxisMeasurementKey.self, value: [measurementScope:
               NativeChartAxisMeasurements(
                 leftWidth: index < labels.left.count ? geometry.size.width : 0,
                 bottomWidth: index >= labels.left.count ? geometry.size.width : 0,
-                lineHeight: geometry.size.height)])
+                lineHeight: max(geometry.size.height, style.font.measuredLineHeight(scale: axisScale)))])
           })
       }
     }.fixedSize().hidden().allowsHitTesting(false).accessibilityHidden(true)
@@ -357,10 +358,11 @@ private struct NativeRadarLabels: View {
   @State private var sizes: [Int: CGSize] = [:]
   var body: some View {
     GeometryReader { geometry in
+      let style = theme.textStyle(.compactBody)
       let projection = NativeRadarGeometry(size: geometry.size, scale: scale)
       let frames = NativeRadarLabelPlacement.frames(size: geometry.size, count: labels.count,
         heights: sizes.mapValues(\.height), scale: scale,
-        lineHeight: (theme.textBodySm.size * 1.2 + theme.textBodySm.additionalLineSpacing()) * scale)
+        lineHeight: style.font.measuredLineHeight(scale: scale))
       ZStack(alignment: .topLeading) {
         ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
           let frame = frames[index]
@@ -371,7 +373,7 @@ private struct NativeRadarLabels: View {
             path.addLine(to: CGPoint(x: side < 0 ? frame.maxX : side > 0 ? frame.minX : frame.midX,
               y: frame.midY))
           }.stroke(theme.borderDefault, lineWidth: 0.5)
-          Text(label).openUIFont(theme.textBodySm, role: .detail).foregroundStyle(theme.textNeutralPrimary)
+          Text(label).nativeTextStyle(style)
             .multilineTextAlignment(side < 0 ? .trailing : side > 0 ? .leading : .center)
             .lineLimit(nil).frame(width: frame.width,
               alignment: side < 0 ? .trailing : side > 0 ? .leading : .center)

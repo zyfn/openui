@@ -62,7 +62,7 @@ struct OpenUINativeField: View {
             control.accessibilityIdentifier("openui.field.\(field.name.displayString)")
             if let error {
                 Label(error, systemImage: "exclamationmark.circle.fill")
-                    .openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(context.theme.textDangerPrimary)
+                    .nativeTextStyle(context.theme.textStyle(.fieldError))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("openui.error.\(field.name.displayString)")
             }
@@ -157,8 +157,7 @@ struct OpenUINativeField: View {
                         VStack(alignment: .leading, spacing: context.theme.spacing("3xs")) {
                             Text(option.label).openUIFont(context.theme.textBodyDefault).foregroundStyle(canEdit ? context.theme.textNeutralPrimary : context.theme.textNeutralTertiary)
                             if !option.description.isEmpty {
-                                Text(option.description).openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(
-                                    context.theme.textNeutralSecondary)
+                                Text(option.description).nativeTextStyle(context.theme.textStyle(.supporting))
                             }
                         }.fixedSize(horizontal: false, vertical: true)
                     }.openUIToggleStyle(checkbox: kind == .checkbox, theme: context.theme)
@@ -177,7 +176,8 @@ struct OpenUINativeField: View {
         VStack(alignment: .leading, spacing: context.theme.spacing("3xs")) {
             Text(option.label).openUIFont(context.theme.textBodyDefault).foregroundStyle(canEdit ? context.theme.textNeutralPrimary : context.theme.textNeutralTertiary)
             if !option.description.isEmpty {
-                Text(option.description).openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(canEdit ? context.theme.textNeutralSecondary : context.theme.textNeutralTertiary)
+                Text(option.description).nativeTextStyle(context.theme.textStyle(.supporting),
+                  color: canEdit ? nil : context.theme.textNeutralTertiary)
             }
         }.fixedSize(horizontal: false, vertical: true)
     }

@@ -60,12 +60,12 @@ semantic color must not silently become the chart series palette.
 
 | Family | Reference relationship adopted | Native boundary / remaining review |
 | --- | --- | --- |
-| Stack, Card | declared direction/alignment/wrap and existing variants | native Card defaults to a padded foreground panel with a light border; clear remains transparent and sunk recessed; rounded backgrounds do not mask text |
+| Stack, Card | declared direction/alignment/wrap and existing variants | native Card defaults to a padded foreground panel with a light border; clear is transparent and sunk uses a subtle fill without border/elevation; rounded backgrounds do not mask text |
 | TextContent, Markdown, Text, BoldText | shared type hierarchy, small does not imply gray, emphasis does not change reading size | system font metrics, MarkdownUI block layout |
 | CardHeader, InlineHeader, Label | role-specific typography, description priority and spacing | full text may grow at larger type |
 | Image, ImageBlock, ImageGallery, ImageTextLarge | shared media radius and stable slots | user-approved 16:9 photo covers instead of fixed 180px banner |
-| ImageText, IconText, Icon | reference compact type and neutral/semantic badge treatment; pinned Lucide artwork | icon-size parameters and nearest-view scaling retained |
-| Tag, TagBlock | informational tint, primary neutral ink, 12/14/16pt reading sizes | complete long labels can wrap instead of being ellipsized |
+| ImageText, IconText, Icon | reference roles, authored size/direction, neutral/semantic ink, pinned Lucide artwork | unspecified thumbnails prefer80/reduce toward64 locally; glyph columns align across variants; status glyphs are unplated except inverted; aliases normalize before geometry |
+| Tag, TagBlock | informational tint, primary neutral ink, 12/14/16pt reading sizes | vertical insets2/4/4; complete long labels wrap with readable corner limits |
 | Button, IconButton, Buttons | primary/secondary/tertiary hierarchy; transparent bordered secondary, capsule text actions and shared density | native hit target, focus, press/Reduce Motion; flat neutral assistant treatment |
 | EntityList | shared body roles, header/total priority and tabular numeric values | native text values stay regular and lead when stacked; number values remain emphasized; read-only body rows use spaceS |
 | ListBlock, ListItem, Steps | common reading roles, media/text gap, number and action hierarchy | width-derived photo previews, complete text and scalable step marker |
@@ -110,9 +110,13 @@ their consuming component. A blank standalone screenshot is not visual approval.
    not. The always-column first candidate was rejected in user review.
    Card/overlay elevation approximates CSS multi-layer shadows. This does not
    authorize new local colors, font sizes or ornamental shadows.
-6. Tags use a shared capsule shape following the later explicit user request.
-   This replaces the earlier small-corner native badge mapping; parameters and
-   text/density roles remain unchanged.
+6. Tags use a capsule at ordinary heights with a corner limit for long wrapped
+   labels. Informational density uses 2/4/4pt vertical insets; declared text sizes
+   and variants remain unchanged. This is native presentation, not a Lang rule.
+7. Explicit supporting slots use14pt secondary reading even when their parent
+   value is larger. Generic TextContent size variants retain primary ink.
+   Field/disclosure and compact action labels use the existing medium label
+   tokens. Resource failure is a neutral photo placeholder with accessible status.
 
 Explicitly supplied legal parameters take priority over defaults. Defaults are
 not an allowlist; this document does not narrow the standard Lang contract.

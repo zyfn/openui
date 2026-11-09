@@ -17,8 +17,7 @@ struct NativeHeading: View {
           .isHeader)
       }
       if let detail = context.string(compact ? "description" : "subtitle") {
-        Text(detail).openUIFont(context.theme.textBodySm, role: .detail)
-          .foregroundStyle(context.theme.textNeutralSecondary)
+        Text(detail).nativeTextStyle(context.theme.textStyle(.supporting))
       }
     }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -27,19 +26,18 @@ struct NativeHeading: View {
 struct NativeMarkdown: View {
   let context: OpenUIComponentContext
   var body: some View {
+    let surface = NativeContentSurface(context.string("variant"), fallback: .clear)
     NativeMarkdownText(text: context.string("textMarkdown") ?? "")
       .padding(
         context.string("variant") == "clear" || context.string("variant") == nil
           ? 0 : context.theme.spaceM
       )
       .background(
-        context.string("variant") == "card"
-          ? context.theme.foreground
-          : context.string("variant") == "sunk" ? context.theme.sunk : .clear,
+        surface.fill(context.theme),
         in: RoundedRectangle(cornerRadius: context.theme.radiusM))
       .overlay {
         RoundedRectangle(cornerRadius: context.theme.radiusM)
-          .strokeBorder(context.string("variant") == "card" || context.string("variant") == "sunk"
+          .strokeBorder(surface.bordered
             ? context.presentation.resolvedCardBorderColor(with: context.theme) : .clear,
             lineWidth: context.presentation.borderWidth)
           .allowsHitTesting(false)
@@ -165,9 +163,9 @@ struct NativeInlineText: View {
     VStack(alignment: .leading, spacing: 0) {
       NativeMarkdownText(text: context.string("value") ?? "", mode: .inline, style: style)
       if let sub = context.string("subtext") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(
-          font: ["md", "lg"].contains(context.string("size") ?? "sm") ? context.theme.textBodyDefault : context.theme.textBodySm,
-          numeric: context.string("subtextVariant") == "number", color: subtextColor(sub)))
+        NativeMarkdownText(text: sub, mode: .inline,
+          style: context.theme.textStyle(.supporting).richText(
+            numeric: context.string("subtextVariant") == "number", color: subtextColor(sub)))
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -195,8 +193,11 @@ struct NativeMediaText: View {
   let media: Media
   private var vertical: Bool { context.string("layout") == "vertical" }
   private var centered: Bool { vertical && textAlignment == .center }
-  private var iconInset: CGFloat {
-    context.string("iconVariant") == nil || context.string("iconVariant") == "neutral" ? 0 : context.theme.space2xs
+  private var adaptiveThumbnail: NativeAdaptiveThumbnail? {
+    guard media == .thumbnail, explicitImageSize == nil else { return nil }
+    return .init(preferred: imageSize,
+      minimum: context.presentation.minimumInlineThumbnailSize,
+      readingWidth: context.presentation.minimumTextColumnWidth * iconScale)
   }
   var body: some View {
     Group {
@@ -214,6 +215,7 @@ struct NativeMediaText: View {
         NativeMediaRow(axis: vertical ? .vertical : .horizontal,
           gap: media == .icon ? context.theme.spaceS * iconScale : context.theme.spaceM,
           centered: centered,
+          adaptiveThumbnail: adaptiveThumbnail,
           media: { leadingMedia }, copy: {
             words.frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
               .multilineTextAlignment(centered ? .center : .leading)
@@ -223,37 +225,40 @@ struct NativeMediaText: View {
   }
   @ViewBuilder private var leadingMedia: some View {
     if media == .icon {
-      let colors = NativeBadgeColors(variant: context.string("iconVariant"), theme: context.theme)
-      // Neutral is a quiet glyph. Explicit colored/soft variants retain their
-      // background and the caller's declared icon size.
+      let style = NativeIconTextStyle(variant: context.string("iconVariant"), theme: context.theme)
       context.slot("icon").environment(\.openUIIconSize, glyphSize)
-        .foregroundStyle(iconInset == 0 ? context.theme.textNeutralSecondary : colors.foreground)
-        .frame(width: (glyphSize + iconInset * 2) * iconScale, height: (glyphSize + iconInset * 2) * iconScale)
-        .background(iconInset > 0 ? colors.background : .clear,
+        .foregroundStyle(style.foreground)
+        .frame(width: (glyphSize + style.inset * 2) * iconScale, height: (glyphSize + style.inset * 2) * iconScale)
+        .background(style.background,
           in: RoundedRectangle(cornerRadius: context.theme.radiusM))
         .accessibilityIdentifier("openui.icon-text.badge")
     } else {
       NativeRemoteImage(
         src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
-        layout: .thumbnail(CGSize(width: imageSize, height: imageSize)))
+        layout: explicitImageSize.map { .thumbnail(CGSize(width: $0, height: $0)) } ?? .aspect(1))
+        .frame(idealWidth: imageSize)
         .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
     }
   }
   private var glyphSize: CGFloat { NativeIconTextMetrics.glyph(context.string("iconSize")) }
-  private var imageSize: CGFloat {
-    // The reference CSS has a default thumbnail in either orientation;
-    // an explicit imageSize overrides it without native-only bounds.
+  private var explicitImageSize: CGFloat? {
     if let size = context.number("imageSize"), size.isFinite, size > 0 { return CGFloat(size) }
-    return context.presentation.inlineThumbnailSize
+    return nil
+  }
+  private var imageSize: CGFloat {
+    if let explicitImageSize { return explicitImageSize }
+    let preferred = context.presentation.inlineThumbnailSize
+    return preferred.isFinite && preferred > 0 ? preferred : OpenUIPresentation.defaults.inlineThumbnailSize
   }
   private var words: some View {
     VStack(alignment: centered ? .center : .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       NativeMarkdownText(text: context.string("title") ?? "", mode: .inline,
         style: .init(font: media == .banner ? context.theme.textBodyLgHeavy
-          : context.theme.inlineFont("sm", emphasized: context.flag("bold") == true), role: .title))
+          : context.theme.inlineFont("sm", emphasized: context.flag("bold") == true), role: .title,
+          emphasisWeight: media == .banner ? context.theme.textBodyLgHeavy.weight : context.theme.textBodyDefaultHeavy.weight))
 
       if let sub = context.string("subtitle") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary, role: .detail))
+        NativeMarkdownText(text: sub, mode: .inline, style: context.theme.textStyle(.supporting).richText())
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -451,15 +456,15 @@ struct NativeListItem: View {
   }
   private var words: some View {
     HStack(alignment: .center, spacing: context.theme.spaceM) {
-      VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
+      VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
         Text(context.string("title") ?? "").openUIFont(presentation.compact
           ? context.theme.textBodySmHeavy : context.theme.textBodyDefaultHeavy, role: .title)
         if let detail = context.string("subtitle") {
-          Text(detail).openUIFont(presentation.compact ? context.theme.textBodySm : context.theme.textBodyDefault, role: presentation.compact ? .detail : .body).foregroundStyle(context.theme.textNeutralSecondary)
+          Text(detail).nativeTextStyle(context.theme.textStyle(.supporting))
         }
         if hasAction, let label = context.string("actionLabel"), !label.isEmpty {
-          Text(label).openUIFont(context.theme.textLabelSmHeavy, role: .control)
-            .foregroundStyle(context.theme.textNeutralSecondary).padding(.top, 2).accessibilityHidden(true)
+          Text(label).nativeTextStyle(context.theme.textStyle(.compactAction))
+            .padding(.top, 2).accessibilityHidden(true)
         }
       }.frame(maxWidth: .infinity, alignment: .leading)
       if hasAction {
@@ -482,7 +487,7 @@ struct NativeSteps: View {
           VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
             Text(NativeValue.string(item.value, "title") ?? "").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
             NativeMarkdownText(text: NativeValue.string(item.value, "details") ?? "",
-              style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary, role: .detail))
+              style: context.theme.textStyle(.supporting).richText())
           }
         }
         .padding(.bottom, index < items.count - 1 ? context.theme.spacing("m") : 0)
@@ -741,7 +746,7 @@ struct NativeCardItem: View {
         context.slot("title").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
         if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }
         if let body = context.string("body") {
-          NativeMarkdownText(text: body, mode: .inline, style: .init(font: context.theme.textBodySm))
+          NativeMarkdownText(text: body, mode: .inline, style: context.theme.textStyle(.compactBody).richText())
         }
       case "Visual":
         context.slot("tag")
@@ -899,14 +904,14 @@ struct NativeFollowUpItem: View {
     OpenUIActionSurface(context: context, message: text, action: Self.action(for: text)) {
       Text(text)
         .fixedSize(horizontal: false, vertical: true)
-        .openUIFont(context.theme.textLabelSm, role: .control)
-        .foregroundStyle(context.theme.textNeutralPrimary)
+        .nativeTextStyle(context.theme.textStyle(.compactAction))
         .padding(.horizontal, context.theme.spacing("m"))
         .padding(.vertical, context.theme.spacing("s"))
         .background(context.theme.sunk, in: Capsule(style: .continuous))
         .overlay(
           Capsule(style: .continuous).strokeBorder(context.theme.borderDefault,
             lineWidth: context.presentation.borderWidth))
+        .openUIControlTarget(alignment: .leading)
     }
     .buttonStyle(.plain)
     .accessibilityLabel(text)

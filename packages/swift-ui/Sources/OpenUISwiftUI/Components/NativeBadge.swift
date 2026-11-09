@@ -43,7 +43,7 @@ struct NativeTagPill<Icon: View>: View {
     size == "sm" ? theme.textBodyXs : size == "lg" ? theme.textBodyDefault : theme.textLabelSm
   }
   private var horizontalInset: CGFloat { theme.spacing(size == "sm" ? "xs" : size == "lg" ? "m" : "s") }
-  private var verticalInset: CGFloat { theme.spacing(size == "sm" ? "2xs" : size == "lg" ? "s" : "xs") }
+  private var verticalInset: CGFloat { size == "sm" ? theme.space3xs : theme.space2xs }
   private var colors: NativeBadgeColors { NativeBadgeColors(variant: variant, theme: theme) }
 
   var body: some View {
@@ -55,7 +55,9 @@ struct NativeTagPill<Icon: View>: View {
     .padding(.horizontal, horizontalInset * scale)
     .padding(.vertical, verticalInset * scale)
     .foregroundStyle(colors.foreground)
-    .background(colors.background, in: RoundedRectangle(cornerRadius: theme.radiusFull, style: .continuous))
+    .background(colors.background, in: NativeButtonShape(radius: nil,
+      maximumRadius: min(max(0, theme.radiusFull) * scale,
+        NativeButtonShape.readableRadius(horizontal: horizontalInset * scale, vertical: verticalInset * scale))))
     .accessibilityElement(children: .combine)
     .accessibilityLabel(text)
     .accessibilityIdentifier("openui.tag")

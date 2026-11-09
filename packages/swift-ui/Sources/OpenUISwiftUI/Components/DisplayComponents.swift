@@ -55,7 +55,7 @@ struct NativeMetric: View {
     }
     @ViewBuilder private var comparison: some View {
         if let previous = context.string("previousValue") {
-            Text(previous).strikethrough().openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textNeutralSecondary)
+            Text(previous).strikethrough().nativeTextStyle(context.theme.textStyle(.caption))
         }
         if case .object(let trend) = context.value("trend"), case .number(let number) = trend["value"],
             number.isFinite,
@@ -65,12 +65,12 @@ struct NativeMetric: View {
                 number.formatted(.number.precision(.fractionLength(0...2))) + "%",
                 systemImage: direction == "down" ? "arrow.down" : "arrow.up"
             )
-            .openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textNeutralSecondary)
+            .nativeTextStyle(context.theme.textStyle(.caption))
         }
     }
     @ViewBuilder private var subtitle: some View {
         if let subtext = context.string("subtext") {
-            Text(subtext).openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(context.theme.textNeutralSecondary)
+            Text(subtext).nativeTextStyle(context.theme.textStyle(.supporting))
         }
     }
 }
@@ -137,7 +137,7 @@ struct NativeAccordion: View {
                         context.render(PropValue.value(item, "content") ?? .null)
                             .padding(.top, context.theme.spacing("m"))
                     } label: {
-                        Text(PropValue.string(item, "trigger") ?? "").openUIFont(context.theme.textBodyDefault)
+                        Text(PropValue.string(item, "trigger") ?? "").nativeTextStyle(context.theme.textStyle(.fieldLabel))
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -289,8 +289,7 @@ struct NativeTableViewport<Content: View>: View {
                 } icon: {
                     Image(systemName: "arrow.left.and.right").accessibilityHidden(true)
                 }
-                .openUIFont(theme.textBodyXs, role: .caption)
-                .foregroundStyle(theme.textNeutralSecondary)
+                .nativeTextStyle(theme.textStyle(.caption))
                 .accessibilityIdentifier("openui.table.overflow-hint")
             }
         }

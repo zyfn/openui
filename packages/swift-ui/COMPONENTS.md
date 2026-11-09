@@ -98,8 +98,15 @@ Each role controls its own font family, size, weight and tracking.
 native glyph metrics. `lineSpacing` retains the native additional-spacing
 setting in em; an explicit `lineHeight` takes precedence. When both are omitted,
 components resolve role-specific leading: body 1.50, detail 1.45, caption 1.40,
-title 1.35, section 1.30 and display/control/metric 1.25.
+title/field-label 1.35, section 1.30 and display/control/metric 1.25.
 These native font values replace CSS font strings, not the Lang contract.
+
+Known descriptions, subtext, list subtitles, gallery details and hints share the
+14pt secondary reading role; field errors share its font and leading with error
+ink. Source/position metadata uses the 12pt caption role. Native text, Markdown
+and geometry consume the same resolved font, including explicit host leading.
+TextContent small/small-heavy keep primary ink. No content-priority inference or
+new text role parameter is added to the language.
 
 Spacing uses the official `space*` tokens. `gap="none"` is always zero.
 Card families consume their own tokens directly: object and fact-card padding
@@ -126,10 +133,22 @@ cards and Carousel use swipe/drag paging without a visible navigation-button row
 Accessibility page navigation and focused macOS arrow keys remain available;
 Table retains its own pagination controls.
 
-Cards and secondary actions use `borderDefault`; editable fields use the stronger
+Ordinary cards and secondary actions use `borderDefault`; clear/sunk content
+containers have no grouping stroke, and sunk has no outer shadow. Editable fields use the stronger
 `borderInteractive`. Set
 `presentation.cardBorderColor` when a product needs a different card boundary
 without changing form controls, Steps or other users of the shared theme tokens.
+
+`ImageText` without an explicit `imageSize` uses an 80pt preferred thumbnail and
+can reduce toward 64pt inside a narrow local row. `inlineThumbnailSize` remains
+the host's preferred dimension; `minimumTextColumnWidth` supplies the reading
+budget. Explicit imageSize and direction remain authoritative. This policy does
+not change photo cropping or the separate gallery-thumbnail size.
+
+`IconText` uses a consistent glyph column. `neutral`, `filled`, and `soft` share
+the same unplated presentation; state variants keep colored glyphs, while
+`inverted` retains its contrasting plate. Tag stays informational: its vertical
+insets are 2/4/4pt for sm/md/lg and complete wrapped copy remains visible.
 
 ### Shared appearance configuration and button shape
 

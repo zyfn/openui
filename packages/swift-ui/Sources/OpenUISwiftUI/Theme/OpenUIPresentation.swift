@@ -11,7 +11,11 @@ public struct OpenUIPresentation {
     #endif
     public var thumbnailSize: CGFloat = 112
     public var compactThumbnailSize: CGFloat = 80
-    public var inlineThumbnailSize: CGFloat = 112
+    /// Preferred size of an unqualified object thumbnail; local reading space
+    /// may reduce it. Gallery navigation keeps its separate compact metric.
+    /// Authored imageSize wins.
+    public var inlineThumbnailSize: CGFloat = 80
+    var minimumInlineThumbnailSize: CGFloat = 64
     public var minimumTextColumnWidth: CGFloat = 160
     public var coverAspectRatio: CGFloat = 16 / 9
     public var maximumCarouselCardWidth: CGFloat = 320

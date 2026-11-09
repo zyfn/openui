@@ -97,7 +97,7 @@ struct NativeDateField: View {
     }
     private func dateControl(_ title: String, part: NativeDatePart) -> some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
-            if range { Text(title).openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(context.theme.textNeutralSecondary) }
+            if range { Text(title).nativeTextStyle(context.theme.textStyle(.supporting)) }
             Button {
                 request = NativeDateRequest(
                     part: part, label: title, date: date(part) ?? Date(), context: context)

@@ -32,11 +32,11 @@ struct NativeCodeBlockContent: View {
   var body: some View {
     VStack(alignment: .leading, spacing: theme.spacing("2xs")) {
       HStack(spacing: theme.spacing("m")) {
-        Text(source.language.displayString).openUIFont(theme.textBodyXs, role: .caption).foregroundStyle(theme.textNeutralSecondary)
+        Text(source.language.displayString).nativeTextStyle(theme.textStyle(.caption))
         Spacer(minLength: 0)
         Button(action: copy) {
           Image(systemName: copied ? "checkmark" : "doc.on.doc")
-            .openUIFont(theme.textBodySm, role: .detail)
+            .nativeTextStyle(theme.textStyle(.compactAction))
             .openUIControlTarget()
         }.buttonStyle(.plain)
           .accessibilityLabel(Text(copied ? "Copied to clipboard" : "Copy code", bundle: NativeControlResources.bundle))

@@ -77,8 +77,8 @@ struct NativeCitationSources: View {
                 } else { Image(systemName: "globe").frame(width: 20, height: 20) }
                 VStack(alignment: .leading, spacing: theme.spacing("2xs")) {
                   Text(source.title).openUIFont(theme.textBodyDefaultHeavy, role: .title).foregroundStyle(theme.textNeutralPrimary)
-                  Text(source.sourceName).openUIFont(theme.textBodyXs, role: .caption).foregroundStyle(theme.textNeutralSecondary)
-                  if let target { Text(target.absoluteString).openUIFont(theme.textBodyXs, role: .caption).foregroundStyle(theme.textNeutralSecondary).lineLimit(2) }
+                  Text(source.sourceName).nativeTextStyle(theme.textStyle(.caption))
+                  if let target { Text(target.absoluteString).nativeTextStyle(theme.textStyle(.caption)).lineLimit(2) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
               }.contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityIdentifier("openui.citation.source.\(index)")

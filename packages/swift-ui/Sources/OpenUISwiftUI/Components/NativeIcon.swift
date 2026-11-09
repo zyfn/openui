@@ -14,6 +14,23 @@ enum NativeIconTextMetrics {
   }
 }
 
+/// The variant changes meaning/ink, never the text column's starting position.
+struct NativeIconTextStyle {
+  let variant: String
+  let foreground: Color
+  let background: Color
+  let inset: CGFloat
+
+  init(variant: String?, theme: OpenUIThemeValues) {
+    self.variant = ["filled", "soft"].contains(variant ?? "neutral") ? "neutral" : variant ?? "neutral"
+    let colors = NativeBadgeColors(variant: self.variant, theme: theme)
+    foreground = self.variant == "neutral" ? theme.textNeutralSecondary : colors.foreground
+    // Inverted needs its contrasting plate. Status colors remain on the glyph.
+    background = self.variant == "inverted" ? colors.background : .clear
+    inset = theme.space2xs
+  }
+}
+
 private struct NativeIconSizeKey: EnvironmentKey { static let defaultValue: CGFloat? = nil }
 extension EnvironmentValues {
   var openUIIconSize: CGFloat? {

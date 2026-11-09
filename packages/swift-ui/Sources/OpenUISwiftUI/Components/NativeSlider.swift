@@ -142,7 +142,7 @@ struct NativeSliderField: View {
           select: { value, index in draft.select(value, at: index) })
         ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
           if let error = configuration.error(for: draft.values, index: index) {
-            Text(error).openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textDangerPrimary)
+            Text(error).nativeTextStyle(context.theme.textStyle(.fieldError))
               .fixedSize(horizontal: false, vertical: true)
               .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
           }
@@ -185,7 +185,7 @@ struct NativeSliderField: View {
       : AnyLayout(HStackLayout(alignment: .center, spacing: context.theme.spaceM))
     return layout {
       if fieldLabel == nil {
-        Text(label).openUIFont(context.theme.textBodySm, role: .detail)
+        Text(label).nativeTextStyle(context.theme.textStyle(.fieldLabel))
           .fixedSize(horizontal: false, vertical: true)
           .frame(maxWidth: .infinity, alignment: .leading)
       }

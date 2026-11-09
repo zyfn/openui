@@ -18,7 +18,7 @@ struct NativePageControls: View {
       .accessibilityIdentifier(identifier + ".previous")
       .disabled(!enabled || page <= 0)
       if showsCount {
-        Text("\(page + 1) / \(count)").openUIFont(theme.textBodyXs, role: .caption).monospacedDigit()
+        Text("\(page + 1) / \(count)").nativeTextStyle(theme.textStyle(.caption)).monospacedDigit()
           .accessibilityIdentifier(identifier + ".page")
       }
       Button { select(page + 1) } label: {

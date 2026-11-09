@@ -5,6 +5,7 @@ struct OpenUICardSurface: ViewModifier {
     let theme: OpenUIThemeValues
     let variant: String?
     func body(content: Content) -> some View {
+        let surface = NativeContentSurface(variant, fallback: .card)
         content.environment(\.openUIActionDensity, .compact)
             .padding(.horizontal, theme.componentStyle.panelInset)
             .padding(.vertical, variant == "clear" ? 0 : theme.componentStyle.panelInset)
@@ -13,8 +14,8 @@ struct OpenUICardSurface: ViewModifier {
             // not mask glyphs at the edge of its unpadded content.
             .modifier(NativeCardSurface(
                 theme: theme,
-                fill: variant == "clear" ? .clear : variant == "sunk" ? theme.sunk : theme.foreground,
-                bordered: variant != "clear"))
+                fill: surface.fill(theme),
+                bordered: surface.bordered))
     }
 }
 

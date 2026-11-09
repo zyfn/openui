@@ -2,16 +2,39 @@ import SwiftUI
 
 /// Reading roles resolve layout defaults without rewriting a complete host font.
 enum NativeTextRole {
-    case display, section, title, body, detail, caption, control, metric, code
+    case display, section, title, label, body, detail, caption, control, metric, code
 
     var lineHeight: CGFloat {
         switch self {
         case .display, .control, .metric: return 1.25
         case .section: return 1.30
-        case .title: return 1.35
+        case .title, .label: return 1.35
         case .detail: return 1.45
         case .caption: return 1.40
         case .body, .code: return 1.50
+        }
+    }
+}
+
+/// Content surfaces do not decide the boundaries of their child controls.
+enum NativeContentSurface: Equatable {
+    case clear, sunk, card
+
+    init(_ variant: String?, fallback: Self) {
+        switch variant {
+        case "clear": self = .clear
+        case "sunk": self = .sunk
+        case "card": self = .card
+        default: self = fallback
+        }
+    }
+
+    var bordered: Bool { self == .card }
+    func fill(_ theme: OpenUIThemeValues) -> Color {
+        switch self {
+        case .clear: return .clear
+        case .sunk: return theme.sunk
+        case .card: return theme.foreground
         }
     }
 }

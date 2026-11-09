@@ -12,6 +12,38 @@ enum NativeMediaLayout {
   case cover, aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic
 }
 
+/// A resource placeholder is not an alert. Copy is shown only when it fits;
+/// the enclosing image retains its accessible unavailable status at every size.
+struct NativeUnavailableMedia: View {
+  let theme: OpenUIThemeValues
+  @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 16
+
+  var body: some View {
+    GeometryReader { geometry in
+      let side = min(glyphSize, max(0, min(geometry.size.width, geometry.size.height)))
+      ViewThatFits(in: .vertical) {
+        if geometry.size.width >= 160 {
+          VStack(spacing: theme.spaceXs) {
+            glyph(side)
+            Text("Image unavailable", bundle: NativeControlResources.bundle)
+              .nativeTextStyle(theme.textStyle(.supporting))
+              .multilineTextAlignment(.center)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.horizontal, theme.spaceS)
+          }.fixedSize(horizontal: false, vertical: true)
+        }
+        glyph(side)
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+  }
+
+  private func glyph(_ side: CGFloat) -> some View {
+    Image(systemName: "photo").resizable().scaledToFit()
+      .frame(width: side, height: side).foregroundStyle(theme.textNeutralSecondary)
+  }
+}
+
 /// Completed media belongs to the presentation, rather than a transient layout
 /// branch. A late grid/carousel argument may relocate an already loaded image.
 @MainActor final class NativeMediaCache {
@@ -200,20 +232,7 @@ struct NativeRemoteImage: View {
         ZStack {
           theme.sunk
           if showsFailureSymbol {
-            GeometryReader { geometry in
-              VStack(spacing: theme.spacing("xs")) {
-                Image(systemName: "exclamationmark.triangle").openUIFont(theme.textBodyDefault)
-                if geometry.size.width >= 160 && geometry.size.height >= 96 {
-                  Text("Image unavailable", bundle: NativeControlResources.bundle)
-                    .openUIFont(theme.textBodyXs, role: .caption)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, theme.spacing("s"))
-                }
-              }
-              .foregroundStyle(theme.textNeutralSecondary)
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            NativeUnavailableMedia(theme: theme)
           }
         }
       }
@@ -356,7 +375,7 @@ struct NativeImageGallery: View {
                   : pictures[image.key] == nil ? Text("Loading image", bundle: NativeControlResources.bundle) : Text("")
               )
               .accessibilityIdentifier("openui.gallery.image.\(image.index)")
-              if let details = image.details { Text(details).openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textNeutralSecondary) }
+              if let details = image.details { Text(details).nativeTextStyle(context.theme.textStyle(.supporting)) }
             }
           }
         }
@@ -425,9 +444,9 @@ private struct NativeGalleryPreview: View {
   var body: some View {
     VStack(alignment: .leading, spacing: theme.spacing("m")) {
       HStack {
-        Text("All photos", bundle: NativeControlResources.bundle).openUIFont(theme.textHeadingXs)
+        Text("All photos", bundle: NativeControlResources.bundle).openUIFont(theme.textHeadingXs, role: .title)
         Spacer()
-        if let image { Text("\(image.index + 1) / \(images.count)").openUIFont(theme.textBodySm, role: .detail).foregroundStyle(theme.textNeutralSecondary) }
+        if let image { Text("\(image.index + 1) / \(images.count)").nativeTextStyle(theme.textStyle(.caption)).monospacedDigit() }
         if let image, let destination = resources.request(for: image.src)?.url {
           Button { openURL(destination) } label: {
             Image(systemName: "arrow.up.right.square").openUIFont(theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
@@ -446,8 +465,8 @@ private struct NativeGalleryPreview: View {
           NativeRemoteImage(src: image.src, alt: image.alt, layout: .fit,
             cachedImage: pictures[image.key], attempt: image.requestID.attempt, onStatus: { record($0, $1, image.key) })
         }.accessibilityIdentifier("openui.gallery.preview.image")
-        if !image.alt.isEmpty { Text(image.alt).openUIFont(theme.textBodySm, role: .detail) }
-        if let details = image.details { Text(details).openUIFont(theme.textBodyXs, role: .caption).foregroundStyle(theme.textNeutralSecondary) }
+        if !image.alt.isEmpty { Text(image.alt).nativeTextStyle(theme.textStyle(.compactBody)) }
+        if let details = image.details { Text(details).nativeTextStyle(theme.textStyle(.supporting)) }
       }
       ScrollView(.horizontal) {
         HStack(spacing: theme.spaceM) {

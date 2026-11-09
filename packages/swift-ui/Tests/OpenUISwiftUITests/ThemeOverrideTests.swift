@@ -82,7 +82,7 @@ final class ThemeOverrideTests: XCTestCase {
       NSHostingView(rootView: NativeTagPill(text: "Tag", size: "md", variant: nil, theme: theme) { EmptyView() }
         .openUITheme(theme).fixedSize()).fittingSize.height
     }
-    let base = OpenUIThemeValues(); var custom = base; custom.spaceXs = 10
+    let base = OpenUIThemeValues(); var custom = base; custom.space2xs = base.space2xs + 4
     XCTAssertEqual(height(custom) - height(base), 8, accuracy: 0.5)
   }
 
