@@ -120,6 +120,12 @@ This includes touch targets, thumbnails, carousel widths, chart axes and
 native motion. Changing a theme does not reset this environment value.
 The renderer stays transparent; the app owns its page and message background.
 
+Callout/TextCallout use a neutral leading rule instead of a warning/status icon;
+their variant, visibility binding and dismissal contracts are unchanged. Horizontal
+cards and Carousel use swipe/drag paging without a visible navigation-button row.
+Accessibility page navigation and focused macOS arrow keys remain available;
+Table retains its own pagination controls.
+
 Cards and secondary actions use `borderDefault`; editable fields use the stronger
 `borderInteractive`. Set
 `presentation.cardBorderColor` when a product needs a different card boundary

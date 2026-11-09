@@ -39,7 +39,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
   @Binding var selection: ID
   let enabled: Bool
   let identifier: String
-  var showsControls = true
+  var showsControls = false
   var maximumPageWidth: CGFloat? = nil
   var trailingPeek: CGFloat = 0
   var pageSpacing: CGFloat = 0
@@ -56,6 +56,9 @@ struct NativePager<ID: Hashable, Content: View>: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.layoutDirection) private var direction
   @Environment(\.openUITheme) private var theme
+  #if os(macOS)
+  @FocusState private var keyboardFocused: Bool
+  #endif
   private var index: Int { ids.firstIndex(of: selection) ?? 0 }
   private var isCarousel: Bool { maximumPageWidth != nil }
   private var fallbackWidth: CGFloat { maximumPageWidth ?? nativePresentation.minimumCardWidth }
@@ -102,6 +105,18 @@ struct NativePager<ID: Hashable, Content: View>: View {
         Button { select(index + 1) } label: { Text("Next page", bundle: NativeControlResources.bundle) }
       }
     }
+    #if os(macOS)
+    .focusable(enabled && grid == nil)
+    .focused($keyboardFocused)
+    .onMoveCommand { movement in
+      guard keyboardFocused, enabled, grid == nil else { return }
+      switch movement {
+      case .left: select(index + (direction == .rightToLeft ? 1 : -1))
+      case .right: select(index + (direction == .rightToLeft ? -1 : 1))
+      default: break
+      }
+    }
+    #endif
   }
 
   private var strip: some View {

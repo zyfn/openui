@@ -36,6 +36,10 @@
 "View image" = "查看图片";
 
 "Previous page" = "上一页";
+"Information" = "提示";
+"Success" = "已完成";
+"Warning" = "注意";
+"Error" = "错误";
 "Next page" = "下一页";
 "Copy code" = "复制代码";
 "Copied to clipboard" = "已复制到剪贴板";

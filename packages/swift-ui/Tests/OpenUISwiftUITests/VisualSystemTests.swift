@@ -1,5 +1,6 @@
 import SwiftUI
 import XCTest
+import OpenUILang
 @testable import OpenUISwiftUI
 #if os(macOS)
 import AppKit
@@ -47,6 +48,45 @@ final class VisualSystemTests: XCTestCase {
     }
 
     #if os(macOS)
+    @MainActor func testSwipeCollectionsDoNotReserveAButtonRow() throws {
+        _ = NSApplication.shared
+        let library = try OpenUIStandardComponents.library()
+        func height(_ source: String) -> CGFloat {
+            let state = OpenUIState(schema: library.library.toSchema())
+            state.setSource(source)
+            XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+            return NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
+                .frame(width: 320)).fittingSize.height
+        }
+        let page = "[TextContent(\"One page\")]"
+        XCTAssertEqual(height("root=Carousel([\(page)],\"card\")"),
+                       height("root=Carousel([\(page),\(page)],\"card\")"), accuracy: 1)
+        let first = "CompositeCardItem(\"a\",Text(\"text\",\"Object\"),[Text(\"text\",\"Details\")])"
+        let second = "CompositeCardItem(\"b\",Text(\"text\",\"Object\"),[Text(\"text\",\"Details\")])"
+        XCTAssertEqual(height("root=CompositeCardBlock([\(first)],\"carousel\",true)"),
+                       height("root=CompositeCardBlock([\(first),\(second)],\"carousel\",true)"), accuracy: 1)
+    }
+
+    @MainActor func testQuotedCalloutKeepsVisibilityBindingAndNaturalCopyHeight() throws {
+        _ = NSApplication.shared
+        let library = try OpenUIStandardComponents.library()
+        let state = OpenUIState(schema: library.library.toSchema())
+        let copy = String(repeating: "完整说明文字保持自然换行，不截断阅读内容。", count: 5)
+        state.setSource("root=Stack([Callout(\"warning\",\"补充说明\",\"\(copy)\",$shown)])\n$shown=true")
+        XCTAssertTrue(state.errors.isEmpty)
+        let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
+        let visibleHeight = host.fittingSize.height
+        XCTAssertGreaterThan(visibleHeight, 100)
+        state.setState("$shown", value: .boolean(false))
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.03))
+        XCTAssertLessThan(host.fittingSize.height, 1)
+        state.setState("$shown", value: .boolean(true))
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.03))
+        XCTAssertEqual(host.fittingSize.height, visibleHeight, accuracy: 1)
+    }
+
     @MainActor func testRenderedMarkdownHeadingsKeepTheirScaleAcrossBodyOverrides() {
         _ = NSApplication.shared
         func height(_ text: String, bodySize: CGFloat = 16) -> CGFloat {

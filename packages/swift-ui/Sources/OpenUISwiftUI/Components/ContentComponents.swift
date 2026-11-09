@@ -68,17 +68,25 @@ struct NativeCallout: View {
   var body: some View {
     Group {
       if visible {
-        HStack(alignment: .top, spacing: context.theme.spacing("sm")) {
-          Image(systemName: symbol)
-          .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
-          VStack(alignment: .leading, spacing: context.theme.spacing("2xs")) {
-            if let title = context.string("title") { Text(title).openUIFont(context.theme.textBodyDefaultHeavy, role: .title) }
-            if let detail = context.string("description") {
-              NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary, role: .detail))
-            }
+        VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
+          if let title = context.string("title"), !title.isEmpty {
+            Text(title).openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
           }
-          Spacer(minLength: 0)
-        }.padding(.vertical, context.theme.spaceM).accessibilityElement(children: .combine)
+          if let detail = context.string("description"), !detail.isEmpty {
+            NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodyDefault,
+              color: context.theme.textNeutralPrimary))
+          }
+        }
+        .padding(.leading, context.theme.spaceML)
+        .padding(.vertical, context.theme.spaceS)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .leading) {
+          RoundedRectangle(cornerRadius: context.theme.radius3xs, style: .continuous)
+            .fill(context.theme.borderDefault).frame(width: 3)
+            .padding(.vertical, context.theme.space2xs).accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(Text(statusLabel, bundle: NativeControlResources.bundle))
       }
     }.task(id: "\(state.sourceRevision):\(visible):\(context.canInteract)") {
       guard visible, context.canInteract, binding != nil else { return }
@@ -87,12 +95,12 @@ struct NativeCallout: View {
       binding?.wrappedValue = .boolean(false)
     }
   }
-  private var symbol: String {
+  private var statusLabel: LocalizedStringKey {
     switch context.string("variant") {
-    case "success": return "checkmark.circle"
-    case "warning": return "exclamationmark.triangle"
-    case "error", "danger": return "xmark.circle"
-    default: return "info.circle"
+    case "success": return "Success"
+    case "warning": return "Warning"
+    case "error", "danger": return "Error"
+    default: return "Information"
     }
   }
 }
@@ -838,7 +846,7 @@ struct NativeCardBlock: View {
       } else {
         NativePager(ids: children.map(\.id), selection: selection, enabled: true,
           identifier: "openui.card-block.\(kind.lowercased())",
-          showsControls: context.string("layout") == "carousel",
+          showsControls: false,
           maximumPageWidth: context.presentation.maximumCarouselCardWidth,
           trailingPeek: context.presentation.carouselPeek, pageSpacing: gap, grid: grid, supportsAdjustment: false) { id in
           if let index = children.firstIndex(where: { $0.id == id }) {

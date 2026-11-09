@@ -22,6 +22,9 @@ Hosts may replace theme values without redefining components or rewriting progra
   horizontally rather than turning the table into an unrelated card template.
 - Carousel and card collections use the same native pager and current container width.
   A page selection survives appends; removing a selected page clamps the selection.
+- Horizontal collections have no visible previous/next button row. Drag paging,
+  card peeking and accessibility page actions remain; macOS provides arrow-key
+  navigation when the pager itself has keyboard focus. Table pagination is separate.
 - Stable statement and component identities preserve local UI during streaming,
   state updates and theme changes. Replacing a program resets that program only.
 
@@ -163,7 +166,10 @@ long text columns use the theme's reading-width hint instead of a scalar-only
 minimum. Values are not reformatted or rewritten.
 SDK-generated Context/Composite group actions are siblings of their independent
 content controls inside the item surface; no nested Button is introduced.
-Reading disclosure labels align with their body. Large failed media slots show
+Callout and TextCallout use a quiet quote treatment: a 3pt neutral leading rule,
+16pt body copy and an optional emphasized title, without a status icon. The variant
+remains an accessibility value; visible binding and the existing auto-dismiss
+behavior are unchanged. Reading disclosure labels align with their body. Large failed media slots show
 a brief localized status; small thumbnails retain a distinct status glyph.
 
 ### Density and mounted controls
