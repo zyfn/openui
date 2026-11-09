@@ -1,5 +1,10 @@
 import SwiftUI
 
+struct NativeArtworkImageState: Equatable {
+  let request: NativeResourceRequestID
+  let status: NativeMediaStatus
+}
+
 /// Photo geometry belongs to the container. Copy can move below the photo,
 /// but never changes the photo's aspect or gets clipped to preserve that aspect.
 struct NativeArtworkCardMetrics {

@@ -646,6 +646,9 @@ struct NativeCardItem: View {
   @Environment(\.openUICardGroupAction) private var pendingGroupAction
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.dynamicTypeSize) private var typeSize
+  @Environment(\.openUIResourceContext) private var artworkResources
+  @Environment(\.openUIMediaCache) private var artworkCache
+  @State private var artworkImageState: NativeArtworkImageState?
   private var groupAction: NativeCardGroupAction? { pendingGroupAction }
   private var bannerHeaderInset: CGFloat {
     guard case .element(let header) = context.value("header"), header.typeName == "ImageTextLarge" else { return 0 }
@@ -656,9 +659,19 @@ struct NativeCardItem: View {
       !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
     return source
   }
+  private var artworkRequest: NativeResourceRequestID? {
+    guard let source = artworkSource else { return nil }
+    return .init(request: artworkResources.request(for: source),
+      loader: ObjectIdentifier(artworkResources.loader), attempt: 0)
+  }
+  private var hasLoadedArtwork: Bool {
+    guard context.element.isSourceComplete, let request = artworkRequest else { return false }
+    return artworkCache?[request] != nil
+      || (artworkImageState?.request == request && artworkImageState?.status == .loaded)
+  }
   private var contentTheme: OpenUIThemeValues {
     var theme = context.theme
-    if artworkSource != nil {
+    if hasLoadedArtwork {
       theme.textNeutralPrimary = .white
       theme.textNeutralSecondary = .white.opacity(0.86)
       theme.sunk = .black.opacity(0.55)
@@ -691,7 +704,7 @@ struct NativeCardItem: View {
         : summary ? .clear : context.theme.foreground,
       bordered: artworkSource == nil && kind != "Context"))
     .environment(\.openUIActionDensity, .compact)
-    .environment(\.colorScheme, artworkSource == nil ? colorScheme : .dark)
+    .environment(\.colorScheme, hasLoadedArtwork ? .dark : colorScheme)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("openui.card-item." + kind.lowercased())
     .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
@@ -699,20 +712,40 @@ struct NativeCardItem: View {
       value: kind == "Overview" && context.value("bottom") != nil && context.value("bottom") != .null)
   }
   @ViewBuilder private var content: some View {
-      if let source = artworkSource {
+      if let source = artworkSource, let request = artworkRequest {
         NativeArtworkCardLayout(aspectRatio: context.presentation.coverAspectRatio,
           fallbackWidth: context.presentation.minimumCardWidth, accessibility: typeSize.isAccessibilitySize) {
           ZStack {
-            Color.black
+            context.theme.sunk
             NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .cover,
-              showsFailureSymbol: false)
+              onStatus: { status, _ in
+                guard context.isCurrentPresentation else { return }
+                let next = NativeArtworkImageState(request: request, status: status)
+                if artworkImageState != next { artworkImageState = next }
+              })
+              .environment(\.openUITheme, context.theme)
+              .environment(\.colorScheme, colorScheme)
           }.allowsHitTesting(false)
-          copy.background(LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)],
-            startPoint: .top, endPoint: .bottom).allowsHitTesting(false))
-        }.background(Color.black)
+          copy.background {
+            if hasLoadedArtwork {
+              LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)],
+                startPoint: .top, endPoint: .bottom).allowsHitTesting(false)
+            }
+          }
+        }.background(hasLoadedArtwork ? Color.black : context.theme.sunk)
       } else {
         copy
       }
+  }
+  @ViewBuilder private var contextTitle: some View {
+    if artworkSource != nil, case .element(let title) = context.value("title"), title.typeName == "Tag" {
+      context.slot("title")
+        .environment(\.openUIArtworkTag, true)
+        .environment(\.openUITheme, context.theme)
+        .environment(\.colorScheme, colorScheme)
+    } else {
+      context.slot("title").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
+    }
   }
   private var copy: some View {
     VStack(alignment: centeredOverview ? .center : .leading,
@@ -743,13 +776,16 @@ struct NativeCardItem: View {
           .frame(maxWidth: .infinity, alignment: copyAlignment)
           .alignmentGuide(.nativeOverviewMetricTop) { _ in 0 }
       case "Context":
-        context.slot("title").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
+        contextTitle
         if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }
         if let body = context.string("body") {
-          NativeMarkdownText(text: body, mode: .inline, style: context.theme.textStyle(.compactBody).richText())
+          NativeMarkdownText(text: body, mode: .inline, style: contentTheme.textStyle(.compactBody).richText())
         }
       case "Visual":
         context.slot("tag")
+          .environment(\.openUIArtworkTag, artworkSource != nil)
+          .environment(\.openUITheme, context.theme)
+          .environment(\.colorScheme, colorScheme)
         if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }
         HStack(alignment: .center, spacing: context.theme.spacing("s")) {
           context.slot("body")

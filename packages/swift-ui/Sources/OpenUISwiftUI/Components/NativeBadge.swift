@@ -1,5 +1,13 @@
 import SwiftUI
 
+private struct NativeArtworkTagKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+  var openUIArtworkTag: Bool {
+    get { self[NativeArtworkTagKey.self] }
+    set { self[NativeArtworkTagKey.self] = newValue }
+  }
+}
+
 /// Standard badge presentation, shared by Tag/TagBlock and IconText. These
 /// metrics implement component sizes; they do not depend on the host or content.
 struct NativeBadgeColors {
@@ -38,13 +46,21 @@ struct NativeTagPill<Icon: View>: View {
   let theme: OpenUIThemeValues
   @ViewBuilder var icon: Icon
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+  @Environment(\.openUIArtworkTag) private var onArtwork
+  @Environment(\.openUIPresentation) private var presentation
 
   private var font: OpenUIFont {
     size == "sm" ? theme.textBodyXs : size == "lg" ? theme.textBodyDefault : theme.textLabelSm
   }
   private var horizontalInset: CGFloat { theme.spacing(size == "sm" ? "xs" : size == "lg" ? "m" : "s") }
-  private var verticalInset: CGFloat { size == "sm" ? theme.space3xs : theme.space2xs }
+  private var verticalInset: CGFloat {
+    onArtwork ? theme.space2xs : size == "sm" ? theme.space3xs : theme.space2xs
+  }
   private var colors: NativeBadgeColors { NativeBadgeColors(variant: variant, theme: theme) }
+  private var shape: NativeButtonShape {
+    .init(radius: nil, maximumRadius: min(max(0, theme.radiusFull) * scale,
+      NativeButtonShape.readableRadius(horizontal: horizontalInset * scale, vertical: verticalInset * scale)))
+  }
 
   var body: some View {
     HStack(spacing: theme.spacing(size == "sm" ? "2xs" : "xs") * scale) {
@@ -55,9 +71,9 @@ struct NativeTagPill<Icon: View>: View {
     .padding(.horizontal, horizontalInset * scale)
     .padding(.vertical, verticalInset * scale)
     .foregroundStyle(colors.foreground)
-    .background(colors.background, in: NativeButtonShape(radius: nil,
-      maximumRadius: min(max(0, theme.radiusFull) * scale,
-        NativeButtonShape.readableRadius(horizontal: horizontalInset * scale, vertical: verticalInset * scale))))
+    // A photograph cannot provide the contrast contract of a normal surface.
+    .background(onArtwork ? theme.foreground : colors.background, in: shape)
+    .overlay(shape.strokeBorder(onArtwork ? theme.borderDefault : .clear, lineWidth: presentation.borderWidth))
     .accessibilityElement(children: .combine)
     .accessibilityLabel(text)
     .accessibilityIdentifier("openui.tag")

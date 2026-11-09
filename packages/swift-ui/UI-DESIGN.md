@@ -83,6 +83,18 @@ children, not a new image instance. A responsive block with one recommendation
 uses one full-width column instead of leaving a second column empty. Explicit
 nonresponsive column declarations keep their existing meaning.
 
+Pending or unavailable background photos use the original scoped neutral surface
+and readable primary/secondary ink. White overlay copy and its dark scrim apply
+only while the matching photo is actually loaded (including retained pixels).
+Changing the image request resets this presentation without changing the frame
+or remounting/refetching an unchanged image.
+
+Tags in the dedicated Visual tag slot or Context title-tag slot keep the original
+host theme and appearance. Their plate uses the opaque default foreground surface
+with a light grouping stroke instead of inheriting the photo's translucent dark
+theme. Semantic tag ink is retained. Small artwork tags use at least the 4pt
+vertical inset; ordinary informational tags keep their lighter density.
+
 Card collections use one mounted subtree for grid and carousel placement. A
 positional layout argument can arrive after a large inline item array; until it
 is known, a browsable card viewport avoids temporarily stacking every card into
