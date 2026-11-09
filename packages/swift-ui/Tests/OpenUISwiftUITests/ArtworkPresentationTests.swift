@@ -28,7 +28,7 @@ final class ArtworkPresentationTests: XCTestCase {
       },
     ])
     let state = OpenUIState(schema: library.library.toSchema())
-    state.setSource("root=VisualCardItem(BoldText(\"text\",\"Visible title\"),\"card\",$photo,Tag(\"Place\"),\"Photo\")\n$photo=\"https://images.example/a.png\"")
+    state.setSource("root=VisualCardItem(BoldText(\"text\",$copy),\"card\",$photo,Tag(\"Place\"),\"Photo\")\n$photo=\"https://images.example/a.png\"\n$copy=\"Visible title\"")
     XCTAssertTrue(state.errors.isEmpty)
     let base = OpenUIThemeValues()
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
@@ -64,6 +64,14 @@ final class ArtworkPresentationTests: XCTestCase {
     XCTAssertEqual(probe.tagInk, base.textNeutralPrimary, "The tag must not inherit white photo-overlay ink")
     XCTAssertEqual(probe.tagSurface, base.foreground, "The tag keeps the opaque host surface")
     XCTAssertEqual(loader.count, 1, "Changing copy appearance must not refetch the image")
+    state.setState("$copy", value: .string(String(repeating: "Complete photo descriptions stay readable when moved below the image. ", count: 12)))
+    settle { probe.titleInk == base.textNeutralPrimary }
+    XCTAssertGreaterThan(host.fittingSize.height, loadingSize.height,
+      "Overflowing copy reflows below the unchanged photo, with normal host ink")
+    XCTAssertEqual(loader.count, 1, "Moving copy must preserve the mounted image request")
+    state.setState("$copy", value: .string("Visible title"))
+    settle { probe.titleInk == .white }
+    XCTAssertEqual(host.fittingSize, loadingSize, "Short copy can return to the photo overlay")
     state.setState("$photo", value: .string("invalid://unavailable"))
     settle { probe.titleInk == base.textNeutralPrimary }
     try assertNeutralPlaceholder()

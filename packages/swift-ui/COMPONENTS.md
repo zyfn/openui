@@ -152,7 +152,8 @@ insets are 2/4/4pt for sm/md/lg and complete wrapped copy remains visible.
 
 Background-photo Visual/Context cards keep neutral placeholders and readable
 copy until their image loads; they no longer reserve a black loading panel.
-The loaded photo keeps its dark scrim and overlay ink. On-photo tags use the
+Loaded photos use a dark scrim and overlay ink only behind overlapping copy;
+copy moved below the image uses the original host surface and text colors. On-photo tags use the
 host's original foreground surface and semantic ink with a light boundary, so
 default light/dark photos cannot show through the tag's readable interior.
 This changes native presentation only; bgImageSrc, tag, title and action slots

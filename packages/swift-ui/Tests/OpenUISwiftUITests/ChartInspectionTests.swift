@@ -5,19 +5,22 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class ChartInspectionTests: XCTestCase {
-  func testRadarCategoryRegionsFitAndSeparateMeasuredSideLabels() {
-    let size = CGSize(width: 350, height: 250)
-    let frames = NativeRadarLabelPlacement.frames(size: size, count: 8,
-      heights: Dictionary(uniqueKeysWithValues: (0..<8).map { ($0, CGFloat(52)) }),
-      scale: 1, lineHeight: 20)
-    XCTAssertEqual(frames.count, 8, "Every source category has a native label region")
-    let bounds = CGRect(origin: .zero, size: size)
-    XCTAssertTrue(frames.allSatisfy { bounds.contains($0) })
-    for side in [-1, 1] {
-      let group = frames.indices.filter { NativeRadarLabelPlacement.side(index: $0, count: 8) == side }
-        .map { frames[$0] }.sorted { $0.minY < $1.minY }
-      for pair in zip(group, group.dropFirst()) {
-        XCTAssertLessThanOrEqual(pair.0.maxY, pair.1.minY)
+  func testRadarNumberRegionsStayInsideNarrowPlotsAtLargeTextSizes() {
+    for width: CGFloat in [160, 240, 320] {
+      for scale: CGFloat in [1, 2, 3] {
+        let size = CGSize(width: width, height: 250 * scale)
+        let measured = Dictionary(uniqueKeysWithValues: (0..<20).map {
+          ($0, CGSize(width: CGFloat(String($0 + 1).count) * 14 * scale, height: 22 * scale))
+        })
+        let frames = NativeRadarLabelPlacement.frames(size: size, count: 20, sizes: measured,
+          scale: scale, lineHeight: 22 * scale)
+        XCTAssertEqual(frames.count, 20)
+        let bounds = CGRect(origin: .zero, size: size)
+        XCTAssertTrue(frames.allSatisfy { bounds.contains($0) })
+        for (index, frame) in frames.enumerated() {
+          XCTAssertGreaterThanOrEqual(frame.width, measured[index]!.width)
+          XCTAssertGreaterThanOrEqual(frame.height, measured[index]!.height)
+        }
       }
     }
   }

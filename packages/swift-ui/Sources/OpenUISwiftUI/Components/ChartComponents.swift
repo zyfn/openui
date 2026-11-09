@@ -237,6 +237,9 @@ struct NativeChart: View {
       }.frame(height: NativeChartHeight.value(explicit: context.number("height"),
         defaultHeight: defaultHeight, scale: axisScale,
         minimumHeight: name == "SingleStackedBarChart" ? 0 : 100))
+      if name == "RadarChart" {
+        NativeRadarCategoryKey(labels: data.labels, theme: context.theme)
+      }
       if showsLegend {
         // Legend items already own vertical padding and their full control target.
         NativeChartLegendLayout(rightToLeft: direction == .rightToLeft) {
@@ -299,48 +302,21 @@ enum NativeChartHeight {
   }
 }
 
-/// Full category names stay beside their axes. Native text supplies wrapped
-/// heights; side labels can spread vertically without changing plotted values.
+/// Axis numbers have bounded regions; complete category names live in a
+/// wrapping key below the plot instead of being squeezed beside its vertices.
 enum NativeRadarLabelPlacement {
-  static func frames(size: CGSize, count: Int, heights: [Int: CGFloat], scale: CGFloat,
+  static func frames(size: CGSize, count: Int, sizes: [Int: CGSize], scale: CGFloat,
                      lineHeight: CGFloat) -> [CGRect] {
     guard count > 0 else { return [] }
     let geometry = NativeRadarGeometry(size: size, scale: scale)
-    var result: [CGRect] = []
-    var sides: [Int: [Int]] = [:]
-    for index in 0..<count {
+    return (0..<count).map { index in
       let point = geometry.point(index: index, count: count, fraction: 1.12)
-      let side = side(index: index, count: count)
-      let room = side < 0 ? point.x : side > 0 ? size.width - point.x : size.width
-      let width = max(1, side == 0 ? size.width : min(size.width / 3, room))
-      let height = max(lineHeight, heights[index] ?? lineHeight)
-      let x = side < 0 ? max(0, point.x - width)
-        : side > 0 ? min(size.width - width, point.x) : (size.width - width) / 2
-      result.append(CGRect(x: x, y: min(max(0, point.y - height / 2), max(0, size.height - height)),
-        width: width, height: height))
-      if side != 0 { sides[side, default: []].append(index) }
+      let measured = sizes[index] ?? CGSize(width: CGFloat(String(index + 1).count) * lineHeight * 0.65, height: lineHeight)
+      let width = min(size.width, max(1, measured.width + 4 * scale))
+      let height = min(size.height, max(lineHeight, measured.height))
+      return CGRect(x: min(max(0, point.x - width / 2), max(0, size.width - width)),
+        y: min(max(0, point.y - height / 2), max(0, size.height - height)), width: width, height: height)
     }
-    let gap = max(1, 4 * scale)
-    for indices in sides.values {
-      let sorted = indices.sorted { result[$0].midY < result[$1].midY }
-      var end: CGFloat = -gap
-      for index in sorted {
-        result[index].origin.y = max(result[index].minY, end + gap)
-        end = result[index].maxY
-      }
-      if end > size.height {
-        var ceiling = size.height
-        for index in sorted.reversed() {
-          result[index].origin.y = max(0, min(result[index].minY, ceiling - result[index].height))
-          ceiling = result[index].minY - gap
-        }
-      }
-    }
-    return result
-  }
-  static func side(index: Int, count: Int) -> Int {
-    let cosine = cos(Double(index) * 2 * .pi / Double(max(1, count)) - .pi / 2)
-    return abs(cosine) < 0.001 ? 0 : cosine < 0 ? -1 : 1
   }
 }
 
@@ -358,34 +334,40 @@ private struct NativeRadarLabels: View {
   @State private var sizes: [Int: CGSize] = [:]
   var body: some View {
     GeometryReader { geometry in
-      let style = theme.textStyle(.compactBody)
+      let style = theme.textStyle(.supporting)
       let projection = NativeRadarGeometry(size: geometry.size, scale: scale)
       let frames = NativeRadarLabelPlacement.frames(size: geometry.size, count: labels.count,
-        heights: sizes.mapValues(\.height), scale: scale,
+        sizes: sizes, scale: scale,
         lineHeight: style.font.measuredLineHeight(scale: scale))
       ZStack(alignment: .topLeading) {
-        ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
+        ForEach(projection.labelIndices(count: labels.count), id: \.self) { index in
           let frame = frames[index]
-          let side = NativeRadarLabelPlacement.side(index: index, count: labels.count)
-          Path { path in
-            let start = projection.point(index: index, count: labels.count, fraction: 1.02)
-            path.move(to: start)
-            path.addLine(to: CGPoint(x: side < 0 ? frame.maxX : side > 0 ? frame.minX : frame.midX,
-              y: frame.midY))
-          }.stroke(theme.borderDefault, lineWidth: 0.5)
-          Text(label).nativeTextStyle(style)
-            .multilineTextAlignment(side < 0 ? .trailing : side > 0 ? .leading : .center)
-            .lineLimit(nil).frame(width: frame.width,
-              alignment: side < 0 ? .trailing : side > 0 ? .leading : .center)
-            .fixedSize(horizontal: false, vertical: true)
+          Text("\(index + 1)").nativeTextStyle(style).monospacedDigit().fixedSize()
             .background(GeometryReader { measured in
               Color.clear.preference(key: NativeRadarLabelSizes.self, value: [index: measured.size])
             })
+            .frame(width: frame.width, height: frame.height)
             .position(x: frame.midX, y: frame.midY)
         }
       }
     }
     .onPreferenceChange(NativeRadarLabelSizes.self) { if $0 != sizes { sizes = $0 } }
+  }
+}
+
+struct NativeRadarCategoryKey: View {
+  let labels: [String]
+  let theme: OpenUIThemeValues
+  @Environment(\.layoutDirection) private var direction
+  var body: some View {
+    NativeChartLegendLayout(gap: theme.spaceM, rightToLeft: direction == .rightToLeft) {
+      ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
+        HStack(alignment: .firstTextBaseline, spacing: theme.spaceXs) {
+          Text("\(index + 1)").nativeTextStyle(theme.textStyle(.supporting)).monospacedDigit()
+          Text(label).nativeTextStyle(theme.textStyle(.compactBody)).fixedSize(horizontal: false, vertical: true)
+        }.padding(.vertical, theme.space3xs)
+      }
+    }.accessibilityHidden(true) // The chart already exposes complete category/value rows.
   }
 }
 

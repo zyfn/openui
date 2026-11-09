@@ -33,7 +33,7 @@ mapping, not a claim that a CSS pixel equals a physical display pixel.
 | Card header / inline header | heading-small 18 / body-heavy 16 | 18 / 18 pt | NativeHeading |
 | Body large and large-heavy | both 18, weight differs | both 18, weight differs | NativeRichTextStyle |
 | Text xs / sm / md / lg | 14 / 16 / 16 / 18 | 14 / 16 / 16 / 18 pt | OpenUIThemeValues.inlineFont |
-| Text subtext xs,sm / md,lg | 14 / 16 | 14 / 16 pt | NativeInlineText |
+| Text subtext xs,sm / md,lg | 14 / 16 | 14 pt at every parent size | NativeInlineText |
 | Tag text | label-small 14 at all densities | 12 / 14 / 16 pt for sm / md / lg | NativeTagPill |
 | Action small / regular | label-small 14 / default 16 | 14 / 16 pt | NativeActionButtonStyle |
 | MetricIndicator value | number-heavy 16 | 16 pt, tabular digits | NativeMetric |

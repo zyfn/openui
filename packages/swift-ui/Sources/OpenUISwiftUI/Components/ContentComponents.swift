@@ -649,6 +649,8 @@ struct NativeCardItem: View {
   @Environment(\.openUIResourceContext) private var artworkResources
   @Environment(\.openUIMediaCache) private var artworkCache
   @State private var artworkImageState: NativeArtworkImageState?
+  @State private var copyBelowArtwork = false
+  @Namespace private var artworkLayoutScope
   private var groupAction: NativeCardGroupAction? { pendingGroupAction }
   private var bannerHeaderInset: CGFloat {
     guard case .element(let header) = context.value("header"), header.typeName == "ImageTextLarge" else { return 0 }
@@ -669,9 +671,12 @@ struct NativeCardItem: View {
     return artworkCache?[request] != nil
       || (artworkImageState?.request == request && artworkImageState?.status == .loaded)
   }
+  private var usesArtworkOverlay: Bool {
+    hasLoadedArtwork && !typeSize.isAccessibilitySize && !copyBelowArtwork
+  }
   private var contentTheme: OpenUIThemeValues {
     var theme = context.theme
-    if hasLoadedArtwork {
+    if usesArtworkOverlay {
       theme.textNeutralPrimary = .white
       theme.textNeutralSecondary = .white.opacity(0.86)
       theme.sunk = .black.opacity(0.55)
@@ -704,7 +709,7 @@ struct NativeCardItem: View {
         : summary ? .clear : context.theme.foreground,
       bordered: artworkSource == nil && kind != "Context"))
     .environment(\.openUIActionDensity, .compact)
-    .environment(\.colorScheme, hasLoadedArtwork ? .dark : colorScheme)
+    .environment(\.colorScheme, usesArtworkOverlay ? .dark : colorScheme)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("openui.card-item." + kind.lowercased())
     .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
@@ -727,12 +732,21 @@ struct NativeCardItem: View {
               .environment(\.colorScheme, colorScheme)
           }.allowsHitTesting(false)
           copy.background {
-            if hasLoadedArtwork {
+            GeometryReader { geometry in
+              Color.clear.preference(key: NativeArtworkCopyPlacementKey.self,
+                value: [artworkLayoutScope: geometry.frame(in: .named(artworkLayoutScope)).minY > 0.5])
+            }
+            if usesArtworkOverlay {
               LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)],
                 startPoint: .top, endPoint: .bottom).allowsHitTesting(false)
             }
           }
-        }.background(hasLoadedArtwork ? Color.black : context.theme.sunk)
+        }
+        .coordinateSpace(name: artworkLayoutScope)
+        .onPreferenceChange(NativeArtworkCopyPlacementKey.self) { values in
+          if let below = values[artworkLayoutScope], below != copyBelowArtwork { copyBelowArtwork = below }
+        }
+        .background(usesArtworkOverlay ? Color.black : hasLoadedArtwork ? context.theme.foreground : context.theme.sunk)
       } else {
         copy
       }

@@ -5,6 +5,13 @@ struct NativeArtworkImageState: Equatable {
   let status: NativeMediaStatus
 }
 
+struct NativeArtworkCopyPlacementKey: PreferenceKey {
+  static let defaultValue: [Namespace.ID: Bool] = [:]
+  static func reduce(value: inout [Namespace.ID: Bool], nextValue: () -> [Namespace.ID: Bool]) {
+    value.merge(nextValue(), uniquingKeysWith: { _, next in next })
+  }
+}
+
 /// Photo geometry belongs to the container. Copy can move below the photo,
 /// but never changes the photo's aspect or gets clipped to preserve that aspect.
 struct NativeArtworkCardMetrics {

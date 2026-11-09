@@ -85,7 +85,9 @@ nonresponsive column declarations keep their existing meaning.
 
 Pending or unavailable background photos use the original scoped neutral surface
 and readable primary/secondary ink. White overlay copy and its dark scrim apply
-only while the matching photo is actually loaded (including retained pixels).
+only while the matching photo is actually loaded (including retained pixels)
+and the copy overlaps it. Copy moved below the photo restores the original host
+surface and primary/secondary ink instead of extending a black overlay panel.
 Changing the image request resets this presentation without changing the frame
 or remounting/refetching an unchanged image.
 
@@ -256,6 +258,11 @@ metadata keeps the 12pt caption role. Field/disclosure labels use the existing
 Native Text, rich text and measurement consume the same resolved font, and
 complete host font overrides still win. TextContent small/small-heavy remain
 primary ink: a declared size does not classify a sentence's importance.
+
+Radar axes use compact numbers with a complete, wrapping category key below the
+plot. Number regions stay inside narrow plots at large text sizes; category names
+are not squeezed into the small space beside the vertices. Plot geometry, values,
+series selection and accessible category/value rows remain unchanged.
 
 ### Surfaces and states
 
