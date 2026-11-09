@@ -117,7 +117,7 @@ struct NativeMarkdownText: View {
     let resolved = font.resolved(for: role)
     let styled = content.markdownTextStyle {
       FontFamily(resolved.family.map(FontProperties.Family.custom) ?? .system(resolved.design))
-      FontSize(.em(resolved.size / font.size))
+      FontSize(.em(resolved.size / self.font.size))
       FontWeight(resolved.weight)
       TextTracking(resolved.letterSpacing * resolved.size)
     }

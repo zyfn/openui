@@ -142,8 +142,9 @@ renderer.openUITheme(commonTheme: common, lightTheme: light, darkTheme: dark)
 Resolution is defaults, common, then the selected appearance. Calls without
 `commonTheme` and nested scopes retain the existing reset behavior.
 
-Text buttons are capsules, sized from their actual bounds, including wrapped
-labels. IconButton's declared circle/square shape remains authoritative.
+Text buttons are capsules, sized from their actual bounds. Very tall wrapped
+labels bound the corner radius to keep all text inside the painted surface.
+IconButton's declared circle/square shape remains authoritative.
 `OpenUIPresentation.buttonCornerRadius` is nil by default; set it to 10 (or
 another finite radius) to opt into rounded rectangular text buttons independently
 of inputs and cards. The minimum hit target remains separate from the visible shape.

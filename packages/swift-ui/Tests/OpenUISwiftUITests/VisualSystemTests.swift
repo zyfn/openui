@@ -34,7 +34,36 @@ final class VisualSystemTests: XCTestCase {
         }
     }
 
+    func testWrappedActionLabelRemainsInsidePaintedCorners() {
+        for height in [CGFloat(40), 96, 160] {
+            let rect = CGRect(x: 0, y: 0, width: 180, height: height)
+            let shape = NativeButtonShape(radius: nil,
+                maximumRadius: NativeButtonShape.readableRadius(horizontal: 16, vertical: 8)).path(in: rect)
+            for point in [CGPoint(x: 16.5, y: 8.5), CGPoint(x: 163.5, y: 8.5),
+                          CGPoint(x: 16.5, y: height - 8.5), CGPoint(x: 163.5, y: height - 8.5)] {
+                XCTAssertTrue(shape.contains(point), "A wrapped label must not extend beyond its button fill")
+            }
+        }
+    }
+
     #if os(macOS)
+    @MainActor func testRenderedMarkdownHeadingsKeepTheirScaleAcrossBodyOverrides() {
+        _ = NSApplication.shared
+        func height(_ text: String, bodySize: CGFloat = 16) -> CGFloat {
+            NSHostingView(rootView: NativeMarkdownText(text: text,
+                style: .init(font: OpenUIFont(size: bodySize))).frame(width: 600)).fittingSize.height
+        }
+        let h1 = height("# Same heading")
+        let h2 = height("## Same heading")
+        let h3 = height("### Same heading")
+        let body = height("Same heading")
+        XCTAssertGreaterThan(h1, h2 + 3)
+        XCTAssertGreaterThan(h2, h3 + 1)
+        XCTAssertGreaterThan(h3, body + 1)
+        XCTAssertEqual(height("# Same heading", bodySize: 32), h1, accuracy: 1,
+            "A body-font override must not change the heading's resolved point size")
+    }
+
     @MainActor func testReadableInkAndNecessaryControlBoundariesOnDefaultSurfaces() throws {
         let theme = OpenUIThemeValues.defaults
         for name in [NSAppearance.Name.aqua, .darkAqua, .accessibilityHighContrastAqua, .accessibilityHighContrastDarkAqua] {

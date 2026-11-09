@@ -39,14 +39,25 @@ extension OpenUIThemeValues {
 /// One shape instance survives state changes. Nil radius follows the actual label height.
 struct NativeButtonShape: InsettableShape {
     let radius: CGFloat?
+    var maximumRadius: CGFloat? = nil
     private var inset: CGFloat = 0
 
-    init(radius: CGFloat?) { self.radius = radius }
+    init(radius: CGFloat?, maximumRadius: CGFloat? = nil) {
+        self.radius = radius
+        self.maximumRadius = maximumRadius
+    }
+
+    /// A tall, wrapped label must remain inside the painted surface at its insets.
+    static func readableRadius(horizontal: CGFloat, vertical: CGFloat) -> CGFloat {
+        let h = max(0, horizontal), v = max(0, vertical)
+        return h + v + sqrt(2 * h * v)
+    }
 
     func path(in rect: CGRect) -> Path {
         let bounds = rect.insetBy(dx: inset, dy: inset)
-        let resolved = radius.flatMap { $0.isFinite ? max(0, $0 - inset) : nil }
-            ?? max(0, min(bounds.width, bounds.height) / 2)
+        let capsule = max(0, min(bounds.width, bounds.height) / 2)
+        let limit = maximumRadius.flatMap { $0.isFinite ? max(0, $0 - inset) : nil } ?? capsule
+        let resolved = radius.flatMap { $0.isFinite ? max(0, $0 - inset) : nil } ?? min(capsule, limit)
         return RoundedRectangle(cornerRadius: resolved, style: .continuous).path(in: bounds)
     }
 

@@ -259,7 +259,8 @@ gap controls their relationship to neighbors. Object footer gap is 8pt. Markdown
 block margins are collapsed by MarkdownUI; they are not extra component insets.
 
 Images/code use 8pt corners, inputs 10pt, Context 12pt, fact/choice cards 14pt,
-Composite/Visual/generic cards 16pt and overlays 24pt. Text actions use capsules;
+Composite/Visual/generic cards 16pt and overlays 24pt. Text actions use capsules,
+with a corner limit for very tall wrapped labels to keep text inside the fill;
 declared circular IconButton remains circular. Ordinary borders are 1pt; explicit
 separators, table rules and disclosure rules use a physical-pixel hairline.
 The default button press opacity is 0.92, with the existing 120ms feedback,

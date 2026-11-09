@@ -179,7 +179,9 @@ struct NativeActionButtonStyle: ButtonStyle {
         }
     }
     private var shape: NativeButtonShape {
-        NativeButtonShape(radius: circular ? nil : iconOnly ? theme.radiusL : nativePresentation.buttonCornerRadius)
+        NativeButtonShape(radius: circular ? nil : iconOnly ? theme.radiusL : nativePresentation.buttonCornerRadius,
+            maximumRadius: iconOnly ? nil : NativeButtonShape.readableRadius(
+                horizontal: horizontalInset, vertical: verticalInset * unit))
     }
     private var minimumHeight: CGFloat {
         #if os(iOS)
