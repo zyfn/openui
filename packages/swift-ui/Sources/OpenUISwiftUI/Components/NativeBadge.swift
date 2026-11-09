@@ -9,7 +9,7 @@ struct NativeBadgeColors {
   init(variant: String?, theme: OpenUIThemeValues) {
     switch variant {
     case "inverted":
-      foreground = theme.textAccentPrimary ?? NativeControlPalette.adaptive(light: 0xF5F5F5, dark: 0x0A0A0A)
+      foreground = theme.textAccentPrimary ?? NativeControlPalette.adaptive(light: 0xFFFFFF, dark: 0x0B0B0D)
       background = theme.invertedBackground
     case "info":
       foreground = theme.textInfoPrimary
@@ -39,7 +39,9 @@ struct NativeTagPill<Icon: View>: View {
   @ViewBuilder var icon: Icon
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
 
-  private var font: OpenUIFont { theme.textLabelSm }
+  private var font: OpenUIFont {
+    size == "sm" ? theme.textBodyXs : size == "lg" ? theme.textBodyDefault : theme.textLabelSm
+  }
   private var horizontalInset: CGFloat { theme.spacing(size == "sm" ? "xs" : size == "lg" ? "m" : "s") }
   private var verticalInset: CGFloat { theme.spacing(size == "sm" ? "2xs" : size == "lg" ? "s" : "xs") }
   private var colors: NativeBadgeColors { NativeBadgeColors(variant: variant, theme: theme) }
@@ -49,11 +51,11 @@ struct NativeTagPill<Icon: View>: View {
       icon.environment(\.openUIIconSize, font.size)
       Text(text).fixedSize(horizontal: false, vertical: true)
     }
-    .openUIFont(font.weight(theme.textLabelSm.weight))
+    .openUIFont(font, role: .control)
     .padding(.horizontal, horizontalInset * scale)
     .padding(.vertical, verticalInset * scale)
     .foregroundStyle(colors.foreground)
-    .background(colors.background, in: Capsule(style: .continuous))
+    .background(colors.background, in: RoundedRectangle(cornerRadius: theme.radiusFull, style: .continuous))
     .accessibilityElement(children: .combine)
     .accessibilityLabel(text)
     .accessibilityIdentifier("openui.tag")

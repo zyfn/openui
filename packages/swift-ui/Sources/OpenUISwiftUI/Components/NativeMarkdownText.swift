@@ -35,7 +35,7 @@ struct NativeMarkdownText: View {
     default: return .leading
     }
   }
-  private var font: OpenUIFont { (style.font ?? inheritedFont ?? theme.textBodyDefault) }
+  private var font: OpenUIFont { (style.font ?? inheritedFont ?? theme.textBodyDefault).resolved(for: style.role) }
   private var mathSize: CGFloat { font.size * scale }
   private var mathColor: String { NativeMathColor.css(foreground, scheme: colorScheme) }
   private var request: NativeRichTextRequest {
@@ -53,8 +53,8 @@ struct NativeMarkdownText: View {
         TextTracking(font.letterSpacing * font.size)
         FontDigitVariant(style.numeric || font.monospacedDigits ? .monospaced : .normal)
       }
-      .markdownTextStyle(\.link) { ForegroundColor(theme.textNeutralLink) }
-      .markdownTextStyle(\.strong) { FontWeight(theme.textBodyDefaultHeavy.weight) }
+      .markdownTextStyle(\.link) { ForegroundColor(theme.textNeutralLink); UnderlineStyle(.single) }
+      .markdownTextStyle(\.strong) { FontWeight(style.emphasisWeight ?? theme.textBodyDefaultHeavy.weight) }
       .markdownSoftBreakMode(mode == .markdown ? .space : .lineBreak)
       .markdownBlockStyle(\.paragraph) { configuration in
         configuration.label.fixedSize(horizontal: false, vertical: true)
@@ -62,12 +62,12 @@ struct NativeMarkdownText: View {
           .relativeLineSpacing(.em(font.additionalLineSpacing() / max(1, font.size)))
           .markdownMargin(top: 0, bottom: mode == .inline ? 0 : theme.spaceM)
       }
-      .markdownBlockStyle(\.heading1) { heading($0.label, role: theme.textHeadingMd) }
-      .markdownBlockStyle(\.heading2) { heading($0.label, role: theme.textHeadingSm) }
-      .markdownBlockStyle(\.heading3) { heading($0.label, role: theme.textHeadingXs) }
-      .markdownBlockStyle(\.heading4) { heading($0.label, role: theme.textHeadingXs) }
-      .markdownBlockStyle(\.heading5) { heading($0.label, role: theme.textBodySmHeavy) }
-      .markdownBlockStyle(\.heading6) { heading($0.label, role: theme.textBodyXs.weight(.semibold)) }
+      .markdownBlockStyle(\.heading1) { heading($0.label, font: theme.textHeadingMd, role: .display, before: theme.spaceXl) }
+      .markdownBlockStyle(\.heading2) { heading($0.label, font: theme.textHeadingSm, role: .section, before: theme.spaceXl) }
+      .markdownBlockStyle(\.heading3) { heading($0.label, font: theme.textHeadingXs, role: .title, before: theme.spaceL) }
+      .markdownBlockStyle(\.heading4) { heading($0.label, font: theme.textBodyDefaultHeavy, role: .title, before: theme.spaceM) }
+      .markdownBlockStyle(\.heading5) { heading($0.label, font: theme.textBodySmHeavy, role: .detail, before: theme.spaceM) }
+      .markdownBlockStyle(\.heading6) { heading($0.label, font: theme.textBodyXs.weight(.semibold), role: .caption, before: theme.spaceM) }
       .markdownBlockStyle(\.codeBlock) { configuration in
         NativeCodeBlockContent(code: OpenUIString(configuration.content.trimmingCharacters(in: .whitespacesAndNewlines)),
           language: OpenUIString(NativeMarkdownCode.language(configuration.language)), theme: theme)
@@ -113,8 +113,8 @@ struct NativeMarkdownText: View {
       }
       .onDisappear { math.cancel() }
   }
-  @ViewBuilder private func heading<Content: View>(_ content: Content, role: OpenUIFont) -> some View {
-    let resolved = role
+  @ViewBuilder private func heading<Content: View>(_ content: Content, font: OpenUIFont, role: NativeTextRole, before: CGFloat) -> some View {
+    let resolved = font.resolved(for: role)
     let styled = content.markdownTextStyle {
       FontFamily(resolved.family.map(FontProperties.Family.custom) ?? .system(resolved.design))
       FontSize(.em(resolved.size / font.size))
@@ -122,7 +122,7 @@ struct NativeMarkdownText: View {
       TextTracking(resolved.letterSpacing * resolved.size)
     }
     .fixedSize(horizontal: false, vertical: true)
-    .markdownMargin(top: theme.spacing("m"), bottom: theme.spacing("s"))
+    .markdownMargin(top: before, bottom: theme.spaceS)
     if resolved.lineSpacing != nil || resolved.lineHeight != nil {
       styled.relativeLineSpacing(.em(resolved.additionalLineSpacing() / max(1, resolved.size)))
     } else {
@@ -207,7 +207,7 @@ private struct NativeMathBlock: View {
           .accessibilityElement(children: .ignore).accessibilityLabel(descriptor.tex)
           .accessibilityAddTraits(.isImage).accessibilityIdentifier("openui.math.rendered")
       } else if failed {
-        Text(descriptor.tex).openUIFont(theme.textCodeDefault).textSelection(.enabled)
+        Text(descriptor.tex).openUIFont(theme.textCodeDefault, role: .code).textSelection(.enabled)
           .accessibilityIdentifier("openui.math.fallback")
       } else { ProgressView().frame(minHeight: fontSize * 1.5).accessibilityIdentifier("openui.math.loading") }
     }.task(id: key) {

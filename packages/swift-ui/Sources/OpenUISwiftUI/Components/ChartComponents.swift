@@ -160,7 +160,7 @@ struct NativeChart: View {
     let labels = drawing.axisLabels
     return HStack(spacing: 0) {
       ForEach(Array((labels.left + labels.bottom).enumerated()), id: \.offset) { index, label in
-        Text(label).openUIFont(context.theme.textBodySm).monospacedDigit()
+        Text(label).openUIFont(context.theme.textBodySm, role: .detail).monospacedDigit()
           .lineLimit(1).fixedSize()
           .background(GeometryReader { geometry in
             Color.clear.preference(key: NativeChartAxisMeasurementKey.self, value: [measurementScope:
@@ -277,14 +277,14 @@ struct NativeChart: View {
       RoundedRectangle(cornerRadius: 2, style: .continuous)
         .fill(palette[allData.colorIndex(at: index) % palette.count])
         .frame(width: legendMarkerSize, height: legendMarkerSize).accessibilityHidden(true)
-      Text(title).openUIFont(context.theme.textLabelSm).foregroundStyle(context.theme.textNeutralSecondary)
+      Text(title).openUIFont(context.theme.textLabelSm, role: .control).foregroundStyle(context.theme.textNeutralSecondary)
         .fixedSize(horizontal: false, vertical: true)
       if ["PieChart", "RadialChart"].contains(name), allData.slices.indices.contains(index) {
         Text(NativeChartNumber.tooltip(allData.slices[index], locale: locale))
           .openUIFont(context.theme.textLabelSm.weight(.semibold)).monospacedDigit().layoutPriority(1)
       } else if name == "SingleStackedBarChart", allData.slices.indices.contains(index) {
         Text(NativeChartNumber.percentage(allData.slices[index], total: allData.slices.reduce(0, +)))
-          .openUIFont(context.theme.textLabelSm).monospacedDigit()
+          .openUIFont(context.theme.textLabelSm, role: .control).monospacedDigit()
       }
     }.padding(.vertical, 6).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
   }
@@ -371,7 +371,7 @@ private struct NativeRadarLabels: View {
             path.addLine(to: CGPoint(x: side < 0 ? frame.maxX : side > 0 ? frame.minX : frame.midX,
               y: frame.midY))
           }.stroke(theme.borderDefault, lineWidth: 0.5)
-          Text(label).openUIFont(theme.textBodySm).foregroundStyle(theme.textNeutralPrimary)
+          Text(label).openUIFont(theme.textBodySm, role: .detail).foregroundStyle(theme.textNeutralPrimary)
             .multilineTextAlignment(side < 0 ? .trailing : side > 0 ? .leading : .center)
             .lineLimit(nil).frame(width: frame.width,
               alignment: side < 0 ? .trailing : side > 0 ? .leading : .center)
@@ -398,7 +398,7 @@ struct NativeChartCategoryAxis: View {
   var body: some View {
     ZStack(alignment: .topLeading) {
       ForEach(layout.categoryLabels(count: labels.count), id: \.index) { label in
-        Text(labels[label.index]).openUIFont(theme.textBodySm).monospacedDigit()
+        Text(labels[label.index]).openUIFont(theme.textBodySm, role: .detail).monospacedDigit()
           .foregroundStyle(nativePresentation.chartAxis).lineLimit(layout.categoryLabelLines).truncationMode(.tail)
           .multilineTextAlignment(label.anchor.x == 0 ? .leading : label.anchor.x == 1 ? .trailing : .center)
           .frame(width: label.width, alignment: Alignment(horizontal:
@@ -428,7 +428,7 @@ private struct NativeChartTooltip: View {
       if !details.title.isEmpty {
         HStack(spacing: theme.spacing("s")) {
           if let index = details.colorIndex { marker(index) }
-          Text(details.title).openUIFont(theme.textBodySmHeavy)
+          Text(details.title).openUIFont(theme.textBodySmHeavy, role: .detail)
             .foregroundStyle(theme.textNeutralPrimary).fixedSize(horizontal: false, vertical: true)
         }
         Rectangle().fill(theme.borderDefault).frame(height: 1 / displayScale)
@@ -447,7 +447,7 @@ private struct NativeChartTooltip: View {
               .multilineTextAlignment(.trailing).layoutPriority(1)
           }.accessibilityElement(children: .combine)
         }
-      }.openUIFont(theme.textBodySm)
+      }.openUIFont(theme.textBodySm, role: .detail)
     }
       .padding(theme.spaceM)
       .modifier(NativeOverlaySurface(theme: theme, compact: true))

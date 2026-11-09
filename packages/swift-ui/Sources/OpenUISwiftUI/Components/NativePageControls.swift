@@ -12,17 +12,17 @@ struct NativePageControls: View {
     HStack(spacing: theme.spacing("s")) {
       Spacer(minLength: 0)
       Button { select(page - 1) } label: {
-        Image(systemName: "chevron.left").openUIFont(theme.textLabelDefaultHeavy).openUIControlTarget()
+        Image(systemName: "chevron.left").openUIFont(theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
       }
       .accessibilityLabel(Text("Previous page", bundle: NativeControlResources.bundle))
       .accessibilityIdentifier(identifier + ".previous")
       .disabled(!enabled || page <= 0)
       if showsCount {
-        Text("\(page + 1) / \(count)").openUIFont(theme.textBodyXs).monospacedDigit()
+        Text("\(page + 1) / \(count)").openUIFont(theme.textBodyXs, role: .caption).monospacedDigit()
           .accessibilityIdentifier(identifier + ".page")
       }
       Button { select(page + 1) } label: {
-        Image(systemName: "chevron.right").openUIFont(theme.textLabelDefaultHeavy).openUIControlTarget()
+        Image(systemName: "chevron.right").openUIFont(theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
       }
       .accessibilityLabel(Text("Next page", bundle: NativeControlResources.bundle))
       .accessibilityIdentifier(identifier + ".next")

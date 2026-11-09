@@ -205,7 +205,7 @@ struct NativeRemoteImage: View {
                 Image(systemName: "exclamationmark.triangle").openUIFont(theme.textBodyDefault)
                 if geometry.size.width >= 160 && geometry.size.height >= 96 {
                   Text("Image unavailable", bundle: NativeControlResources.bundle)
-                    .openUIFont(theme.textBodyXs)
+                    .openUIFont(theme.textBodyXs, role: .caption)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, theme.spacing("s"))
@@ -356,7 +356,7 @@ struct NativeImageGallery: View {
                   : pictures[image.key] == nil ? Text("Loading image", bundle: NativeControlResources.bundle) : Text("")
               )
               .accessibilityIdentifier("openui.gallery.image.\(image.index)")
-              if let details = image.details { Text(details).openUIFont(context.theme.textBodyXs).foregroundStyle(context.theme.textNeutralSecondary) }
+              if let details = image.details { Text(details).openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textNeutralSecondary) }
             }
           }
         }
@@ -372,7 +372,7 @@ struct NativeImageGallery: View {
               preview = true
             } label: {
               Text("Show all photos", bundle: NativeControlResources.bundle)
-                .openUIFont(context.theme.textLabelSmHeavy).openUIControlTarget(alignment: .leading)
+                .openUIFont(context.theme.textLabelSmHeavy, role: .control).openUIControlTarget(alignment: .leading)
             }
             .disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.showAll")
           }
@@ -383,7 +383,7 @@ struct NativeImageGallery: View {
               for image in failed { retries[image.id, default: 0] += 1 }
             } label: {
               Text("Retry", bundle: NativeControlResources.bundle)
-                .openUIFont(context.theme.textLabelSmHeavy).openUIControlTarget()
+                .openUIFont(context.theme.textLabelSmHeavy, role: .control).openUIControlTarget()
             }
               .accessibilityIdentifier("openui.gallery.retry")
               .disabled(!context.canInteract)
@@ -427,10 +427,10 @@ private struct NativeGalleryPreview: View {
       HStack {
         Text("All photos", bundle: NativeControlResources.bundle).openUIFont(theme.textHeadingXs)
         Spacer()
-        if let image { Text("\(image.index + 1) / \(images.count)").openUIFont(theme.textBodySm).foregroundStyle(theme.textNeutralSecondary) }
+        if let image { Text("\(image.index + 1) / \(images.count)").openUIFont(theme.textBodySm, role: .detail).foregroundStyle(theme.textNeutralSecondary) }
         if let image, let destination = resources.request(for: image.src)?.url {
           Button { openURL(destination) } label: {
-            Image(systemName: "arrow.up.right.square").openUIFont(theme.textLabelDefaultHeavy).openUIControlTarget()
+            Image(systemName: "arrow.up.right.square").openUIFont(theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
           }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("Open original image", bundle: NativeControlResources.bundle))
@@ -446,8 +446,8 @@ private struct NativeGalleryPreview: View {
           NativeRemoteImage(src: image.src, alt: image.alt, layout: .fit,
             cachedImage: pictures[image.key], attempt: image.requestID.attempt, onStatus: { record($0, $1, image.key) })
         }.accessibilityIdentifier("openui.gallery.preview.image")
-        if !image.alt.isEmpty { Text(image.alt).openUIFont(theme.textBodySm) }
-        if let details = image.details { Text(details).openUIFont(theme.textBodyXs).foregroundStyle(theme.textNeutralSecondary) }
+        if !image.alt.isEmpty { Text(image.alt).openUIFont(theme.textBodySm, role: .detail) }
+        if let details = image.details { Text(details).openUIFont(theme.textBodyXs, role: .caption).foregroundStyle(theme.textNeutralSecondary) }
       }
       ScrollView(.horizontal) {
         HStack(spacing: theme.spaceM) {

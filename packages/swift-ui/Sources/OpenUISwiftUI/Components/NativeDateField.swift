@@ -97,7 +97,7 @@ struct NativeDateField: View {
     }
     private func dateControl(_ title: String, part: NativeDatePart) -> some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
-            if range { Text(title).openUIFont(context.theme.textBodySm).foregroundStyle(context.theme.textNeutralSecondary) }
+            if range { Text(title).openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(context.theme.textNeutralSecondary) }
             Button {
                 request = NativeDateRequest(
                     part: part, label: title, date: date(part) ?? Date(), context: context)
@@ -112,7 +112,7 @@ struct NativeDateField: View {
                         Text("Select date", bundle: NativeControlResources.bundle).foregroundStyle(context.theme.textNeutralSecondary)
                     }
                     if fieldPresentation != .inline { Spacer(minLength: 8) }
-                    Image(systemName: "calendar").openUIFont(context.theme.textBodySm).foregroundStyle(context.theme.textNeutralSecondary)
+                    Image(systemName: "calendar").openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(context.theme.textNeutralSecondary)
                 }.frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading).modifier(
                     NativeFieldSurface(theme: context.theme))
             }.buttonStyle(.plain).disabled(!context.canInteract).accessibilityLabel(title)
@@ -178,7 +178,7 @@ struct NativeCalendarEditor: View {
                     .buttonStyle(NativeActionButtonStyle(theme: theme, variant: "tertiary", size: "small"))
                     .keyboardShortcut(.cancelAction).accessibilityIdentifier("openui.date.cancel")
                 Spacer(minLength: 0)
-                Text(request.label).openUIFont(theme.textHeadingXs).foregroundStyle(theme.textNeutralPrimary).multilineTextAlignment(
+                Text(request.label).openUIFont(theme.textBodyDefaultHeavy, role: .title).foregroundStyle(theme.textNeutralPrimary).multilineTextAlignment(
                     .center)
                 Spacer(minLength: 0)
                 Button {

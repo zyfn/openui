@@ -4,12 +4,13 @@ import SwiftUI
 
 struct NativeSeparator: View {
     let context: OpenUIComponentContext
+    @Environment(\.displayScale) private var displayScale
     @ViewBuilder var body: some View {
         Group {
             if context.string("orientation") == "vertical" {
-                Rectangle().fill(context.theme.borderDefault).frame(width: 1).frame(minHeight: 18)
+                Rectangle().fill(context.theme.borderDefault).frame(width: 1 / displayScale).frame(minHeight: 18)
             } else {
-                Rectangle().fill(context.theme.borderDefault).frame(height: context.presentation.borderWidth)
+                Rectangle().fill(context.theme.borderDefault).frame(height: 1 / displayScale)
             }
         }.accessibilityHidden(context.flag("decorative") ?? true)
     }
@@ -54,7 +55,7 @@ struct NativeMetric: View {
     }
     @ViewBuilder private var comparison: some View {
         if let previous = context.string("previousValue") {
-            Text(previous).strikethrough().openUIFont(context.theme.textBodyXs).foregroundStyle(context.theme.textNeutralSecondary)
+            Text(previous).strikethrough().openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textNeutralSecondary)
         }
         if case .object(let trend) = context.value("trend"), case .number(let number) = trend["value"],
             number.isFinite,
@@ -64,12 +65,12 @@ struct NativeMetric: View {
                 number.formatted(.number.precision(.fractionLength(0...2))) + "%",
                 systemImage: direction == "down" ? "arrow.down" : "arrow.up"
             )
-            .openUIFont(context.theme.textBodyXs).foregroundStyle(context.theme.textNeutralSecondary)
+            .openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textNeutralSecondary)
         }
     }
     @ViewBuilder private var subtitle: some View {
         if let subtext = context.string("subtext") {
-            Text(subtext).openUIFont(context.theme.textBodySm).foregroundStyle(context.theme.textNeutralSecondary)
+            Text(subtext).openUIFont(context.theme.textBodySm, role: .detail).foregroundStyle(context.theme.textNeutralSecondary)
         }
     }
 }
@@ -81,14 +82,14 @@ struct NativeMetricValue: View {
     let font: OpenUIFont
     let theme: OpenUIThemeValues
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
-    private var label: some View { Text(text).openUIFont(font).monospacedDigit().fixedSize() }
+    private var label: some View { Text(text).openUIFont(font, role: .metric).monospacedDigit().fixedSize() }
     var body: some View {
         // These are text-only measurement candidates, without state, resources
         // or actions. Only the selected presentation is exposed to accessibility.
         ViewThatFits(in: .horizontal) {
             label
             ScrollView(.horizontal) { label }
-                .frame(height: (font.size * 1.2 + font.additionalLineSpacing()) * scale)
+                .frame(height: font.resolved(for: .metric).measuredLineHeight(scale: scale))
         }
         .accessibilityElement(children: .ignore).accessibilityLabel(text)
     }
@@ -112,6 +113,7 @@ struct NativeAccordionSelection {
 
 struct NativeAccordion: View {
     let context: OpenUIComponentContext
+    @Environment(\.displayScale) private var displayScale
     @State private var local = NativeAccordionSelection()
     private var items: [OpenUIRenderChild] { context.children("items") }
     private var keys: [OpenUIString] {
@@ -141,7 +143,7 @@ struct NativeAccordion: View {
                     }
                     .padding(.vertical, context.theme.spacing("l"))
                     if child.id != items.last?.id {
-                        Rectangle().fill(context.theme.borderDefault).frame(height: context.presentation.borderWidth)
+                        Rectangle().fill(context.theme.borderDefault).frame(height: 1 / displayScale)
                             .accessibilityHidden(true)
                     }
                 }
@@ -162,6 +164,7 @@ struct NativeDataTable: View {
     }
     let context: OpenUIComponentContext
     @Environment(\.openUITableCellPolicy) private var cellPolicy
+    @Environment(\.displayScale) private var displayScale
     @ScaledMetric(relativeTo: .body) private var minimumWidth: CGFloat = 88
     @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
     @State private var availableWidth: CGFloat = 0
@@ -224,14 +227,14 @@ struct NativeDataTable: View {
             columnMinimums: columns.map { $0.numeric ? minimumWidth : context.presentation.minimumTextColumnWidth * textScale }
         ) {
             ForEach(columns) { column in
-                Text(column.title).openUIFont(context.theme.textBodyDefaultHeavy)
+                Text(column.title).openUIFont(context.theme.textBodySmHeavy, role: .control)
                     .foregroundStyle(context.theme.textNeutralPrimary)
                     .accessibilityAddTraits(.isHeader)
-                    .padding(.vertical, context.theme.spacing("sm"))
+                    .padding(.vertical, context.theme.spaceS)
                     .multilineTextAlignment(column.numeric ? .trailing : .leading)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: column.numeric ? .topTrailing : .topLeading)
             }
-            context.theme.borderDefault.frame(height: context.presentation.borderWidth).layoutValue(key: NativeTableBoundaryKey.self, value: true)
+            context.theme.borderDefault.frame(height: 1 / displayScale).layoutValue(key: NativeTableBoundaryKey.self, value: true)
                 .accessibilityHidden(true)
             ForEach(visibleRows, id: \.self) { row in
                 ForEach(columns) { column in
@@ -239,13 +242,13 @@ struct NativeDataTable: View {
                         .openUIFont(column.numeric ? context.theme.textBodyDefault.monospacedDigit() : context.theme.textBodyDefault)
                         .multilineTextAlignment(column.numeric ? .trailing : .leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.vertical, context.theme.spacing("m"))
+                        .padding(.vertical, context.theme.spaceSM)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: column.numeric ? .topTrailing : .topLeading)
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier("openui.table.cell.\(row).\(column.id)")
                 }
                 if row < visibleRows.upperBound - 1 {
-                    context.theme.borderDefault.frame(height: context.presentation.borderWidth).layoutValue(key: NativeTableBoundaryKey.self, value: true)
+                    context.theme.borderDefault.frame(height: 1 / displayScale).layoutValue(key: NativeTableBoundaryKey.self, value: true)
                         .accessibilityHidden(true)
                 }
             }
@@ -286,7 +289,7 @@ struct NativeTableViewport<Content: View>: View {
                 } icon: {
                     Image(systemName: "arrow.left.and.right").accessibilityHidden(true)
                 }
-                .openUIFont(theme.textBodyXs)
+                .openUIFont(theme.textBodyXs, role: .caption)
                 .foregroundStyle(theme.textNeutralSecondary)
                 .accessibilityIdentifier("openui.table.overflow-hint")
             }

@@ -6,6 +6,24 @@ import OpenUILang
 @testable import OpenUISwiftUI
 
 final class ThemeArchitectureTests: XCTestCase {
+    @MainActor func testExplicitCommonThemeSharesTypographyAndKeepsAppearanceOverridesIndependent() {
+        _ = NSApplication.shared
+        var common = OpenUITheme(); common.spaceM = 23; common.textBodyDefault = OpenUIFont(size: 21)
+        var light = OpenUITheme(); light.spaceL = 29
+        var dark = OpenUITheme(); dark.spaceL = 41
+        let samples = ThemeSamples()
+        let content = ThemeProbe(name: "shared", samples: samples)
+            .openUITheme(commonTheme: common, lightTheme: light, darkTheme: dark)
+        let host = NSHostingView(rootView: content.environment(\.colorScheme, .light))
+        _ = host.fittingSize
+        let identity = samples.identities["shared"]
+        XCTAssertEqual(samples.values["shared"], [23, 29, 21])
+        host.rootView = content.environment(\.colorScheme, .dark)
+        _ = host.fittingSize
+        XCTAssertEqual(samples.values["shared"], [23, 41, 21])
+        XCTAssertEqual(samples.identities["shared"], identity)
+    }
+
     @MainActor func testNestedScopesStartFromDefaultsWithoutChangingSiblings() throws {
         _ = NSApplication.shared
         var parent = OpenUITheme()

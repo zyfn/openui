@@ -12,10 +12,11 @@ private struct OpenUIThemeScope: ViewModifier {
     let mode: OpenUIThemeMode
     let light: OpenUITheme
     let dark: OpenUITheme?
+    var common = OpenUITheme()
     @Environment(\.colorScheme) private var inheritedScheme
     func body(content: Content) -> some View {
         let scheme: ColorScheme = mode == .light ? .light : mode == .dark ? .dark : inheritedScheme
-        let values = (scheme == .dark ? dark ?? light : light).resolved()
+        let values = (scheme == .dark ? dark ?? light : light).resolved(over: common.resolved())
         content.environment(\.openUITheme, values).environment(\.colorScheme, scheme)
     }
 }
@@ -30,6 +31,13 @@ extension View {
     }
     public func openUITheme(_ overrides: OpenUITheme) -> some View {
         openUITheme(lightTheme: overrides)
+    }
+    /// Share typography and geometry explicitly, then apply appearance-specific overrides.
+    /// Nested scopes keep the existing reset-to-defaults behavior.
+    public func openUITheme(commonTheme: OpenUITheme, mode: OpenUIThemeMode = .system,
+                            lightTheme: OpenUITheme = OpenUITheme(),
+                            darkTheme: OpenUITheme? = nil) -> some View {
+        modifier(OpenUIThemeScope(mode: mode, light: lightTheme, dark: darkTheme, common: commonTheme))
     }
     /// Build a fresh override set. An inner scope does not merge parent overrides.
     public func openUITheme(_ configure: (inout OpenUITheme) -> Void) -> some View {

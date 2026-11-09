@@ -17,6 +17,8 @@ public struct OpenUIPresentation {
     public var maximumCarouselCardWidth: CGFloat = 320
     public var carouselPeek: CGFloat = 32
     public var borderWidth: CGFloat = 1
+    /// Text actions are capsules by default. A finite radius is an independent host override.
+    public var buttonCornerRadius: CGFloat? = nil
     public var cardBorderColor: Color?
     public var minimumCardWidth: CGFloat = 240
     public var minimumCompactCardWidth: CGFloat = 160
@@ -28,6 +30,6 @@ public struct OpenUIPresentation {
     var singleStackedBarThickness: CGFloat = 28
     public init() {}
     public func resolvedCardBorderColor(with theme: OpenUIThemeValues) -> Color {
-        cardBorderColor ?? theme.borderInteractive
+        cardBorderColor ?? theme.componentStyle.surfaceBorder
     }
 }

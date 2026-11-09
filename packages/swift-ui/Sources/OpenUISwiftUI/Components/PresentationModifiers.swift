@@ -27,7 +27,12 @@ private struct OpenUIControlTarget: ViewModifier {
     }
 }
 extension View {
-    public func openUIFont(_ font: OpenUIFont) -> some View { modifier(OpenUIFontModifier(font: font)) }
+    public func openUIFont(_ font: OpenUIFont) -> some View {
+        modifier(OpenUIFontModifier(font: font.resolved(for: .body)))
+    }
+    func openUIFont(_ font: OpenUIFont, role: NativeTextRole) -> some View {
+        modifier(OpenUIFontModifier(font: font.resolved(for: role)))
+    }
     public func openUIControlTarget(alignment: Alignment = .center) -> some View {
         modifier(OpenUIControlTarget(alignment: alignment))
     }
@@ -77,7 +82,7 @@ struct NativeOverlaySurface: ViewModifier {
             if material && !reduceTransparency { shape.fill(materialStyle) }
             else { shape.fill(theme.popoverBackground) }
         }
-        .overlay(shape.strokeBorder(theme.borderDefault.opacity(0.45), lineWidth: nativePresentation.borderWidth))
+        .overlay(shape.strokeBorder(theme.componentStyle.surfaceBorder, lineWidth: nativePresentation.borderWidth))
         .shadow(color: .black.opacity(theme.shadowL.opacity), radius: theme.shadowL.radius, x: theme.shadowL.x, y: theme.shadowL.y)
     }
 }

@@ -6,7 +6,7 @@ See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONEN
 
 For matched schema/native registrations, host-authored named slots, semantic themes, message-scoped resources and the optional standard component collection, see [component authoring](COMPONENTS.md). `OpenUIStandardComponents.library()` supplies an opt-in reference catalog; extend this library when adding product definitions, preserving imported field order; applications can extend or override it while existing dictionary registrations remain supported.
 
-The standard collection defaults to neutral native typography, grouped forms and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
+The standard collection defaults to role-based native typography, open forms, capsule actions and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
 
 Composition programs, preview applications and Simulator acceptance captures are maintained separately from this SDK-only distribution. They consume the installed registry and unchanged language runtime; they are not library dependencies or part of the SDK unit-test suite.
 
@@ -82,7 +82,7 @@ See [theme overrides and the RC migration](COMPONENTS.md#theme-overrides).
 
 ## Component catalogue
 
-`OpenUIStandardComponents.library()` registers the 82 pinned upstream components.
+`OpenUIStandardComponents.library()` registers the 84 pinned upstream components.
 Generate the prompt and render using the same library. Host-owned additions can
 use the existing library extension API; the SDK does not ship an extra component catalogue.
 
@@ -140,10 +140,10 @@ Native Layout handles measured baseline, stretch and main-axis distribution on
 the minimum supported iOS 16/macOS 13 versions. There is one layout implementation;
 older stack/grid approximations have been removed.
 Accessibility text and parent width are environment inputs, not screen-global
-breakpoints. The 82-component schema has no CSS/media-query or arbitrary flex-weight
+breakpoints. The 84-component schema has no CSS/media-query or arbitrary flex-weight
 API. A fixed row should therefore not be described as automatic column reflow.
 
-The standard 82 registration names and their parameter contracts stay intact.
+The standard 84 registration names and their parameter contracts stay intact.
 Visual design belongs to the SDK's shared theme and native presentation; it can
 improve on upstream styling without renaming components or dropping capabilities.
 Image uses a 16:9/fill cover default; ImageBlock and ImageTextLarge use

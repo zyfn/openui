@@ -83,7 +83,8 @@ struct NativeFieldSurface: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content.openUIFont(theme.fieldFont(size)).foregroundStyle(theme.textNeutralPrimary)
+        content.openUIFont(theme.fieldFont(size), role: .control)
+            .foregroundStyle(enabled ? theme.textNeutralPrimary : theme.componentStyle.disabledText)
             .padding(.horizontal, standalone ? (textEditor ? 11 : theme.spaceM) : 0)
             .padding(.vertical, standalone ? verticalInset : 0)
             .frame(minHeight: max(nativePresentation.minimumControlTargetSize, standalone ? height * sizeScale : presentation == .inline ? inlineHeight : 0))
@@ -94,11 +95,10 @@ struct NativeFieldSurface: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: theme.radiusL, style: .continuous)
                     .strokeBorder(
-                        standalone ? (error != nil ? theme.textDangerPrimary
-                            : (focused || keyboardFocused) ? theme.textNeutralPrimary.opacity(0.3) : theme.borderInteractive) : .clear,
-                        lineWidth: nativePresentation.borderWidth)
+                        standalone ? (!enabled ? theme.borderDefault : error != nil ? theme.textDangerPrimary
+                            : (focused || keyboardFocused) ? theme.interactiveAccentDefault : theme.componentStyle.controlBorder) : .clear,
+                        lineWidth: (focused || keyboardFocused) && enabled ? max(2, nativePresentation.borderWidth) : nativePresentation.borderWidth)
             )
-            .opacity(enabled ? 1 : 0.45)
     }
 }
 
@@ -121,13 +121,13 @@ struct NativeActionButtonStyle: ButtonStyle {
     @ScaledMetric(relativeTo: .body) private var unit: CGFloat = 1
 
     private var accent: Color { destructive ? theme.interactiveDestructiveAccentDefault : theme.interactiveAccentDefault }
-    private var foreground: Color {
+    private func foreground(pressed: Bool) -> Color {
         if !enabled && variant != "primary" {
             return destructive ? theme.textDangerTertiary : theme.textNeutralTertiary
         }
         if variant == "primary" {
             return (destructive ? theme.textDangerInvertedPrimary : theme.textAccentPrimary)
-                ?? NativeControlPalette.foreground(on: accent, scheme: scheme)
+                ?? NativeControlPalette.foreground(on: background(pressed: pressed), scheme: scheme)
         }
         return destructive ? theme.textDangerPrimary : theme.textNeutralPrimary
     }
@@ -148,7 +148,7 @@ struct NativeActionButtonStyle: ButtonStyle {
     }
     private var border: Color {
         if variant == "primary" { return theme.borderAccent }
-        if variant == "secondary" { return destructive ? theme.borderDanger : theme.borderInteractive }
+        if variant == "secondary" { return destructive ? theme.borderDanger : theme.componentStyle.surfaceBorder }
         return .clear
     }
     private var resolvedSize: String { size ?? (formActions || density == .regular ? "medium" : "small") }
@@ -172,14 +172,14 @@ struct NativeActionButtonStyle: ButtonStyle {
     }
     private var verticalInset: CGFloat {
         switch resolvedSize {
-        case "extra-small": return 4.25
-        case "small": return 7
-        case "large": return 11
-        default: return 9
+        case "extra-small": return 4
+        case "small": return 6
+        case "large": return 10
+        default: return 8
         }
     }
-    private var radius: CGFloat {
-        circular ? max(theme.radiusL, minimumHeight) : theme.radiusL
+    private var shape: NativeButtonShape {
+        NativeButtonShape(radius: circular ? nil : iconOnly ? theme.radiusL : nativePresentation.buttonCornerRadius)
     }
     private var minimumHeight: CGFloat {
         #if os(iOS)
@@ -190,21 +190,22 @@ struct NativeActionButtonStyle: ButtonStyle {
     }
     private var minimumControlTargetSize: CGFloat { nativePresentation.minimumControlTargetSize }
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .openUIFont(font)
+        let foreground = foreground(pressed: configuration.isPressed)
+        return configuration.label
+            .openUIFont(font, role: .control)
             .foregroundStyle(foreground).tint(foreground)
             .padding(.horizontal, horizontalInset)
             .padding(.vertical, verticalInset * unit)
             .frame(minWidth: iconOnly ? minimumHeight : nil, minHeight: minimumHeight)
             .background(
-                background(pressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: radius, style: .continuous)
+                background(pressed: configuration.isPressed), in: shape
             )
-            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .overlay(shape
                 .strokeBorder(border, lineWidth: nativePresentation.borderWidth).allowsHitTesting(false))
             .opacity(configuration.isPressed && enabled ? nativePresentation.motion.pressedOpacity : 1)
             .scaleEffect(configuration.isPressed && enabled && !reduceMotion ? nativePresentation.motion.pressedScale : 1)
             .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                shape
                     .strokeBorder(theme.interactiveAccentDefault, lineWidth: 2).padding(-3).opacity(focused && enabled ? 1 : 0)
             )
             // Keep a native touch target without inflating the visible capsule.

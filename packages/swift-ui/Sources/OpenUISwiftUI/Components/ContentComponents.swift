@@ -4,20 +4,20 @@ import SwiftUI
 
 enum NativeHeadingStyle {
   static func titleFont(compact: Bool, theme: OpenUIThemeValues) -> OpenUIFont {
-    compact ? theme.textHeadingSm : theme.textBodyLgHeavy
+    compact ? theme.textHeadingXs : theme.textBodyLgHeavy
   }
 }
 struct NativeHeading: View {
   let context: OpenUIComponentContext
   let compact: Bool
   var body: some View {
-    VStack(alignment: .leading, spacing: context.theme.spacing(compact ? "3xs" : "xs")) {
+    VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       if let title = context.string(compact ? "heading" : "title") {
-        Text(title).openUIFont(NativeHeadingStyle.titleFont(compact: compact, theme: context.theme)).accessibilityAddTraits(
+        Text(title).openUIFont(NativeHeadingStyle.titleFont(compact: compact, theme: context.theme), role: .title).accessibilityAddTraits(
           .isHeader)
       }
       if let detail = context.string(compact ? "description" : "subtitle") {
-        Text(detail).openUIFont(compact ? context.theme.textBodySm : context.theme.textBodyDefault)
+        Text(detail).openUIFont(context.theme.textBodySm, role: .detail)
           .foregroundStyle(context.theme.textNeutralSecondary)
       }
     }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
@@ -36,9 +36,9 @@ struct NativeMarkdown: View {
         context.string("variant") == "card"
           ? context.theme.foreground
           : context.string("variant") == "sunk" ? context.theme.sunk : .clear,
-        in: RoundedRectangle(cornerRadius: max(0, context.theme.radiusL - 2)))
+        in: RoundedRectangle(cornerRadius: context.theme.radiusM))
       .overlay {
-        RoundedRectangle(cornerRadius: max(0, context.theme.radiusL - 2))
+        RoundedRectangle(cornerRadius: context.theme.radiusM)
           .strokeBorder(context.string("variant") == "card" || context.string("variant") == "sunk"
             ? context.presentation.resolvedCardBorderColor(with: context.theme) : .clear,
             lineWidth: context.presentation.borderWidth)
@@ -72,9 +72,9 @@ struct NativeCallout: View {
           Image(systemName: symbol)
           .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
           VStack(alignment: .leading, spacing: context.theme.spacing("2xs")) {
-            if let title = context.string("title") { Text(title).openUIFont(context.theme.textHeadingXs) }
+            if let title = context.string("title") { Text(title).openUIFont(context.theme.textBodyDefaultHeavy, role: .title) }
             if let detail = context.string("description") {
-              NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary))
+              NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary, role: .detail))
             }
           }
           Spacer(minLength: 0)
@@ -150,7 +150,8 @@ struct NativeInlineText: View {
     let size = context.string("size") ?? "sm"
     let font = context.theme.inlineFont(size, emphasized: bold)
     return .init(font: font,
-      numeric: context.string("variant") == "number")
+      numeric: context.string("variant") == "number", role: size == "xs" ? .detail : .body,
+      emphasisWeight: context.theme.inlineFont(size, emphasized: true).weight)
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -238,14 +239,13 @@ struct NativeMediaText: View {
     return context.presentation.inlineThumbnailSize
   }
   private var words: some View {
-    VStack(alignment: centered ? .center : .leading, spacing: 0) {
+    VStack(alignment: centered ? .center : .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       NativeMarkdownText(text: context.string("title") ?? "", mode: .inline,
-        style: .init(font: media == .banner ? context.theme.textBodyDefaultHeavy
-          : context.theme.inlineFont(context.string("layout") == "vertical" ? "sm" : "xs",
-                                     emphasized: context.flag("bold") == true)))
+        style: .init(font: media == .banner ? context.theme.textBodyLgHeavy
+          : context.theme.inlineFont("sm", emphasized: context.flag("bold") == true), role: .title))
 
       if let sub = context.string("subtitle") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary))
+        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary, role: .detail))
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -265,10 +265,6 @@ struct NativeIconButton: View {
         theme: context.theme, variant: context.string("variant") ?? "secondary",
         size: context.string("size"), destructive: false,
         iconOnly: true, circular: context.string("shape") == "circle")
-    )
-    .clipShape(
-      RoundedRectangle(
-        cornerRadius: context.string("shape") == "circle" ? 100 : context.theme.radiusL)
     )
     .accessibilityLabel(context.string("name") ?? "")
   }
@@ -328,10 +324,10 @@ struct NativeEntityList: View {
       gap: context.theme.spacing("m"), minimumLabelWidth: context.presentation.minimumTextColumnWidth
     ) {
       NativeMarkdownText(text: NativeValue.string(value, "left") ?? "", mode: .inline,
-        style: .init(font: font, color: color))
+        style: .init(font: font, color: color, role: small ? .detail : .body))
       NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
-        style: .init(font: kind == .footer ? context.theme.textHeadingSm
-          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true) : font), numeric: numeric, color: color))
+        style: .init(font: kind == .footer ? context.theme.textBodyLgHeavy
+          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true) : font), numeric: numeric, color: color, role: kind == .footer ? .title : small ? .detail : .body))
       // Horizontal layout still anchors a short value at the row's right edge.
       // A full-width text value must read from the left when the row stacks.
       .multilineTextAlignment(numeric ? .trailing : .leading)
@@ -449,12 +445,12 @@ struct NativeListItem: View {
     HStack(alignment: .center, spacing: context.theme.spaceM) {
       VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
         Text(context.string("title") ?? "").openUIFont(presentation.compact
-          ? context.theme.textBodySmHeavy : context.theme.textBodyDefaultHeavy)
+          ? context.theme.textBodySmHeavy : context.theme.textBodyDefaultHeavy, role: .title)
         if let detail = context.string("subtitle") {
-          Text(detail).openUIFont(presentation.compact ? context.theme.textBodySm : context.theme.textBodyDefault).foregroundStyle(context.theme.textNeutralSecondary)
+          Text(detail).openUIFont(presentation.compact ? context.theme.textBodySm : context.theme.textBodyDefault, role: presentation.compact ? .detail : .body).foregroundStyle(context.theme.textNeutralSecondary)
         }
         if hasAction, let label = context.string("actionLabel"), !label.isEmpty {
-          Text(label).openUIFont(context.theme.textLabelSmHeavy)
+          Text(label).openUIFont(context.theme.textLabelSmHeavy, role: .control)
             .foregroundStyle(context.theme.textNeutralSecondary).padding(.top, 2).accessibilityHidden(true)
         }
       }.frame(maxWidth: .infinity, alignment: .leading)
@@ -476,9 +472,9 @@ struct NativeSteps: View {
         HStack(alignment: .top, spacing: context.theme.spacing("m")) {
           NativeStepMarker(number: index + 1, theme: context.theme, diameter: markerDiameter)
           VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
-            Text(NativeValue.string(item.value, "title") ?? "").openUIFont(context.theme.textHeadingXs)
+            Text(NativeValue.string(item.value, "title") ?? "").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
             NativeMarkdownText(text: NativeValue.string(item.value, "details") ?? "",
-              style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary))
+              style: .init(font: context.theme.textBodySm, color: context.theme.textNeutralSecondary, role: .detail))
           }
         }
         .padding(.bottom, index < items.count - 1 ? context.theme.spacing("m") : 0)
@@ -500,7 +496,7 @@ struct NativeStepMarker: View {
   let theme: OpenUIThemeValues
   let diameter: CGFloat
   var body: some View {
-    Text("\(number)").openUIFont(theme.textBodySmHeavy)
+    Text("\(number)").openUIFont(theme.textBodySmHeavy, role: .detail)
       .fixedSize().frame(minWidth: diameter, minHeight: diameter)
       .background(theme.sunk, in: Circle())
       .accessibilityIdentifier("openui.steps.marker")
@@ -548,12 +544,12 @@ struct NativeModal: View {
       .sheet(isPresented: presented) {
         VStack(alignment: .leading, spacing: context.theme.spacing("ml")) {
           HStack {
-            Text(context.string("title") ?? "").openUIFont(context.theme.textHeadingXs).accessibilityAddTraits(.isHeader)
+            Text(context.string("title") ?? "").openUIFont(context.theme.textBodyDefaultHeavy, role: .title).accessibilityAddTraits(.isHeader)
             Spacer()
             Button {
               presented.wrappedValue = false
             } label: {
-              Image(systemName: "xmark").openUIFont(context.theme.textLabelDefaultHeavy).openUIControlTarget()
+              Image(systemName: "xmark").openUIFont(context.theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
             }
             .buttonStyle(.plain).keyboardShortcut(.cancelAction)
             .accessibilityLabel(Text("Close", bundle: NativeControlResources.bundle))
@@ -630,7 +626,7 @@ struct NativeCardItem: View {
     // The official families share tokens, not an identical outline: Context
     // uses radius-xl, compact fact cards radius-2xl, photo cards radius-3xl.
     theme.radius3xl = context.theme.cardRadius(for: kind)
-    if ["Overview", "Snippet"].contains(kind) { theme.spaceM = theme.spaceSM }
+    // Insets are owned by the component recipe; do not mutate a shared spacing token.
     return theme
   }
   @Environment(\.openUICardIsAction) private var isAction
@@ -661,7 +657,7 @@ struct NativeCardItem: View {
   }
   @ViewBuilder private var actionIndicator: some View {
     if isAction {
-      Image(systemName: "chevron.right").openUIFont(context.theme.textLabelSmHeavy)
+      Image(systemName: "chevron.right").openUIFont(context.theme.textLabelSmHeavy, role: .control)
         .foregroundStyle(contentTheme.textNeutralSecondary).accessibilityHidden(true)
     }
   }
@@ -707,7 +703,7 @@ struct NativeCardItem: View {
   }
   private var copy: some View {
     VStack(alignment: centeredOverview ? .center : .leading,
-      spacing: kind == "Overview" ? context.theme.spaceS : context.theme.spaceM) {
+      spacing: ["Overview", "Context"].contains(kind) ? context.theme.spaceS : context.theme.spaceM) {
       switch kind {
       case "Snippet":
         HStack(alignment: .center, spacing: context.theme.spacing("s")) {
@@ -734,7 +730,7 @@ struct NativeCardItem: View {
           .frame(maxWidth: .infinity, alignment: copyAlignment)
           .alignmentGuide(.nativeOverviewMetricTop) { _ in 0 }
       case "Context":
-        context.slot("title").openUIFont(context.theme.textBodyDefaultHeavy)
+        context.slot("title").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
         if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }
         if let body = context.string("body") {
           NativeMarkdownText(text: body, mode: .inline, style: .init(font: context.theme.textBodySm))
@@ -760,7 +756,7 @@ struct NativeCardItem: View {
       groupEntry
     }
       .environment(\.openUICardGroupAction, nil)
-      .padding(summary ? context.theme.spaceM : itemTheme.spaceM)
+      .padding(context.theme.componentStyle.objectInset)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: centeredOverview ? .top : .topLeading)
   }
   @ViewBuilder private var groupEntry: some View {
@@ -772,7 +768,7 @@ struct NativeCardItem: View {
           Spacer(minLength: 0)
           Image(systemName: "chevron.right").accessibilityHidden(true)
         }
-        .openUIFont(context.theme.textLabelSmHeavy)
+        .openUIFont(context.theme.textLabelSmHeavy, role: .control)
         .foregroundStyle(contentTheme.textNeutralPrimary)
         .frame(maxWidth: .infinity, alignment: .leading)
       }
@@ -789,7 +785,7 @@ struct NativeCompositeFooter: View {
     // An object footer balances amount and action when their complete widths
     // fit. It becomes a column before compressing either reading value. The
     // same mounted action survives that placement change.
-    NativeLabelValueLayout(gap: context.theme.spaceM,
+    NativeLabelValueLayout(gap: context.theme.componentStyle.footerGap,
       minimumLabelWidth: .greatestFiniteMagnitude, centerVertically: true,
       collapsesEmptySlots: true) {
       context.render(NativeValue.prop(footer, "price") ?? .null)
@@ -850,7 +846,7 @@ struct NativeCardBlock: View {
           }
         }
       }
-    }.padding(.vertical, !children.isEmpty && ["Overview", "Snippet"].contains(kind) ? context.theme.spaceS : 0)
+    }
   }
   @ViewBuilder private func item(_ item: OpenUIRenderChild, index: Int) -> some View {
     if let value = context.value("action"), value != .null {
@@ -895,7 +891,7 @@ struct NativeFollowUpItem: View {
     OpenUIActionSurface(context: context, message: text, action: Self.action(for: text)) {
       Text(text)
         .fixedSize(horizontal: false, vertical: true)
-        .openUIFont(context.theme.textLabelSm)
+        .openUIFont(context.theme.textLabelSm, role: .control)
         .foregroundStyle(context.theme.textNeutralPrimary)
         .padding(.horizontal, context.theme.spacing("m"))
         .padding(.vertical, context.theme.spacing("s"))

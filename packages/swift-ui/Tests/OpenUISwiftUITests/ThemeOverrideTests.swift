@@ -70,7 +70,7 @@ final class ThemeOverrideTests: XCTestCase {
         .openUITheme(theme).frame(width: 300)).fittingSize.height
     }
     let base = OpenUIThemeValues(); var custom = base
-    custom.spaceM = 22; custom.spaceL = 28
+    custom.spaceM = 22; custom.spaceML = 26
     let children = "[TextContent(\"A\"),TextContent(\"B\")]"
     XCTAssertEqual(try height("root=Stack(\(children))", custom) - height("root=Stack(\(children))", base), 10, accuracy: 0.5)
     XCTAssertEqual(try height("root=Card(\(children),\"sunk\")", custom) - height("root=Card(\(children),\"sunk\")", base), 30, accuracy: 0.5)
@@ -110,7 +110,7 @@ final class ThemeOverrideTests: XCTestCase {
     }
     let base = OpenUIThemeValues()
     var custom = base
-    custom.textBodySmHeavy = OpenUIFont(size: 34, weight: .light, lineSpacing: 0.4)
+    custom.textBodyDefaultHeavy = OpenUIFont(size: 34, weight: .light, lineSpacing: 0.4)
     XCTAssertGreaterThan(height(bold: true, theme: custom), height(bold: true, theme: base) + 10)
     XCTAssertEqual(height(bold: false, theme: custom), height(bold: false, theme: base), accuracy: 0.5)
   }
@@ -126,7 +126,7 @@ final class ThemeOverrideTests: XCTestCase {
         .openUITheme(theme).frame(width: 360)).fittingSize.height
     }
     let base = OpenUIThemeValues(); var custom = base
-    custom.textBodyDefaultHeavy = OpenUIFont(size: 30, weight: .bold)
+    custom.textBodyLgHeavy = OpenUIFont(size: 30, weight: .bold)
     XCTAssertGreaterThan(height(custom), height(base) + 10)
     XCTAssertEqual(custom.textBodySm, base.textBodySm)
   }

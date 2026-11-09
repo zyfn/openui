@@ -39,6 +39,7 @@ struct NativeChoiceField: View {
   @EnvironmentObject private var state: OpenUIState
   @Environment(\.dynamicTypeSize) private var typeSize
   @Environment(\.layoutDirection) private var direction
+  @Environment(\.isEnabled) private var enabled
   @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
   private var field: NativeFieldState { NativeFieldState(context: context) }
   private var selection: [OpenUIString] { NativeChoiceSelection.values(field.value) }
@@ -46,8 +47,8 @@ struct NativeChoiceField: View {
     Group {
       if cards {
         NativeChoiceCardsLayout(minimumWidth: context.presentation.minimumChoiceWidth * textScale,
-          gap: context.theme.spacing("m"), padding: context.theme.spacing("sm"),
-          extraCopyHeight: context.theme.textBodyDefault.size * textScale * 1.35,
+          gap: context.theme.spacing("m"), padding: context.theme.componentStyle.objectInset,
+          extraCopyHeight: context.theme.textBodySm.resolved(for: .detail).measuredLineHeight(scale: textScale),
           singleColumn: typeSize.isAccessibilitySize, rightToLeft: direction == .rightToLeft) { options }
       } else {
         NativeWrappingRow(gap: context.theme.spacing("s")) { options }
@@ -79,40 +80,45 @@ struct NativeChoiceField: View {
       }
     }
   }
+  private func isDisabled(_ item: EvaluatedElement) -> Bool {
+    !enabled || !context.canInteract || PropValue.value(item, "disabled") == .boolean(true)
+  }
   private func choice(_ item: EvaluatedElement, selected: Bool) -> some View {
     VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
       if cards { context.render(PropValue.value(item, "topContent") ?? .null) }
       cardCopy(item, selected: selected)
-    }.padding(.horizontal, context.theme.spacing(cards ? "sm" : "s"))
-    .padding(.vertical, context.theme.spacing(cards ? "sm" : "xs")).frame(
+    }.padding(.horizontal, cards ? context.theme.componentStyle.objectInset : context.theme.spaceS)
+    .padding(.vertical, cards ? context.theme.componentStyle.objectInset : context.theme.spaceXs).frame(
       maxWidth: cards ? .infinity : nil, maxHeight: cards ? .infinity : nil, alignment: .topLeading
     )
     .background(
-      selected ? context.theme.sunk : .clear,
+      selected ? context.theme.componentStyle.selectedSurface : .clear,
       in: RoundedRectangle(cornerRadius: choiceRadius)
     )
     .overlay(
       RoundedRectangle(cornerRadius: choiceRadius).strokeBorder(
-        selected ? context.theme.textNeutralPrimary : context.theme.borderInteractive, lineWidth: context.presentation.borderWidth))
-    .opacity(PropValue.value(item, "disabled") == .boolean(true) || !context.canInteract ? 0.5 : 1)
+        selected && !isDisabled(item) ? context.theme.componentStyle.selectedBorder : context.theme.componentStyle.surfaceBorder, lineWidth: context.presentation.borderWidth))
   }
-  private var choiceRadius: CGFloat { cards ? max(0, context.theme.radiusL + 4) : context.theme.radiusFull }
+  private var choiceRadius: CGFloat { cards ? context.theme.componentStyle.optionRadius : context.theme.radiusFull }
   private func cardCopy(_ item: EvaluatedElement, selected: Bool) -> some View {
-    VStack(alignment: .leading, spacing: context.theme.spacing("3xs")) {
+    VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       HStack(spacing: context.theme.spacing("xs")) {
         if !cards { context.render(PropValue.value(item, "icon") ?? .null) }
         Text(PropValue.string(item, cards ? "title" : "label") ?? "").openUIFont(
-          context.theme.textBodyDefault.weight(cards || selected ? .medium : .regular)
+          cards ? context.theme.textBodyDefaultHeavy : context.theme.textLabelDefaultHeavy, role: .control
         )
+        .foregroundStyle(isDisabled(item) ? context.theme.componentStyle.disabledText : context.theme.textNeutralPrimary)
         .fixedSize(horizontal: false, vertical: true)
         if cards {
           Spacer(minLength: 4)
           Image(systemName: selected ? "checkmark.circle.fill" : "circle").foregroundStyle(
-            selected ? context.theme.textNeutralPrimary : context.theme.textNeutralSecondary)
+            isDisabled(item) ? context.theme.componentStyle.disabledText
+              : selected ? context.theme.componentStyle.selectedBorder : context.theme.textNeutralSecondary)
         }
       }
       if cards, let subtitle = PropValue.string(item, "subtitle") {
-        Text(subtitle).openUIFont(context.theme.textBodySm).foregroundStyle(context.theme.textNeutralSecondary)
+        Text(subtitle).openUIFont(context.theme.textBodySm, role: .detail)
+          .foregroundStyle(isDisabled(item) ? context.theme.componentStyle.disabledText : context.theme.textNeutralSecondary)
           .fixedSize(horizontal: false, vertical: true)
       }
     }

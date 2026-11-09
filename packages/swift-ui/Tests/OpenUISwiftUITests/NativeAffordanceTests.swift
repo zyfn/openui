@@ -12,10 +12,10 @@ final class NativeAffordanceTests: XCTestCase {
         XCTAssertEqual(theme.textBodyDefaultHeavy.size, 16)
     }
 
-    func testCardBorderUsesInteractiveDefaultAndSupportsIndependentOverride() {
+    func testCardBorderUsesSurfaceDefaultAndSupportsIndependentOverride() {
         let theme = OpenUIThemeValues.defaults
         let presentation = OpenUIPresentation()
-        XCTAssertEqual(presentation.resolvedCardBorderColor(with: theme), theme.borderInteractive)
+        XCTAssertEqual(presentation.resolvedCardBorderColor(with: theme), theme.borderDefault)
 
         var customized = presentation
         customized.cardBorderColor = .red

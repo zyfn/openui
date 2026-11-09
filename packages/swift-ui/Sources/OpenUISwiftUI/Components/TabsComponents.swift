@@ -87,18 +87,18 @@ struct NativeTabsView: View {
                         Button { nativeSelection.wrappedValue = panel.id } label: {
                             NativeBoundedLabelLayout(maximumWidth: width > 0 ? min(width, 232) : 232) {
                               Text(panel.label)
-                                .openUIFont(context.theme.textLabelDefaultHeavy.weight(active?.id == panel.id ? .medium : .regular))
+                                .openUIFont(context.theme.textLabelDefaultHeavy, role: .control)
                                 .foregroundStyle(active?.id == panel.id ? context.theme.textNeutralPrimary : context.theme.textNeutralSecondary)
                                 .lineLimit(textSize.isAccessibilitySize ? nil : 2)
                                 .truncationMode(.tail).fixedSize(horizontal: false, vertical: true)
                             }
                                 .padding(.horizontal, context.theme.spaceM)
                                 .padding(.vertical, context.theme.spaceS)
-                                .background(active?.id == panel.id ? context.theme.sunk : .clear,
+                                .background(active?.id == panel.id ? context.theme.componentStyle.selectedSurface : .clear,
                                   in: Capsule(style: .continuous))
                                 .overlay(
                                   Capsule(style: .continuous).strokeBorder(
-                                    active?.id == panel.id ? context.theme.borderInteractive : .clear,
+                                    active?.id == panel.id ? context.theme.componentStyle.selectedBorder : .clear,
                                     lineWidth: context.presentation.borderWidth))
                                 .openUIControlTarget()
                         }

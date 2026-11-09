@@ -54,7 +54,7 @@ final class CardTextClippingTests: XCTestCase {
       XCTAssertEqual(card.0, padded.0)
       XCTAssertEqual(card.1, padded.1)
       XCTAssertEqual(card.2, padded.2, "Default Card must retain all visible glyph strokes within its content inset: \(title)")
-      let insetReference = try bitmap("root=Stack([\(header)])", horizontalInset: OpenUIThemeValues().spacing("l"))
+      let insetReference = try bitmap("root=Stack([\(header)])", horizontalInset: OpenUIThemeValues().spaceML)
       let clear = try bitmap("root=Card([\(header)],\"clear\")")
       XCTAssertEqual(clear.0, insetReference.0)
       XCTAssertEqual(clear.1, insetReference.1)

@@ -142,7 +142,7 @@ struct NativeSliderField: View {
           select: { value, index in draft.select(value, at: index) })
         ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
           if let error = configuration.error(for: draft.values, index: index) {
-            Text(error).openUIFont(context.theme.textBodyXs).foregroundStyle(context.theme.textDangerPrimary)
+            Text(error).openUIFont(context.theme.textBodyXs, role: .caption).foregroundStyle(context.theme.textDangerPrimary)
               .fixedSize(horizontal: false, vertical: true)
               .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
           }
@@ -185,7 +185,7 @@ struct NativeSliderField: View {
       : AnyLayout(HStackLayout(alignment: .center, spacing: context.theme.spaceM))
     return layout {
       if fieldLabel == nil {
-        Text(label).openUIFont(context.theme.textBodySm)
+        Text(label).openUIFont(context.theme.textBodySm, role: .detail)
           .fixedSize(horizontal: false, vertical: true)
           .frame(maxWidth: .infinity, alignment: .leading)
       }
@@ -212,7 +212,7 @@ struct NativeSliderField: View {
           HStack {
             Text(jsNumberString(draft.values[index])).monospacedDigit()
             Spacer(minLength: context.theme.spacing("s"))
-            Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.textBodyXs)
+            Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.textBodyXs, role: .caption)
           }.padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
             .background(context.theme.sunk, in: RoundedRectangle(cornerRadius: context.theme.radiusL))
         }.buttonStyle(.plain).accessibilityIdentifier("openui.slider.choice.\(field.name.displayString).\(index)")

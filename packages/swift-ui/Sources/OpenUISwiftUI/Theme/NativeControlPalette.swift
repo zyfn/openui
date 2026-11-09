@@ -27,18 +27,28 @@ enum NativeControlPalette {
     static var info: Color { adaptive(light: 0x1E40AF, dark: 0x93C5FD) }
     static var success: Color { adaptive(light: 0x166534, dark: 0x86EFAC) }
     static var warning: Color { adaptive(light: 0x854D0F, dark: 0xFDE046) }
-    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+    static func adaptive(light: UInt32, dark: UInt32,
+                         highContrastLight: UInt32? = nil, highContrastDark: UInt32? = nil) -> Color {
         func channels(_ hex: UInt32) -> (CGFloat, CGFloat, CGFloat) {
             (CGFloat((hex >> 16) & 255) / 255, CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255)
         }
         #if canImport(UIKit)
             return Color(uiColor: UIColor { traits in
-                let (r, g, b) = channels(traits.userInterfaceStyle == .dark ? dark : light)
+                let isDark = traits.userInterfaceStyle == .dark
+                let hex = traits.accessibilityContrast == .high
+                    ? (isDark ? highContrastDark ?? dark : highContrastLight ?? light)
+                    : (isDark ? dark : light)
+                let (r, g, b) = channels(hex)
                 return UIColor(red: r, green: g, blue: b, alpha: 1)
             })
         #elseif canImport(AppKit)
             return Color(nsColor: NSColor(name: nil) { appearance in
-                let (r, g, b) = channels(appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light)
+                let name = appearance.bestMatch(from: [.accessibilityHighContrastDarkAqua,
+                    .accessibilityHighContrastAqua, .darkAqua, .aqua])
+                let isDark = name == .darkAqua || name == .accessibilityHighContrastDarkAqua
+                let high = name == .accessibilityHighContrastDarkAqua || name == .accessibilityHighContrastAqua
+                let hex = high ? (isDark ? highContrastDark ?? dark : highContrastLight ?? light) : (isDark ? dark : light)
+                let (r, g, b) = channels(hex)
                 return NSColor(srgbRed: r, green: g, blue: b, alpha: 1)
             })
         #else

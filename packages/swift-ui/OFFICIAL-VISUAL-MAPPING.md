@@ -23,26 +23,26 @@ labels and containers must not compete with the content.
 
 ## Foundation mapping
 
-Logical point values below correspond to the reference's default CSS values;
+The table distinguishes reference CSS values from the native reading defaults;
 they scale through the receiving SwiftUI environment. This is a default visual
 mapping, not a claim that a CSS pixel equals a physical display pixel.
 
 | Role | Reference | Native default | Owner |
 | --- | --- | --- | --- |
 | Body / supporting / caption | 16 / 14 / 12 | 16 / 14 / 12 pt | OpenUIThemeValues text roles |
-| Card header / inline header | heading-small 18 / body-heavy 16 | 18 / 16 pt | NativeHeading |
+| Card header / inline header | heading-small 18 / body-heavy 16 | 18 / 18 pt | NativeHeading |
 | Body large and large-heavy | both 18, weight differs | both 18, weight differs | NativeRichTextStyle |
 | Text xs / sm / md / lg | 14 / 16 / 16 / 18 | 14 / 16 / 16 / 18 pt | OpenUIThemeValues.inlineFont |
 | Text subtext xs,sm / md,lg | 14 / 16 | 14 / 16 pt | NativeInlineText |
-| Tag text | label-small 14 at all densities | 14 pt, padding changes | NativeTagPill |
+| Tag text | label-small 14 at all densities | 12 / 14 / 16 pt for sm / md / lg | NativeTagPill |
 | Action small / regular | label-small 14 / default 16 | 14 / 16 pt | NativeActionButtonStyle |
 | MetricIndicator value | number-heavy 16 | 16 pt, tabular digits | NativeMetric |
 | Code | code-default 14 | 14 pt, native monospace | NativeCodeBlockContent |
 | Gap xs / s / m / l / xl / 2xl | 6 / 8 / 12 / 18 / 24 / 36 | same logical values | OpenUIThemeValues.spacing |
-| Neutral ink | neutral-1000 light / neutral-50 dark | #030303 / #FAFAFA | OpenUITheme |
-| Secondary ink | primary at 60% | same opacity | OpenUITheme |
-| Recessed / subtle surface | overlay at 4% / 2% | same opacity | OpenUITheme |
-| Default / interactive border | overlay at 6% / 12% | same opacity | OpenUITheme |
+| Neutral ink | neutral-1000 light / neutral-50 dark | #202024 / #F4F4F5 | OpenUITheme |
+| Secondary ink | primary at 60% | opaque #64646E / #A1A1AA | OpenUITheme |
+| Recessed / subtle surface | overlay at 4% / 2% | explicit appearance-aware surfaces | OpenUITheme |
+| Default / interactive border | overlay at 6% / 12% | separate opaque grouping/editing colors | OpenUITheme |
 | Accent | official brand and control-state colors are configurable | native neutral brand / host override | OpenUITheme.interactiveAccentDefault |
 | Surface border | 1 | 1 pt | OpenUIPresentation.borderWidth |
 | Composite padding / radius | 12 / 16 | 12 / 16 pt | NativeCardItem |
@@ -50,8 +50,8 @@ mapping, not a claim that a CSS pixel equals a physical display pixel.
 | Context padding / radius | 12 / 12 | 12 / 12 pt | NativeCardItem |
 | Media corner | radius-m 8 | 8 pt | OpenUITheme.radiusM |
 
-Neutral and semantic swatches are converted from the pinned OKLCH source to
-8-bit sRGB. Semantic tint backgrounds follow the host's semantic color at a
+Native neutral swatches use the explicit sRGB values in UI-DESIGN.md.
+Semantic status colors retain their pinned reference relationship. Semantic tint backgrounds follow the host's semantic color at a
 shared low opacity; they are not claimed to reproduce every upstream source
 swatch/alpha combination. Theme overrides continue to work. An unrelated
 semantic color must not silently become the chart series palette.
@@ -65,13 +65,13 @@ semantic color must not silently become the chart series palette.
 | CardHeader, InlineHeader, Label | role-specific typography, description priority and spacing | full text may grow at larger type |
 | Image, ImageBlock, ImageGallery, ImageTextLarge | shared media radius and stable slots | user-approved 16:9 photo covers instead of fixed 180px banner |
 | ImageText, IconText, Icon | reference compact type and neutral/semantic badge treatment; pinned Lucide artwork | icon-size parameters and nearest-view scaling retained |
-| Tag, TagBlock | informational tint, primary neutral ink, label-small across sizes | complete long labels can wrap instead of being ellipsized |
-| Button, IconButton, Buttons | primary/secondary/tertiary hierarchy; transparent bordered secondary, shared native button corner and density | native hit target, focus, press/Reduce Motion; flat neutral assistant treatment |
+| Tag, TagBlock | informational tint, primary neutral ink, 12/14/16pt reading sizes | complete long labels can wrap instead of being ellipsized |
+| Button, IconButton, Buttons | primary/secondary/tertiary hierarchy; transparent bordered secondary, capsule text actions and shared density | native hit target, focus, press/Reduce Motion; flat neutral assistant treatment |
 | EntityList | shared body roles, header/total priority and tabular numeric values | native text values stay regular and lead when stacked; number values remain emphasized; read-only body rows use spaceS |
 | ListBlock, ListItem, Steps | common reading roles, media/text gap, number and action hierarchy | width-derived photo previews, complete text and scalable step marker |
 | CompositeCardItem/Block | 12pt inset, 16pt corner, quiet surface, measured amount/action relationship | full-bleed 16:9 cover; amount/action share a row when they fit, otherwise stack; one mounted action remains inside card |
 | Overview, Snippet, Context, Visual cards | family-specific radius/inset from the same scale | photo cards use width-derived extent; native collection measurement retained; compact facts stack before splitting values |
-| Tabs | open labels with selected underline and neutral divider | native horizontal scrolling and focus; long accessibility labels wrap within the viewport |
+| Tabs | open labels with a selected capsule and shared selection color | native horizontal scrolling and focus; long accessibility labels wrap within the viewport |
 | Accordion | continuous clear disclosure list, no separate card per item | native DisclosureGroup affordance; streaming open-selection behavior retained |
 | Form, FormControl | open vertical flow, 16pt form gap, 8pt control gap | one input subtree; native field/picker interaction retained |
 | Input, TextArea, Select, DatePicker | shared reading role, subtle surface, interactive/error border | native keyboard, date sheet, text editor and minimum targets |
@@ -93,9 +93,9 @@ their consuming component. A blank standalone screenshot is not visual approval.
 
 1. Native system fonts and nearest-view Dynamic Type replace bundled Inter.
    Native font metrics/leading and semibold emphasis approximate the reference;
-   the 440/560 variable axes and CSS line boxes are not reproduced. The existing
-   host-adjustable extra line-spacing factor remains 0.20.
-2. Photo covers use available width / 1.5 and crop proportionally before pixels
+   the 440/560 variable axes and CSS line boxes are not reproduced. Explicit
+   host leading wins; omitted leading resolves by reading role.
+2. Photo covers use available width / (16 / 9) and crop proportionally before pixels
    arrive. Original-image viewers and document images preserve full source
    geometry. Square avatar/icon roles remain square. Content and actions are
    never cropped just to equalize complete card heights.
@@ -103,7 +103,7 @@ their consuming component. A blank standalone screenshot is not visual approval.
    Compact visible controls retain the larger native hit region.
 4. Native chart geometry and palette remain. Labels, legends and inspection must
    stay legible at large type and cannot borrow fixed web heights blindly.
-5. The assistant uses a neutral brand, one 10pt button corner and flat controls.
+5. The assistant uses a neutral brand, capsule text actions and flat controls.
    The reference's blue default, per-size corners and button shadows are not
    the native skin; the first blue candidate was rejected in user review.
    Object footers share a row when both complete values fit and stack when they do
@@ -132,7 +132,7 @@ The three-item retained-patch list alone is not a complete customization invento
 Stable element/control identity, prepared schema caches, request coalescing,
 resource ownership, cancellation and execution budgets are SDK runtime policy.
 They remain independent of hotel/travel/example content. The SDK catalogue
-contains only the 82 pinned standard definitions.
+contains 84 standard definitions.
 
 Scene catalogs, synthetic data and interaction samples belong to the separate
 visual review application, not to SDK targets or default prompt additions. UI verification of the review shell does

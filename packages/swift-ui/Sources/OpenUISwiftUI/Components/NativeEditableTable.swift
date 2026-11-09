@@ -104,7 +104,7 @@ struct NativeEditableTable: View {
         VStack(spacing: 0) {
           HStack(spacing: 0) {
             ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
-              Text(NativeValue.string(column, "header") ?? "").openUIFont(context.theme.textBodySmHeavy)
+              Text(NativeValue.string(column, "header") ?? "").openUIFont(context.theme.textBodySmHeavy, role: .detail)
                 .multilineTextAlignment(NativeValue.string(column, "type") == "number" ? .trailing : .leading)
                 .frame(width: width(index), alignment: alignment(column)).padding(context.theme.spaceM)
             }
@@ -149,7 +149,7 @@ struct NativeEditableTable: View {
               .buttonStyle(
                 NativeActionButtonStyle(theme: context.theme, variant: "primary", size: "small"))
           }
-        }.openUIFont(context.theme.textBodySm).disabled(!context.canInteract || saving)
+        }.openUIFont(context.theme.textBodySm, role: .detail).disabled(!context.canInteract || saving)
       }
     }
     .onAppear { editing.receive(source, revision: state.sourceRevision) }

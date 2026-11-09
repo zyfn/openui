@@ -6,8 +6,8 @@ struct OpenUICardSurface: ViewModifier {
     let variant: String?
     func body(content: Content) -> some View {
         content.environment(\.openUIActionDensity, .compact)
-            .padding(.horizontal, variant == "clear" || variant == "sunk" ? theme.spaceL : theme.spaceML)
-            .padding(.vertical, variant == "clear" ? 0 : variant == "sunk" ? theme.spaceL : theme.spaceML)
+            .padding(.horizontal, theme.componentStyle.panelInset)
+            .padding(.vertical, variant == "clear" ? 0 : theme.componentStyle.panelInset)
             .frame(maxWidth: .infinity, alignment: .leading)
             // Background and media own their corners; the open container must
             // not mask glyphs at the edge of its unpadded content.
@@ -15,8 +15,6 @@ struct OpenUICardSurface: ViewModifier {
                 theme: theme,
                 fill: variant == "clear" ? .clear : variant == "sunk" ? theme.sunk : theme.foreground,
                 bordered: variant != "clear"))
-            .shadow(color: .black.opacity(variant == "sunk" ? theme.shadowS.opacity : 0),
-                    radius: theme.shadowS.radius, x: theme.shadowS.x, y: theme.shadowS.y)
     }
 }
 
@@ -58,7 +56,7 @@ struct NativeContentImage: View {
             layout: .cover)
             // Suggest a media width when a row measures its children. Grid card
             // widths are unrelated; the parent still controls the final width.
-            // Standard Image follows the pinned reference's 3:2 photo default.
+            // Standard Image uses the shared native cover role.
             .frame(idealWidth: context.presentation.thumbnailSize)
             .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
     }

@@ -101,7 +101,10 @@ public struct OpenUITheme {
 
     /// Resolve this override set against the SDK defaults. Colors remain appearance-aware.
     public func resolved() -> OpenUIThemeValues {
-        var values = OpenUIThemeValues.defaults
+        resolved(over: .defaults)
+    }
+    func resolved(over base: OpenUIThemeValues) -> OpenUIThemeValues {
+        var values = base
         if let textNeutralPrimary { values.textNeutralPrimary = textNeutralPrimary }
         if let textNeutralSecondary { values.textNeutralSecondary = textNeutralSecondary }
         if let textNeutralTertiary { values.textNeutralTertiary = textNeutralTertiary }
@@ -205,21 +208,21 @@ public struct OpenUITheme {
 public struct OpenUIThemeValues {
     // Dynamic Color providers are reused across scope resolution and stream updates.
     static let defaults = OpenUIThemeValues()
-    public var textNeutralPrimary: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFAFAFA)
-    public var textNeutralSecondary: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFAFAFA).opacity(0.6)
-    public var textNeutralTertiary: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFAFAFA).opacity(0.2)
-    public var textNeutralLink: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFAFAFA)
-    public var background: Color = NativeControlPalette.adaptive(light: 0xF5F5F5, dark: 0x0A0A0A)
-    public var foreground: Color = NativeControlPalette.adaptive(light: 0xFDFDFD, dark: 0x171717)
-    public var popoverBackground: Color = NativeControlPalette.adaptive(light: 0xFDFDFD, dark: 0x171717)
-    public var sunk: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFDFDFD).opacity(0.04)
-    public var sunkLight: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFDFDFD).opacity(0.02)
-    public var highlight: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFDFDFD).opacity(0.04)
-    public var borderDefault: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFDFDFD).opacity(0.06)
-    public var borderInteractive: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFDFDFD).opacity(0.12)
+    public var textNeutralPrimary: Color = NativeControlPalette.adaptive(light: 0x202024, dark: 0xF4F4F5, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
+    public var textNeutralSecondary: Color = NativeControlPalette.adaptive(light: 0x64646E, dark: 0xA1A1AA, highContrastLight: 0x50505A, highContrastDark: 0xC4C4CE)
+    public var textNeutralTertiary: Color = NativeControlPalette.adaptive(light: 0xAAAAB4, dark: 0x686874)
+    public var textNeutralLink: Color = NativeControlPalette.adaptive(light: 0x202024, dark: 0xF4F4F5, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
+    public var background: Color = NativeControlPalette.adaptive(light: 0xFFFFFF, dark: 0x0B0B0D)
+    public var foreground: Color = NativeControlPalette.adaptive(light: 0xFFFFFF, dark: 0x17171B)
+    public var popoverBackground: Color = NativeControlPalette.adaptive(light: 0xFFFFFF, dark: 0x242429)
+    public var sunk: Color = NativeControlPalette.adaptive(light: 0xF5F5F7, dark: 0x1F1F24)
+    public var sunkLight: Color = NativeControlPalette.adaptive(light: 0xFAFAFC, dark: 0x17171B)
+    public var highlight: Color = NativeControlPalette.adaptive(light: 0xF1F1F4, dark: 0x2A2A30)
+    public var borderDefault: Color = NativeControlPalette.adaptive(light: 0xE0E0E5, dark: 0x393940, highContrastLight: 0xCBCBD3, highContrastDark: 0x5A5A64)
+    public var borderInteractive: Color = NativeControlPalette.adaptive(light: 0x8A8A94, dark: 0x767680, highContrastLight: 0x64646F, highContrastDark: 0x9898A4)
     public var borderAccent: Color = NativeControlPalette.ink.opacity(0.08)
     public var borderDanger: Color = NativeControlPalette.error.opacity(0.08)
-    public var invertedBackground: Color = NativeControlPalette.adaptive(light: 0x030303, dark: 0xFAFAFA)
+    public var invertedBackground: Color = NativeControlPalette.adaptive(light: 0x202024, dark: 0xF4F4F5, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
     public var textInfoPrimary: Color = NativeControlPalette.info
     public var textSuccessPrimary: Color = NativeControlPalette.success
     public var textAlertPrimary: Color = NativeControlPalette.warning
@@ -229,10 +232,10 @@ public struct OpenUIThemeValues {
     public var successBackground: Color = NativeControlPalette.success.opacity(0.12)
     public var alertBackground: Color = NativeControlPalette.warning.opacity(0.12)
     public var dangerBackground: Color = NativeControlPalette.error.opacity(0.12)
-    public var interactiveAccentDefault: Color = NativeControlPalette.ink
-    public var interactiveAccentHover: Color = NativeControlPalette.ink.opacity(0.8)
-    public var interactiveAccentPressed: Color = NativeControlPalette.ink
-    public var interactiveAccentDisabled: Color = NativeControlPalette.ink.opacity(0.4)
+    public var interactiveAccentDefault: Color = NativeControlPalette.adaptive(light: 0x202024, dark: 0xF4F4F5, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
+    public var interactiveAccentHover: Color = NativeControlPalette.adaptive(light: 0x3D3D43, dark: 0xDEDEE3)
+    public var interactiveAccentPressed: Color = NativeControlPalette.adaptive(light: 0x101014, dark: 0xE4E4EA)
+    public var interactiveAccentDisabled: Color = NativeControlPalette.adaptive(light: 0xB6B6BF, dark: 0x52525C)
     public var interactiveDestructiveDefault: Color = NativeControlPalette.error.opacity(0.02)
     public var interactiveDestructiveHover: Color = NativeControlPalette.error.opacity(0.08)
     public var interactiveDestructivePressed: Color = NativeControlPalette.error.opacity(0.08)
@@ -272,9 +275,9 @@ public struct OpenUIThemeValues {
     public var radius8xl: CGFloat = 40
     public var radius9xl: CGFloat = 48
     public var radiusFull: CGFloat = 9999
-    public var textHeadingMd: OpenUIFont = OpenUIFont(size: 24, weight: .semibold)
-    public var textHeadingSm: OpenUIFont = OpenUIFont(size: 18, weight: .semibold)
-    public var textHeadingXs: OpenUIFont = OpenUIFont(size: 16, weight: .semibold)
+    public var textHeadingMd: OpenUIFont = OpenUIFont(size: 26, weight: .semibold)
+    public var textHeadingSm: OpenUIFont = OpenUIFont(size: 20, weight: .semibold)
+    public var textHeadingXs: OpenUIFont = OpenUIFont(size: 18, weight: .semibold)
     public var textBodyDefault: OpenUIFont = OpenUIFont(size: 16, weight: .regular)
     public var textBodyDefaultHeavy: OpenUIFont = OpenUIFont(size: 16, weight: .semibold)
     public var textBodySm: OpenUIFont = OpenUIFont(size: 14, weight: .regular)

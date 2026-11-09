@@ -31,7 +31,7 @@ Keep the installed registry complete and derive the per-message library through
 lang-core. For example, a host can offer a read-only subset:
 
 ```swift
-let installed = try OpenUIStandardComponents.library() // 82 registered names
+let installed = try OpenUIStandardComponents.library() // 84 registered names
 var generation = try installed.library.extend(
     LibraryExtension(removeComponents: ["EditableTable"])
 )
@@ -91,17 +91,20 @@ theme. The closure overload also creates a fresh override set.
 
 Typography roles are independent complete `OpenUIFont` values. For example,
 `textBodyDefaultHeavy` does not change when `textBodyDefault` is overridden.
-`ImageTextLarge` and default-size `BoldText` use `textBodyDefaultHeavy`;
+`ImageTextLarge` and CardHeader use `textBodyLgHeavy`; ImageText and default-size `BoldText` use `textBodyDefaultHeavy` when emphasized;
 headings use `textHeadingXs`, `textHeadingSm` and `textHeadingMd`.
 Each role controls its own font family, size, weight and tracking.
 `lineHeight` requests a baseline height as a font-size multiplier, clamped to
 native glyph metrics. `lineSpacing` retains the native additional-spacing
-setting in em (0.20 when omitted); an explicit `lineHeight` takes precedence.
+setting in em; an explicit `lineHeight` takes precedence. When both are omitted,
+components resolve role-specific leading: body 1.50, detail 1.45, caption 1.40,
+title 1.35, section 1.30 and display/control/metric 1.25.
 These native font values replace CSS font strings, not the Lang contract.
 
 Spacing uses the official `space*` tokens. `gap="none"` is always zero.
-Card families consume their own tokens directly: card padding, including
-outlined compact fact cards, uses `spaceM`, and the corresponding
+Card families consume their own tokens directly: object and fact-card padding
+uses `spaceM`; generic Card uses `spaceML` (clear has zero vertical inset).
+Fact-card groups add no outer margin. The corresponding
 radii are `radius3xl`, `radius2xl` or `radiusXl`. There are no competing
 `cardPadding`, `contentSpacing` or `cornerRadius` overrides.
 
@@ -117,9 +120,34 @@ This includes touch targets, thumbnails, carousel widths, chart axes and
 native motion. Changing a theme does not reset this environment value.
 The renderer stays transparent; the app owns its page and message background.
 
-Cards use `borderInteractive` for a readable default outline. Set
+Cards and secondary actions use `borderDefault`; editable fields use the stronger
+`borderInteractive`. Set
 `presentation.cardBorderColor` when a product needs a different card boundary
 without changing form controls, Steps or other users of the shared theme tokens.
+
+### Shared appearance configuration and button shape
+
+Use an explicit common override set when typography and geometry should be shared:
+
+```swift
+var common = OpenUITheme()
+common.textBodyDefault = OpenUIFont(size: 17, lineHeight: 1.5)
+var light = OpenUITheme()
+light.background = .white
+var dark = OpenUITheme()
+dark.background = .black
+renderer.openUITheme(commonTheme: common, lightTheme: light, darkTheme: dark)
+```
+
+Resolution is defaults, common, then the selected appearance. Calls without
+`commonTheme` and nested scopes retain the existing reset behavior.
+
+Text buttons are capsules, sized from their actual bounds, including wrapped
+labels. IconButton's declared circle/square shape remains authoritative.
+`OpenUIPresentation.buttonCornerRadius` is nil by default; set it to 10 (or
+another finite radius) to opt into rounded rectangular text buttons independently
+of inputs and cards. The minimum hit target remains separate from the visible shape.
+See [UI-DESIGN.md](UI-DESIGN.md) for the complete default design.
 
 ### Migrating from 0.1.1-rc.1
 
@@ -136,7 +164,7 @@ Custom component builders now read `OpenUIThemeValues` and
 
 ## Layout and theme
 
-The collection contains the pinned upstream default library's 82 registrations, including chart data items and parent-consumed records; see [NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md). On iOS 16/macOS 13, row/column layout uses child measurement, real first-text baselines and distinct space-around/space-evenly distribution. Wrapped rows measure each line independently. The package minimum is iOS 16/macOS 13, so the older stack/grid approximation is not shipped. Use Stack for list/wrapping layouts and Carousel for container-width horizontal pages; these respond to their actual parent proposal, not a device-specific layout template.
+The collection contains the pinned upstream default library's 84 registrations, including chart data items and parent-consumed records; see [NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md). On iOS 16/macOS 13, row/column layout uses child measurement, real first-text baselines and distinct space-around/space-evenly distribution. Wrapped rows measure each line independently. The package minimum is iOS 16/macOS 13, so the older stack/grid approximation is not shipped. Use Stack for list/wrapping layouts and Carousel for container-width horizontal pages; these respond to their actual parent proposal, not a device-specific layout template.
 
 Use `.openUITheme(theme)` for appearance and `.openUIPresentation(options)` for native media and layout metrics. Text uses Dynamic Type semantic fonts. There are no screen-global measurements. Override any standard component with `extending(overriding: ...)` when a product needs its own loader or view.
 

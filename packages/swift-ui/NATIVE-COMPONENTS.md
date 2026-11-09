@@ -1,6 +1,6 @@
 # Native standard component catalog
 
-`OpenUIStandardComponents.library()` registers the 82 pinned upstream default
+`OpenUIStandardComponents.library()` registers the 84 pinned upstream default
 component names. Names, positional argument order, defaults and component slots
 follow `react-ui/src/genui-lib`. SwiftUI owns the platform appearance and measured
 layout; library and schema rules use shared `lang-core`.

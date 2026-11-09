@@ -144,7 +144,7 @@
                 XCTAssertEqual(try height(source, proposedHeight: 400), natural, accuracy: 1,
                     "A height proposal is a constraint, not a request to fill it")
                 let theme = OpenUIThemeValues()
-                let inset = variant == "clear" ? 0 : 2 * (variant == "sunk" ? theme.spaceL : theme.spaceML)
+                let inset = variant == "clear" ? 0 : 2 * theme.spaceML
                 XCTAssertEqual(natural, textHeight + inset, accuracy: 1,
                     "Card height must include only its content and declared native inset")
             }

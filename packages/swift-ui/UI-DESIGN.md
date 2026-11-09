@@ -40,9 +40,11 @@ the plot, inspection values and accessible dataset remain available.
 Body variants follow the upstream semantic relationship: `large` and
 `large-heavy` share a reading size and differ by weight; `small` does not imply
 secondary ink. Native defaults use the reference's 16pt body, 14pt supporting reading/neutral label,
-12pt caption, 18pt card title and 24pt Markdown display heading. MetricIndicator
+12pt caption, 18pt card title and 26/20/18pt Markdown H1/H2/H3 headings. MetricIndicator
 uses the reference's 16pt emphasized numeric role instead of a separate giant number.
-Inline headers use the body-heading role, card headers the title role. Neutral
+Inline headers use the 18pt heading-xs role; CardHeader uses the 18pt large-body title role.
+ImageText titles use 16pt in both orientations and ImageTextLarge uses 18pt.
+Title/detail pairs share a 4pt gap and supporting copy uses 14pt. Neutral
 tags stay regular-weight so they do not dominate explanations. These are native
 platform defaults with Dynamic Type, not a conversion of CSS pixels into points.
 
@@ -99,14 +101,14 @@ completion. A later explicit row argument changes the actual parent layout.
 ## Platform boundaries
 
 The SDK requires iOS 16/macOS 13 or later and uses one measured Layout
-implementation. Pager height comes from the measured selected page and interpolates only during
-a user-driven transition to its neighbor. Offscreen appends do not stretch the
-current card. Grid rows still share their tallest cell height; both modes retain
+implementation. Pager height reserves the tallest mounted page so selecting or dragging does not
+move following prose. Content growth, including offscreen content, can change that
+measured track height. Grid rows still share their tallest cell height; both modes retain
 the same mounted children without an asynchronous scroll-height cache. MarkdownUI manages its internal semantic font
 roles; the SDK shares supported colors, spacing and media styling through its
 public API rather than reflection.
 
-The 82 standard registrations have upstream names and positional signatures.
+The 84 standard registrations have upstream names and positional signatures.
 Tabs follows the upstream content-growth selection rule until a user changes the
 active value. Native presentation may differ: controls use Apple interaction
 conventions, and web-specific styling is not a native API contract.
@@ -138,8 +140,7 @@ separately; charts with axes retain their normal plotting area. No Lang height
 parameter is added. Code-copy controls use the existing platform hit-target
 policy, and syntax-category colors are owned by the theme palette.
 
-Reading roles stay independent. ContextCard's title is a compact label and its
-body an emphasized summary in the reference design; use TextContent or Markdown
+Reading roles stay independent. ContextCard uses a 16pt emphasized title and 14pt body; use TextContent or Markdown
 for ordinary explanations rather than forcing paragraphs into that family.
 CardHeader identifies an object/section; large-heavy is emphasized body text,
 not an inferred document heading. The SDK does not remove or reorder headings.
@@ -184,13 +185,13 @@ Spacing names resolve to the pinned reference values: xs=6, s=8, m=12, l=18,
 xl=24 and 2xl=36. Native-only internal intermediate tokens do not add DSL enum
 values. Explicit legal component parameters retain their meaning.
 
-The default theme uses the reference neutral swatches and a neutral assistant
-brand. The reference default blue, per-size button corners and button shadows
-were rejected during user review; native controls keep one 10pt corner and a
-flat primary/secondary hierarchy. Hosts
-can still override semantic theme roles. Secondary actions have a transparent
-surface, an interactive border and quiet elevation; tags are informational, not
-secondary buttons. Tabs use the reference's open underline treatment. Accordion
+The default theme uses opaque neutral surfaces and a neutral assistant brand.
+Text actions are capsules based on their actual height, with flat primary and
+secondary treatments. Hosts may set OpenUIPresentation.buttonCornerRadius without
+changing inputs or cards. Secondary actions use transparent surfaces and the quiet
+borderDefault; editable fields use borderInteractive. Tags remain informational,
+with 12/14/16pt text for sm/md/lg. Tabs use a selected capsule with a neutral fill
+and the shared selection border. Accordion
 is a continuous open disclosure list, not one card per section. Generic Card
 uses a padded foreground panel with a quiet border by default; clear keeps its
 transparent side-inset layout, and sunk keeps its recessed surface. This is a
@@ -208,3 +209,65 @@ Overview and Snippet facts are outlined cards without a default fill, with
 compressing digits. MetricIndicator keeps oversized amounts on one horizontally
 scrollable line. Long accessibility tab labels wrap within the viewport. Radar axes use
 short numbers and a native full-label key, sharing drawing/inspection geometry.
+
+
+## Fixed native visual system
+
+The defaults are one coherent system. Component roles are resolved centrally from
+OpenUIThemeValues and OpenUIPresentation, with no business-label inference or
+per-scene rules. The 84 definitions, language runtime and action semantics remain
+unchanged. Native unit checks and consuming-app visual checks have distinct scopes.
+
+### Reading
+
+Reading leading is filled only when both lineHeight and lineSpacing are omitted:
+body/code 1.50, detail 1.45, caption 1.40, object title 1.35, section 1.30 and
+display/control/metric 1.25. A complete host font keeps its family, size, weight,
+tracking, digit setting and explicit leading. Native Text and Markdown receive
+the same resolved font. Measured native line height replaces fixed 1.2 estimates
+for constrained metric and text-editor content. Links are underlined by default.
+
+### Surfaces and states
+
+| Role | Light | Dark |
+| --- | --- | --- |
+| Page | #FFFFFF | #0B0B0D |
+| Content | #FFFFFF | #17171B |
+| Subtle | #F5F5F7 | #1F1F24 |
+| Field | #FAFAFC | #17171B |
+| Selection | #F1F1F4 | #2A2A30 |
+| Overlay | #FFFFFF | #242429 |
+| Primary text / accent | #202024 | #F4F4F5 |
+| Secondary text | #64646E | #A1A1AA |
+| Disabled text | #AAAAB4 | #686874 |
+| Surface border | #E0E0E5 | #393940 |
+| Editable boundary | #8A8A94 | #767680 |
+
+Primary/secondary ink and boundaries strengthen under the native high-contrast
+appearance. Semantic status hues and the independent chart palette remain.
+Cards default to borderDefault, with cardBorderColor as an independent override.
+Choice markers, selected borders and focus use interactiveAccentDefault. Focus is
+2pt and remains outside image clipping. Disabled fields and choices use explicit
+state colors, without a second SDK-wide opacity multiplication. Floating surfaces
+use the full border token, without an additional 0.45 multiplier.
+
+### Density and shape
+
+Object/fact/choice insets are 12pt. Generic Card variants share 16pt insets; clear
+retains zero vertical padding. Fact-card groups add no outer padding: parent Stack
+gap controls their relationship to neighbors. Object footer gap is 8pt. Markdown
+block margins are collapsed by MarkdownUI; they are not extra component insets.
+
+Images/code use 8pt corners, inputs 10pt, Context 12pt, fact/choice cards 14pt,
+Composite/Visual/generic cards 16pt and overlays 24pt. Text actions use capsules;
+declared circular IconButton remains circular. Ordinary borders are 1pt; explicit
+separators, table rules and disclosure rules use a physical-pixel hairline.
+The default button press opacity is 0.92, with the existing 120ms feedback,
+0.985 scale and Reduce Motion behavior. Native target size remains independent.
+
+### Explicit shared themes
+
+The commonTheme overload resolves defaults, common overrides, then light/dark
+overrides. Existing calls and nested reset behavior retain their contract. See
+COMPONENTS.md for migration details. SVG/Map implementations supplied by a host
+consume the public theme explicitly; arbitrary SVG attributes are not rewritten.
