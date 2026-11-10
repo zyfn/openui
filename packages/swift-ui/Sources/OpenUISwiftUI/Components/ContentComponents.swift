@@ -754,7 +754,7 @@ struct NativeCardItem: View {
   @ViewBuilder private var contextTitle: some View {
     if artworkSource != nil, case .element(let title) = context.value("title"), title.typeName == "Tag" {
       context.slot("title")
-        .environment(\.openUIArtworkTag, true)
+        .environment(\.openUIArtworkTag, usesArtworkOverlay)
         .environment(\.openUITheme, context.theme)
         .environment(\.colorScheme, colorScheme)
     } else {
@@ -797,7 +797,7 @@ struct NativeCardItem: View {
         }
       case "Visual":
         context.slot("tag")
-          .environment(\.openUIArtworkTag, artworkSource != nil)
+          .environment(\.openUIArtworkTag, usesArtworkOverlay)
           .environment(\.openUITheme, context.theme)
           .environment(\.colorScheme, colorScheme)
         if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }

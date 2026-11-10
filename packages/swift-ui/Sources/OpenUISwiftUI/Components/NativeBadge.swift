@@ -47,7 +47,6 @@ struct NativeTagPill<Icon: View>: View {
   @ViewBuilder var icon: Icon
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
   @Environment(\.openUIArtworkTag) private var onArtwork
-  @Environment(\.openUIPresentation) private var presentation
 
   private var font: OpenUIFont {
     size == "sm" ? theme.textBodyXs : size == "lg" ? theme.textBodyDefault : theme.textLabelSm
@@ -70,10 +69,10 @@ struct NativeTagPill<Icon: View>: View {
     .openUIFont(font, role: .control)
     .padding(.horizontal, horizontalInset * scale)
     .padding(.vertical, verticalInset * scale)
-    .foregroundStyle(colors.foreground)
-    // A photograph cannot provide the contrast contract of a normal surface.
-    .background(onArtwork ? theme.foreground : colors.background, in: shape)
-    .overlay(shape.strokeBorder(onArtwork ? theme.borderDefault : .clear, lineWidth: presentation.borderWidth))
+    .foregroundStyle(onArtwork ? Color.white.opacity(0.94) : colors.foreground)
+    // A quiet translucent plate integrates with the photo while keeping the
+    // existing capsule and reading metrics. Off-photo tags use their host theme.
+    .background(onArtwork ? Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.64) : colors.background, in: shape)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(text)
     .accessibilityIdentifier("openui.tag")

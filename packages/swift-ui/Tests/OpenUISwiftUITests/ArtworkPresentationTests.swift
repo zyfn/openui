@@ -80,7 +80,7 @@ final class ArtworkPresentationTests: XCTestCase {
     XCTAssertEqual(loader.count, 1)
   }
 
-  @MainActor func testArtworkTagPlateDoesNotBlendWithBrightOrDarkPhotos() throws {
+  @MainActor func testArtworkTagPlateRetainsPhotoTransparency() throws {
     _ = NSApplication.shared
     let theme = OpenUIThemeValues()
     func pixels(_ background: Color) throws -> (Int, Int, Data) {
@@ -99,15 +99,16 @@ final class ArtworkPresentationTests: XCTestCase {
     XCTAssertEqual(dark.0, bright.0); XCTAssertEqual(dark.1, bright.1)
     // The central rectangle is inside the rounded plate; corner pixels may
     // correctly show the photograph outside its contour.
+    var changedChannels = 0
     for y in (dark.1 / 4)..<(dark.1 * 3 / 4) {
       for x in (dark.0 / 5)..<(dark.0 * 4 / 5) {
         let index = (y * dark.0 + x) * 4
         for channel in 0..<4 {
-          XCTAssertEqual(dark.2[index + channel], bright.2[index + channel],
-            "Photo pixels must not tint the tag's readable interior")
+          if dark.2[index + channel] != bright.2[index + channel] { changedChannels += 1 }
         }
       }
     }
+    XCTAssertGreaterThan(changedChannels, 0, "The capsule must retain photograph translucency instead of painting an opaque sticker")
   }
 }
 
