@@ -9,6 +9,7 @@ on:
       - 'packages/swift-ui/**'
       - 'packages/lang-core/**'
       - 'examples/app-frameworks/swiftui-macos/**'
+      - 'examples/agent-cases/**'
       - 'spec/**'
       - '.github/workflows/build-swift.yml'
   pull_request:
@@ -19,6 +20,7 @@ on:
       - 'packages/swift-ui/**'
       - 'packages/lang-core/**'
       - 'examples/app-frameworks/swiftui-macos/**'
+      - 'examples/agent-cases/**'
       - 'spec/**'
       - '.github/workflows/build-swift.yml'
 
