@@ -6,6 +6,19 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class StreamingVisualStateTests: XCTestCase {
+  @MainActor func testPieReservesItsLegendRegionBeforeLabelsAndValuesArrive() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=PieChart(labels,values)\n")
+    let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
+    let initial = host.fittingSize.height
+    XCTAssertGreaterThan(initial, 234)
+    state.push("labels=[\"A\",\"B\",\"C\"]\nvalues=[2,4,3]\n"); state.complete()
+    host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.06))
+    XCTAssertEqual(host.fittingSize.height, initial, accuracy: 1)
+  }
+
   @MainActor func testRootChartReservesSpaceWhileRequiredReferencesAreStillAbsent() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()

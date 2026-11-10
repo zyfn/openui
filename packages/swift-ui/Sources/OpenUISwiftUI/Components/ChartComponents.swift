@@ -297,6 +297,12 @@ struct NativeChart: View {
             }
           }
         }
+        // These chart families always own a legend control region. Reserve its
+        // minimum target before labels/values arrive, without fabricating any
+        // legend entries. Longer real legends can still wrap naturally.
+        .frame(minHeight: ["PieChart", "RadialChart"].contains(name)
+          ? max(context.presentation.minimumControlTargetSize,
+            context.theme.textLabelSm.resolved(for: .control).measuredLineHeight(scale: axisScale) + 12) : nil)
       }
       if allData.hasContent(for: name), incomplete || context.hasDataFailure {
         Text(context.hasDataFailure ? (stableData == nil ? "Unable to load chart" : "Unable to refresh chart")
