@@ -14,7 +14,8 @@ const here = dirname(fileURLToPath(import.meta.url)),
   root = resolve(here, '../../..');
 // The pinned checkout adds the positional-omittability rule to the signature
 // printer plus its regression test; parser/runtime sources are unchanged.
-const pin = '053f51d4da2f151c36581f80cfd125d1fb6aa8af';
+// The tree pin also records the repository-formatted regression test.
+const pin = '92152ac52c9d8effdebbe734bedca3c8016b6bac';
 if (
   execFileSync('git', ['rev-parse', 'HEAD:packages/lang-core'], {
     cwd: root,
