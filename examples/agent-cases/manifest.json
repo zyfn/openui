@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "number": 1,
+      "id": "simple-01-explore-scene-discovery",
+      "title": "杭州周末 · 场景发现",
+      "purpose": "四种出游氛围、地点与地图",
+      "file": "case-01-explore-scene-discovery.openui",
+      "sha256": "fc29c7c084b80c31039eb5fc7459407050cd3711af2ad1d937526aa367dbcd9c",
+      "sourceSHA256": "38d9ca11cece339d42a49b2255516b818d5e46f83e07b2472ace951a62b0b932"
+    },
+    {
+      "number": 2,
+      "id": "simple-02-explore-visual-preview",
+      "title": "杭州两日 · 实景与票务预览",
+      "purpose": "两日图文、景点地图与票务商品卡",
+      "file": "case-02-explore-visual-preview-ticket-booking.openui",
+      "sha256": "e0ed4ea531851d2bc2d112307111f6fd34f24f955e70f4079804177ef869894d",
+      "sourceSHA256": "576738be1afa6bce0ee44ccd67be8dbb7129230218fb7e0e808266e06f278726"
+    },
+    {
+      "number": 3,
+      "id": "simple-03-explore-heat-pump-explanation",
+      "title": "空调制热 · 热泵原理",
+      "purpose": "概念讲解、SVG 示意与原理对照",
+      "file": "case-03-explore-heat-pump-explanation-editorial.openui",
+      "sha256": "144376579012ecd44e5036a0d699f14c69ecc294737b71dca3edc0c102baf632",
+      "sourceSHA256": "421c7e6cc485c8c7ffb5ce96c1bbe6f6daf9df4202279b8b8f8f53fe3ef1a176"
+    },
+    {
+      "number": 4,
+      "id": "simple-04-explore-bedroom-style",
+      "title": "卧室氛围 · 风格探索",
+      "purpose": "图文多选与可撤回的布置建议",
+      "file": "case-04-explore-bedroom-style.openui",
+      "sha256": "5a6fbf7796f00aa424cb5f23fa32ceecb4f7dfcbff3fd5040c1c081946ae1309",
+      "sourceSHA256": "ad9b438387b7797ddb5320aa34bf93d4e4ce34d303bc76afee76c21ace93fd73"
+    },
+    {
+      "number": 5,
+      "id": "simple-05-decide-reading-desk-lamp",
+      "title": "小书桌 · 阅读台灯决策",
+      "purpose": "商品卡比较、使用条件与价格口径",
+      "file": "case-05-decide-reading-desk-lamp-refined.openui",
+      "sha256": "50c77559e3897922b8d33cc7946b750015bcdae224e6b1fb3142547786753ee2",
+      "sourceSHA256": "73aeca82b47b432955e211867c8329ca59ba42ab6d7f44864b5f6751b2562348"
+    },
+    {
+      "number": 6,
+      "id": "simple-06-decide-code-execution-isolation",
+      "title": "执行用户代码 · 隔离方案决策",
+      "purpose": "容器、虚拟机与沙箱架构比较",
+      "file": "case-06-decide-code-execution-isolation.openui",
+      "sha256": "7ba708f75bf41d5ae0afa8c888c06ec140642ae12a76c8b4d8da5e92690e22af",
+      "sourceSHA256": "1b229af79855a4f69eebcfb02aa018e35d53bae845a8c9bba2e2317e5d02f8e9"
+    },
+    {
+      "number": 7,
+      "id": "simple-07-plan-suzhou-family-trip",
+      "title": "苏州两天｜陪父母慢慢逛",
+      "purpose": "路线、住宿选址、真实公开票价与出发前确认",
+      "file": "case-07-plan-suzhou-family-trip-ticket-design.openui",
+      "request": "想从上海去苏州玩两天，带父母，不想太累。交通、住宿和景点能一起安排吗？",
+      "sha256": "5e2261077b9f02f593c1328efc77c3ac1c35e1f96574d2b09cb06e6f22059668",
+      "sourceSHA256": "4c1f6a6e744e981e8385511ae28629cdf2c03334e82f9237ebd23553d3604c7f"
+    },
+    {
+      "number": 8,
+      "id": "simple-08-transport-comparison",
+      "title": "北京—曼谷 · 交通报价",
+      "purpose": "统一交通卡布局、首段航司、中转信息与日期比较",
+      "file": "case-08-transport-comparison.openui",
+      "sha256": "d64eccf80df67fa3c41ccbafba1b39b31a4970efa96b0adbefa4051ecf0c0f98",
+      "sourceSHA256": "4c8b21b585cadb6dbf86ae2f2880aebfa8ce60ba2d8815e2f987b5a11b376edb"
+    }
+  ],
+  "source": {
+    "kind": "user-reviewed-eight-cases",
+    "sourceSkillSHA256": "577ef3a03c98d5e5ccc4aaa03446336bdcf2d4e6d12b98f475e1dc81090cce3d",
+    "importedOn": "2026-11-11"
+  }
+}

@@ -292,15 +292,17 @@ private struct NativeGalleryImage: Identifiable {
 
 /// Small galleries are measured synchronously at their actual container width.
 /// Columns never outnumber the supplied images, so sparse galleries fill the row.
-private struct NativeGalleryGridLayout: Layout {
+struct NativeGalleryGridLayout: Layout {
   let minimumWidth: CGFloat
   let gap: CGFloat
   var maximumColumns: Int?
+  var layoutCount: Int? = nil
 
   private func frames(_ proposal: ProposedViewSize, _ subviews: Subviews) -> (CGFloat, [CGRect]) {
     let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? max(1, minimumWidth)
     guard !subviews.isEmpty else { return (width, []) }
-    let columns = min(subviews.count, maximumColumns ?? subviews.count,
+    let count = max(subviews.count, layoutCount ?? subviews.count)
+    let columns = min(count, maximumColumns ?? count,
       max(1, Int((width + gap) / max(1, minimumWidth + gap))))
     let tileWidth = max(1, (width - gap * CGFloat(columns - 1)) / CGFloat(columns))
     let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: tileWidth, height: nil)) }
@@ -347,9 +349,10 @@ struct NativeImageGallery: View {
     return currentImages
   }
   private var currentImages: [NativeGalleryImage] {
-    let children = context.children("images")
+    let children = context.presentationChildren("images")
     let source = context.element.sourceReadiness["images"]
-    let aligned = source.complete || source.expectedCount == children.count
+    let mapped = source.valueIndices.map { $0.compactMap { $0 } == Array(children.indices) } ?? false
+    let aligned = source.complete || source.expectedCount == children.count || mapped
     return children.enumerated().map { index, child in
       let attempt = retries[child.id, default: 0]
       var request = resources.request(for: NativeValue.string(child.value, "src"))
@@ -371,16 +374,20 @@ struct NativeImageGallery: View {
     if stableImages != nil && (context.hasPendingData || context.hasDataFailure) { return true }
     return NativeLayoutContract.collectionShapeReady(context.element.sourceReadiness["images"], count: images.count)
   }
+  private var layoutCount: Int? {
+    let source = context.element.sourceReadiness["images"]
+    return !source.complete && source.closed ? source.expectedCount : nil
+  }
   private func rememberImages() {
     if gridReady && !context.hasPendingData && !context.hasDataFailure { stableImages = currentImages }
   }
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.spaceM) {
-      if !gridReady {
+      if !gridReady || (visible.isEmpty && (context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete))) {
         NativePendingContent(loading: !context.hasDataFailure && (context.isStreaming || context.hasPendingData), message: "Loading image")
       } else if !visible.isEmpty {
         NativeGalleryGridLayout(minimumWidth: context.presentation.thumbnailSize,
-          gap: context.theme.spaceM, maximumColumns: typeSize.isAccessibilitySize ? 1 : nil) {
+          gap: context.theme.spaceM, maximumColumns: typeSize.isAccessibilitySize ? 1 : nil, layoutCount: layoutCount) {
           ForEach(visible) { image in
             VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
               Button {

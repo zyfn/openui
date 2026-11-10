@@ -6,6 +6,31 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class CardCollectionContinuityTests: XCTestCase {
+  @MainActor func testReferencedVisualCardKeepsItsIdentityWhileItsDataIDStreams() throws {
+    _ = NSApplication.shared
+    let log = CardCollectionMounts()
+    let standard = try OpenUIStandardComponents.library()
+    let definition = try XCTUnwrap(standard.library.components.first { $0.name == "BoldText" })
+    let library = try standard.extending(overriding: [OpenUIComponent(definition) { context in
+      CardCollectionMarker(name: context.string("value") ?? "", log: log).frame(height: 20)
+    }])
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=VisualCardBlock([a,b],\"carousel\",true)\na=VisualCardItem(BoldText(\"text\",\"First\"),\"f")
+    let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
+    let window = NSWindow(contentRect: .init(x:0,y:0,width:320,height:500),styleMask:[.borderless],backing:.buffered,defer:false)
+    window.isReleasedWhenClosed=false; window.contentView=host
+    window.setFrameOrigin(.init(x:-10000,y:-10000)); window.orderFront(nil)
+    defer { window.close() }
+    func settle() { host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.12)) }
+    settle()
+    let first = try XCTUnwrap(log.views["First"])
+    state.push("irst\",null)\nb=VisualCardItem(BoldText(\"text\",\"Second\"),\"second\",null)")
+    settle(); state.complete(); settle()
+    XCTAssertTrue(log.views["First"] === first)
+    XCTAssertEqual(log.created["First"],1)
+    XCTAssertEqual(log.removed["First",default:0],0)
+  }
+
   @MainActor func testLateCarouselModeDoesNotExpandATemporaryVerticalListOrRemountCards() throws {
     try checkLateMode("carousel")
   }

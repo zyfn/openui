@@ -43,6 +43,10 @@ slots and must not be wrapped as display components.
   other properties of the same source item remain unfinished.
 - Gallery waits for known collection shape before deciding its initial columns;
   a refresh preserves previously presented items. Source order stays intact.
+- Card groups use an already declared item count to allocate page/grid widths
+  before all references arrive. They render only available items and do not
+  manufacture future cards or scroll targets. Named card statements retain their
+  identity while an optional data id streams. Unknown counts retain normal flow.
 - First chart presentation is compact waiting feedback. No large gray plot,
   artificial grid or empty ring is drawn. Confirmed values create a real plot;
   normalized charts wait for sufficient data. Waiting uses a delayed visual

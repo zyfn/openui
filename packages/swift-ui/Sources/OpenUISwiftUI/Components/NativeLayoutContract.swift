@@ -23,7 +23,7 @@ enum NativeLayoutContract {
     fields.allSatisfy { source[$0].complete }
   }
   static func collectionShapeReady(_ source: NativeSourceReadiness, count: Int) -> Bool {
-    source.complete || (source.closed && source.expectedCount == count)
+    source.complete || (source.closed && source.expectedCount.map { $0 >= count } == true)
   }
 }
 

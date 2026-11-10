@@ -46,6 +46,9 @@ struct NativePager<ID: Hashable, Content: View>: View {
   /// Card blocks keep the same mounted pages when a late layout argument
   /// resolves to a grid. Other pagers leave this nil.
   var grid: NativeCardGrid? = nil
+  /// Authored collection shape can be known before all referenced items arrive.
+  /// It affects allocation only, never the list of displayed/interactive items.
+  var layoutCount: Int? = nil
   var supportsAdjustment = true
   @ViewBuilder let content: (ID) -> Content
   @Namespace private var scope
@@ -66,7 +69,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
     NativePagerGeometry(
       width: max(1, width), count: ids.count, selected: index,
       maximumPageWidth: maximumPageWidth, minimumPageWidth: nativePresentation.minimumCardWidth,
-      peek: trailingPeek, spacing: pageSpacing)
+      peek: trailingPeek, spacing: pageSpacing, layoutCount: layoutCount)
   }
 
   var body: some View {
@@ -124,7 +127,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
       selected: index, maximumPageWidth: maximumPageWidth,
       minimumPageWidth: nativePresentation.minimumCardWidth, peek: trailingPeek, spacing: pageSpacing,
       fallbackWidth: fallbackWidth, translation: translation, rightToLeft: direction == .rightToLeft,
-      grid: grid
+      grid: grid, layoutCount: layoutCount
     ) {
       ForEach(ids, id: \.self) { id in
         content(id).id(id).accessibilityHidden(grid == nil && !isCarousel && id != selection)
@@ -186,12 +189,12 @@ struct NativePagerGeometry {
 
   init(
     width: CGFloat, count: Int, selected: Int, maximumPageWidth: CGFloat?,
-    minimumPageWidth: CGFloat, peek: CGFloat, spacing: CGFloat
+    minimumPageWidth: CGFloat, peek: CGFloat, spacing: CGFloat, layoutCount: Int? = nil
   ) {
     self.width = max(1, width.isFinite ? width : 1)
     if let maximumPageWidth {
       let visiblePeek = min(max(0, peek), max(0, self.width - minimumPageWidth - spacing))
-      let reservation = count > 1 && visiblePeek > 0 ? visiblePeek + spacing : 0
+      let reservation = max(count, layoutCount ?? count) > 1 && visiblePeek > 0 ? visiblePeek + spacing : 0
       pageWidth = min(max(1, maximumPageWidth), max(1, self.width - reservation))
     } else {
       pageWidth = self.width
@@ -220,21 +223,23 @@ private struct NativePagerLayout: Layout {
   let translation: CGFloat
   let rightToLeft: Bool
   var grid: NativeCardGrid? = nil
+  var layoutCount: Int? = nil
 
   private func geometry(_ proposal: ProposedViewSize, count: Int) -> NativePagerGeometry {
     let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? fallbackWidth
     return NativePagerGeometry(
       width: width, count: count, selected: selected,
-      maximumPageWidth: maximumPageWidth, minimumPageWidth: minimumPageWidth, peek: peek, spacing: spacing)
+      maximumPageWidth: maximumPageWidth, minimumPageWidth: minimumPageWidth, peek: peek, spacing: spacing, layoutCount: layoutCount)
   }
   private func gridFrames(_ grid: NativeCardGrid, width: CGFloat, subviews: Subviews) -> [CGRect] {
-    grid.frames(width: width, count: subviews.count, metricTop: { index, width in
+    Array(grid.frames(width: width, count: max(subviews.count, layoutCount ?? subviews.count), visibleCount: subviews.count, metricTop: { index, width in
+      guard index < subviews.count else { return nil }
       guard subviews[index][NativeOverviewMetricKey.self] else { return nil }
       return subviews[index].dimensions(in: ProposedViewSize(width: width, height: nil))[
         explicit: .nativeOverviewMetricTop]
     }) { index, width in
-      subviews[index].sizeThatFits(ProposedViewSize(width: width, height: nil)).height
-    }
+      index < subviews.count ? subviews[index].sizeThatFits(ProposedViewSize(width: width, height: nil)).height : 0
+    }.prefix(subviews.count))
   }
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
     let layout = geometry(proposal, count: subviews.count)
@@ -300,11 +305,12 @@ struct NativeCardGrid {
     default: return Array(repeating: 3, count: (count - 4) / 3) + [2, 2]
     }
   }
-  func frames(width: CGFloat, count: Int, metricTop: ((Int, CGFloat) -> CGFloat?)? = nil,
+  func frames(width: CGFloat, count: Int, visibleCount: Int? = nil, metricTop: ((Int, CGFloat) -> CGFloat?)? = nil,
               height: (Int, CGFloat) -> CGFloat) -> [CGRect] {
     var result: [CGRect] = []
     var y: CGFloat = 0
     for columns in rows(width: width, count: count) {
+      if result.count >= (visibleCount ?? count) { break }
       let cellWidth = max(1, (width - CGFloat(columns - 1) * spacing) / CGFloat(columns))
       let indices = result.count..<(result.count + columns)
       let heights = indices.map { height($0, cellWidth) }

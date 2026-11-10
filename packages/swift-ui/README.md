@@ -60,6 +60,10 @@ from upstream `openuiPromptOptions`; it does not include application tools. When
 removing components, curate the preset and group notes to match the selected
 library. This is the general-purpose preset, not `openuiChatPromptOptions`.
 
+The eight user-reviewed, Agent-facing composition examples are maintained separately in
+[examples/agent-cases](../../examples/agent-cases/README.md). They are not injected into every
+SDK prompt. CaseLab mirrors that single source for native streaming review.
+
 ## Appearance
 
 The default theme requires no setup. Override the supported React-named tokens

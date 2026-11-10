@@ -886,7 +886,18 @@ struct NativeCardBlock: View {
   @EnvironmentObject private var state: OpenUIState
   @Environment(\.dynamicTypeSize) private var typeSize
   @State private var selectedID = ""
-  private var children: [OpenUIRenderChild] { context.children("items") }
+  private var children: [OpenUIRenderChild] {
+    var occurrences: [String: Int] = [:]
+    return context.children("items").map { child in
+      guard case .element(let item) = child.value, let statement = item.statementId else { return child }
+      let ordinal = occurrences[statement, default: 0]; occurrences[statement] = ordinal + 1
+      return OpenUIRenderChild(id: "statement:\(statement):\(ordinal)", value: child.value)
+    }
+  }
+  private var layoutCount: Int? {
+    let source = context.element.sourceReadiness["items"]
+    return !source.complete && source.closed ? source.expectedCount : nil
+  }
   private var selection: Binding<String> {
     Binding(get: { children.contains(where: { $0.id == selectedID }) ? selectedID : children.first?.id ?? "" },
       set: { selectedID = $0 })
@@ -925,7 +936,7 @@ struct NativeCardBlock: View {
           identifier: "openui.card-block.\(kind.lowercased())",
           showsControls: false,
           maximumPageWidth: context.presentation.maximumCarouselCardWidth,
-          trailingPeek: context.presentation.carouselPeek, pageSpacing: gap, grid: grid, supportsAdjustment: false) { id in
+          trailingPeek: context.presentation.carouselPeek, pageSpacing: gap, grid: grid, layoutCount: layoutCount, supportsAdjustment: false) { id in
           if let index = children.firstIndex(where: { $0.id == id }) {
             item(children[index], index: index)
           }

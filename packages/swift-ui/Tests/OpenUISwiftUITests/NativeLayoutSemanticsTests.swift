@@ -6,6 +6,21 @@ import AppKit
 #endif
 
 final class NativeLayoutSemanticsTests: XCTestCase {
+  func testKnownCollectionShapeKeepsTheFirstCardWidthAsReferencesArrive() {
+    let first = NativePagerGeometry(width: 320, count: 1, selected: 0,
+      maximumPageWidth: 320, minimumPageWidth: 240, peek: 32, spacing: 12, layoutCount: 4)
+    let complete = NativePagerGeometry(width: 320, count: 4, selected: 0,
+      maximumPageWidth: 320, minimumPageWidth: 240, peek: 32, spacing: 12)
+    XCTAssertEqual(first.pageWidth, complete.pageWidth)
+    XCTAssertEqual(first.offset, 0, "Unresolved items must not become scrollable pages")
+    let grid = NativeCardGrid(maxPerRow: 2, responsive: true, singleColumn: false, spacing: 12)
+    let initial = grid.frames(width: 600, count: 4, visibleCount: 1) { index, _ in index == 0 ? 180 : 0 }
+    let final = grid.frames(width: 600, count: 4) { _, _ in 180 }
+    XCTAssertEqual(initial.first?.width, final.first?.width)
+    XCTAssertEqual(initial.first?.height, final.first?.height)
+    XCTAssertLessThan(initial.count, 4, "Do not allocate invisible future rows")
+  }
+
   func testWrappedFlexChildrenShareAvailableRowsWithoutResizingIntrinsicControls() {
     let cards = OpenUIWrappedFlexRows.allocate(ideal: [80, 260], minimums: [32, 32],
       growing: [true, true], width: 350, gap: 12)
@@ -32,6 +47,19 @@ final class NativeLayoutSemanticsTests: XCTestCase {
   }
 
   #if os(macOS)
+  @MainActor func testKnownGalleryShapeAllocatesTheFirstImageAtItsFinalColumnWidth() {
+    _ = NSApplication.shared
+    let first = NSHostingView(rootView: NativeGalleryGridLayout(minimumWidth: 112, gap: 12, maximumColumns: nil, layoutCount: 2) {
+      Color.clear.aspectRatio(16.0/9, contentMode: .fit)
+    }.frame(width:320))
+    let complete = NSHostingView(rootView: NativeGalleryGridLayout(minimumWidth: 112, gap: 12, maximumColumns: nil) {
+      Color.clear.aspectRatio(16.0/9, contentMode: .fit)
+      Color.clear.aspectRatio(16.0/9, contentMode: .fit)
+    }.frame(width:320))
+    XCTAssertEqual(first.fittingSize.height,complete.fittingSize.height,accuracy:1)
+    XCTAssertEqual(first.fittingSize.height,154*9.0/16,accuracy:1)
+  }
+
   @MainActor func testMountedPagerReservesTheSameTrackInBothReadingDirections() {
     _ = NSApplication.shared
     for direction in [LayoutDirection.leftToRight, .rightToLeft] {
