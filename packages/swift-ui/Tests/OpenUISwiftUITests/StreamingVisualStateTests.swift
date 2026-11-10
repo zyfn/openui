@@ -6,6 +6,22 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class StreamingVisualStateTests: XCTestCase {
+  @MainActor func testCardHeaderWithOnlySubtitleRendersItsOptionalContent() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    func height(_ subtitle: String?) throws -> CGFloat {
+      let value = try subtitle.map { String(decoding: try JSONEncoder().encode($0), as: UTF8.self) } ?? "null"
+      let state = OpenUIState(schema: library.library.toSchema())
+      state.setSource("root=CardHeader(null,\(value))")
+      XCTAssertTrue(state.errors.isEmpty)
+      return NSHostingView(rootView: OpenUIRenderer(state: state,registry:library.registry).frame(width:160)).fittingSize.height
+    }
+    let empty = try height(nil)
+    let detail = try height(String(repeating:"日期、航司与舱位说明。",count:5))
+    XCTAssertLessThan(empty,1,"An intentionally empty optional header must not become an error message")
+    XCTAssertGreaterThan(detail,empty+40,"A nil title must not hide a valid subtitle")
+  }
+
   @MainActor func testPieWaitsCompactlyWithoutInventingAnEmptyRing() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()

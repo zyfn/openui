@@ -13,7 +13,9 @@ enum NativePresentationProxy {
   static func primaryTextField(_ name: String) -> String? {
     switch name {
     case "TextContent": return "text"
-    case "CardHeader": return "title"
+    // Both CardHeader fields are optional. A subtitle-only or intentionally
+    // empty header is valid and must remain owned by its normal renderer.
+    case "CardHeader": return nil
     case "InlineHeader": return "heading"
     case "CodeBlock": return "codeString"
     case "Text", "BoldText": return "value"
