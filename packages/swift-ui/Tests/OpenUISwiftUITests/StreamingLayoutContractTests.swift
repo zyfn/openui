@@ -24,6 +24,17 @@ final class StreamingLayoutContractTests: XCTestCase {
     XCTAssertTrue(registry.presentationLayoutFields("Stack").isEmpty)
   }
 
+  @MainActor func testChartDoesNotCommitItsDefaultHeightBeforeATrailingHeightArrives() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=LineChart([\"A\",\"B\"],[Series(\"S\",[1,2])],\"linear\",\"X\",\"Y\",")
+    let fields = library.registry.presentationLayoutFields("LineChart")
+    XCTAssertTrue(fields.contains("height"))
+    XCTAssertFalse(NativeLayoutContract.ready(try XCTUnwrap(state.root).sourceReadiness, fields: fields))
+    state.push("160)")
+    XCTAssertTrue(NativeLayoutContract.ready(try XCTUnwrap(state.root).sourceReadiness, fields: fields))
+  }
+
   #if os(macOS)
   @MainActor func testFluidMediaWaitsCompactlyButKnownThumbnailKeepsItsFixedSize() {
     _ = NSApplication.shared

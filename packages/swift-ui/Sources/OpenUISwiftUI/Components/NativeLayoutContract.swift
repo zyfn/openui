@@ -13,6 +13,9 @@ enum NativeLayoutContract {
     case "ImageText": return ["layout", "imageSize"]
     case "CompositeCardBlock", "VisualCardBlock", "ContextCardBlock", "OverviewCardBlock", "SnippetCardBlock": return ["layout", "responsive", "gap"]
     case "Carousel": return ["variant"]
+    case "LineChart", "BarChart", "HorizontalBarChart", "AreaChart", "ScatterChart", "RadarChart",
+         "PieChart", "RadialChart", "SingleStackedBarChart":
+      return ["height", "variant", "appearance", "xLabel", "yLabel"]
     default: return []
     }
   }

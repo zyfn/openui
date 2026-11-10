@@ -31,7 +31,8 @@ enum NativePresentationProxy {
     let known = Dictionary(properties.keys.map { ($0, NativeSourceReadiness(complete: true, closed: true)) },
       uniquingKeysWith: { _, last in last })
     let readiness = NativeSourceReadiness(complete: false, closed: source.closed,
-      children: known, queryDependencies: source.queryDependencies, placeholder: hint)
+      children: source.children.merging(known, uniquingKeysWith: { _, committed in committed }),
+      queryDependencies: source.queryDependencies, placeholder: hint)
     return EvaluatedElement(typeName: hint.typeName, props: fields, statementId: hint.statementId,
       partial: true, isSourceComplete: false, sourceReadiness: readiness)
   }
