@@ -70,7 +70,7 @@ semantic color must not silently become the chart series palette.
 | EntityList | shared body roles, header/total priority and tabular numeric values | native text values stay regular and lead when stacked; number values remain emphasized; read-only body rows use spaceS |
 | ListBlock, ListItem, Steps | common reading roles, media/text gap, number and action hierarchy | width-derived photo previews, complete text and scalable step marker |
 | CompositeCardItem/Block | 12pt inset, 16pt corner, quiet surface, measured amount/action relationship | full-bleed 16:9 cover; amount/action share a row when they fit, otherwise stack; one mounted action remains inside card |
-| Overview, Snippet, Context, Visual cards | family-specific radius/inset from the same scale | photo cards use width-derived extent, neutral loading/failure and opaque readable tag plates; native collection measurement retained; compact facts stack before splitting values |
+| Overview, Snippet, Context, Visual cards | family-specific radius/inset from the same scale | photo cards use width-derived extent, neutral loading/failure and translucent charcoal tag capsules with soft white ink; native collection measurement retained; compact facts stack before splitting values |
 | Tabs | open labels with a selected capsule and shared selection color | native horizontal scrolling and focus; long accessibility labels wrap within the viewport |
 | Accordion | continuous clear disclosure list, no separate card per item | native DisclosureGroup affordance; streaming open-selection behavior retained |
 | Form, FormControl | open vertical flow, 16pt form gap, 8pt control gap | one input subtree; native field/picker interaction retained |

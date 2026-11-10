@@ -91,11 +91,12 @@ surface and primary/secondary ink instead of extending a black overlay panel.
 Changing the image request resets this presentation without changing the frame
 or remounting/refetching an unchanged image.
 
-Tags in the dedicated Visual tag slot or Context title-tag slot keep the original
-host theme and appearance. Their plate uses the opaque default foreground surface
-with a light grouping stroke instead of inheriting the photo's translucent dark
-theme. Semantic tag ink is retained. Small artwork tags use at least the 4pt
-vertical inset; ordinary informational tags keep their lighter density.
+Tags in the dedicated Visual tag slot or Context title-tag slot retain their
+capsule geometry. While overlapping a loaded photograph they use a 64%-opacity
+charcoal plate with 94%-opacity white text and icons, without a border or shadow.
+Existing regular font tokens and size variants remain. Small artwork tags use
+at least the 4pt vertical inset. Pending/missing photos and copy below the image
+use the ordinary host tag theme, including its semantic colors and density.
 
 Card collections use one mounted subtree for grid and carousel placement. A
 positional layout argument can arrive after a large inline item array; until it
