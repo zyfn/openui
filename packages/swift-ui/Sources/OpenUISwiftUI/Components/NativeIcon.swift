@@ -104,6 +104,8 @@ struct NativeIcon: View {
   var body: some View {
     let name = context.string("name") ?? ""
     let resolved = NativeIconCatalog.resolvedName(name, category: context.string("category"))
+    let ready = context.element.sourceReadiness["name"].complete
+      && (NativeIconCatalog.catalog.icons[name] != nil || context.element.sourceReadiness["category"].complete)
     Canvas { canvas, dimensions in
       let scale = min(dimensions.width, dimensions.height) / 24
       canvas.translateBy(x: (dimensions.width - 24 * scale) / 2, y: (dimensions.height - 24 * scale) / 2)
@@ -114,6 +116,7 @@ struct NativeIcon: View {
       }
     }
     .frame(width: size * (requestedSize ?? 18) / 18, height: size * (requestedSize ?? 18) / 18)
+    .opacity(ready ? 1 : 0).accessibilityHidden(!ready)
     .accessibilityLabel(name).accessibilityAddTraits(.isImage)
     .accessibilityIdentifier("openui.icon." + resolved)
   }

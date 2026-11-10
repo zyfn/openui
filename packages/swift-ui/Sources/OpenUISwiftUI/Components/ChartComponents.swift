@@ -4,17 +4,17 @@ import SwiftUI
 
 /// Accept both evaluated component references and inline schema objects, just
 /// as the upstream chart data helpers do. No schema coercion happens here.
-struct NativeChartData {
-  struct Series {
+struct NativeChartData: Equatable {
+  struct Series: Equatable {
     let name: String
     let values: [Double]
   }
-  struct Point {
+  struct Point: Equatable {
     let x: Double
     let y: Double
     let z: Double?
   }
-  struct Scatter {
+  struct Scatter: Equatable {
     let name: String
     let points: [Point]
   }
@@ -23,6 +23,7 @@ struct NativeChartData {
   var slices: [Double]
   var scatter: [Scatter]
   var colorIndices: [Int] = []
+  var isProgressive = false
   init() { labels = []; series = []; slices = []; scatter = [] }
   init(context: OpenUIComponentContext) {
     labels = NativeValue.array(context.value("labels")).map { value in
@@ -51,7 +52,9 @@ struct NativeChartData {
     }
     // buildChartData creates JavaScript object properties: duplicate series
     // replace values, and integer property names keep ECMAScript key ordering.
+    let sourceNames = Self.sourceColorIndices(series.map { OpenUIString($0.name) })
     let keyed = OpenUIObject(series.map { ObjectField(key: $0.name, value: .array($0.values.map(Value.number))) })
+    colorIndices = keyed.map { sourceNames[$0.key] ?? 0 }
     series = keyed.map { Series(name: $0.key.displayString, values: Self.numbers($0.value)) }
     let values = Self.numbers(context.value("values"))
     slices =
@@ -83,11 +86,19 @@ struct NativeChartData {
       return number.isFinite ? number : 0
     }
   }
+  static func sourceColorIndices(_ names: [OpenUIString]) -> [OpenUIString: Int] {
+    var indices: [OpenUIString: Int] = [:]
+    for name in names where indices[name] == nil { indices[name] = indices.count }
+    return indices
+  }
   func value(_ seriesIndex: Int, _ labelIndex: Int) -> Double {
     guard series.indices.contains(seriesIndex),
       series[seriesIndex].values.indices.contains(labelIndex)
     else { return 0 }
     return series[seriesIndex].values[labelIndex]
+  }
+  func hasValue(_ seriesIndex: Int, _ labelIndex: Int) -> Bool {
+    !isProgressive || (series.indices.contains(seriesIndex) && series[seriesIndex].values.indices.contains(labelIndex))
   }
   var accessibilityRows: [String] {
     if !scatter.isEmpty {
@@ -96,9 +107,11 @@ struct NativeChartData {
       }
     }
     if !series.isEmpty {
-      return labels.indices.map { i in
-        labels[i] + ": "
-          + series.indices.map { "\(series[$0].name) \(value($0, i))" }.joined(separator: ", ")
+      return labels.indices.compactMap { i in
+        let known = series.indices.filter { hasValue($0, i) }
+        guard !known.isEmpty else { return nil }
+        return labels[i] + ": "
+          + known.map { "\(series[$0].name) \(value($0, i))" }.joined(separator: ", ")
       }
     }
     return labels.indices.map { "\(labels[$0]): \(slices.indices.contains($0) ? slices[$0] : 0)" }
@@ -126,15 +139,21 @@ struct NativeChart: View {
   @State private var inspectionLocation = CGPoint.zero
   @State private var pinnedInspection = false
   @State private var stableData: NativeChartData?
+  @State private var progressiveData: NativeChartData?
+  @State private var presentationCache = NativeChartPresentationCache()
   @State private var axisMeasurements = NativeChartAxisMeasurements()
   @ScaledMetric(relativeTo: .body) private var axisScale: CGFloat = 1
   @ScaledMetric(relativeTo: .body) private var legendMarkerSize: CGFloat = 10
   @Namespace private var measurementScope
   private var name: String { context.element.typeName }
-  private var currentData: NativeChartData { NativeChartData(context: context).prepared(for: name) }
+  private var currentData: NativeChartData { presentationCache.values(context).current }
+  private var waiting: Bool { context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete) }
+  private var incomplete: Bool { !context.isStreaming && (!context.element.isSourceComplete || context.hasInterruptedData) && !context.hasPendingData }
   private var allData: NativeChartData {
-    NativeChartStreamingPresentation.data(current: currentData, stable: stableData,
-      partial: !context.element.isSourceComplete)
+    if context.hasPendingData || context.hasDataFailure, let stableData { return stableData }
+    if context.element.isSourceComplete { return currentData }
+    return stableData ?? presentationCache.values(context).staged
+      ?? progressiveData ?? NativeChartData()
   }
   private var data: NativeChartData { allData.excluding(visibility.hidden, for: name) }
   private var palette: [Color] {
@@ -146,8 +165,8 @@ struct NativeChart: View {
   }
   private var drawing: NativeChartDrawing {
     NativeChartDrawing(
-      data: data, name: name, variant: context.string("variant"),
-      semi: context.string("appearance") == "semiCircular", palette: palette,
+      data: data, name: name, variant: context.presentationString("variant"),
+      semi: context.presentationString("appearance") == "semiCircular", palette: palette,
       secondary: context.theme.textNeutralSecondary, border: context.theme.borderDefault,
       gridColor: context.presentation.chartGrid, axisColor: context.presentation.chartAxis,
       canvasColor: context.theme.background, labelFont: context.theme.textStyle(.supporting).font.nativeFont(scale: axisScale),
@@ -176,20 +195,16 @@ struct NativeChart: View {
   /// Touch scrolling remains native until a deliberate press activates
   /// inspection. Desktop pointer dragging has no competing touch-scroll intent.
   @ViewBuilder var body: some View {
-    Group {
-      if allData.hasContent(for: name) {
-        chartBody
-      } else if name == "PieChart", context.isQueryLoading {
-        NativePieSkeleton(donut: context.string("variant") == "donut", semi: context.string("appearance") == "semiCircular")
-      }
-    }
+    chartBody
     .onAppear(perform: rememberStableData)
-    .onChange(of: context.element.isSourceComplete) { _ in rememberStableData() }
-    .onChange(of: currentData.accessibilityRows) { _ in rememberStableData() }
+    .onChange(of: ObjectIdentifier(context.element)) { _ in rememberStableData() }
+    .onChange(of: context.hasPendingData) { _ in rememberStableData() }
   }
 
   private func rememberStableData() {
-    if context.element.isSourceComplete { stableData = currentData }
+    if context.element.isSourceComplete && !context.hasPendingData && !context.hasDataFailure {
+      if stableData != currentData { stableData = currentData }
+    } else if let next = presentationCache.values(context).staged, progressiveData != next { progressiveData = next }
   }
 
   private var chartBody: some View {
@@ -234,7 +249,19 @@ struct NativeChart: View {
               anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
           }
         }
-      }.frame(height: NativeChartHeight.value(explicit: context.number("height"),
+        .overlay {
+          if !allData.hasContent(for: name) {
+            NativeChartPlaceholder(name: name, loading: waiting,
+              failed: context.hasDataFailure, incomplete: incomplete)
+          }
+        }
+        .overlay(alignment: .topTrailing) {
+          NativeDelayedPresentation(active: waiting && allData.hasContent(for: name)) { visible in
+            if visible { NativeLoadingIndicator().padding(context.theme.space2xs) }
+          }
+        }
+        .accessibilityValue(Text(waiting ? "Loading data" : incomplete ? "Chart is incomplete" : "", bundle: NativeControlResources.bundle))
+      }.frame(height: NativeChartHeight.value(explicit: context.presentationNumber("height"),
         defaultHeight: defaultHeight, scale: axisScale,
         minimumHeight: name == "SingleStackedBarChart" ? 0 : 100))
       if name == "RadarChart" {
@@ -259,6 +286,11 @@ struct NativeChart: View {
             }
           }
         }
+      }
+      if allData.hasContent(for: name), incomplete || context.hasDataFailure {
+        Text(context.hasDataFailure ? (stableData == nil ? "Unable to load chart" : "Unable to refresh chart")
+          : "Chart is incomplete", bundle: NativeControlResources.bundle)
+          .nativeTextStyle(context.theme.textStyle(.supporting))
       }
     }.frame(maxWidth: .infinity, alignment: .leading)
       .background(alignment: .topLeading) { measuredAxisLabels }
@@ -781,6 +813,7 @@ struct NativeChartDrawing {
         var positive = 0.0
         var negative = 0.0
         for s in 0..<seriesCount {
+          guard data.hasValue(s, i) else { continue }
           let value = data.value(s, i)
           let base = stacked ? (value >= 0 ? positive : negative) : 0
           let a = numeric(base)
@@ -804,7 +837,8 @@ struct NativeChartDrawing {
       }
     } else {
       for s in 0..<seriesCount {
-        let points = (0..<count).map {
+        let visibleCount = data.isProgressive ? min(count, data.series[s].values.count) : count
+        let points = (0..<visibleCount).map {
           CGPoint(x: rect.minX + pitch * (CGFloat($0) + 0.5), y: numeric(data.value(s, $0)))
         }
         let line = linePath(points)
@@ -823,7 +857,7 @@ struct NativeChartDrawing {
           let marker = Path(ellipseIn: CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8))
           canvas.fill(marker, with: .color(canvasColor))
           canvas.stroke(marker, with: .color(color(s)), lineWidth: 2)
-        } else if count == 1, let point = points.first {
+        } else if points.count == 1, let point = points.first {
           canvas.fill(
             Path(ellipseIn: CGRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6)),
             with: .color(color(s)))

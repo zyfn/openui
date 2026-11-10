@@ -63,25 +63,48 @@ struct NativeCallout: View {
   private var visible: Bool {
     binding.map { $0.wrappedValue == .boolean(true) || $0.wrappedValue == .string("true") } ?? true
   }
+  private var statusIcon: String? {
+    switch context.string("variant") {
+    case "success": return "checkmark.circle"
+    case "warning": return "exclamationmark.circle"
+    case "error", "danger": return "xmark.circle"
+    default: return nil
+    }
+  }
+  private var hasCopy: Bool {
+    [context.string("title"), context.string("description")].contains {
+      !($0 ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+  }
   var body: some View {
     Group {
-      if visible {
-        VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
-          if let title = context.string("title"), !title.isEmpty {
-            Text(title).openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
+      if visible && hasCopy {
+        HStack(alignment: .firstTextBaseline, spacing: context.theme.spaceM) {
+          if let statusIcon {
+            Image(systemName: statusIcon)
+              .openUIFont(context.theme.textLabelDefaultHeavy, role: .control)
+              .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
+              .accessibilityHidden(true)
           }
-          if let detail = context.string("description"), !detail.isEmpty {
-            NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodyDefault,
-              color: context.theme.textNeutralPrimary))
+          VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
+            if let title = context.string("title"), !title.isEmpty {
+              Text(title).openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
+            }
+            if let detail = context.string("description"), !detail.isEmpty {
+              NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodyDefault,
+                color: context.theme.textNeutralPrimary))
+            }
           }
         }
-        .padding(.leading, context.theme.spaceML)
+        .padding(.leading, statusIcon == nil ? context.theme.spaceML : 0)
         .padding(.vertical, context.theme.spaceS)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(alignment: .leading) {
-          RoundedRectangle(cornerRadius: context.theme.radius3xs, style: .continuous)
-            .fill(context.theme.borderDefault).frame(width: 3)
-            .padding(.vertical, context.theme.space2xs).accessibilityHidden(true)
+          if statusIcon == nil {
+            RoundedRectangle(cornerRadius: context.theme.radius3xs, style: .continuous)
+              .fill(context.theme.borderDefault).frame(width: 3)
+              .padding(.vertical, context.theme.space2xs).accessibilityHidden(true)
+          }
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue(Text(statusLabel, bundle: NativeControlResources.bundle))
@@ -213,8 +236,8 @@ struct NativeMediaText: View {
         }.frame(maxWidth: .infinity, alignment: .leading)
       } else {
         NativeMediaRow(axis: vertical ? .vertical : .horizontal,
-          gap: media == .icon ? context.theme.spaceS * iconScale : context.theme.spaceM,
-          centered: media == .thumbnail && !vertical ? true : centered,
+          gap: context.theme.spaceM * (media == .icon ? iconScale : 1),
+          centered: !vertical ? true : centered,
           adaptiveThumbnail: adaptiveThumbnail,
           media: { leadingMedia }, copy: {
             words.frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
@@ -225,7 +248,7 @@ struct NativeMediaText: View {
   }
   @ViewBuilder private var leadingMedia: some View {
     if media == .icon {
-      let style = NativeIconTextStyle(variant: context.string("iconVariant"), theme: context.theme)
+      let style = NativeIconTextStyle(variant: context.presentationString("iconVariant"), theme: context.theme)
       context.slot("icon").environment(\.openUIIconSize, glyphSize)
         .foregroundStyle(style.foreground)
         .frame(width: (glyphSize + style.inset * 2) * iconScale, height: (glyphSize + style.inset * 2) * iconScale)
@@ -240,9 +263,9 @@ struct NativeMediaText: View {
         .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
     }
   }
-  private var glyphSize: CGFloat { NativeIconTextMetrics.glyph(context.string("iconSize")) }
+  private var glyphSize: CGFloat { NativeIconTextMetrics.glyph(context.presentationString("iconSize")) }
   private var explicitImageSize: CGFloat? {
-    if let size = context.number("imageSize"), size.isFinite, size > 0 { return CGFloat(size) }
+    if let size = context.presentationNumber("imageSize"), size.isFinite, size > 0 { return CGFloat(size) }
     return nil
   }
   private var imageSize: CGFloat {
@@ -667,7 +690,7 @@ struct NativeCardItem: View {
       loader: ObjectIdentifier(artworkResources.loader), attempt: 0)
   }
   private var hasLoadedArtwork: Bool {
-    guard context.element.isSourceComplete, let request = artworkRequest else { return false }
+    guard context.element.sourceReadiness["bgImageSrc"].complete, let request = artworkRequest else { return false }
     return artworkCache?[request] != nil
       || (artworkImageState?.request == request && artworkImageState?.status == .loaded)
   }
@@ -730,6 +753,7 @@ struct NativeCardItem: View {
               })
               .environment(\.openUITheme, context.theme)
               .environment(\.colorScheme, colorScheme)
+              .environment(\.openUIMediaSourceReady, context.element.sourceReadiness["bgImageSrc"].complete)
           }.allowsHitTesting(false)
           copy.background {
             GeometryReader { geometry in
@@ -870,14 +894,14 @@ struct NativeCardBlock: View {
   private var gap: CGFloat {
     CGFloat(
       min(
-        128, max(0, context.number("gap") ?? Double(context.theme.spacing(context.string("gap"))))))
+        128, max(0, context.presentationNumber("gap") ?? Double(context.theme.spacing(context.presentationString("gap"))))))
   }
   private var grid: NativeCardGrid? {
     let layout = context.string("layout")
     // Positional layout arguments may arrive after large inline item arrays.
     // Until the mode is known, keep a browsable card viewport rather than
     // expanding every item into a temporary vertical document.
-    let pending = !context.element.isSourceComplete && !["grid", "carousel"].contains(layout ?? "")
+    let pending = !context.element.sourceReadiness["layout"].complete && !["grid", "carousel"].contains(layout ?? "")
     guard layout != "carousel", !pending else { return nil }
     return NativeCardGrid(maxPerRow: ["Overview", "Context", "Visual"].contains(kind) ? 3 : 2,
       responsive: context.flag("responsive") != false,

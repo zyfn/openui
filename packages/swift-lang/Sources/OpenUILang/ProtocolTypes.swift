@@ -254,13 +254,16 @@ public final class EvaluatedElement: Sendable, Equatable {
     /// Native source readiness, independent of the protocol's program-wide
     /// partial flag. This advisory metadata is never serialized as OpenUI Lang.
     public let isSourceComplete: Bool
+    /// Advisory native boundaries; deliberately excluded from Lang serialization/equality.
+    public let sourceReadiness: NativeSourceReadiness
 
-    public init(typeName: String, props: [(String, Value)] = [], statementId: String? = nil, partial: Bool = false, isSourceComplete: Bool? = nil) {
+    public init(typeName: String, props: [(String, Value)] = [], statementId: String? = nil, partial: Bool = false, isSourceComplete: Bool? = nil, sourceReadiness: NativeSourceReadiness? = nil) {
         self.typeName = typeName
         self.props = props
         self.statementId = statementId
         self.partial = partial
         self.isSourceComplete = isSourceComplete ?? !partial
+        self.sourceReadiness = sourceReadiness ?? .init(complete: isSourceComplete ?? !partial, closed: isSourceComplete ?? !partial)
     }
 
     public static func == (lhs: EvaluatedElement, rhs: EvaluatedElement) -> Bool {

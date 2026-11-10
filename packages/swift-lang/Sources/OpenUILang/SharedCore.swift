@@ -222,7 +222,8 @@ final class SharedCore {
         let id = Int(call("identity", [js]).toInt32())
         if let obj = decoded[id]?.object {
             if let a = obj as? OpenUIArray { return .array(a) }; if let o = obj as? OpenUIObject { return .object(o) }
-            if let e = obj as? EvaluatedElement, e.isSourceComplete == call("sourceComplete", [js]).toBool() { return .element(e) }
+            if let e = obj as? EvaluatedElement, e.isSourceComplete == call("sourceComplete", [js]).toBool(),
+               e.sourceReadiness == sourceReadiness(call("sourcePresentation", [js])) { return .element(e) }
             if let a = obj as? ActionPlan, a.isSourceComplete == call("sourceComplete", [js]).toBool() { return .actionPlan(a) }
             if let b = obj as? ReactiveAssign { return .reactiveBinding(b) }
         }
@@ -231,7 +232,7 @@ final class SharedCore {
         let runtimeShape = interpret && tagged != "object"
         if js.isArray { result = .array(items(js).map { decode($0, level: level + 1, interpret: interpret) }) }
         else if runtimeShape && js.forProperty("type").isString && js.forProperty("type").toString() == "element" {
-            result = .element(EvaluatedElement(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { ($0.0.displayString, decode($0.1, level: level + 1, interpret: interpret)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool(), isSourceComplete: call("sourceComplete", [js]).toBool()))
+            result = .element(EvaluatedElement(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { ($0.0.displayString, decode($0.1, level: level + 1, interpret: interpret)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool(), isSourceComplete: call("sourceComplete", [js]).toBool(), sourceReadiness: sourceReadiness(call("sourcePresentation", [js]))))
         } else if runtimeShape && js.forProperty("__reactive").isString && js.forProperty("__reactive").toString() == "assign" {
             let target = js.forProperty("target").toString()!
             let expression = decodeAST(js.forProperty("expr"))
@@ -309,12 +310,33 @@ final class SharedCore {
         }
         return js.isNull ? .null : .value(decode(js))
     }
+    private func sourceReadiness(_ js: JSValue, depth: Int = 0) -> NativeSourceReadiness {
+        guard depth < 256 else { return .init(complete: false, closed: false) }
+        return .init(complete: js.forProperty("complete")?.toBool() ?? false,
+            closed: js.forProperty("closed")?.toBool() ?? false,
+            children: Dictionary(entries(js.forProperty("children")).map {
+                ($0.0, sourceReadiness($0.1, depth: depth + 1))
+            }, uniquingKeysWith: { _, last in last }),
+            expectedCount: js.forProperty("count").isNumber ? Int(js.forProperty("count").toInt32()) : nil,
+            queryDependencies: items(js.forProperty("queries")).map { string($0) })
+    }
     func element(_ js: JSValue) -> ElementNode {
         ElementNode(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { PropEntry(key: $0.0.displayString, value: materialized($0.1)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool(), hasDynamicProps: js.forProperty("hasDynamicProps").isUndefined || js.forProperty("hasDynamicProps").toBool())
     }
     func encodeElement(_ e: EvaluatedElement) -> JSValue {
         let js = object([("type", string("element")), ("typeName", string(OpenUIString(e.typeName))), ("props", object(e.props.map { (OpenUIString($0.0), encode($0.1)) })), ("partial", JSValue(bool: e.partial, in: context)!)])
-        if let id = e.statementId { js.setValue(id, forProperty: "statementId") };return call("tagNativeSource", [js, JSValue(bool: e.isSourceComplete, in: context)!])
+        if let id = e.statementId { js.setValue(id, forProperty: "statementId") }
+        return call("tagNativeSource", [js, JSValue(bool: e.isSourceComplete, in: context)!, encodeReadiness(e.sourceReadiness)])
+    }
+    private func encodeReadiness(_ value: NativeSourceReadiness) -> JSValue {
+        var fields: [(OpenUIString, JSValue)] = [
+            ("complete", JSValue(bool: value.complete, in: context)!),
+            ("closed", JSValue(bool: value.closed, in: context)!),
+            ("children", object(value.children.map { ($0.key, encodeReadiness($0.value)) })),
+            ("queries", array(value.queryDependencies.map(string))),
+        ]
+        if let count = value.expectedCount { fields.append(("count", JSValue(int32: Int32(clamping: count), in: context)!)) }
+        return object(fields)
     }
     func materialized(_ value: Materialized) -> JSValue {
         switch value {

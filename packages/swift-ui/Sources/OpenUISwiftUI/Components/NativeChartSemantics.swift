@@ -140,10 +140,12 @@ extension NativeChartData {
     }
     guard labels.indices.contains(index) else { return nil }
     if !series.isEmpty {
-      return .init(title: labels[index], rows: series.enumerated().map { seriesIndex, series in
-        .init(id: OpenUIString(series.name), label: series.name,
+      let rows: [NativeChartInspection.Row] = series.enumerated().compactMap { seriesIndex, series in
+        guard hasValue(seriesIndex, index) else { return nil }
+        return .init(id: OpenUIString(series.name), label: series.name,
           value: number(value(seriesIndex, index)), colorIndex: colorIndex(seriesIndex))
-      })
+      }
+      return rows.isEmpty ? nil : .init(title: labels[index], rows: rows)
     }
     return .init(title: labels[index], rows: [
       .init(id: "value", label: nil, value: number(slices.indices.contains(index) ? slices[index] : 0),
@@ -187,11 +189,15 @@ extension NativeChartData {
   }
 
   func hasContent(for name: String) -> Bool {
+    if isProgressive {
+      return name == "ScatterChart" ? scatter.contains { !$0.points.isEmpty }
+        : !labels.isEmpty && series.contains { !$0.values.isEmpty }
+    }
     if name == "ScatterChart" { return !scatter.isEmpty }
     if ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name) {
       return !labels.isEmpty && !slices.isEmpty
     }
-    return !labels.isEmpty
+    return !labels.isEmpty && !series.isEmpty
   }
 }
 

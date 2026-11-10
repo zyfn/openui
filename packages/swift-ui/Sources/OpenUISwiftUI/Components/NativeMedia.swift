@@ -137,6 +137,7 @@ struct NativeRemoteImage: View {
   var attempt = 0
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
   @Environment(\.openUIMediaSourceReady) private var sourceReady
+  @Environment(\.openUIStreamActive) private var streamActive
   @State private var phase: AsyncImagePhase = .empty
   @State private var imageSize: CGSize?
   @State private var loadedRequest: NativeResourceRequestID?
@@ -151,7 +152,7 @@ struct NativeRemoteImage: View {
       // Each media role owns its frame before pixels arrive. A later parent
       // layout argument must not temporarily replace it with a small thumbnail.
       if !sourceReady {
-        placeholder(loading: true).onAppear { onStatus?(.loading, nil) }
+        placeholder(loading: streamActive).onAppear { onStatus?(streamActive ? .loading : .unavailable, nil) }
       } else if let cachedImage {
         picture(cachedImage).onAppear { onStatus?(.loaded, cachedImage) }
       } else if loadedRequest != requestID, let retained = mediaCache?[requestID] {
@@ -227,7 +228,7 @@ struct NativeRemoteImage: View {
   private func placeholder(loading: Bool) -> some View {
     canvas {
       if loading {
-        NativeMediaSkeleton()
+        NativeLoadingSurface(showsMediaSymbol: true)
       } else {
         ZStack {
           theme.sunk
@@ -334,7 +335,10 @@ struct NativeImageGallery: View {
   // The pinned upstream ImageGallery previews five items, with Show All.
   private let previewLimit = 5
   private var images: [NativeGalleryImage] {
-    context.children("images").enumerated().map { index, child in
+    let children = context.children("images")
+    let source = context.element.sourceReadiness["images"]
+    let aligned = source.complete || source.expectedCount == children.count
+    return children.enumerated().map { index, child in
       let attempt = retries[child.id, default: 0]
       var request = resources.request(for: NativeValue.string(child.value, "src"))
       if attempt > 0 { request?.cachePolicy = .reloadIgnoringLocalCacheData }
@@ -342,7 +346,11 @@ struct NativeImageGallery: View {
         src: NativeValue.string(child.value, "src"), alt: NativeValue.string(child.value, "alt") ?? "",
         details: NativeValue.string(child.value, "details"),
         requestID: .init(request: request, loader: ObjectIdentifier(resources.loader), attempt: attempt),
-        sourceReady: { if case .element(let image) = child.value { return image.isSourceComplete }; return context.element.isSourceComplete }())
+        sourceReady: {
+          if case .element(let image) = child.value { return image.sourceReadiness["src"].complete }
+          guard aligned else { return false }
+          return source[index]["src"].complete
+        }())
     }
   }
   private var visible: [NativeGalleryImage] { Array(images.prefix(previewLimit)) }

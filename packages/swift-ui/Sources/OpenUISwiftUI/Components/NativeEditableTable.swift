@@ -157,7 +157,8 @@ struct NativeEditableTable: View {
     .onChange(of: state.sourceRevision) { revision in editing.receive(source, revision: revision) }
   }
   private func width(_ index: Int) -> CGFloat {
-    NativeEditableColumn.width(NativeValue.number(columns[index], "width"))
+    NativeEditableColumn.width(context.element.sourceReadiness["columns"][index]["width"].complete
+      ? NativeValue.number(columns[index], "width") : nil)
   }
   private func alignment(_ definition: Value) -> Alignment {
     NativeValue.string(definition, "type") == "number" ? .trailing : .leading

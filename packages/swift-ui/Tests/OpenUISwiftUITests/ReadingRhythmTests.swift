@@ -79,7 +79,7 @@ final class ReadingRhythmTests: XCTestCase {
     XCTAssertEqual(try XCTUnwrap(frames.values["icon"]).midX, 75, accuracy: 1)
   }
 
-  @MainActor func testIconTextKeepsItsIconAtTheTopWhenTheDescriptionWraps() throws {
+  @MainActor func testIconTextCentersItsIconAgainstTheCompleteTextBlock() throws {
     _ = NSApplication.shared
     let frames = OverviewSlotFrames()
     let standard = try OpenUIStandardComponents.library()
@@ -98,15 +98,15 @@ final class ReadingRhythmTests: XCTestCase {
     window.isReleasedWhenClosed = false; window.contentView = host
     window.setFrameOrigin(NSPoint(x: -10000, y: -10000)); window.orderFront(nil)
     defer { window.close() }
-    func iconY(_ description: String) throws -> CGFloat {
+    func checkCenter(_ description: String) throws {
       state.setSource("root=IconText(Icon(\"calendar\"),\"soft\",\"m\",\"Duration\",\(jsonStringLiteral(description)))")
       XCTAssertTrue(state.errors.isEmpty)
       host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-      return try XCTUnwrap(frames.values["icon"]).minY
+      XCTAssertEqual(try XCTUnwrap(frames.values["icon"]).midY,
+        host.fittingSize.height / 2, accuracy: 1)
     }
-    let short = try iconY("One day")
-    XCTAssertEqual(try iconY(String(repeating: "A longer description with natural wrapping. ", count: 5)),
-      short, accuracy: 1, "An icon badge must not drift down beside a taller paragraph")
+    try checkCenter("One day")
+    try checkCenter(String(repeating: "A longer description with natural wrapping. ", count: 5))
   }
 
   @MainActor func testOverviewMetricsUseTheBottomEdgeOfTheSameGridRow() throws {

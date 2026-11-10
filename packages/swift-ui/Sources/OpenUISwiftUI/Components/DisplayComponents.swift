@@ -161,6 +161,7 @@ struct NativeDataTable: View {
         let title: String
         let data: [Value]
         let numeric: Bool
+        let source: NativeSourceReadiness
     }
     let context: OpenUIComponentContext
     @Environment(\.openUITableCellPolicy) private var cellPolicy
@@ -169,10 +170,11 @@ struct NativeDataTable: View {
     @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
     @State private var availableWidth: CGFloat = 0
     @State private var currentPage = 0
+    @State private var stableColumns: [Column]?
     @Namespace private var measurementScope
     private let pageSize = 10 // Pinned upstream Table's DEFAULT_PAGE_SIZE.
     private var columnGap: CGFloat { context.theme.spacing("ml") }
-    private var columns: [Column] {
+    private var currentColumns: [Column] {
         context.children("columns").compactMap { child in
             guard case .element(let element) = child.value else { return nil }
             let raw = PropValue.value(element, "data") ?? .null
@@ -183,10 +185,34 @@ struct NativeDataTable: View {
                 data = raw == .null || raw == .undefined ? [] : [raw]
             }
             return Column(id: child.id, title: PropValue.string(element, "label") ?? "", data: data,
-                numeric: PropValue.string(element, "type") == "number")
+                numeric: PropValue.string(element, "type") == "number", source: element.sourceReadiness)
         }
     }
-    private var rowCount: Int { columns.map { $0.data.count }.max() ?? 0 }
+    private var waiting: Bool { context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete) }
+    private var incomplete: Bool { !context.isStreaming && (!context.element.isSourceComplete || context.hasInterruptedData) && !context.hasPendingData }
+    private var columns: [Column] {
+        if !context.element.isSourceComplete || context.hasPendingData || context.hasDataFailure,
+           let stableColumns { return stableColumns }
+        return currentColumns
+    }
+    private var columnsReady: Bool {
+        if stableColumns != nil { return true }
+        let source = context.element.sourceReadiness["columns"]
+        return source.complete || (source.closed && source.expectedCount == columns.count)
+    }
+    private var rowCount: Int {
+        let maximum = columns.map { $0.data.count }.max() ?? 0
+        guard !context.element.isSourceComplete else { return maximum }
+        for row in 0..<maximum {
+            let ready = columns.allSatisfy { column in
+                let source = column.source["data"]
+                return source.complete || (row < column.data.count && source[row].complete)
+                    || (source.closed && row >= column.data.count)
+            }
+            if !ready { return row }
+        }
+        return maximum
+    }
     private var pageCount: Int { max(1, (rowCount + pageSize - 1) / pageSize) }
     private var safePage: Int { min(currentPage, pageCount - 1) }
     private var visibleRows: Range<Int> {
@@ -194,15 +220,29 @@ struct NativeDataTable: View {
         return start..<min(start + pageSize, rowCount)
     }
     @ViewBuilder var body: some View {
-        if context.isQueryLoading && rowCount == 0 {
-            NativeTableSkeleton(columns: columns.count)
-        } else if !columns.isEmpty {
-            loadedTable
+        Group {
+            if columnsReady && !columns.isEmpty { loadedTable }
+            else if waiting {
+                NativeTableSkeleton()
+            } else { stateMessage }
         }
+        .onAppear(perform: rememberColumns)
+        .onChange(of: context.element) { _ in rememberColumns() }
+        .onChange(of: context.hasPendingData) { _ in rememberColumns() }
+        .onChange(of: context.element.isSourceComplete) { _ in rememberColumns() }
+    }
+    private func rememberColumns() {
+        if context.element.isSourceComplete && !context.hasPendingData && !context.hasDataFailure { stableColumns = currentColumns }
+    }
+    private var stateMessage: some View {
+        Text(context.hasDataFailure ? (stableColumns == nil ? "Unable to load data" : "Unable to refresh data")
+            : incomplete ? "Table is incomplete" : "No data", bundle: NativeControlResources.bundle)
+            .nativeTextStyle(context.theme.textStyle(.supporting)).padding(.vertical, context.theme.spaceS)
     }
     private var loadedTable: some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("s")) {
             NativeTableViewport { tableContent }
+            if !waiting && (rowCount == 0 || incomplete || context.hasDataFailure) { stateMessage }
             if pageCount > 1 {
                 NativePageControls(page: safePage, count: pageCount, enabled: true, identifier: "openui.table") { currentPage = $0 }
             }
@@ -218,6 +258,13 @@ struct NativeDataTable: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("openui.table")
+        .accessibilityValue(Text(waiting ? "Loading data" : "", bundle: NativeControlResources.bundle))
+        .overlay(alignment: .topTrailing) {
+            NativeDelayedPresentation(active: waiting) { visible in
+                if visible { NativeLoadingIndicator().padding(context.theme.space2xs) }
+            }
+        }
+        .environment(\.openUIInteractionScopeReady, context.canInteract && !context.hasPendingData && !context.hasDataFailure)
         .environment(\.openUIActionDensity, .compact)
     }
     @ViewBuilder private var tableContent: some View {

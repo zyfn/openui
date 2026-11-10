@@ -18,7 +18,7 @@ public enum OpenUIStandardComponents {
             },
             OpenUIReference.component("TextContent") { context in
                 NativeMarkdownText(text: context.string("text") ?? "", mode: .textContent,
-                    style: .textContent(context.string("size"), theme: context.theme))
+                    style: .textContent(context.presentationString("size"), theme: context.theme))
             },
             OpenUIReference.component("Image") { NativeContentImage(context: $0) },
             OpenUIReference.component("Button") { OpenUINativeButton(context: $0) },

@@ -176,15 +176,19 @@ and retain the complete measured numeral rather than clipping it to a fixed box.
 
 IconText's declared sizes select a base glyph and scale its container with the
 same nearest-view text environment. The standard aliases remain supported.
+Horizontal glyphs center against the complete title/detail block; text remains
+on the common title/supporting roles, and the glyph-to-copy gap uses spaceM.
 Table carries Col's numeric type into trailing alignment and monospaced digits;
 long text columns use the theme's reading-width hint instead of a scalar-only
 minimum. Values are not reformatted or rewritten.
 SDK-generated Context/Composite group actions are siblings of their independent
 content controls inside the item surface; no nested Button is introduced.
-Callout and TextCallout use a quiet quote treatment: a 3pt neutral leading rule,
-16pt body copy and an optional emphasized title, without a status icon. The variant
-remains an accessibility value; visible binding and the existing auto-dismiss
-behavior are unchanged. Reading disclosure labels align with their body. Failed media uses
+Neutral/info Callout and TextCallout use a quiet quote treatment: a 3pt neutral
+leading rule, common body copy and an optional emphasized title. Success,
+warning and error/danger use a small semantic icon aligned with the first line,
+without duplicating the rule or adding a colored background. Body ink remains
+neutral. Variant accessibility, visible binding and existing auto-dismiss behavior
+are unchanged. Reading disclosure labels align with their body. Failed media uses
 a neutral photo glyph and a localized status when the complete copy fits. Small
 slots and very large text retain the glyph and accessible unavailable status.
 

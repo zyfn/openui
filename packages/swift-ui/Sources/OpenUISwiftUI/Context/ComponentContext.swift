@@ -54,6 +54,13 @@ public struct OpenUIComponentContext {
     // stretched row item cannot accidentally stretch all nested descendants.
     var stretchesVertically = false
     var fillsControlWidth = false
+    // EvaluatedElement's equality intentionally follows normative values, not
+    // presentation metadata. Copy these snapshots so SwiftUI also invalidates
+    // a child when a delimiter or its own query status changes without new data.
+    let presentationReadiness: NativeSourceReadiness
+    let hasPendingData: Bool
+    let hasDataFailure: Bool
+    let hasInterruptedData: Bool
     var interactionScopeReady = true
     var activationIntent: NativeActivationIntent?
     private let state: OpenUIState
@@ -68,6 +75,11 @@ public struct OpenUIComponentContext {
         self.sourceRevision = state.sourceRevision
         self.isStreaming = !state.isComplete
         self.isQueryLoading = state.isQueryLoading
+        self.presentationReadiness = element.sourceReadiness
+        let queries = element.sourceReadiness.queryDependencies.map { state.queryStates[$0.displayString] }
+        self.hasPendingData = queries.contains { $0?.status == .loading || (!state.isComplete && ($0 == nil || $0?.status == .idle)) }
+        self.hasDataFailure = queries.contains { $0?.status == .error }
+        self.hasInterruptedData = state.isInterrupted && queries.contains { $0 == nil || $0?.status == .idle }
     }
 
     @MainActor public var canInteract: Bool { interactionScopeReady && state.isElementReady(element) && isCurrentPresentation }
@@ -94,6 +106,14 @@ public struct OpenUIComponentContext {
         state.setFieldValue(form: exactFormName, name: name, value: value, componentType: nil)
     }
     public func value(_ name: String) -> Value? { element.props.last(where: { $0.0 == name })?.1 }
+    /// Geometry/style arguments must not consume an unfinished numeric or enum
+    /// token. Data text continues to use value/string for progressive reading.
+    func presentationNumber(_ name: String) -> Double? {
+        element.sourceReadiness[name].complete ? number(name) : nil
+    }
+    func presentationString(_ name: String) -> String? {
+        element.sourceReadiness[name].complete ? string(name) : nil
+    }
     /// Native display text. Use codeUnitString/value for semantic action data.
     public func string(_ name: String) -> String? { codeUnitString(name)?.displayString }
     public func codeUnitString(_ name: String) -> OpenUIString? {
@@ -198,7 +218,10 @@ struct OpenUIComponentHost<Content: View>: View {
             .environment(\.openUIFillControlWidth, false)
             .environment(\.openUIInteractionScopeReady, interactionScopeReady && (!atomic || context.canInteract))
             .environment(\.openUIInlineLinksReady, context.canInteract)
-            .environment(\.openUIMediaSourceReady, element.isSourceComplete)
+            .environment(\.openUIMediaSourceReady,
+                ["Image", "ImageBlock", "ImageText", "ImageTextLarge"].contains(element.typeName)
+                    ? element.sourceReadiness["src"].complete : element.isSourceComplete)
+            .environment(\.openUIStreamActive, context.isStreaming)
         // Reset once at the native tree's entry, including direct RenderNode
         // hosts. Repeating one explicit id on every descendant makes lazy
         // containers merge distinct siblings, losing cards and their content.

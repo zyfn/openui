@@ -1,10 +1,10 @@
 {
   "upstream": "f08a660535e55b5b2a24a0eb68568edaf9e4fe4b",
   "sourceTree": "053f51d4da2f151c36581f80cfd125d1fb6aa8af",
-  "sha256": "fee68728f49d59a3942a84c78bdec5e852ae1673d55c75493106a415794ead22",
-  "bytes": 1044650,
+  "sha256": "9772a1fb9a410af1d973b6a95d49932e7543b917854fbe71751f8aebea11be4d",
+  "bytes": 723563,
   "lockSha256": "1c8c81dc00c8717afd390d204c683bf1851baf01f0ed9b9f395d01b43b5a497e",
-  "adapterSha256": "4cc487a07cce02b72acbddb9d64c1992a50bec86048092d0dc85adb906f60802",
+  "adapterSha256": "4ea31aa2e20c499c670bea9ff402658803264f00e3244218931c77aab46b44a3",
   "telemetry": "excluded at build time: native host has no process, fetch or install telemetry",
   "bridge": "opaque captures resolve through upstream EvaluationContext.resolveRef; core-created ActionPlan objects retain provenance; host-authored plans execute at the native boundary",
   "authoring": {
@@ -101,11 +101,12 @@
       "category": "native-presentation-metadata",
       "locations": [
         "scripts/readiness-compat.mjs",
-        "scripts/readiness.ts"
+        "scripts/readiness.ts",
+        "Sources/OpenUILang/NativeSourceReadiness.swift"
       ],
-      "reason": "Distinguish a complete control from unrelated streaming content",
-      "observable": "Injects lexer, expressions, parser, materialize, evaluator and evaluate-tree; Symbols and WeakMaps are outside wire data",
-      "verification": "Strict intermediate snapshots plus complete-control/incomplete-action UI tests",
+      "reason": "Distinguish structural closure, committed data boundaries, local query ownership and interaction readiness",
+      "observable": "Existing syntax marks remain private; new per-property/index boundaries and query dependencies live in WeakMaps, outside protocol values and serialized ASTs",
+      "verification": "Strict intermediate snapshots, source-tail boundary tests, staged chart/table and complete-control/incomplete-action UI tests",
       "removal": "Upstream exposes equivalent source/dependency provenance; injection is explicitly retained until then"
     },
     {

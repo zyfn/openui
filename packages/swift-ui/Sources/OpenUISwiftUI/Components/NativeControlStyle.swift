@@ -104,6 +104,7 @@ struct NativeFieldSurface: ViewModifier {
 
 struct NativeActionButtonStyle: ButtonStyle {
     @Environment(\.openUIPresentation) private var nativePresentation
+    @Environment(\.openUIActionAppearance) private var appearance
 
     let theme: OpenUIThemeValues
     var variant = "primary"
@@ -121,8 +122,9 @@ struct NativeActionButtonStyle: ButtonStyle {
     @ScaledMetric(relativeTo: .body) private var unit: CGFloat = 1
 
     private var accent: Color { destructive ? theme.interactiveDestructiveAccentDefault : theme.interactiveAccentDefault }
+    private var visuallyEnabled: Bool { enabled || appearance == .pending || appearance == .performing }
     private func foreground(pressed: Bool) -> Color {
-        if !enabled && variant != "primary" {
+        if !visuallyEnabled && variant != "primary" {
             return destructive ? theme.textDangerTertiary : theme.textNeutralTertiary
         }
         if variant == "primary" {
@@ -133,15 +135,15 @@ struct NativeActionButtonStyle: ButtonStyle {
     }
     private func background(pressed: Bool) -> Color {
         if variant == "primary" {
-            if !enabled { return destructive ? theme.interactiveDestructiveAccentDisabled : theme.interactiveAccentDisabled }
+            if !visuallyEnabled { return destructive ? theme.interactiveDestructiveAccentDisabled : theme.interactiveAccentDisabled }
             if pressed { return destructive ? theme.interactiveDestructiveAccentPressed : theme.interactiveAccentPressed }
-            if hovered { return destructive ? theme.interactiveDestructiveAccentHover : theme.interactiveAccentHover }
+            if hovered && enabled { return destructive ? theme.interactiveDestructiveAccentHover : theme.interactiveAccentHover }
             return accent
         }
         if destructive {
-            if !enabled { return variant == "secondary" ? theme.interactiveDestructiveDisabled : .clear }
+            if !visuallyEnabled { return variant == "secondary" ? theme.interactiveDestructiveDisabled : .clear }
             if pressed { return theme.interactiveDestructivePressed }
-            if hovered { return theme.interactiveDestructiveHover }
+            if hovered && enabled { return theme.interactiveDestructiveHover }
             return variant == "secondary" ? theme.interactiveDestructiveDefault : .clear
         }
         return enabled && (pressed || hovered) ? theme.highlight : .clear

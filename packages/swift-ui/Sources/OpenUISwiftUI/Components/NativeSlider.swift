@@ -122,8 +122,8 @@ struct NativeSliderField: View {
   @State private var picker: NativeSliderPickerRequest?
   private var field: NativeFieldState { .init(context: context) }
   private var configuration: NativeSliderConfiguration {
-    .init(minimum: context.number("min") ?? 0, maximum: context.number("max") ?? 100,
-      step: context.number("step"), discrete: context.string("variant") == "discrete")
+    .init(minimum: context.presentationNumber("min") ?? 0, maximum: context.presentationNumber("max") ?? 100,
+      step: context.presentationNumber("step"), discrete: context.presentationString("variant") == "discrete")
   }
   private var external: [Double] {
     let values = NativeChartData.numbers(field.value)

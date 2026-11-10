@@ -8,7 +8,15 @@ public struct OpenUIMotion {
     public var pagingResponse: Double = 0.32
     public var pagingDamping: Double = 0.86
     public var loadingShimmerDuration: Double = 1.6
+    public var loadingIndicatorDelay: Double = 0.2
     public var mediaRevealDuration: Double = 0.18
+    var loadingDelayNanoseconds: UInt64 {
+        let seconds = loadingIndicatorDelay.isFinite ? max(0, loadingIndicatorDelay) : 0.2
+        return UInt64(min(seconds * 1_000_000_000, Double(UInt64.max / 2)))
+    }
+    var loadingCycle: Double {
+        loadingShimmerDuration.isFinite && loadingShimmerDuration > 0 ? loadingShimmerDuration : 1.6
+    }
     public init() {}
 }
 

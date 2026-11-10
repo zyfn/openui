@@ -64,7 +64,8 @@ semantic color must not silently become the chart series palette.
 | TextContent, Markdown, Text, BoldText | shared type hierarchy, small does not imply gray, emphasis does not change reading size | system font metrics, MarkdownUI block layout |
 | CardHeader, InlineHeader, Label | role-specific typography, description priority and spacing | full text may grow at larger type |
 | Image, ImageBlock, ImageGallery, ImageTextLarge | shared media radius and stable slots | user-approved 16:9 photo covers instead of fixed 180px banner |
-| ImageText, IconText, Icon | reference roles, authored size/direction, neutral/semantic ink, pinned Lucide artwork | unspecified thumbnails prefer80/reduce toward64 locally; glyph columns align across variants; status glyphs are unplated except inverted; aliases normalize before geometry |
+| ImageText, IconText, Icon | authored size/direction, shared text roles, neutral/semantic ink, pinned Lucide artwork | horizontal IconText centers its glyph against the complete text block using shared tokens; unspecified thumbnails prefer80/reduce toward64 locally; status glyphs are unplated except inverted |
+| Callout, TextCallout | existing variant, content, binding and dismissal contracts | neutral/info use a quiet rule; success/warning/error use small semantic icons with ordinary text, no colored panels |
 | Tag, TagBlock | informational tint, primary neutral ink, 12/14/16pt reading sizes | vertical insets2/4/4; complete long labels wrap with readable corner limits |
 | Button, IconButton, Buttons | primary/secondary/tertiary hierarchy; transparent bordered secondary, capsule text actions and shared density | native hit target, focus, press/Reduce Motion; flat neutral assistant treatment |
 | EntityList | shared body roles, header/total priority and tabular numeric values | native text values stay regular and lead when stacked; number values remain emphasized; read-only body rows use spaceS |

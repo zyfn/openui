@@ -15,6 +15,7 @@ public struct OpenUIActionSurface<Content: View>: View {
     // Source readiness can change interaction eligibility without changing props.
     @EnvironmentObject private var state: OpenUIState
     @Environment(\.openUIFormValidation) private var validation
+    @Environment(\.isEnabled) private var hostEnabled
     @State private var performing = false
 
     public init(context: OpenUIComponentContext, action: ActionPlan, role: ButtonRole? = nil, useNativeStyle: Bool = false, validateForm: Bool = false, showsProgress: Bool = false, @ViewBuilder content: () -> Content) {
@@ -49,13 +50,12 @@ public struct OpenUIActionSurface<Content: View>: View {
                 if useNativeStyle { content }
                 else { content.openUIControlTarget(alignment: .leading) }
             }.contentShape(Rectangle())
-                .opacity(showsProgress && performing ? 0 : 1)
-                .overlay {
-                    if showsProgress && performing { ProgressView().controlSize(.small) }
-                }
+                .modifier(NativeActionProgress(active: showsProgress && performing))
         }
         .accessibilityValue(showsProgress && performing ? Text("In progress", bundle: NativeControlResources.bundle) : Text(""))
         .disabled(!context.canInteract || performing)
+        .environment(\.openUIActionAppearance,
+            !hostEnabled ? .disabled : performing ? .performing : context.canInteract ? .ready : .pending)
     }
     private var needsValidation: Bool {
         let plan: ActionPlan?

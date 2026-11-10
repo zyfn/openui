@@ -63,3 +63,10 @@
 "Reload" = "Reload";
 "Scroll horizontally to see all columns" = "Scroll horizontally to see all columns";
 "More tabs" = "More tabs";
+"No data" = "No data";
+"Chart is incomplete" = "Chart is incomplete";
+"Unable to load chart" = "Unable to load chart";
+"Unable to refresh chart" = "Unable to refresh chart; previous data is shown";
+"Unable to load data" = "Unable to load data";
+"Unable to refresh data" = "Unable to refresh data; previous data is shown";
+"Table is incomplete" = "Table is incomplete";

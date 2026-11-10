@@ -115,7 +115,9 @@ stretch reaches a direct text button's visible surface; center/start/end retain
 its content width. Nested Stack does not implicitly grow along a parent's row;
 Card retains its explicit row-sharing behavior. These policies preserve the same
 mounted controls when placement changes. Horizontal ImageText centers image and
-copy vertically; horizontal IconText retains top alignment.
+copy vertically. IconText also centers the glyph against its complete title/detail
+block, using the existing font roles and spaceM; this is an approved native
+presentation choice rather than the reference's top-aligned IconText skin.
 Card families consume their own tokens directly: object and fact-card padding
 uses `spaceM`; generic Card uses `spaceML` (clear has zero vertical inset).
 Fact-card groups add no outer margin. The corresponding
@@ -134,8 +136,9 @@ This includes touch targets, thumbnails, carousel widths, chart axes and
 native motion. Changing a theme does not reset this environment value.
 The renderer stays transparent; the app owns its page and message background.
 
-Callout/TextCallout use a neutral leading rule instead of a warning/status icon;
-their variant, visibility binding and dismissal contracts are unchanged. Horizontal
+Callout/TextCallout use a neutral leading rule for neutral/info; success, warning
+and error/danger use a small semantic icon with ordinary title/body ink and no
+colored panel. Their variant, visibility binding and dismissal contracts are unchanged. Horizontal
 cards and Carousel use swipe/drag paging without a visible navigation-button row.
 Accessibility page navigation and focused macOS arrow keys remain available;
 Table retains its own pagination controls.
@@ -211,6 +214,44 @@ The collection contains the pinned upstream default library's 84 registrations, 
 Use `.openUITheme(theme)` for appearance and `.openUIPresentation(options)` for native media and layout metrics. Text uses Dynamic Type semantic fonts. There are no screen-global measurements. Override any standard component with `extending(overriding: ...)` when a product needs its own loader or view.
 
 ## State, resources and actions
+
+Native source presentation separates structural boundaries, committed data and
+interaction eligibility. `NativeSourceReadiness` is advisory SDK metadata carried
+outside Lang values and serialized ASTs; it does not add component parameters.
+Numeric/string/reference tails remain provisional until a real boundary arrives.
+Components receive a separate readiness snapshot so punctuation-only updates also
+invalidate SwiftUI views without changing normative element equality.
+
+Cartesian charts can reveal committed values, scatter charts complete points,
+and tables complete rows. Missing streamed values are not temporarily plotted as
+zero. Pie/percentage/radial/radar presentations wait for the required total or
+domain data. Known plot space is reserved before data appears, and known series
+names may establish the legend early. Complex unresolved expressions stay
+conservative; later declarations can still change unknown labels or geometry.
+This is not an animation that replays a fully received chart as if it streamed.
+
+Loading surfaces share theme tokens and motion. Animated indication starts after
+`presentation.motion.loadingIndicatorDelay` (default 0.2s); the existing 1.6s
+loading cycle and 0.18s media reveal remain. Reduce Motion uses static feedback,
+and loading sweeps pause outside an active scene. A table does not invent five
+rows or three columns while its structure is unknown. Query loading/error state
+is scoped to dependencies of the consuming component; refresh retains prior data.
+
+An incomplete Button reserves its measured slot but does not paint a guessed
+primary/gray capsule. Once its appearance is known, source-pending and performing
+states retain that appearance while interaction remains gated. The in-flight
+indicator is delayed; genuine host-disabled appearance remains distinct. Hosts
+should not globally `.disabled(isStreaming)` on the renderer, because that is an
+external disabled state rather than the SDK's per-control source readiness.
+
+Call `state.complete()` for normal source completion. For a user Stop action,
+cancel the host transport and call `state.interrupt()`: it retains completed
+content, leaves the trailing token provisional, and does not start deferred tools.
+`isInterrupted` records this native lifecycle state. It does not cancel unrelated
+already-running image requests. Do not continue feeding the stopped transport;
+a later push after terminal completion follows the existing new-program reset rule.
+The host still owns conversation scrolling, reading-position preservation and
+transport error UI. These cannot be inferred from a silent source stream.
 
 `OpenUIRenderer` injects its existing OpenUIState. Registered components receive a context with binding, action execution, named child rendering, semantic theme, and message-scoped resource values. `.openUIResources(...)` supplies product data; this is a host convention, not a new OpenUI language feature or a network service. `.openUIForm(name)` forwards a form scope. Built-in Form also preserves its exact `OpenUIString` name; `context.exactFormName` and context field/action helpers retain these code units.
 

@@ -17,6 +17,7 @@ public final class OpenUIState: ObservableObject {
     @Published public private(set) var root: EvaluatedElement?
     @Published public private(set) var errors: [OpenUIError] = []
     @Published public private(set) var isComplete = false
+    @Published public private(set) var isInterrupted = false
     @Published public private(set) var queryStates: [String: QueryState] = [:]
     @Published public private(set) var mutationStates: [String: MutationState] = [:]
     /// Matches the reference context's loading signal, including declared
@@ -47,7 +48,7 @@ public final class OpenUIState: ObservableObject {
     /// Stream termination alone does not make a truncated preview executable.
     /// Recoverable rendering diagnostics remain local to their components.
     var canExecuteActions: Bool {
-        guard isComplete, let result = latestResult else { return false }
+        guard isComplete, !isInterrupted, let result = latestResult else { return false }
         return !result.meta.incomplete && result.meta.unresolved.isEmpty
     }
     private var liveElements: [String: [EvaluatedElement]] = [:]
@@ -92,7 +93,7 @@ public final class OpenUIState: ObservableObject {
             }
         }
         func metadata(_ x: EvaluatedElement, _ y: EvaluatedElement, depth: Int) -> Bool {
-            x.isSourceComplete == y.isSourceComplete && x.props.count == y.props.count
+            x.isSourceComplete == y.isSourceComplete && x.sourceReadiness == y.sourceReadiness && x.props.count == y.props.count
                 && zip(x.props,y.props).allSatisfy { readiness($0.1,$1.1,depth:depth+1) }
         }
         let current = matches.first.flatMap { first in
@@ -221,6 +222,16 @@ public final class OpenUIState: ObservableObject {
         acceptSource(parser.getResult(complete: true))
     }
 
+    /// A host's Stop action ends generation without committing its trailing
+    /// token or starting deferred tools. Already completed content is retained.
+    /// Use complete() for a normally finished response, not for cancellation.
+    public func interrupt() {
+        guard !isComplete else { return }
+        isInterrupted = true
+        isComplete = true
+        acceptSource(parser.getResult(complete: false))
+    }
+
     public func reset() {
         let hadErrors = !errors.isEmpty
         streamGeneration += 1
@@ -233,7 +244,7 @@ public final class OpenUIState: ObservableObject {
         latestResult = nil; source = ""; persistedState = [:]
         indexLiveElements(nil)
         queryRequests = [:]; querySourceGeneration = -1; queryStoreSnapshot = [:]; idleMutations = [:]
-        root = nil; errors = []; queryStates = [:]; mutationStates = [:]; isComplete = false
+        root = nil; errors = []; queryStates = [:]; mutationStates = [:]; isComplete = false; isInterrupted = false
         errorRevision = nil
         observeQueries()
         if hadErrors { onError?([]) }
@@ -252,7 +263,7 @@ public final class OpenUIState: ObservableObject {
         if replacesPresentation { presentationRevision += 1; mediaCache.removeAll(); resourceStore.removeAll() }
         unsubscribe?(); observeQueries()
         queryManager.invalidateMutations(); idleMutations = [:]
-        source = text; isComplete = !streaming
+        source = text; isComplete = !streaming; isInterrupted = false
         acceptSource(parser.set(text, complete: !streaming))
     }
 
@@ -511,12 +522,12 @@ public final class OpenUIState: ObservableObject {
         store.initialize(defaults: result.stateDeclarations, persisted: persistedState)
         persistedState = [:]
         let evaluator = makeEvaluator(result: result)
-        if isComplete { queryManager.registerMutations(Dictionary(result.mutationStatements.map { mutation in
+        if isComplete && !isInterrupted { queryManager.registerMutations(Dictionary(result.mutationStatements.map { mutation in
             let tool = mutation.toolAST.map { evaluator.evaluate($0) }
             if case .string(let name) = tool { return (mutation.statementId, name) }
             return (mutation.statementId, "")
         }, uniquingKeysWith: { _, new in new })) }
-        if isComplete && synchronizeQueries {
+        if isComplete && !isInterrupted && synchronizeQueries {
             let sourceChanged = querySourceGeneration != streamGeneration
             querySourceGeneration = streamGeneration
             let snapshot = store.getSnapshot()
