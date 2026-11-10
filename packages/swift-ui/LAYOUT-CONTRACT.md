@@ -41,7 +41,9 @@ slots and must not be wrapped as display components.
   a refresh preserves previously presented items. Source order stays intact.
 - First chart presentation is compact waiting feedback. No large gray plot,
   artificial grid or empty ring is drawn. Confirmed values create a real plot;
-  normalized charts wait for sufficient data. Natural height growth is allowed.
+  normalized charts wait for sufficient data. Waiting uses a delayed visual
+  indicator, with resource-state text exposed only to accessibility. The SDK
+  does not narrate business activity such as "preparing content". Natural height growth is allowed.
   Refresh retains safe existing data; empty/error/interrupted first results use
   compact terminal feedback. The obsolete chart-skeleton view was removed.
 

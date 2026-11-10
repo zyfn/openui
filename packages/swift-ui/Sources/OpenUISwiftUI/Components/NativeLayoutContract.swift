@@ -67,20 +67,28 @@ extension EnvironmentValues {
 /// replaces an already populated chart during a data refresh.
 struct NativePendingContent: View {
   let loading: Bool
-  var message: LocalizedStringKey = "Loading content"
+  /// Accessibility-only resource state; the renderer does not narrate an
+  /// Agent's business activity while source/layout information is arriving.
+  var message: LocalizedStringKey = "Loading"
   var terminalMessage: LocalizedStringKey = "Content is incomplete"
   @Environment(\.openUITheme) private var theme
+  @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
   var body: some View {
     HStack(spacing: theme.spaceS) {
-      if loading { NativeDelayedPresentation(active: true) { visible in
-        if visible { NativeLoadingIndicator() }
-      }.frame(width: theme.textLabelSm.size) }
-      Text(loading ? message : terminalMessage, bundle: NativeControlResources.bundle)
-        .nativeTextStyle(theme.textStyle(.supporting))
+      if loading {
+        NativeDelayedPresentation(active: true) { visible in
+          if visible { NativeLoadingIndicator() }
+        }.frame(width: theme.textLabelSm.size * scale,
+          height: theme.textStyle(.supporting).font.measuredLineHeight(scale: scale))
+      } else {
+        Text(terminalMessage, bundle: NativeControlResources.bundle)
+          .nativeTextStyle(theme.textStyle(.supporting))
+      }
     }
     .padding(.vertical, theme.spaceS)
     .frame(maxWidth: .infinity, alignment: .leading)
     .allowsHitTesting(false)
-    .accessibilityElement(children: .combine)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(Text(loading ? message : terminalMessage, bundle: NativeControlResources.bundle))
   }
 }
