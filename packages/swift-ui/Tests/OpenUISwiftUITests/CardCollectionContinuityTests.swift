@@ -36,23 +36,25 @@ final class CardCollectionContinuityTests: XCTestCase {
       } while Date() < deadline
     }
     settle()
-    let first = try XCTUnwrap(log.views["A"])
-    let oneCardHeight = hosting.fittingSize.height
+    XCTAssertNil(log.views["A"], "The collection's final placement is not yet known")
+    let waitingHeight = hosting.fittingSize.height
     state.push(",CompositeCardItem(\"b\",ImageText(\"b\",\"B\",\"Second\"),[])")
     settle()
-    XCTAssertLessThanOrEqual(hosting.fittingSize.height, oneCardHeight + 1,
+    XCTAssertLessThanOrEqual(hosting.fittingSize.height, waitingHeight + 1,
       "An unresolved positional layout must not temporarily stack every arriving card")
-    XCTAssertTrue(log.views["A"] === first)
+    XCTAssertNil(log.views["A"])
     state.push("],\"\(mode)\",true)")
+    settle()
+    let first = try XCTUnwrap(log.views["A"])
     state.complete(); settle()
-    XCTAssertTrue(log.views["A"] === first, "Changing collection placement must retain the first mounted native card")
+    XCTAssertTrue(log.views["A"] === first, "Completing an unchanged resolved layout must retain its native card")
     XCTAssertEqual(log.created["A"], 1)
     XCTAssertEqual(log.removed["A", default: 0], 0)
     if mode == "grid" {
-      XCTAssertGreaterThan(hosting.fittingSize.height, oneCardHeight * 1.5,
+      XCTAssertGreaterThan(hosting.fittingSize.height, 360,
         "A resolved narrow grid still presents all cards vertically")
     } else {
-      XCTAssertLessThan(hosting.fittingSize.height, oneCardHeight * 1.5,
+      XCTAssertLessThan(hosting.fittingSize.height, 360,
         "Browsing controls may add their natural height, but pages must remain a single track")
     }
     XCTAssertTrue(state.errors.isEmpty)

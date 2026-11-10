@@ -33,6 +33,7 @@ extension EnvironmentValues {
 }
 
 struct OpenUIStack: View {
+    @Environment(\.openUIMediaWidthReady) private var parentMediaWidthReady
     let context: OpenUIComponentContext
     // Upstream Stack normalizes wrapped space-between; upstream Card does not.
     var wrapJustifyBetweenAsStart = false
@@ -48,6 +49,11 @@ struct OpenUIStack: View {
         ) {
             ForEach(children) { child in
                 context.render(child.value)
+                    // Row measurement may depend on an unfinished child's
+                    // intrinsic content. Keep reading text progressive, but
+                    // do not reveal fluid media inside that changing width.
+                    .environment(\.openUIMediaWidthReady,
+                        parentMediaWidthReady && (context.string("direction") != "row" || mediaWidthReady(child.value)))
                     .environment(\.openUIFillControlWidth,
                         (context.string("direction") ?? "column") == "column" && stretches)
                     .environment(\.openUIStretchHeight, context.string("direction") == "row" && stretches)
@@ -55,6 +61,13 @@ struct OpenUIStack: View {
         }
     }
     private var stretches: Bool { context.string("align") == nil || context.string("align") == "stretch" }
+    private func mediaWidthReady(_ value: Value) -> Bool {
+        switch value {
+        case .element(let element): return element.isSourceComplete
+        case .array(let values): return values.allSatisfy(mediaWidthReady)
+        default: return true
+        }
+    }
 }
 
 struct NativeContentImage: View {

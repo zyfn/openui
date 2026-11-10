@@ -26,7 +26,7 @@
             XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
         }
 
-        @MainActor func testUnfinishedContainerUsesColumnDefaultBeforeAnExplicitRowArrives() throws {
+        @MainActor func testUnfinishedContainerDefersMediaUntilLocalLayoutIsKnown() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()
             let state = OpenUIState(schema: library.library.toSchema())
@@ -37,8 +37,7 @@
             }
             state.push("root=Stack([Image(\"Photo\",null),TextContent(\"Copy grows")
             let pending = try height()
-            XCTAssertGreaterThanOrEqual(pending, 320 / OpenUIPresentation().coverAspectRatio,
-                "The standard column default must reserve the full-width photo, even before its pixels arrive")
+            XCTAssertLessThan(pending, 100, "Unreceived direction is not a confirmed column default")
             state.push(" beside the image\")],\"row\",\"m\",\"stretch\",\"start\",false)")
             state.complete()
             XCTAssertTrue(state.errors.isEmpty)
@@ -47,8 +46,8 @@
                 "Resolving a local row must retain the shared photo aspect rather than switching to a 4:5 height")
             state.reset()
             state.push("root=Stack([Stack([Image(\"Photo\",null),TextContent(\"Known local row\")],\"row\",\"m\",\"stretch\",\"start\",false)")
-            XCTAssertEqual(try height(), photoHeight, accuracy: 1,
-                "A resolved local row shows its photo without waiting for the unfinished outer response")
+            XCTAssertLessThan(try height(), photoHeight,
+                "An unresolved ancestor can still change this row's available width")
         }
 
         @MainActor func testNativeAndRichTextBothRespondToTheSameThemeFont() throws {

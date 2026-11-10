@@ -75,8 +75,7 @@ struct NativeTextPlaceholder: View {
     let height = (style.font ?? context.theme.textBodyDefault).resolved(for: style.role).measuredLineHeight(scale: scale)
     Group {
       if loading {
-        NativeLoadingSurface().frame(height: height)
-          .clipShape(RoundedRectangle(cornerRadius: context.theme.radius3xs))
+        NativePendingContent(loading: true)
       } else {
         Text("Content unavailable", bundle: NativeControlResources.bundle)
           .nativeTextStyle(context.theme.textStyle(.supporting)).frame(minHeight: height)

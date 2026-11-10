@@ -27,7 +27,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
       },
     ])
     let state = OpenUIState(schema: library.library.toSchema())
-    state.push("root=CompositeCardBlock(@Each([{id:\"a\",name:\"A\",src:\"https://images.example/a.png\"}],\"item\",CompositeCardItem(item.id,ImageTextLarge(item.src,item.name,item.name),[],{button:Button(\"Open\",@OpenUrl(\"https://example.com\"))}")
+    state.push("root=CompositeCardBlock(cards,\"carousel\",true)\ncards=@Each([{id:\"a\",name:\"A\",src:\"https://images.example/a.png\"}],\"item\",CompositeCardItem(item.id,ImageTextLarge(item.src,item.name,item.name),[],{button:Button(\"Open\",@OpenUrl(\"https://example.com\"))}")
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
       .openUIResourceContext(OpenUIResourceContext(loader: loader)).frame(width: 390))
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 390, height: 700),
@@ -47,7 +47,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
     let first = try XCTUnwrap(mounts.button)
     XCTAssertEqual(mounts.enabled, false, "The actual SDK action surface supplies the disabled environment")
     XCTAssertEqual(loader.count("a.png"), 0, "An unfinished Each must not load its generated media")
-    state.push(")),\"carousel\",true)\nunrelated=TextContent(\"still arriving")
+    state.push("))\nunrelated=TextContent(\"still arriving")
     settle { mounts.enabled == true && statuses.statuses["A", default: []].contains(.loaded) }
     XCTAssertFalse(state.isComplete)
     XCTAssertTrue(mounts.button === first)
@@ -55,7 +55,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
     XCTAssertEqual(loader.count("a.png"), 1)
     XCTAssertTrue(state.errors.isEmpty)
   }
-  @MainActor func testSlowRequestSurvivesRelocationBeforeItHasLoaded() throws {
+  @MainActor func testSlowRequestSurvivesLaterSiblingsBeforeItHasLoaded() throws {
     _ = NSApplication.shared
     let loader = RetentionImageLoader(delay: 500_000_000)
     let log = RetentionStatusLog()
@@ -67,7 +67,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
         onStatus: { status, _ in log.statuses[context.string("alt") ?? "", default: []].append(status) })
     }])
     let state = OpenUIState(schema: library.library.toSchema())
-    state.push("root=CompositeCardBlock([CompositeCardItem(\"a\",ImageText(\"https://images.example/a.png\",\"A\",\"First\"),[])")
+    state.push("root=CompositeCardBlock([a,b,c],\"carousel\",true)\na=CompositeCardItem(\"a\",ImageText(\"https://images.example/a.png\",\"A\",\"First\"),[])\n")
     let hosting = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
       .openUIResourceContext(OpenUIResourceContext(loader: loader)).frame(width: 1040, height: 350))
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1040, height: 350),
@@ -87,7 +87,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
     }
     settle { loader.count("a.png") == 1 }
     XCTAssertFalse(log.statuses["A", default: []].contains(.loaded), "Relocate during the pending request, not after a cached success")
-    state.push(",CompositeCardItem(\"b\",ImageText(\"https://images.example/b.png\",\"B\",\"Second\"),[]),CompositeCardItem(\"c\",ImageText(\"https://images.example/c.png\",\"C\",\"Third\"),[])],\"carousel\",true)")
+    state.push("b=CompositeCardItem(\"b\",ImageText(\"https://images.example/b.png\",\"B\",\"Second\"),[])\nc=CompositeCardItem(\"c\",ImageText(\"https://images.example/c.png\",\"C\",\"Third\"),[])\n")
     state.complete()
     settle { log.statuses["A", default: []].contains(.loaded) }
     XCTAssertEqual(loader.count("a.png"), 1, "A pending image belongs to the presentation and must not restart on relocation")
@@ -168,7 +168,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
     XCTAssertEqual(loader.count("a.png"), 0, "A mounted cache-restored image must not refetch")
   }
 
-  @MainActor func testLoadedFirstCardDoesNotReloadWhenLaterCardsAndLayoutArrive() throws {
+  @MainActor func testLoadedFirstCardDoesNotReloadWhenLaterReferencedCardsArrive() throws {
     _ = NSApplication.shared
     let loader = RetentionImageLoader()
     let log = RetentionStatusLog()
@@ -180,7 +180,7 @@ final class StreamingMediaRetentionTests: XCTestCase {
         onStatus: { status, _ in log.statuses[context.string("alt") ?? "", default: []].append(status) })
     }])
     let state = OpenUIState(schema: library.library.toSchema())
-    state.push("root=CompositeCardBlock([CompositeCardItem(\"a\",ImageText(\"https://images.example/a.png\",\"A\",\"First\"),[TextContent(\"A body\")])")
+    state.push("root=CompositeCardBlock([a,b,c],\"carousel\",true)\na=CompositeCardItem(\"a\",ImageText(\"https://images.example/a.png\",\"A\",\"First\"),[TextContent(\"A body\")])\n")
     let hosting = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
       .openUIResourceContext(OpenUIResourceContext(loader: loader))
       .frame(width: 1040, height: 350))
@@ -204,11 +204,10 @@ final class StreamingMediaRetentionTests: XCTestCase {
     XCTAssertGreaterThan(hosting.bounds.width, 1000, "The test must mount a real viewport before checking lazy cards")
     RunLoop.main.run(until: Date().addingTimeInterval(OpenUIPresentation().motion.mediaRevealDuration + 0.05))
     let firstLoaded = try XCTUnwrap(log.statuses["A"]?.firstIndex(of: .loaded))
-    state.push(",CompositeCardItem(\"b\",ImageText(\"https://images.example/b.png\",\"B\",\"Second\"),[TextContent(\"B body\")])")
+    state.push("b=CompositeCardItem(\"b\",ImageText(\"https://images.example/b.png\",\"B\",\"Second\"),[TextContent(\"B body\")])\n")
     settle { log.statuses["B"]?.contains(.loaded) == true }
-    state.push(",CompositeCardItem(\"c\",ImageText(\"https://images.example/c.png\",\"C\",\"Third\"),[TextContent(\"C body\")])")
+    state.push("c=CompositeCardItem(\"c\",ImageText(\"https://images.example/c.png\",\"C\",\"Third\"),[TextContent(\"C body\")])\n")
     settle { log.statuses["C"]?.contains(.loaded) == true }
-    state.push("],\"carousel\",true)")
     state.complete()
     settle { log.statuses["A"]?.last == .loaded }
     XCTAssertEqual(loader.count("a.png"), 1, "Late container arguments must not refetch the loaded first image")

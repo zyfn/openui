@@ -6,20 +6,20 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class StreamingVisualStateTests: XCTestCase {
-  @MainActor func testPieReservesItsLegendRegionBeforeLabelsAndValuesArrive() throws {
+  @MainActor func testPieWaitsCompactlyWithoutInventingAnEmptyRing() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
     state.push("root=PieChart(labels,values)\n")
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
     let initial = host.fittingSize.height
-    XCTAssertGreaterThan(initial, 234)
+    XCTAssertLessThan(initial, 100)
     state.push("labels=[\"A\",\"B\",\"C\"]\nvalues=[2,4,3]\n"); state.complete()
     host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.06))
-    XCTAssertEqual(host.fittingSize.height, initial, accuracy: 1)
+    XCTAssertGreaterThan(host.fittingSize.height, 234)
   }
 
-  @MainActor func testRootChartReservesSpaceWhileRequiredReferencesAreStillAbsent() throws {
+  @MainActor func testRootChartWaitsCompactlyWhileRequiredReferencesAreStillAbsent() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
@@ -28,10 +28,10 @@ final class StreamingVisualStateTests: XCTestCase {
     XCTAssertEqual(state.presentationRoot?.placeholder?.typeName, "LineChart")
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
     let initial = host.fittingSize.height
-    XCTAssertGreaterThanOrEqual(initial, 250)
+    XCTAssertLessThan(initial, 100)
     state.push("labels=[\"A\",\"B\"]\nseries=[Series(\"S\",[1,2])]\n"); state.complete()
     host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.06))
-    XCTAssertEqual(host.fittingSize.height, initial, accuracy: 1)
+    XCTAssertGreaterThanOrEqual(host.fittingSize.height, 250)
   }
 
   @MainActor func testTableAddsOnlyCommittedRowsWithoutInventedSkeletonRows() throws {
@@ -102,17 +102,17 @@ final class StreamingVisualStateTests: XCTestCase {
     XCTAssertGreaterThan(disabled.gray, 0.1, "Actual host-disabled state keeps its distinct appearance")
   }
 
-  @MainActor func testChartReservesItsPlotBeforeAnyValueIsCommitted() throws {
+  @MainActor func testChartExpandsWhenConfirmedValuesBecomeAvailable() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
     state.push("root=LineChart([\"A\",\"B\"],[Series(\"S\",[")
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
     let pendingHeight = host.fittingSize.height
-    XCTAssertGreaterThanOrEqual(pendingHeight, 250)
+    XCTAssertLessThan(pendingHeight, 100)
     state.push("1,20])])"); state.complete()
     host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-    XCTAssertEqual(host.fittingSize.height, pendingHeight, accuracy: 1)
+    XCTAssertGreaterThanOrEqual(host.fittingSize.height, 250)
   }
 }
 #endif

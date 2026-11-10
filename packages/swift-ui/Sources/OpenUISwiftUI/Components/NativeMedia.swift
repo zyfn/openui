@@ -138,6 +138,7 @@ struct NativeRemoteImage: View {
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
   @Environment(\.openUIMediaSourceReady) private var sourceReady
   @Environment(\.openUIStreamActive) private var streamActive
+  @Environment(\.openUIMediaWidthReady) private var widthReady
   @State private var phase: AsyncImagePhase = .empty
   @State private var imageSize: CGSize?
   @State private var loadedRequest: NativeResourceRequestID?
@@ -151,7 +152,9 @@ struct NativeRemoteImage: View {
     Group {
       // Each media role owns its frame before pixels arrive. A later parent
       // layout argument must not temporarily replace it with a small thumbnail.
-      if !sourceReady {
+      if !widthReady && needsResolvedWidth {
+        NativePendingContent(loading: streamActive, message: "Loading image")
+      } else if !sourceReady {
         placeholder(loading: streamActive).onAppear { onStatus?(streamActive ? .loading : .unavailable, nil) }
       } else if let cachedImage {
         picture(cachedImage).onAppear { onStatus?(.loaded, cachedImage) }
@@ -191,6 +194,10 @@ struct NativeRemoteImage: View {
     var request = resources.request(for: src)
     if attempt > 0 { request?.cachePolicy = .reloadIgnoringLocalCacheData }
     return .init(request: request, loader: ObjectIdentifier(resources.loader), attempt: attempt)
+  }
+  private var needsResolvedWidth: Bool {
+    if case .thumbnail = layout { return false }
+    return true
   }
   @MainActor private func load() async {
     let id = requestID
@@ -334,7 +341,12 @@ struct NativeImageGallery: View {
   @State private var retries: [String: Int] = [:]
   // The pinned upstream ImageGallery previews five items, with Show All.
   private let previewLimit = 5
+  @State private var stableImages: [NativeGalleryImage]?
   private var images: [NativeGalleryImage] {
+    if context.hasPendingData || context.hasDataFailure, let stableImages { return stableImages }
+    return currentImages
+  }
+  private var currentImages: [NativeGalleryImage] {
     let children = context.children("images")
     let source = context.element.sourceReadiness["images"]
     let aligned = source.complete || source.expectedCount == children.count
@@ -355,9 +367,18 @@ struct NativeImageGallery: View {
   }
   private var visible: [NativeGalleryImage] { Array(images.prefix(previewLimit)) }
   private var failed: [NativeGalleryImage] { images.filter { phases[$0.key] == .unavailable } }
+  private var gridReady: Bool {
+    if stableImages != nil && (context.hasPendingData || context.hasDataFailure) { return true }
+    return NativeLayoutContract.collectionShapeReady(context.element.sourceReadiness["images"], count: images.count)
+  }
+  private func rememberImages() {
+    if gridReady && !context.hasPendingData && !context.hasDataFailure { stableImages = currentImages }
+  }
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.spaceM) {
-      if !visible.isEmpty {
+      if !gridReady {
+        NativePendingContent(loading: !context.hasDataFailure && (context.isStreaming || context.hasPendingData), message: "Loading image")
+      } else if !visible.isEmpty {
         NativeGalleryGridLayout(minimumWidth: context.presentation.thumbnailSize,
           gap: context.theme.spaceM, maximumColumns: typeSize.isAccessibilitySize ? 1 : nil) {
           ForEach(visible) { image in
@@ -388,7 +409,7 @@ struct NativeImageGallery: View {
           }
         }
       }
-      if images.count > previewLimit || !failed.isEmpty {
+      if gridReady && (images.count > previewLimit || !failed.isEmpty) {
         HStack {
           if images.count > previewLimit {
             Button {
@@ -419,6 +440,9 @@ struct NativeImageGallery: View {
       }
     }
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery")
+    .onAppear(perform: rememberImages)
+    .onChange(of: ObjectIdentifier(context.element)) { _ in rememberImages() }
+    .onChange(of: context.hasPendingData) { _ in rememberImages() }
     .sheet(isPresented: $preview) {
       NativeGalleryPreview(images: images, selected: $selected, pictures: pictures, phases: phases, record: record)
     }

@@ -218,7 +218,12 @@ struct OpenUIComponentHost<Content: View>: View {
         context.activationIntent = activationIntent
         let atomic = ["Card", "Form", "CompositeCardItem", "VisualCardItem", "ContextCardItem", "OverviewCardItem", "SnippetCardItem"].contains(element.typeName)
         let presented = Group {
-            if registry.supportsPresentationPlaceholder(element.typeName),
+            if !NativeLayoutContract.ready(element.sourceReadiness, fields: registry.presentationLayoutFields(element.typeName)) {
+                if element.typeName == "Stack" || element.typeName == "Card" {
+                    NativeDeferredLayout(context: context)
+                } else { NativePendingContent(loading: !context.hasDataFailure && (context.isStreaming || context.hasPendingData),
+                    terminalMessage: context.hasDataFailure ? "Content unavailable" : "Content is incomplete") }
+            } else if registry.supportsPresentationPlaceholder(element.typeName),
                let field = NativePresentationProxy.primaryTextField(element.typeName),
                element.sourceReadiness.placeholder != nil || context.codeUnitString(field) == nil {
                 NativeTextPlaceholder(context: context)

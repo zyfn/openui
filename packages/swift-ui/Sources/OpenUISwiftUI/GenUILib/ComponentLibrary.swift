@@ -7,6 +7,7 @@ public struct OpenUIComponent {
     public let definition: DefinedComponent
     fileprivate let builder: ComponentRegistry.Builder
     var supportsPresentationPlaceholder = false
+    var presentationLayoutFields: [String] = []
 
     public init<Content: View>(name: String, description: String, params: [ParamDef],
                                @ViewBuilder content: @escaping (OpenUIComponentContext) -> Content) {
@@ -18,6 +19,7 @@ public struct OpenUIComponent {
     public func replacingDefinition(_ definition: DefinedComponent) -> OpenUIComponent {
         var result = OpenUIComponent(definition: definition, builder: builder)
         result.supportsPresentationPlaceholder = supportsPresentationPlaceholder
+        result.presentationLayoutFields = presentationLayoutFields.filter { name in definition.params.contains { $0.name == name } }
         return result
     }
 
@@ -57,6 +59,7 @@ public struct OpenUIComponentLibrary {
         for component in components {
             registry[component.definition.name] = component.builder
             registry.setPresentationPlaceholder(component.definition.name, enabled: component.supportsPresentationPlaceholder)
+            registry.setLayoutFields(component.definition.name, fields: component.presentationLayoutFields)
         }
         self.library = library
         self.registry = registry
@@ -84,6 +87,7 @@ public struct OpenUIComponentLibrary {
         for component in adding + overriding {
             next[component.definition.name] = component.builder
             next.setPresentationPlaceholder(component.definition.name, enabled: component.supportsPresentationPlaceholder)
+            next.setLayoutFields(component.definition.name, fields: component.presentationLayoutFields)
         }
         return OpenUIComponentLibrary(library: extended, registry: next)
     }

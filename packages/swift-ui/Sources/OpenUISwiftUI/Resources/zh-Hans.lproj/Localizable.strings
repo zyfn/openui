@@ -71,3 +71,5 @@
 "Unable to refresh data" = "数据刷新未完成，当前保留上次内容";
 "Table is incomplete" = "表格尚未完整生成";
 "Content unavailable" = "内容暂不可用";
+"Loading content" = "正在整理内容";
+"Content is incomplete" = "内容尚未完整";

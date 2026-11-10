@@ -203,7 +203,12 @@ struct NativeChart: View {
   /// Touch scrolling remains native until a deliberate press activates
   /// inspection. Desktop pointer dragging has no competing touch-scroll intent.
   @ViewBuilder var body: some View {
-    chartBody
+    Group {
+      if !allData.hasContent(for: name) {
+        NativePendingContent(loading: waiting, message: "Loading data",
+          terminalMessage: context.hasDataFailure ? "Unable to load chart" : incomplete ? "Chart is incomplete" : "No data")
+      } else { chartBody }
+    }
     .onAppear(perform: rememberStableData)
     .onChange(of: ObjectIdentifier(context.element)) { _ in rememberStableData() }
     .onChange(of: context.hasPendingData) { _ in rememberStableData() }
@@ -255,12 +260,6 @@ struct NativeChart: View {
           if let inspected, let details = data.inspection(at: inspected, locale: locale) {
             NativeChartTooltip(details: details, palette: palette,
               anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
-          }
-        }
-        .overlay {
-          if !allData.hasContent(for: name) {
-            NativeChartPlaceholder(name: name, loading: waiting,
-              failed: context.hasDataFailure, incomplete: incomplete)
           }
         }
         .overlay(alignment: .topTrailing) {

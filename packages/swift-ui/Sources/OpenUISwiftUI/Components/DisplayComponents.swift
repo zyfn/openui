@@ -223,7 +223,7 @@ struct NativeDataTable: View {
         Group {
             if columnsReady && !columns.isEmpty { loadedTable }
             else if waiting {
-                NativeTableSkeleton()
+                NativePendingContent(loading: true, message: "Loading data")
             } else { stateMessage }
         }
         .onAppear(perform: rememberColumns)

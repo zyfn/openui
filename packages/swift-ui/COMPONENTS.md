@@ -225,14 +225,14 @@ invalidate SwiftUI views without changing normative element equality.
 Cartesian charts can reveal committed values, scatter charts complete points,
 and tables complete rows. Missing streamed values are not temporarily plotted as
 zero. Pie/percentage/radial/radar presentations wait for the required total or
-domain data. Known plot space is reserved before data appears, and known series
-names may establish the legend early. Complex unresolved expressions stay
+domain data. The first wait is compact; a real plot expands when confirmed data
+becomes available. Existing plots stay visible during refresh. Complex unresolved expressions stay
 conservative; later declarations can still change unknown labels or geometry.
 This is not an animation that replays a fully received chart as if it streamed.
 
 When the parser omits a declared component whose required forward references are
 still unresolved, a native presentation sidecar records its source position and
-committed layout hints. Opt-in standard renderers reserve that slot through a
+committed layout hints. Opt-in standard renderers expose local waiting through a
 data-free view proxy, including a root chart. The proxy never enters the parsed
 root, Store, serialized document or action evaluator. Replacing a standard
 renderer opts out of this geometry policy. Unknown branches and unknown content
@@ -246,6 +246,11 @@ rows or three columns while its structure is unknown. Query loading/error state
 is scoped to dependencies of the consuming component; refresh retains prior data.
 Dependency observation follows actual expression reads: inactive conditional
 branches and deferred action bodies do not make a component show query loading.
+
+Standard layout families wait for committed geometry arguments instead of
+applying temporary defaults one at a time. Readable leading text can continue
+without exposing a guessed image/grid layout. See [LAYOUT-CONTRACT.md](LAYOUT-CONTRACT.md)
+for ownership, custom-renderer opt-out, retained native adaptations and limits.
 
 An incomplete Button reserves its measured slot but does not paint a guessed
 primary/gray capsule. Once its appearance is known, source-pending and performing

@@ -898,11 +898,9 @@ struct NativeCardBlock: View {
   }
   private var grid: NativeCardGrid? {
     let layout = context.string("layout")
-    // Positional layout arguments may arrive after large inline item arrays.
-    // Until the mode is known, keep a browsable card viewport rather than
-    // expanding every item into a temporary vertical document.
-    let pending = !context.element.sourceReadiness["layout"].complete && !["grid", "carousel"].contains(layout ?? "")
-    guard layout != "carousel", !pending else { return nil }
+    // The standard component host admits only a committed layout. No guessed
+    // carousel is needed while positional collection arguments are arriving.
+    guard layout != "carousel" else { return nil }
     return NativeCardGrid(maxPerRow: ["Overview", "Context", "Visual"].contains(kind) ? 3 : 2,
       responsive: context.flag("responsive") != false,
       singleColumn: typeSize.isAccessibilitySize,

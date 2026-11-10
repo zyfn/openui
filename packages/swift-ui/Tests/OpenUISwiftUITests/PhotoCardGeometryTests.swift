@@ -75,11 +75,11 @@ final class PhotoCardGeometryTests: XCTestCase {
     }
   }
 
-  @MainActor func testLateRowChangesLayoutOnlyWhenItsDirectionArrives() throws {
+  @MainActor func testLateRowDoesNotExposeAProvisionalFullWidthImage() throws {
     try withStreamingImage { state, settle, measured in
       state.push("root=Stack([Image(\"photo\"),TextContent(\"Caption\")]")
       settle()
-      XCTAssertEqual(measured.width, 300, accuracy: 1, "An omitted direction uses the standard column default")
+      XCTAssertEqual(measured.width, 0, accuracy: 1, "An unreceived direction must not expose a provisional full-width image")
       state.push(",\"row\")\nother=TextContent(\"still")
       settle()
       XCTAssertTrue(state.errors.isEmpty)

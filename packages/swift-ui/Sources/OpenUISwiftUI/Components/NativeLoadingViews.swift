@@ -1,21 +1,5 @@
 import SwiftUI
 
-struct NativeTableSkeleton: View {
-  @Environment(\.openUITheme) private var theme
-  @Environment(\.displayScale) private var displayScale
-  @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
-  var body: some View {
-    NativeLoadingSurface()
-      .frame(height: theme.textBodySmHeavy.resolved(for: .control).measuredLineHeight(scale: scale)
-        + theme.spaceS * 2 + 1 / displayScale)
-      .clipShape(RoundedRectangle(cornerRadius: theme.radius3xs))
-      .frame(maxWidth: .infinity)
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel(Text("Loading data", bundle: NativeControlResources.bundle))
-      .accessibilityIdentifier("openui.table.loading")
-  }
-}
-
 /// One loading surface for known media/data regions. Its motion changes only
 /// pixels, never the region's dimensions or its containing layout.
 struct NativeLoadingSurface: View {
@@ -63,51 +47,6 @@ struct NativeLoadingSurface: View {
       guard !Task.isCancelled else { return }
       animating = true
     }
-  }
-}
-
-/// No numeric labels, bars or percentage arcs are invented while data arrives.
-struct NativeChartPlaceholder: View {
-  let name: String
-  let loading: Bool
-  let failed: Bool
-  let incomplete: Bool
-  @Environment(\.openUITheme) private var theme
-  private var message: LocalizedStringKey {
-    failed ? "Unable to load chart" : incomplete ? "Chart is incomplete" : "No data"
-  }
-  var body: some View {
-    ZStack {
-      NativeLoadingSurface(active: loading)
-      if loading {
-        if ["PieChart", "RadialChart", "RadarChart"].contains(name) {
-          Circle().stroke(theme.borderDefault, lineWidth: 1).padding(theme.space2xl)
-        } else {
-          GeometryReader { geometry in
-            Path { path in
-              let rect = CGRect(origin: .zero, size: geometry.size).insetBy(dx: theme.spaceML, dy: theme.spaceML)
-              for fraction in [CGFloat(0), 0.5, 1] {
-                let y = rect.minY + rect.height * fraction
-                path.move(to: CGPoint(x: rect.minX, y: y))
-                path.addLine(to: CGPoint(x: rect.maxX, y: y))
-              }
-            }.stroke(theme.borderDefault, lineWidth: 1)
-          }
-        }
-      } else {
-        ViewThatFits(in: .vertical) {
-          Text(message, bundle: NativeControlResources.bundle)
-            .nativeTextStyle(theme.textStyle(.supporting)).lineLimit(nil)
-            .fixedSize(horizontal: false, vertical: true).padding(theme.spaceML)
-          Image(systemName: "chart.xyaxis.line")
-            .nativeTextStyle(theme.textStyle(.supporting))
-        }
-      }
-    }
-    .clipShape(RoundedRectangle(cornerRadius: theme.radiusM))
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(Text(loading ? "Loading data" : message, bundle: NativeControlResources.bundle))
-    .accessibilityIdentifier(loading ? "openui.chart.loading" : failed ? "openui.chart.unavailable" : incomplete ? "openui.chart.incomplete" : "openui.chart.empty")
   }
 }
 
