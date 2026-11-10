@@ -1,6 +1,12 @@
 import Foundation
 import JavaScriptCore
 
+/// Accessed only inside the shared realm lock, like CoreParseSnapshot.
+/// Ownership follows a schema value; there is no process-wide schema registry.
+final class CoreLibraryCache: @unchecked Sendable {
+    var value: JSValue?
+}
+
 /// JSValue is used only while holding SharedCore's serialized realm lock.
 final class CoreParseSnapshot: @unchecked Sendable {
     let value: JSValue
@@ -36,9 +42,12 @@ enum LangCoreResources {
     static let bundle = resolve(in: .main) { .module }
 
     static func resolve(in host: Bundle, fallback: () -> Bundle) -> Bundle {
-        if let resources = host.resourceURL,
-           let embedded = Bundle(url: resources.appendingPathComponent("swift-lang_OpenUILang.bundle")) {
-            return embedded
+        if let resources = host.resourceURL {
+            for name in ["openui_OpenUILang.bundle", "swift-lang_OpenUILang.bundle"] {
+                if let embedded = Bundle(url: resources.appendingPathComponent(name)) {
+                    return embedded
+                }
+            }
         }
         return fallback()
     }
@@ -201,7 +210,7 @@ final class SharedCore {
         case .element(let e): result = encodeElement(e)
         case .binding(let b), .reactiveBinding(let b):
             result = object([("__reactive", string("assign")), ("target", string(OpenUIString(b.target))), ("expr", ast(b.expression))])
-        case .actionPlan(let plan): result = call("nativePlan", [object([("steps", array(plan.steps.map(encodeStep)))])])
+        case .actionPlan(let plan): result = call("tagNativeSource", [call("nativePlan", [object([("steps", array(plan.steps.map(encodeStep)))])]), JSValue(bool: plan.isSourceComplete, in: context)!])
         }
         if let native { remember(native, result) }
         return result
@@ -213,7 +222,9 @@ final class SharedCore {
         let id = Int(call("identity", [js]).toInt32())
         if let obj = decoded[id]?.object {
             if let a = obj as? OpenUIArray { return .array(a) }; if let o = obj as? OpenUIObject { return .object(o) }
-            if let e = obj as? EvaluatedElement { return .element(e) }; if let a = obj as? ActionPlan { return .actionPlan(a) }
+            if let e = obj as? EvaluatedElement, e.isSourceComplete == call("sourceComplete", [js]).toBool(),
+               e.sourceReadiness == sourceReadiness(call("sourcePresentation", [js])) { return .element(e) }
+            if let a = obj as? ActionPlan, a.isSourceComplete == call("sourceComplete", [js]).toBool() { return .actionPlan(a) }
             if let b = obj as? ReactiveAssign { return .reactiveBinding(b) }
         }
         let result: Value
@@ -221,13 +232,13 @@ final class SharedCore {
         let runtimeShape = interpret && tagged != "object"
         if js.isArray { result = .array(items(js).map { decode($0, level: level + 1, interpret: interpret) }) }
         else if runtimeShape && js.forProperty("type").isString && js.forProperty("type").toString() == "element" {
-            result = .element(EvaluatedElement(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { ($0.0.displayString, decode($0.1, level: level + 1, interpret: interpret)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool()))
+            result = .element(EvaluatedElement(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { ($0.0.displayString, decode($0.1, level: level + 1, interpret: interpret)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool(), isSourceComplete: call("sourceComplete", [js]).toBool(), sourceReadiness: sourceReadiness(call("sourcePresentation", [js]))))
         } else if runtimeShape && js.forProperty("__reactive").isString && js.forProperty("__reactive").toString() == "assign" {
             let target = js.forProperty("target").toString()!
             let expression = decodeAST(js.forProperty("expr"))
             result = expression == .stateRef("$value") ? .binding(target) : .reactiveBinding(target: target, expression: expression)
         } else if runtimeShape && js.forProperty("steps").isArray {
-            result = .actionPlan(ActionPlan(steps: items(call("actionSteps", [js])).compactMap(decodeStep)))
+            result = .actionPlan(ActionPlan(steps: items(call("actionSteps", [js])).compactMap(decodeStep), isSourceComplete: call("sourceComplete", [js]).toBool()))
         } else { result = .object(entries(js).map { ObjectField(key: $0.0, value: decode($0.1, level: level + 1, interpret: interpret)) }) }
         switch result {
         case .array(let a): remember(a, js)
@@ -299,12 +310,58 @@ final class SharedCore {
         }
         return js.isNull ? .null : .value(decode(js))
     }
+    private func sourceReadiness(_ js: JSValue, depth: Int = 0) -> NativeSourceReadiness {
+        guard depth < 256 else { return .init(complete: false, closed: false) }
+        let hint = js.forProperty("placeholder")!
+        let placeholder: NativeComponentPlaceholder? = hint.isObject && hint.forProperty("name").isString
+            ? .init(typeName: hint.forProperty("name").toString(), statementId: optionalString(hint.forProperty("id")),
+                properties: Dictionary(entries(hint.forProperty("props")).filter {
+                    $0.1.isString || $0.1.isNumber || $0.1.isBoolean
+                }.map { ($0.0, decode($0.1)) }, uniquingKeysWith: { _, last in last })) : nil
+        return .init(complete: js.forProperty("complete")?.toBool() ?? false,
+            closed: js.forProperty("closed")?.toBool() ?? false,
+            children: Dictionary(entries(js.forProperty("children")).map {
+                ($0.0, sourceReadiness($0.1, depth: depth + 1))
+            }, uniquingKeysWith: { _, last in last }),
+            expectedCount: js.forProperty("count").isNumber ? Int(js.forProperty("count").toInt32()) : nil,
+            queryDependencies: items(js.forProperty("queries")).map { string($0) },
+            queryDependenciesObserved: js.forProperty("observed").toBool(),
+            valueIndices: js.forProperty("slots").isArray ? items(js.forProperty("slots")).map { $0.isNumber ? Int($0.toInt32()) : nil } : nil,
+            pendingChildren: Dictionary(entries(js.forProperty("pending")).compactMap { entry in
+                Int(entry.0.displayString).map { ($0, sourceReadiness(entry.1, depth: depth + 1)) }
+            }, uniquingKeysWith: { _, last in last }), placeholder: placeholder)
+    }
     func element(_ js: JSValue) -> ElementNode {
         ElementNode(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { PropEntry(key: $0.0.displayString, value: materialized($0.1)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool(), hasDynamicProps: js.forProperty("hasDynamicProps").isUndefined || js.forProperty("hasDynamicProps").toBool())
     }
     func encodeElement(_ e: EvaluatedElement) -> JSValue {
         let js = object([("type", string("element")), ("typeName", string(OpenUIString(e.typeName))), ("props", object(e.props.map { (OpenUIString($0.0), encode($0.1)) })), ("partial", JSValue(bool: e.partial, in: context)!)])
-        if let id = e.statementId { js.setValue(id, forProperty: "statementId") };return js
+        if let id = e.statementId { js.setValue(id, forProperty: "statementId") }
+        return call("tagNativeSource", [js, JSValue(bool: e.isSourceComplete, in: context)!, encodeReadiness(e.sourceReadiness)])
+    }
+    private func encodeReadiness(_ value: NativeSourceReadiness) -> JSValue {
+        var fields: [(OpenUIString, JSValue)] = [
+            ("complete", JSValue(bool: value.complete, in: context)!),
+            ("closed", JSValue(bool: value.closed, in: context)!),
+            ("children", object(value.children.map { ($0.key, encodeReadiness($0.value)) })),
+            ("queries", array(value.queryDependencies.map(string))),
+            ("observed", JSValue(bool: value.queryDependenciesObserved, in: context)!),
+        ]
+        if let count = value.expectedCount { fields.append(("count", JSValue(int32: Int32(clamping: count), in: context)!)) }
+        if let slots = value.valueIndices {
+            fields.append(("slots", array(slots.map { index in
+                index.map { JSValue(int32: Int32(clamping: $0), in: context)! } ?? JSValue(nullIn: context)!
+            })))
+        }
+        if !value.pendingChildren.isEmpty {
+            fields.append(("pending", object(value.pendingChildren.map { (OpenUIString(String($0.key)), encodeReadiness($0.value)) })))
+        }
+        if let hint = value.placeholder {
+            var properties: [(OpenUIString, JSValue)] = [("name", string(OpenUIString(hint.typeName))), ("props", object(hint.properties.map { ($0.key, encode($0.value)) }))]
+            if let id = hint.statementId { properties.append(("id", string(OpenUIString(id)))) }
+            fields.append(("placeholder", object(properties)))
+        }
+        return object(fields)
     }
     func materialized(_ value: Materialized) -> JSValue {
         switch value {
@@ -376,23 +433,28 @@ extension SharedCore {
         return .object(fields)
     }
     func library(_ schema: LibrarySchema) -> JSValue {
+        if let prepared = schema.coreLibraryCache.value { return prepared }
         let bindings = object(schema.components.map { name, params in
             (OpenUIString(name), array(params.filter(\.isBindable).map { string(OpenUIString($0.name)) }))
         })
-        return call("library", [json(schemaJSON(schema)), bindings])
+        let prepared = call("library", [json(schemaJSON(schema)), bindings])
+        schema.coreLibraryCache.value = prepared
+        return prepared
     }
     func error(_ js: JSValue) -> OpenUIError {
-        OpenUIError(source: OpenUIErrorSource(rawValue: optionalString(js.forProperty("source")) ?? "parser") ?? .parser,
+        var error = OpenUIError(source: OpenUIErrorSource(rawValue: optionalString(js.forProperty("source")) ?? "parser") ?? .parser,
                     code: OpenUIErrorCode(rawValue: optionalString(js.forProperty("code")) ?? "runtime-error") ?? .runtimeError,
                     message: js.forProperty("message").toString() ?? "Shared core error",
                     statementId: optionalString(js.forProperty("statementId")), component: optionalString(js.forProperty("component")),
                     path: js.forProperty("path").isUndefined ? nil : string(js.forProperty("path")),
                     toolName: js.forProperty("toolName").isUndefined ? nil : string(js.forProperty("toolName")),
                     hint: optionalString(js.forProperty("hint")), severity: optionalString(js.forProperty("severity")))
+        error.hasProtocolSource = optionalString(js.forProperty("source")) != nil
+        return error
     }
     func parseResult(_ js: JSValue) -> ParseResult {
         let meta = js.forProperty("meta")!
-        return ParseResult(snapshot: CoreParseSnapshot(value: js),
+        var result = ParseResult(snapshot: CoreParseSnapshot(value: js),
             meta: ParseMeta(incomplete: meta.forProperty("incomplete").toBool(), unresolved: items(meta.forProperty("unresolved")).map { $0.toString() }, orphaned: items(meta.forProperty("orphaned")).map { $0.toString() }, statementCount: Int(meta.forProperty("statementCount").toInt32()), errors: items(meta.forProperty("errors")).map(error)),
             stateDeclarations: entries(js.forProperty("stateDeclarations")).map { ($0.0.displayString, .stateDefault(StateDefault(materialized($0.1)))) },
             queryStatements: items(js.forProperty("queryStatements")).map { q in
@@ -401,6 +463,8 @@ extension SharedCore {
             }, mutationStatements: items(js.forProperty("mutationStatements")).map { m in
                 MutationStatementInfo(statementId: m.forProperty("statementId").toString(), toolAST: m.forProperty("toolAST").isUndefined ? nil : decodeAST(m.forProperty("toolAST")), argsAST: m.forProperty("argsAST").isUndefined ? nil : decodeAST(m.forProperty("argsAST")))
             })
+        result.presentationRoot = sourceReadiness(call("sourcePresentation", [js]))
+        return result
     }
 }
 

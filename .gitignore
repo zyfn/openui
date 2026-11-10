@@ -69,3 +69,8 @@ packages/openui-cli/src/templates/
 
 # Local native review output
 /work/
+/.worktrees/
+# Root SwiftPM consumer/development artifacts
+/.build/
+/.swiftpm/
+/Package.resolved

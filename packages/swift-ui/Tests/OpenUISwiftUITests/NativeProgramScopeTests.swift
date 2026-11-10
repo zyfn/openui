@@ -3,42 +3,36 @@ import AppKit
 import OpenUILang
 import SwiftUI
 import XCTest
-import OpenUIWeb
-import WebKit
 @testable import OpenUISwiftUI
 
 final class NativeProgramScopeTests: XCTestCase {
-    @MainActor func testLazyCustomContainerKeepsTwoIndependentSVGSurfaces() throws {
+    @MainActor func testReplacingTheStateOwnerDoesNotReuseItsNativeLocalState() throws {
         _ = NSApplication.shared
-        let grid = OpenUIComponent(name: "NativeGrid", description: "Test container", params: [
-            OpenUIParameter.slot("children", required: true),
-        ]) { context in
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())]) { context.slot() }
-        }
-        let library = try OpenUIWebComponents.install(into: OpenUIStandardComponents.library().extending(adding: [grid]))
-        let state = OpenUIState(schema: library.library.toSchema())
-        state.setSource("""
-            root=NativeGrid([
-              SVG("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'><text x='8' y='30'>A</text></svg>",null,"A",64),
-              SVG("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'><text x='8' y='30'>B</text></svg>",null,"B",64)
-            ])
-            """)
-        XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
-        let hosting = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 180),
-            styleMask: [.borderless], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.contentView = hosting
-        window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
-        window.orderFront(nil)
+        let standard = try OpenUIStandardComponents.library()
+        let definition = try XCTUnwrap(standard.library.components.first { $0.name == "TextContent" })
+        let library = try standard.extending(overriding: [OpenUIComponent(definition) { context in
+            ProgramScopeMarker(text: context.string("text") ?? "")
+        }])
+        let a = OpenUIState(schema: library.library.toSchema()), b = OpenUIState(schema: library.library.toSchema())
+        a.setSource("root=TextContent(\"Same text\")"); b.setSource("root=TextContent(\"Same text\")")
+        let hosting = NSHostingView(rootView: OpenUIRenderer(state: a, registry: library.registry).frame(width: 350, height: 100))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 350, height: 100), styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = hosting
+        hosting.frame = NSRect(x: 0, y: 0, width: 350, height: 100)
+        window.setFrameOrigin(NSPoint(x: -10000, y: -10000)); window.orderFront(nil)
         defer { window.close() }
-        hosting.layoutSubtreeIfNeeded()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
-        func count(_ view: NSView) -> Int {
-            view is WKWebView ? 1 : view.subviews.reduce(0) { $0 + count($1) }
+        func marker(_ view: NSView) -> NSTextField? {
+            if let label = view as? NSTextField, label.identifier?.rawValue == "program-scope-marker" { return label }
+            return view.subviews.lazy.compactMap(marker).first
         }
-        XCTAssertEqual(count(hosting), 2, "Embedded configuration identities must be per instance")
+        hosting.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+        let original = try XCTUnwrap(marker(hosting))
+        hosting.rootView = OpenUIRenderer(state: b, registry: library.registry).frame(width: 350, height: 100)
+        hosting.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+        let replacement = try XCTUnwrap(marker(hosting))
+        XCTAssertFalse(original === replacement, "A new state owner is a new presentation even when source and revision match")
     }
+
     @MainActor func testLazyContainersKeepSiblingsAndIndependentProgramRoots() throws {
         _ = NSApplication.shared
         let markers = OpenUIStandardComponents.components.filter {

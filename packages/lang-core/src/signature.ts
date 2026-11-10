@@ -223,14 +223,23 @@ function analyzeFields(shape: Record<string, z.$ZodType>, reg?: SchemaRegistry):
 }
 
 export function buildSignature(componentName: string, fields: FieldInfo[]): string {
-  const params = fields.map((f) => {
+  // Arguments are positional: a slot can only be left out when every slot after
+  // it is also left out, so a param reads as omittable only inside the trailing
+  // run of optional params. Marking an earlier param optional would invite
+  // callers to skip it and shift every later argument into the wrong slot.
+  const omittable = fields.map((f) => f.isOptional);
+  for (let i = omittable.length - 2; i >= 0; i--) {
+    omittable[i] = omittable[i] && omittable[i + 1];
+  }
+  const params = fields.map((f, i) => {
+    const optional = omittable[i];
     if (f.typeAnnotation) {
-      return f.isOptional ? `${f.name}?: ${f.typeAnnotation}` : `${f.name}: ${f.typeAnnotation}`;
+      return optional ? `${f.name}?: ${f.typeAnnotation}` : `${f.name}: ${f.typeAnnotation}`;
     }
     if (f.isArray) {
-      return f.isOptional ? `[${f.name}]?` : `[${f.name}]`;
+      return optional ? `[${f.name}]?` : `[${f.name}]`;
     }
-    return f.isOptional ? `${f.name}?` : f.name;
+    return optional ? `${f.name}?` : f.name;
   });
   return `${componentName}(${params.join(", ")})`;
 }

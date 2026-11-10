@@ -31,7 +31,7 @@ Keep the installed registry complete and derive the per-message library through
 lang-core. For example, a host can offer a read-only subset:
 
 ```swift
-let installed = try OpenUIStandardComponents.library() // 82 registered names
+let installed = try OpenUIStandardComponents.library() // 84 registered names
 var generation = try installed.library.extend(
     LibraryExtension(removeComponents: ["EditableTable"])
 )
@@ -63,25 +63,227 @@ automatically rewrites prose. No second schema-filtering framework is needed.
 
 Standard Card uses exactly the official seven parameters (`children`, `variant`, `direction`, `gap`, `align`, `justify`, `wrap`). Compose titles, images and action groups through children. Named slots belong in explicitly authored host components, such as a Notice that declares its own header; the slot helpers do not add fields to Card.
 
+## Theme overrides
+
+`OpenUITheme` is a partial override set using the pinned React Theme names.
+`OpenUIThemeValues` is the complete value read by `context.theme` and
+`EnvironmentValues.openUITheme`. A missing override uses the SDK default.
+
+```swift
+var light = OpenUITheme()
+light.interactiveAccentDefault = .blue
+light.interactiveAccentPressed = .blue
+light.interactiveAccentDisabled = .blue.opacity(0.4)
+light.textAccentPrimary = .white
+light.spaceM = 16
+light.textBodyDefault = OpenUIFont(size: 17)
+
+OpenUIRenderer(state: state, registry: installed.registry)
+    .openUITheme(mode: .system, lightTheme: light)
+```
+
+Pass `darkTheme:` for independent dark overrides. When omitted, the light
+**overrides** are applied to the dark defaults. `.system` follows the nearest
+SwiftUI color scheme; `.light` and `.dark` affect this subtree only. An inner
+`.openUITheme(...)` starts from SDK defaults plus its own overrides, matching
+the pinned React ThemeProvider. Ordinary children inherit the active resolved
+theme. The closure overload also creates a fresh override set.
+
+Typography roles are independent complete `OpenUIFont` values. For example,
+`textBodyDefaultHeavy` does not change when `textBodyDefault` is overridden.
+`ImageTextLarge` and CardHeader use `textBodyLgHeavy`; ImageText and default-size `BoldText` use `textBodyDefaultHeavy` when emphasized;
+headings use `textHeadingXs`, `textHeadingSm` and `textHeadingMd`.
+Each role controls its own font family, size, weight and tracking.
+`lineHeight` requests a baseline height as a font-size multiplier, clamped to
+native glyph metrics. `lineSpacing` retains the native additional-spacing
+setting in em; an explicit `lineHeight` takes precedence. When both are omitted,
+components resolve role-specific leading: body 1.50, detail 1.45, caption 1.40,
+title/field-label 1.35, section 1.30 and display/control/metric 1.25.
+These native font values replace CSS font strings, not the Lang contract.
+
+Known descriptions, subtext, list subtitles, gallery details and hints share the
+14pt secondary reading role; field errors share its font and leading with error
+ink. Source/position metadata uses the 12pt caption role. Native text, Markdown
+and geometry consume the same resolved font, including explicit host leading.
+TextContent small/small-heavy keep primary ink. No content-priority inference or
+new text role parameter is added to the language.
+
+Spacing uses the official `space*` tokens. `gap="none"` is always zero.
+Buttons groups occupy their available width. Column groups stretch each text
+button; row groups wrap item by item using spaceM on both axes. Stack column
+stretch reaches a direct text button's visible surface; center/start/end retain
+its content width. Nested Stack does not implicitly grow along a parent's row;
+Card retains its explicit row-sharing behavior. These policies preserve the same
+mounted controls when placement changes. Horizontal ImageText centers image and
+copy vertically. IconText also centers the glyph against its complete title/detail
+block, using the existing font roles and spaceM; this is an approved native
+presentation choice rather than the reference's top-aligned IconText skin.
+Card families consume their own tokens directly: object and fact-card padding
+uses `spaceM`; generic Card uses `spaceML` (clear has zero vertical inset).
+Fact-card groups add no outer margin. The corresponding
+radii are `radius3xl`, `radius2xl` or `radiusXl`. There are no competing
+`cardPadding`, `contentSpacing` or `cornerRadius` overrides.
+
+Native-only metrics and motion are supplied separately:
+
+```swift
+var presentation = OpenUIPresentation()
+presentation.coverAspectRatio = 3.0 / 2.0
+renderer.openUIPresentation(presentation)
+```
+
+This includes touch targets, thumbnails, carousel widths, chart axes and
+native motion. Changing a theme does not reset this environment value.
+The renderer stays transparent; the app owns its page and message background.
+
+Callout/TextCallout use a neutral leading rule for neutral/info; success, warning
+and error/danger use a small semantic icon with ordinary title/body ink and no
+colored panel. Their variant, visibility binding and dismissal contracts are unchanged. Horizontal
+cards and Carousel use swipe/drag paging without a visible navigation-button row.
+Accessibility page navigation and focused macOS arrow keys remain available;
+Table retains its own pagination controls.
+
+Ordinary cards and secondary actions use `borderDefault`; clear/sunk content
+containers have no grouping stroke, and sunk has no outer shadow. Editable fields use the stronger
+`borderInteractive`. Set
+`presentation.cardBorderColor` when a product needs a different card boundary
+without changing form controls, Steps or other users of the shared theme tokens.
+
+`ImageText` without an explicit `imageSize` uses an 80pt preferred thumbnail and
+can reduce toward 64pt inside a narrow local row. `inlineThumbnailSize` remains
+the host's preferred dimension; `minimumTextColumnWidth` supplies the reading
+budget. Explicit imageSize and direction remain authoritative. This policy does
+not change photo cropping or the separate gallery-thumbnail size.
+
+`IconText` uses a consistent glyph column. `neutral`, `filled`, and `soft` share
+the same unplated presentation; state variants keep colored glyphs, while
+`inverted` retains its contrasting plate. Tag stays informational: its vertical
+insets are 2/4/4pt for sm/md/lg and complete wrapped copy remains visible.
+
+Background-photo Visual/Context cards keep neutral placeholders and readable
+copy until their image loads; they no longer reserve a black loading panel.
+Loaded photos use a dark scrim and overlay ink only behind overlapping copy;
+copy moved below the image uses the original host surface and text colors. On-photo
+tags retain their capsule with translucent charcoal, soft white text/icons and no
+border. Tags off the photograph use their ordinary host theme and semantic colors.
+This changes native presentation only; bgImageSrc, tag, title and action slots
+retain their existing contracts.
+
+### Shared appearance configuration and button shape
+
+Use an explicit common override set when typography and geometry should be shared:
+
+```swift
+var common = OpenUITheme()
+common.textBodyDefault = OpenUIFont(size: 17, lineHeight: 1.5)
+var light = OpenUITheme()
+light.background = .white
+var dark = OpenUITheme()
+dark.background = .black
+renderer.openUITheme(commonTheme: common, lightTheme: light, darkTheme: dark)
+```
+
+Resolution is defaults, common, then the selected appearance. Calls without
+`commonTheme` and nested scopes retain the existing reset behavior.
+
+Text buttons are capsules, sized from their actual bounds. Very tall wrapped
+labels bound the corner radius to keep all text inside the painted surface.
+IconButton's declared circle/square shape remains authoritative.
+`OpenUIPresentation.buttonCornerRadius` is nil by default; set it to 10 (or
+another finite radius) to opt into rounded rectangular text buttons independently
+of inputs and cards. The minimum hit target remains separate from the visible shape.
+See [UI-DESIGN.md](UI-DESIGN.md) for the complete default design.
+
+### Migrating from 0.1.1-rc.1
+
+This RC changes the theme API. In particular, `foreground` now means a surface
+color, as in React; use `textNeutralPrimary` for the old text-color setting.
+`secondary` becomes `textNeutralSecondary`, `canvas` becomes `background`,
+`accent` becomes `interactiveAccentDefault`, and `dataColors` becomes
+`defaultChartPalette`. Configure pressed/disabled colors separately.
+Replace `typography.body` / `bodyHeavy` / `detail` / `title` with
+`textBodyDefault` / `textBodyDefaultHeavy` / `textBodySm` / `textHeadingSm`.
+Move cover, size and motion options to `OpenUIPresentation`.
+Custom component builders now read `OpenUIThemeValues` and
+`context.presentation`. Published older tags retain their old API.
+
 ## Layout and theme
 
-The collection contains the pinned upstream default library's 82 registrations, including chart data items and parent-consumed records; see [NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md). On iOS 16/macOS 13, row/column layout uses child measurement, real first-text baselines and distinct space-around/space-evenly distribution. Wrapped rows measure each line independently. The package minimum is iOS 16/macOS 13, so the older stack/grid approximation is not shipped. Use Stack for list/wrapping layouts and Carousel for container-width horizontal pages; these respond to their actual parent proposal, not a device-specific layout template.
+The collection contains the pinned upstream default library's 84 registrations, including chart data items and parent-consumed records; see [NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md). On iOS 16/macOS 13, row/column layout uses child measurement, real first-text baselines and distinct space-around/space-evenly distribution. Wrapped rows measure each line independently. The package minimum is iOS 16/macOS 13, so the older stack/grid approximation is not shipped. Use Stack for list/wrapping layouts and Carousel for container-width horizontal pages; these respond to their actual parent proposal, not a device-specific layout template.
 
-Use `.openUITheme(theme)` to map semantic surfaces, foregrounds, spacing, and minimum card width to the product design system. Text uses Dynamic Type semantic fonts. There are no screen-global measurements. Override any standard component with `extending(overriding: ...)` when a product needs its own loader or view.
+Use `.openUITheme(theme)` for appearance and `.openUIPresentation(options)` for native media and layout metrics. Text uses Dynamic Type semantic fonts. There are no screen-global measurements. Override any standard component with `extending(overriding: ...)` when a product needs its own loader or view.
 
 ## State, resources and actions
+
+Native source presentation separates structural boundaries, committed data and
+interaction eligibility. `NativeSourceReadiness` is advisory SDK metadata carried
+outside Lang values and serialized ASTs; it does not add component parameters.
+Numeric/string/reference tails remain provisional until a real boundary arrives.
+Components receive a separate readiness snapshot so punctuation-only updates also
+invalidate SwiftUI views without changing normative element equality.
+
+Cartesian charts can reveal committed values, scatter charts complete points,
+and tables complete rows. Missing streamed values are not temporarily plotted as
+zero. Pie/percentage/radial/radar presentations wait for the required total or
+domain data. The first wait is compact; a real plot expands when confirmed data
+becomes available. Existing plots stay visible during refresh. Complex unresolved expressions stay
+conservative; later declarations can still change unknown labels or geometry.
+This is not an animation that replays a fully received chart as if it streamed.
+
+When the parser omits a declared component whose required forward references are
+still unresolved, a native presentation sidecar records its source position and
+committed layout hints. Opt-in standard renderers expose local waiting through a
+data-free view proxy, including a root chart. The proxy never enters the parsed
+root, Store, serialized document or action evaluator. Replacing a standard
+renderer opts out of this geometry policy. Unknown branches and unknown content
+lengths are not guessed; text reserves only its known role's minimum line height.
+
+Loading surfaces share theme tokens and motion. Animated indication starts after
+`presentation.motion.loadingIndicatorDelay` (default 0.2s); the existing 1.6s
+loading cycle and 0.18s media reveal remain. Reduce Motion uses static feedback,
+and loading sweeps pause outside an active scene. A table does not invent five
+rows or three columns while its structure is unknown. Query loading/error state
+is scoped to dependencies of the consuming component; refresh retains prior data.
+Dependency observation follows actual expression reads: inactive conditional
+branches and deferred action bodies do not make a component show query loading.
+
+Standard layout families wait for committed geometry arguments instead of
+applying temporary defaults one at a time. Readable leading text can continue
+without exposing a guessed image/grid layout. See [LAYOUT-CONTRACT.md](LAYOUT-CONTRACT.md)
+for ownership, custom-renderer opt-out, retained native adaptations and limits.
+
+An incomplete Button reserves its measured slot but does not paint a guessed
+primary/gray capsule. Once its appearance is known, source-pending and performing
+states retain that appearance while interaction remains gated. The in-flight
+indicator is delayed; genuine host-disabled appearance remains distinct. Hosts
+should not globally `.disabled(isStreaming)` on the renderer, because that is an
+external disabled state rather than the SDK's per-control source readiness.
+
+Call `state.complete()` for normal source completion. For a user Stop action,
+cancel the host transport and call `state.interrupt()`: it retains completed
+content, leaves the trailing token provisional, and does not start deferred tools.
+`isInterrupted` records this native lifecycle state. It does not cancel unrelated
+already-running image requests. Do not continue feeding the stopped transport;
+a later push after terminal completion follows the existing new-program reset rule.
+The host still owns conversation scrolling, reading-position preservation and
+transport error UI. These cannot be inferred from a silent source stream.
 
 `OpenUIRenderer` injects its existing OpenUIState. Registered components receive a context with binding, action execution, named child rendering, semantic theme, and message-scoped resource values. `.openUIResources(...)` supplies product data; this is a host convention, not a new OpenUI language feature or a network service. `.openUIForm(name)` forwards a form scope. Built-in Form also preserves its exact `OpenUIString` name; `context.exactFormName` and context field/action helpers retain these code units.
 
 The component layer uses the upgraded runtime's immutable reference containers and `OpenUIString` values. `context.string(...)` is a display convenience; `context.codeUnitString(...)` and `context.value(...)` retain exact semantic data. Resource lookup also accepts `OpenUIString` and compares exact keys. Stable render keys keep canonical Unicode variants and isolated UTF-16 units distinct. Native host transports must explicitly convert or reject values their own JSON representation cannot carry; see the [language package](../swift-lang/README.md).
 
-`OpenUIActionSurface` presents a single native button with a presentation-only label. Use it for an entire clickable resource card; do not nest other buttons in that label. `context.perform(plan)` uses the existing asynchronous runtime and host callback. The message/action overload uses the runtime's legacy/default-action dispatcher as well. `OpenUIActions.openURL(...)` and `continueConversation(...)` construct existing action plans; the host still owns navigation and business execution. Choose returned events or the state callback for host routing, never both; the standard surface uses the callback and does not route returned events a second time. Interaction stays disabled until streaming completes. Replacing source invalidates callbacks and context bindings from the previous source revision. Construct component contexts on the main actor; registered component hosts already do this.
+`OpenUIActionSurface` presents a single native button with a presentation-only label. Use it for an entire clickable resource card; do not nest other buttons in that label. `context.perform(plan)` uses the existing asynchronous runtime and host callback. The message/action overload uses the runtime's legacy/default-action dispatcher as well. `OpenUIActions.openURL(...)` and `continueConversation(...)` construct existing action plans; the host still owns navigation and business execution. Choose returned events or the state callback for host routing, never both; the standard surface uses the callback and does not route returned events a second time. Interactions require complete control dependencies in the current source revision; ready controls can act while unrelated content streams. Replacing source invalidates callbacks and context bindings from the previous source revision. Construct component contexts on the main actor; registered component hosts already do this.
 
 `context.isStreaming` is the streaming flag for the current render. Component hosts pass a new snapshot when a stream completes, so indirect child views refresh even when their props are unchanged. `context.canInteract` checks the live completion state and source revision; use it to gate controls and context action helpers to dispatch guarded operations.
 
 Custom input/form views can use context.fieldBinding, fieldValue and initializeField in the nearest `.openUIForm(...)` scope. Field initialization must happen on mount rather than while evaluating a view body.
 
 Stateful dynamic children should declare a stable `key`, `id`, or `resourceId` prop. An explicit instance key separates duplicate presentations of one resource. Named statements retain statementId identity; anonymous positional content is suitable for static/append-only presentation, not stateful reordering. Store a message's source, library version, and runtime snapshot for history restoration.
+
+The next RC removes the earlier Map, SVG, WebView and Popover installers.
+Consumers upgrading from rc.4 should use `OpenUIStandardComponents.library()`
+and export its matching spec. Older programs that depend on the removed names
+are not part of this standard catalogue; the SDK does not silently rewrite them.
 
 ## Local selection and navigation
 
@@ -92,17 +294,16 @@ container declares its own component and renderer rather than relying on hidden
 standard-component behavior.
 
 Use `OpenUIParameter.selection` and `context.binding` for declared bindings.
-Standard Select and Map can share the same variable without changing their
-contracts. Expanded presentations share the existing runtime and resource scope.
+Standard inputs can share the same variable without changing their contracts.
+Presentations share the existing runtime and resource scope.
 
 Declare host actions and invoke them with standard Button/ActionPlan. Business
 facts, transactions and application navigation stay with the caller. The SDK
-provides native rendering, resource hooks and optional presentation capabilities.
+provides native rendering and resource hooks.
 `replacingDefinition` can reuse a native builder when the extended definition
 preserves the semantics that builder implements; new behavior needs its own
 renderer. Export the actual resulting LibrarySpec.
 
-For SVG/WebView add the optional OpenUIWeb product. Popover stays in the base
-SwiftUI package as an opt-in extension. Native PromptOptions and Table cell
-policies are explicit caller choices; base prompt generation and unrestricted
-Table rendering retain the upstream default capabilities.
+Native PromptOptions and Table cell policies are explicit caller choices; base
+prompt generation and unrestricted Table rendering retain the upstream default
+capabilities.

@@ -38,20 +38,20 @@ struct NativeChoiceField: View {
   let cards: Bool
   @EnvironmentObject private var state: OpenUIState
   @Environment(\.dynamicTypeSize) private var typeSize
+  @Environment(\.layoutDirection) private var direction
+  @Environment(\.isEnabled) private var enabled
+  @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
   private var field: NativeFieldState { NativeFieldState(context: context) }
   private var selection: [OpenUIString] { NativeChoiceSelection.values(field.value) }
   var body: some View {
     Group {
       if cards {
-        LazyVGrid(
-          columns: typeSize.isAccessibilitySize
-            ? [GridItem(.flexible())]
-            : [GridItem(.adaptive(minimum: context.theme.minimumChoiceWidth), spacing: 12)],
-          alignment: .leading,
-          spacing: 12
-        ) { options }
+        NativeChoiceCardsLayout(minimumWidth: context.presentation.minimumChoiceWidth * textScale,
+          gap: context.theme.spacing("m"), padding: context.theme.componentStyle.objectInset,
+          extraCopyHeight: context.theme.textBodySm.resolved(for: .detail).measuredLineHeight(scale: textScale),
+          singleColumn: typeSize.isAccessibilitySize, rightToLeft: direction == .rightToLeft) { options }
       } else {
-        NativeWrappingRow(gap: 8) { options }
+        NativeWrappingRow(gap: context.theme.spacing("s")) { options }
       }
     }.frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
   }
@@ -59,6 +59,11 @@ struct NativeChoiceField: View {
     ForEach(Array(field.options.enumerated()), id: \.offset) { _, item in
       if let key = PropValue.codeUnitString(item, "value"), !key.isEmpty {
         let selected = selection.contains(key)
+        if cards {
+          // Only text/symbols participate in density measurement. topContent
+          // may own media or state and belongs exclusively to the real button.
+          cardCopy(item, selected: selected).hidden().allowsHitTesting(false).accessibilityHidden(true)
+        }
         Button {
           guard PropValue.value(item, "disabled") != .boolean(true) else { return }
           field.write(
@@ -75,34 +80,47 @@ struct NativeChoiceField: View {
       }
     }
   }
+  private func isDisabled(_ item: EvaluatedElement) -> Bool {
+    !enabled || !context.canInteract || PropValue.value(item, "disabled") == .boolean(true)
+  }
   private func choice(_ item: EvaluatedElement, selected: Bool) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
       if cards { context.render(PropValue.value(item, "topContent") ?? .null) }
-      HStack(spacing: 6) {
+      cardCopy(item, selected: selected)
+    }.padding(.horizontal, cards ? context.theme.componentStyle.objectInset : context.theme.spaceS)
+    .padding(.vertical, cards ? context.theme.componentStyle.objectInset : context.theme.spaceXs).frame(
+      maxWidth: cards ? .infinity : nil, maxHeight: cards ? .infinity : nil, alignment: .topLeading
+    )
+    .background(
+      selected ? context.theme.componentStyle.selectedSurface : .clear,
+      in: RoundedRectangle(cornerRadius: choiceRadius)
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: choiceRadius).strokeBorder(
+        selected && !isDisabled(item) ? context.theme.componentStyle.selectedBorder : context.theme.componentStyle.surfaceBorder, lineWidth: context.presentation.borderWidth))
+  }
+  private var choiceRadius: CGFloat { cards ? context.theme.componentStyle.optionRadius : context.theme.radiusFull }
+  private func cardCopy(_ item: EvaluatedElement, selected: Bool) -> some View {
+    VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
+      HStack(spacing: context.theme.spacing("xs")) {
         if !cards { context.render(PropValue.value(item, "icon") ?? .null) }
         Text(PropValue.string(item, cards ? "title" : "label") ?? "").openUIFont(
-          context.theme.typography.body.weight(cards || selected ? .medium : .regular)
+          cards ? context.theme.textBodyDefaultHeavy : context.theme.textLabelDefaultHeavy, role: cards ? .title : .control
         )
+        .foregroundStyle(isDisabled(item) ? context.theme.componentStyle.disabledText : context.theme.textNeutralPrimary)
         .fixedSize(horizontal: false, vertical: true)
         if cards {
           Spacer(minLength: 4)
           Image(systemName: selected ? "checkmark.circle.fill" : "circle").foregroundStyle(
-            selected ? context.theme.accent : context.theme.secondary)
+            isDisabled(item) ? context.theme.componentStyle.disabledText
+              : selected ? context.theme.componentStyle.selectedBorder : context.theme.textNeutralSecondary)
         }
       }
       if cards, let subtitle = PropValue.string(item, "subtitle") {
-        Text(subtitle).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+        Text(subtitle).nativeTextStyle(context.theme.textStyle(.supporting),
+          color: isDisabled(item) ? context.theme.componentStyle.disabledText : nil)
           .fixedSize(horizontal: false, vertical: true)
       }
-    }.padding(cards ? 14 : 10).frame(
-      maxWidth: cards ? .infinity : nil, maxHeight: cards ? .infinity : nil, alignment: .topLeading
-    )
-    .background(
-      selected ? context.theme.accent.opacity(0.06) : context.theme.controlSurface,
-      in: RoundedRectangle(cornerRadius: cards ? context.theme.controlCornerRadius : 24)
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: cards ? context.theme.controlCornerRadius : 24).strokeBorder(
-        selected ? context.theme.accent.opacity(0.18) : context.theme.border, lineWidth: 1))
+    }
   }
 }

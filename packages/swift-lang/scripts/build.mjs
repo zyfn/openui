@@ -1,4 +1,5 @@
 import { build } from 'esbuild';
+import { readiness } from './readiness-compat.mjs';
 import {
   serializer,
   replaceOnce,
@@ -11,7 +12,9 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 const here = dirname(fileURLToPath(import.meta.url)),
   root = resolve(here, '../../..');
-const pin = '2dfbddbc96809b80ffc6fdb441e10a03e8ae3575';
+// The pinned checkout adds the positional-omittability rule to the signature
+// printer plus its regression test; parser/runtime sources are unchanged.
+const pin = '053f51d4da2f151c36581f80cfd125d1fb6aa8af';
 if (
   execFileSync('git', ['rev-parse', 'HEAD:packages/lang-core'], {
     cwd: root,
@@ -43,19 +46,28 @@ const result = await build({
       name: 'native-compatibility',
       setup(b) {
         b.onLoad({ filter: /\/parser\/materialize\.ts$/ }, (args) => ({
-          contents: materializer(readFileSync(args.path, 'utf8')),
+          contents: readiness(materializer(readFileSync(args.path, 'utf8')), 'materialize', join(here, 'readiness.ts')),
           loader: 'ts',
         }));
         b.onLoad({ filter: /\/utils\/validation\.ts$/ }, (args) => ({
           contents: replaceOnce(
             readFileSync(args.path, 'utf8'),
             'return new RegExp(arg).test(value) ? undefined : \"Invalid format\";',
-            'const outcome=__nativePattern(arg,value);return outcome===\"matches\"||outcome===\"invalidPattern\"?undefined:\"Invalid format\";',
+            'const outcome=__nativePattern(arg,value);return outcome===\"resourceError\"?\"Validation could not complete: regular expression resource limit exceeded.\":outcome===\"matches\"||outcome===\"invalidPattern\"?undefined:\"Invalid format\";',
           ),
           loader: 'ts',
         }));
         b.onLoad({ filter: /\/parser\/serialize\.ts$/ }, (args) => ({
           contents: serializer(readFileSync(args.path, 'utf8')),
+          loader: 'ts',
+        }));
+        for (const [kind, filter] of [
+          ['lexer', /\/parser\/lexer\.ts$/],
+          ['expressions', /\/parser\/expressions\.ts$/],
+          ['evaluator', /\/runtime\/evaluator\.ts$/],
+          ['evaluate-tree', /\/runtime\/evaluate-tree\.ts$/],
+        ]) b.onLoad({filter}, (args) => ({
+          contents: readiness(readFileSync(args.path, 'utf8'), kind, join(here, 'readiness.ts')),
           loader: 'ts',
         }));
 
@@ -66,7 +78,7 @@ const result = await build({
       setup(b) {
         b.onLoad({ filter: /\/parser\/parser\.ts$/ }, (args) => ({
           contents:
-            readFileSync(args.path, 'utf8') +
+            readiness(readFileSync(args.path, 'utf8'), 'parser', join(here, 'readiness.ts')) +
             '\nexport {preprocess as nativePreprocess};',
           loader: 'ts',
         }));
@@ -143,7 +155,7 @@ writeFileSync(
   join(out, 'core-manifest.json'),
   JSON.stringify(
     {
-      upstream: '9823ec05d4b29bc78d101676dc16b44fe17f1830',
+      upstream: 'f08a660535e55b5b2a24a0eb68568edaf9e4fe4b',
       sourceTree: pin,
       sha256: createHash('sha256').update(data).digest('hex'),
       bytes: data.length,
@@ -152,7 +164,7 @@ writeFileSync(
         .digest('hex'),
       adapterSha256: createHash('sha256')
         .update(
-          ['entry.ts', 'captures.ts', 'authoring.ts', 'compat.mjs', 'build.mjs']
+          ['entry.ts', 'captures.ts', 'authoring.ts', 'compat.mjs', 'readiness.ts', 'readiness-compat.mjs', 'adaptations.json', 'patches/serializer-roundtrip.patch', 'build.mjs']
             .map((name) => readFileSync(join(here, name), 'utf8'))
             .join('\n'),
         )
@@ -174,6 +186,7 @@ writeFileSync(
         'serializer precedence and lossless keys',
         'materialization depth/node budgets',
       ],
+      adaptations: JSON.parse(readFileSync(join(here, 'adaptations.json'), 'utf8')),
       retainedPatches: [
         {
           module: 'parser/serialize.ts',
@@ -189,6 +202,11 @@ writeFileSync(
           module: 'utils/validation.ts',
           reason: 'Delegate pattern execution to the existing bounded native backend; stock JSC RegExp has no portable per-call budget.',
           removal: 'Equivalent bounded pattern execution in the shared core or host runtime.',
+        },
+        {
+          module: 'parser/lexer.ts, parser/expressions.ts, parser/parser.ts, parser/materialize.ts, runtime/evaluator.ts, runtime/evaluate-tree.ts',
+          reason: 'Readiness source provenance is private native metadata; the pinned core has no equivalent complete-control/dependency API.',
+          removal: 'Equivalent source/dependency readiness supplied by upstream and verified against strict intermediate snapshots.',
         },
       ],
       removedSemanticOverrides: [

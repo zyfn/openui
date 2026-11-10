@@ -1,32 +1,20 @@
 import OpenUILang
 import SwiftUI
 
-enum OpenUIChartComponents {
-  static let chartNames = [
-    "BarChart", "LineChart", "AreaChart", "RadarChart", "HorizontalBarChart", "PieChart",
-    "RadialChart", "SingleStackedBarChart", "ScatterChart",
-  ]
-  static var components: [OpenUIComponent] {
-    chartNames.map { name in OpenUIReference.component(name) { NativeChart(context: $0) } }
-      + ["Series", "Slice", "ScatterSeries", "Point"].map { name in
-        OpenUIReference.component(name) { _ in EmptyView() }
-      }
-  }
-}
 
 /// Accept both evaluated component references and inline schema objects, just
 /// as the upstream chart data helpers do. No schema coercion happens here.
-struct NativeChartData {
-  struct Series {
+struct NativeChartData: Equatable {
+  struct Series: Equatable {
     let name: String
     let values: [Double]
   }
-  struct Point {
+  struct Point: Equatable {
     let x: Double
     let y: Double
     let z: Double?
   }
-  struct Scatter {
+  struct Scatter: Equatable {
     let name: String
     let points: [Point]
   }
@@ -35,6 +23,7 @@ struct NativeChartData {
   var slices: [Double]
   var scatter: [Scatter]
   var colorIndices: [Int] = []
+  var isProgressive = false
   init() { labels = []; series = []; slices = []; scatter = [] }
   init(context: OpenUIComponentContext) {
     labels = NativeValue.array(context.value("labels")).map { value in
@@ -63,7 +52,9 @@ struct NativeChartData {
     }
     // buildChartData creates JavaScript object properties: duplicate series
     // replace values, and integer property names keep ECMAScript key ordering.
+    let sourceNames = Self.sourceColorIndices(series.map { OpenUIString($0.name) })
     let keyed = OpenUIObject(series.map { ObjectField(key: $0.name, value: .array($0.values.map(Value.number))) })
+    colorIndices = keyed.map { sourceNames[$0.key] ?? 0 }
     series = keyed.map { Series(name: $0.key.displayString, values: Self.numbers($0.value)) }
     let values = Self.numbers(context.value("values"))
     slices =
@@ -95,11 +86,19 @@ struct NativeChartData {
       return number.isFinite ? number : 0
     }
   }
+  static func sourceColorIndices(_ names: [OpenUIString]) -> [OpenUIString: Int] {
+    var indices: [OpenUIString: Int] = [:]
+    for name in names where indices[name] == nil { indices[name] = indices.count }
+    return indices
+  }
   func value(_ seriesIndex: Int, _ labelIndex: Int) -> Double {
     guard series.indices.contains(seriesIndex),
       series[seriesIndex].values.indices.contains(labelIndex)
     else { return 0 }
     return series[seriesIndex].values[labelIndex]
+  }
+  func hasValue(_ seriesIndex: Int, _ labelIndex: Int) -> Bool {
+    !isProgressive || (series.indices.contains(seriesIndex) && series[seriesIndex].values.indices.contains(labelIndex))
   }
   var accessibilityRows: [String] {
     if !scatter.isEmpty {
@@ -108,9 +107,11 @@ struct NativeChartData {
       }
     }
     if !series.isEmpty {
-      return labels.indices.map { i in
-        labels[i] + ": "
-          + series.indices.map { "\(series[$0].name) \(value($0, i))" }.joined(separator: ", ")
+      return labels.indices.compactMap { i in
+        let known = series.indices.filter { hasValue($0, i) }
+        guard !known.isEmpty else { return nil }
+        return labels[i] + ": "
+          + known.map { "\(series[$0].name) \(value($0, i))" }.joined(separator: ", ")
       }
     }
     return labels.indices.map { "\(labels[$0]): \(slices.indices.contains($0) ? slices[$0] : 0)" }
@@ -132,51 +133,69 @@ enum NativeChartStreamingPresentation {
 struct NativeChart: View {
   let context: OpenUIComponentContext
   @Environment(\.locale) private var locale
+  @Environment(\.layoutDirection) private var direction
   @State private var visibility = NativeChartVisibility()
   @State private var inspected: Int?
   @State private var inspectionLocation = CGPoint.zero
   @State private var pinnedInspection = false
   @State private var stableData: NativeChartData?
+  @State private var progressiveData: NativeChartData?
+  @State private var presentationCache = NativeChartPresentationCache()
   @State private var axisMeasurements = NativeChartAxisMeasurements()
   @ScaledMetric(relativeTo: .body) private var axisScale: CGFloat = 1
   @ScaledMetric(relativeTo: .body) private var legendMarkerSize: CGFloat = 10
   @Namespace private var measurementScope
   private var name: String { context.element.typeName }
-  private var currentData: NativeChartData { NativeChartData(context: context).prepared(for: name) }
+  private var currentData: NativeChartData { presentationCache.values(context).current }
+  private var waiting: Bool { !context.hasDataFailure && (context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete)) }
+  private var incomplete: Bool { !context.isStreaming && (!context.element.isSourceComplete || context.hasInterruptedData) && !context.hasPendingData }
   private var allData: NativeChartData {
-    NativeChartStreamingPresentation.data(current: currentData, stable: stableData,
-      partial: context.element.partial)
+    if context.hasPendingData || context.hasDataFailure, let stableData { return stableData }
+    if context.element.isSourceComplete { return currentData }
+    return stableData ?? presentationCache.values(context).staged
+      ?? progressiveData ?? NativeChartData()
   }
   private var data: NativeChartData { allData.excluding(visibility.hidden, for: name) }
   private var palette: [Color] {
-    context.theme.chartColors(forSeriesCount: legend.count)
+    context.theme.chartColors(forSeriesCount: legend.count, chartType: name)
   }
   private var legend: [String] { allData.legendNames(for: name) }
+  private struct LegendEntry: Identifiable {
+    let id: Int
+    let index: Int
+    let title: String
+  }
+  private var legendEntries: [LegendEntry] {
+    legend.enumerated().map { .init(id: allData.colorIndex(at: $0.offset), index: $0.offset, title: $0.element) }
+  }
   private var showsLegend: Bool {
     legend.count > 1 || ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name)
   }
   private var drawing: NativeChartDrawing {
     NativeChartDrawing(
-      data: data, name: name, variant: context.string("variant"),
-      semi: context.string("appearance") == "semiCircular", palette: palette,
-      secondary: context.theme.secondary, border: context.theme.border,
-      gridColor: context.theme.chartGrid, axisColor: context.theme.chartAxis,
-      canvasColor: context.theme.canvas, labelFont: context.theme.typography.resolve(context.theme.typography.caption).nativeFont(scale: axisScale),
-      inspected: inspected, axisScale: axisScale, axisMeasurements: axisMeasurements,
+      data: data, name: name, variant: context.presentationString("variant"),
+      semi: context.presentationString("appearance") == "semiCircular", palette: palette,
+      secondary: context.theme.textNeutralSecondary, border: context.theme.borderDefault,
+      gridColor: context.presentation.chartGrid, axisColor: context.presentation.chartAxis,
+      canvasColor: context.theme.background, labelFont: context.theme.textStyle(.supporting).font.nativeFont(scale: axisScale),
+      inspected: inspected, axisScale: axisScale,
+      singleStackedBarThickness: context.presentation.singleStackedBarThickness * axisScale,
+      axisMeasurements: axisMeasurements,
       hasYAxisTitle: context.string("yLabel")?.isEmpty == false)
   }
   private var measuredAxisLabels: some View {
     let labels = drawing.axisLabels
+    let style = context.theme.textStyle(.supporting)
     return HStack(spacing: 0) {
       ForEach(Array((labels.left + labels.bottom).enumerated()), id: \.offset) { index, label in
-        Text(label).openUIFont(context.theme.typography.caption).monospacedDigit()
+        Text(label).nativeTextStyle(style).monospacedDigit()
           .lineLimit(1).fixedSize()
           .background(GeometryReader { geometry in
             Color.clear.preference(key: NativeChartAxisMeasurementKey.self, value: [measurementScope:
               NativeChartAxisMeasurements(
                 leftWidth: index < labels.left.count ? geometry.size.width : 0,
                 bottomWidth: index >= labels.left.count ? geometry.size.width : 0,
-                lineHeight: geometry.size.height)])
+                lineHeight: max(geometry.size.height, style.font.measuredLineHeight(scale: axisScale)))])
           })
       }
     }.fixedSize().hidden().allowsHitTesting(false).accessibilityHidden(true)
@@ -185,23 +204,24 @@ struct NativeChart: View {
   /// inspection. Desktop pointer dragging has no competing touch-scroll intent.
   @ViewBuilder var body: some View {
     Group {
-      if allData.hasContent(for: name) {
-        chartBody
-      } else if name == "PieChart", context.isQueryLoading {
-        NativePieSkeleton(donut: context.string("variant") == "donut", semi: context.string("appearance") == "semiCircular")
-      }
+      if !allData.hasContent(for: name) {
+        NativePendingContent(loading: waiting, message: "Loading data",
+          terminalMessage: context.hasDataFailure ? "Unable to load chart" : incomplete ? "Chart is incomplete" : "No data")
+      } else { chartBody }
     }
     .onAppear(perform: rememberStableData)
-    .onChange(of: context.element.partial) { _ in rememberStableData() }
-    .onChange(of: currentData.accessibilityRows) { _ in rememberStableData() }
+    .onChange(of: ObjectIdentifier(context.element)) { _ in rememberStableData() }
+    .onChange(of: context.hasPendingData) { _ in rememberStableData() }
   }
 
   private func rememberStableData() {
-    if !context.element.partial { stableData = currentData }
+    if context.element.isSourceComplete && !context.hasPendingData && !context.hasDataFailure {
+      if stableData != currentData { stableData = currentData }
+    } else if let next = presentationCache.values(context).staged, progressiveData != next { progressiveData = next }
   }
 
   private var chartBody: some View {
-    VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
+    VStack(alignment: .leading, spacing: context.theme.spaceM) {
       GeometryReader { geometry in
         Canvas { canvas, size in
           drawing.draw(
@@ -225,15 +245,42 @@ struct NativeChart: View {
           ForEach(Array(data.accessibilityRows.enumerated()), id: \.offset) { _, row in Text(row) }
         }
         .overlay(alignment: .topLeading) {
+          if ["BarChart", "LineChart", "AreaChart"].contains(name) {
+            NativeChartCategoryAxis(labels: data.labels, layout: drawing.layout(geometry.size), theme: context.theme)
+              .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+              .allowsHitTesting(false).accessibilityHidden(true)
+          }
+          if name == "RadarChart" {
+            NativeRadarLabels(labels: data.labels, theme: context.theme, scale: axisScale)
+              .frame(width: geometry.size.width, height: geometry.size.height)
+              .allowsHitTesting(false).accessibilityHidden(true)
+          }
+        }
+        .overlay(alignment: .topLeading) {
           if let inspected, let details = data.inspection(at: inspected, locale: locale) {
             NativeChartTooltip(details: details, palette: palette,
               anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
           }
         }
-      }.frame(height: CGFloat(min(1200, max(100, context.number("height") ?? defaultHeight))))
+        .overlay(alignment: .topTrailing) {
+          NativeDelayedPresentation(active: waiting && allData.hasContent(for: name)) { visible in
+            if visible { NativeLoadingIndicator().padding(context.theme.space2xs) }
+          }
+        }
+        .accessibilityValue(Text(waiting ? "Loading data" : incomplete ? "Chart is incomplete" : "", bundle: NativeControlResources.bundle))
+        .allowsHitTesting(data.hasContent(for: name))
+      }.frame(height: NativeChartHeight.value(explicit: context.presentationNumber("height"),
+        defaultHeight: defaultHeight, scale: axisScale,
+        minimumHeight: name == "SingleStackedBarChart" ? 0 : 100))
+      if name == "RadarChart" {
+        NativeRadarCategoryKey(labels: data.labels, theme: context.theme)
+      }
       if showsLegend {
-        NativeWrappingRow(gap: 16) {
-          ForEach(Array(legend.enumerated()), id: \.offset) { index, title in
+        // Legend items already own vertical padding and their full control target.
+        NativeChartLegendLayout(rightToLeft: direction == .rightToLeft) {
+          ForEach(legendEntries) { entry in
+            let index = entry.index
+            let title = entry.title
             if name == "SingleStackedBarChart" {
               legendLabel(index: index, title: title).accessibilityElement(children: .combine)
             } else {
@@ -249,6 +296,17 @@ struct NativeChart: View {
             }
           }
         }
+        // These chart families always own a legend control region. Reserve its
+        // minimum target before labels/values arrive, without fabricating any
+        // legend entries. Longer real legends can still wrap naturally.
+        .frame(minHeight: ["PieChart", "RadialChart"].contains(name)
+          ? max(context.presentation.minimumControlTargetSize,
+            context.theme.textLabelSm.resolved(for: .control).measuredLineHeight(scale: axisScale) + 12) : nil)
+      }
+      if allData.hasContent(for: name), incomplete || context.hasDataFailure {
+        Text(context.hasDataFailure ? (stableData == nil ? "Unable to load chart" : "Unable to refresh chart")
+          : "Chart is incomplete", bundle: NativeControlResources.bundle)
+          .nativeTextStyle(context.theme.textStyle(.supporting))
       }
     }.frame(maxWidth: .infinity, alignment: .leading)
       .background(alignment: .topLeading) { measuredAxisLabels }
@@ -259,25 +317,130 @@ struct NativeChart: View {
       .onChange(of: data.accessibilityRows) { _ in inspected = nil; pinnedInspection = false }
   }
   private var defaultHeight: Double {
-    if name == "SingleStackedBarChart" { return 100 }
+    if name == "SingleStackedBarChart" {
+      return Double(max(context.presentation.minimumControlTargetSize,
+        context.presentation.singleStackedBarThickness + context.theme.spaceS * 2))
+    }
     if ["PieChart", "RadialChart"].contains(name) { return 210 }
     return 250
   }
   private func legendLabel(index: Int, title: String) -> some View {
-    HStack(spacing: 6) {
+    HStack(spacing: context.theme.spacing("xs")) {
       RoundedRectangle(cornerRadius: 2, style: .continuous)
-        .fill(palette[index % palette.count]).frame(width: legendMarkerSize, height: legendMarkerSize).accessibilityHidden(true)
-      Text(title).openUIFont(context.theme.typography.label).foregroundStyle(context.theme.secondary)
+        .fill(palette[allData.colorIndex(at: index) % palette.count])
+        .frame(width: legendMarkerSize, height: legendMarkerSize).accessibilityHidden(true)
+      Text(title).openUIFont(context.theme.textLabelSm, role: .control).foregroundStyle(context.theme.textNeutralSecondary)
+        .fixedSize(horizontal: false, vertical: true)
       if ["PieChart", "RadialChart"].contains(name), allData.slices.indices.contains(index) {
         Text(NativeChartNumber.tooltip(allData.slices[index], locale: locale))
-          .openUIFont(context.theme.typography.label.weight(.semibold)).monospacedDigit()
+          .openUIFont(context.theme.textLabelSm.weight(.semibold)).monospacedDigit().layoutPriority(1)
       } else if name == "SingleStackedBarChart", allData.slices.indices.contains(index) {
         Text(NativeChartNumber.percentage(allData.slices[index], total: allData.slices.reduce(0, +)))
-          .openUIFont(context.theme.typography.label).monospacedDigit()
+          .openUIFont(context.theme.textLabelSm, role: .control).monospacedDigit()
       }
-    }.padding(.vertical, 6).contentShape(Rectangle())
+    }.padding(.vertical, 6).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
   }
 
+}
+
+enum NativeChartHeight {
+  static func value(explicit: Double?, defaultHeight: Double, scale: CGFloat, minimumHeight: Double = 100) -> CGFloat {
+    if let explicit, explicit.isFinite, explicit > 0 { return CGFloat(explicit) }
+    return CGFloat(max(minimumHeight, defaultHeight * Double(max(1, scale))))
+  }
+}
+
+/// Axis numbers have bounded regions; complete category names live in a
+/// wrapping key below the plot instead of being squeezed beside its vertices.
+enum NativeRadarLabelPlacement {
+  static func frames(size: CGSize, count: Int, sizes: [Int: CGSize], scale: CGFloat,
+                     lineHeight: CGFloat) -> [CGRect] {
+    guard count > 0 else { return [] }
+    let geometry = NativeRadarGeometry(size: size, scale: scale)
+    return (0..<count).map { index in
+      let point = geometry.point(index: index, count: count, fraction: 1.12)
+      let measured = sizes[index] ?? CGSize(width: CGFloat(String(index + 1).count) * lineHeight * 0.65, height: lineHeight)
+      let width = min(size.width, max(1, measured.width + 4 * scale))
+      let height = min(size.height, max(lineHeight, measured.height))
+      return CGRect(x: min(max(0, point.x - width / 2), max(0, size.width - width)),
+        y: min(max(0, point.y - height / 2), max(0, size.height - height)), width: width, height: height)
+    }
+  }
+}
+
+private struct NativeRadarLabelSizes: PreferenceKey {
+  static let defaultValue: [Int: CGSize] = [:]
+  static func reduce(value: inout [Int: CGSize], nextValue: () -> [Int: CGSize]) {
+    value.merge(nextValue(), uniquingKeysWith: { _, next in next })
+  }
+}
+
+private struct NativeRadarLabels: View {
+  let labels: [String]
+  let theme: OpenUIThemeValues
+  let scale: CGFloat
+  @State private var sizes: [Int: CGSize] = [:]
+  var body: some View {
+    GeometryReader { geometry in
+      let style = theme.textStyle(.supporting)
+      let projection = NativeRadarGeometry(size: geometry.size, scale: scale)
+      let frames = NativeRadarLabelPlacement.frames(size: geometry.size, count: labels.count,
+        sizes: sizes, scale: scale,
+        lineHeight: style.font.measuredLineHeight(scale: scale))
+      ZStack(alignment: .topLeading) {
+        ForEach(projection.labelIndices(count: labels.count), id: \.self) { index in
+          let frame = frames[index]
+          Text("\(index + 1)").nativeTextStyle(style).monospacedDigit().fixedSize()
+            .background(GeometryReader { measured in
+              Color.clear.preference(key: NativeRadarLabelSizes.self, value: [index: measured.size])
+            })
+            .frame(width: frame.width, height: frame.height)
+            .position(x: frame.midX, y: frame.midY)
+        }
+      }
+    }
+    .onPreferenceChange(NativeRadarLabelSizes.self) { if $0 != sizes { sizes = $0 } }
+  }
+}
+
+struct NativeRadarCategoryKey: View {
+  let labels: [String]
+  let theme: OpenUIThemeValues
+  @Environment(\.layoutDirection) private var direction
+  var body: some View {
+    NativeChartLegendLayout(gap: theme.spaceM, rightToLeft: direction == .rightToLeft) {
+      ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
+        HStack(alignment: .firstTextBaseline, spacing: theme.spaceXs) {
+          Text("\(index + 1)").nativeTextStyle(theme.textStyle(.supporting)).monospacedDigit()
+          Text(label).nativeTextStyle(theme.textStyle(.compactBody)).fixedSize(horizontal: false, vertical: true)
+        }.padding(.vertical, theme.space3xs)
+      }
+    }.accessibilityHidden(true) // The chart already exposes complete category/value rows.
+  }
+}
+
+/// Category text uses native text layout rather than Canvas's inherited
+/// one-line environment. The plot and inspection share the same geometry.
+struct NativeChartCategoryAxis: View {
+    @Environment(\.openUIPresentation) private var nativePresentation
+
+  let labels: [String]
+  let layout: NativeChartLayout
+  let theme: OpenUIThemeValues
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      ForEach(layout.categoryLabels(count: labels.count), id: \.index) { label in
+        Text(labels[label.index]).openUIFont(theme.textBodySm, role: .detail).monospacedDigit()
+          .foregroundStyle(nativePresentation.chartAxis).lineLimit(layout.categoryLabelLines).truncationMode(.tail)
+          .multilineTextAlignment(label.anchor.x == 0 ? .leading : label.anchor.x == 1 ? .trailing : .center)
+          .frame(width: label.width, alignment: Alignment(horizontal:
+            label.anchor.x == 0 ? .leading : label.anchor.x == 1 ? .trailing : .center, vertical: .top))
+          .fixedSize(horizontal: false, vertical: true)
+          .offset(x: label.x - label.width * label.anchor.x,
+            y: layout.rect.maxY + (layout.categoryLabelLines > 1 ? 6 * layout.scale : layout.tickOffset - layout.lineHeight / 2))
+      }
+    }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+  }
 }
 
 private struct NativeChartTooltip: View {
@@ -285,7 +448,7 @@ private struct NativeChartTooltip: View {
   let palette: [Color]
   let anchor: CGPoint
   let bounds: CGSize
-  let theme: OpenUITheme
+  let theme: OpenUIThemeValues
   @Environment(\.displayScale) private var displayScale
   @ScaledMetric(relativeTo: .body) private var markerSize: CGFloat = 9
   var body: some View {
@@ -293,39 +456,39 @@ private struct NativeChartTooltip: View {
       .allowsHitTesting(false)
   }
   private var label: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(alignment: .leading, spacing: theme.spacing("sm")) {
       if !details.title.isEmpty {
-        HStack(spacing: 8) {
+        HStack(spacing: theme.spacing("s")) {
           if let index = details.colorIndex { marker(index) }
-          Text(details.title).openUIFont(theme.typography.detail.weight(.semibold))
-            .foregroundStyle(theme.foreground).fixedSize(horizontal: false, vertical: true)
+          Text(details.title).openUIFont(theme.textBodySmHeavy, role: .detail)
+            .foregroundStyle(theme.textNeutralPrimary).fixedSize(horizontal: false, vertical: true)
         }
-        Rectangle().fill(theme.border).frame(height: 1 / displayScale)
+        Rectangle().fill(theme.borderDefault).frame(height: 1 / displayScale)
       }
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: theme.spacing("s")) {
         ForEach(details.rows) { row in
-          HStack(alignment: .firstTextBaseline, spacing: 8) {
+          HStack(alignment: .firstTextBaseline, spacing: theme.spacing("s")) {
             if let index = row.colorIndex { marker(index) }
             Group {
               if let label = row.label { Text(label) }
               else { Text("Value", bundle: NativeControlResources.bundle) }
-            }.foregroundStyle(theme.secondary)
+            }.foregroundStyle(theme.textNeutralSecondary)
               .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            Text(row.value).monospacedDigit().foregroundStyle(theme.foreground)
+            Text(row.value).monospacedDigit().foregroundStyle(theme.textNeutralPrimary)
               .multilineTextAlignment(.trailing).layoutPriority(1)
           }.accessibilityElement(children: .combine)
         }
-      }.openUIFont(theme.typography.detail)
+      }.openUIFont(theme.textBodySm, role: .detail)
     }
-      .padding(theme.contentSpacing)
+      .padding(theme.spaceM)
       .modifier(NativeOverlaySurface(theme: theme, compact: true))
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("openui-chart-inspection")
   }
   private func marker(_ index: Int) -> some View {
     RoundedRectangle(cornerRadius: 2)
-      .fill(palette.isEmpty ? theme.accent : palette[max(0, index) % palette.count])
+      .fill(palette.isEmpty ? theme.interactiveAccentDefault : palette[max(0, index) % palette.count])
       .frame(width: markerSize, height: markerSize)
       .accessibilityHidden(true)
   }
@@ -386,8 +549,10 @@ struct NativeChartLayout {
   let showsLeftLabels: Bool
   let showsXAxisTitle: Bool
   let showsYAxisTitle: Bool
+  let categoryLabelLines: Int
 
-  init(size: CGSize, scale: CGFloat = 1, measurements: NativeChartAxisMeasurements = .init(), hasYAxisTitle: Bool = false) {
+  init(size: CGSize, scale: CGFloat = 1, measurements: NativeChartAxisMeasurements = .init(), hasYAxisTitle: Bool = false,
+       categoryLabelLines: Int = 1) {
     let scale = max(1, scale)
     let lineHeight = max(16 * scale, measurements.lineHeight)
     let tickOffset = max(12 * scale, lineHeight / 2 + 4 * scale)
@@ -397,13 +562,17 @@ struct NativeChartLayout {
       max(0, size.width - right - min(80, size.width)))
     let titleClearance = lineHeight * 1.5 + 10 * scale
     let top = min(hasYAxisTitle ? titleClearance : max(18 * scale, lineHeight + 2 * scale), max(0, size.height - 40))
-    let bottom = min(max(40 * scale, tickOffset + lineHeight * 1.5 + 4 * scale),
+    let lines = min(2, max(1, categoryLabelLines))
+    let labelClearance = max(40 * scale, tickOffset + lineHeight * (CGFloat(lines) + 0.5) + 4 * scale,
+      lines > 1 ? lineHeight * 3 + 14 * scale : 0)
+    let bottom = min(labelClearance,
       max(0, size.height - top - 40))
     rect = CGRect(x: left, y: top, width: max(1, size.width - left - right),
       height: max(1, size.height - top - bottom))
     self.scale = scale
     self.lineHeight = lineHeight
     self.tickOffset = tickOffset
+    self.categoryLabelLines = lines
     // A compact preview can reserve a useful plot while lacking a complete
     // axis gutter. Omit those ticks instead of drawing clipped digit fragments;
     // values remain available through inspection and accessibility rows.
@@ -412,7 +581,7 @@ struct NativeChartLayout {
     measuredBottomLabelWidth = measurements.bottomWidth > 0 ? measurements.bottomWidth : 44 * scale
     showsXAxisTitle = bottom >= lineHeight + 2 * scale
     showsYAxisTitle = hasYAxisTitle && top >= titleClearance
-    showsBottomLabels = bottom >= tickOffset + lineHeight * 1.5 + 4 * scale
+    showsBottomLabels = bottom >= labelClearance
   }
 
   struct CategoryLabel {
@@ -424,7 +593,7 @@ struct NativeChartLayout {
 
   func categoryLabels(count: Int) -> [CategoryLabel] {
     guard count > 0, showsBottomLabels else { return [] }
-    let capacity = max(1, Int(rect.width / max(1, measuredBottomLabelWidth + 8 * scale)))
+    let capacity = max(1, Int(rect.width / max(1, measuredBottomLabelWidth / CGFloat(categoryLabelLines) + 8 * scale)))
     let visibleCount = min(count, capacity)
     let indices = visibleCount == 1 ? [0] : (0..<visibleCount).map {
       Int((Double($0) * Double(count - 1) / Double(visibleCount - 1)).rounded())
@@ -459,15 +628,16 @@ struct NativeChartDrawing {
   var gridColor: Color? = nil
   var axisColor: Color? = nil
   var canvasColor: Color = .white
-  var labelFont: Font = OpenUITypography().caption.nativeFont()
+  var labelFont: Font = OpenUIThemeValues().textBodySm.nativeFont()
   var inspected: Int? = nil
   var axisScale: CGFloat = 1
+  var singleStackedBarThickness: CGFloat = OpenUIPresentation.defaults.singleStackedBarThickness
   var axisMeasurements = NativeChartAxisMeasurements()
   var hasYAxisTitle = false
   private var gridColorValue: Color { gridColor ?? border }
   private var axisColorValue: Color { axisColor ?? secondary }
   private func color(_ index: Int) -> Color {
-    let slot = data.colorIndices.indices.contains(index) ? data.colorIndices[index] : index
+    let slot = data.colorIndex(at: index)
     return palette.isEmpty ? secondary : palette[slot % palette.count]
   }
   /// Inspection and drawing share the projection, including negative domains
@@ -482,10 +652,9 @@ struct NativeChartDrawing {
         donut: variant == "donut", semi: semi)
     }
     if name == "RadarChart" {
-      let center = CGPoint(x: size.width / 2, y: size.height / 2)
-      let radius = max(1, min(size.width / 2 - 48, size.height / 2 - 24))
-      guard hypot(location.x - center.x, location.y - center.y) <= radius else { return nil }
-      let angle = (atan2(location.y - center.y, location.x - center.x) + .pi / 2 + 2 * .pi)
+      let geometry = NativeRadarGeometry(size: size, scale: axisScale)
+      guard hypot(location.x - geometry.center.x, location.y - geometry.center.y) <= geometry.radius else { return nil }
+      let angle = (atan2(location.y - geometry.center.y, location.x - geometry.center.x) + .pi / 2 + 2 * .pi)
         .truncatingRemainder(dividingBy: 2 * .pi)
       return Int((angle / (2 * .pi) * Double(data.labels.count)).rounded()) % data.labels.count
     }
@@ -536,7 +705,16 @@ struct NativeChartDrawing {
   }
   private func number(_ value: Double) -> String { NativeChartNumber.tick(value) }
   func layout(_ size: CGSize) -> NativeChartLayout {
-    NativeChartLayout(size: size, scale: axisScale, measurements: axisMeasurements, hasYAxisTitle: hasYAxisTitle)
+    // A small categorical comparison benefits from wrapping before dropping
+    // whole categories. Dense axes and numeric domains retain sparse ticks.
+    let categorical = ["BarChart", "LineChart", "AreaChart"].contains(name)
+    let regular = NativeChartLayout(size: size, scale: axisScale,
+      measurements: axisMeasurements, hasYAxisTitle: hasYAxisTitle)
+    let pitch = regular.rect.width / CGFloat(max(1, data.labels.count))
+    let needsWrapping = axisMeasurements.bottomWidth > max(1, pitch - 8 * axisScale)
+    let lines = categorical && (1...4).contains(data.labels.count) && needsWrapping ? 2 : 1
+    return NativeChartLayout(size: size, scale: axisScale, measurements: axisMeasurements,
+      hasYAxisTitle: hasYAxisTitle, categoryLabelLines: lines)
   }
   private var domain: (low: Double, high: Double) {
     let stacked = ["BarChart", "HorizontalBarChart"].contains(name) && variant == "stacked"
@@ -639,11 +817,6 @@ struct NativeChartDrawing {
           data.labels[i], at: CGPoint(x: rect.minX - 6, y: rect.minY + pitch * (CGFloat(i) + 0.5)),
           canvas: &canvas, anchor: .trailing, maxWidth: max(1, rect.minX - 6))
       }
-    } else {
-      for label in layout.categoryLabels(count: count) {
-        text(data.labels[label.index], at: CGPoint(x: label.x, y: rect.maxY + layout.tickOffset),
-          canvas: &canvas, anchor: label.anchor, maxWidth: label.width)
-      }
     }
     if let inspected, (0..<count).contains(inspected) {
       let band = horizontal
@@ -656,6 +829,7 @@ struct NativeChartDrawing {
         var positive = 0.0
         var negative = 0.0
         for s in 0..<seriesCount {
+          guard data.hasValue(s, i) else { continue }
           let value = data.value(s, i)
           let base = stacked ? (value >= 0 ? positive : negative) : 0
           let a = numeric(base)
@@ -679,7 +853,8 @@ struct NativeChartDrawing {
       }
     } else {
       for s in 0..<seriesCount {
-        let points = (0..<count).map {
+        let visibleCount = data.isProgressive ? min(count, data.series[s].values.count) : count
+        let points = (0..<visibleCount).map {
           CGPoint(x: rect.minX + pitch * (CGFloat($0) + 0.5), y: numeric(data.value(s, $0)))
         }
         let line = linePath(points)
@@ -698,7 +873,7 @@ struct NativeChartDrawing {
           let marker = Path(ellipseIn: CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8))
           canvas.fill(marker, with: .color(canvasColor))
           canvas.stroke(marker, with: .color(color(s)), lineWidth: 2)
-        } else if count == 1, let point = points.first {
+        } else if points.count == 1, let point = points.first {
           canvas.fill(
             Path(ellipseIn: CGRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6)),
             with: .color(color(s)))
@@ -740,15 +915,17 @@ struct NativeChartDrawing {
     let total = values.reduce(0, +)
     guard total > 0 else { return }
     if name == "SingleStackedBarChart" {
+      let thickness = min(size.height, max(1, singleStackedBarThickness))
+      let top = (size.height - thickness) / 2
       var barCanvas = canvas
       barCanvas.clip(to: Path(roundedRect:
-        CGRect(x: 4, y: size.height / 2 - 14, width: max(0, size.width - 8), height: 28),
+        CGRect(x: 4, y: top, width: max(0, size.width - 8), height: thickness),
         cornerRadius: 6))
       var x: CGFloat = 4
       for i in values.indices {
         let width = (size.width - 8) * values[i] / total
         barCanvas.fill(
-          Path(CGRect(x: x, y: size.height / 2 - 14, width: width, height: 28)),
+          Path(CGRect(x: x, y: top, width: width, height: thickness)),
           with: .color(color(i)))
         x += width
       }
@@ -799,14 +976,11 @@ struct NativeChartDrawing {
   }
   private func radar(_ canvas: inout GraphicsContext, _ size: CGSize) {
     guard !data.labels.isEmpty, !data.series.isEmpty else { return }
-    let center = CGPoint(x: size.width / 2, y: size.height / 2)
-    let radius = max(1, min(size.width / 2 - 48, size.height / 2 - 24))
+    let geometry = NativeRadarGeometry(size: size, scale: axisScale)
     let high = max(1, data.series.flatMap(\.values).max() ?? 1)
     let count = data.labels.count
     let point = { (i: Int, value: Double) -> CGPoint in
-      let angle = Double(i) * 2 * Double.pi / Double(count) - Double.pi / 2
-      let r = radius * max(0, value) / high
-      return CGPoint(x: center.x + cos(angle) * r, y: center.y + sin(angle) * r)
+      geometry.point(index: i, count: count, fraction: max(0, value) / high)
     }
     for step in 1...4 {
       var polygon = Path()
@@ -819,10 +993,9 @@ struct NativeChartDrawing {
     }
     for i in 0..<count {
       var axis = Path()
-      axis.move(to: center)
+      axis.move(to: geometry.center)
       axis.addLine(to: point(i, high))
       canvas.stroke(axis, with: .color(gridColorValue), lineWidth: 0.5)
-      text(data.labels[i], at: point(i, high * 1.12), canvas: &canvas)
     }
     for s in data.series.indices {
       var polygon = Path()

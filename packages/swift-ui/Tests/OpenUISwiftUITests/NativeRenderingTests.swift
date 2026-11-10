@@ -26,7 +26,7 @@
             XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
         }
 
-        @MainActor func testPendingPositionalLayoutDoesNotPresentAFullWidthInlineImage() throws {
+        @MainActor func testUnfinishedContainerDefersMediaUntilLocalLayoutIsKnown() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()
             let state = OpenUIState(schema: library.library.toSchema())
@@ -37,23 +37,23 @@
             }
             state.push("root=Stack([Image(\"Photo\",null),TextContent(\"Copy grows")
             let pending = try height()
-            XCTAssertGreaterThan(pending, 80, "The waiting media must have a visible skeleton rather than zero-size blank space")
-            XCTAssertLessThan(pending, 160, "A missing row argument must not temporarily produce a full-width photo")
+            XCTAssertLessThan(pending, 100, "Unreceived direction is not a confirmed column default")
             state.push(" beside the image\")],\"row\",\"m\",\"stretch\",\"start\",false)")
             state.complete()
             XCTAssertTrue(state.errors.isEmpty)
-            XCTAssertGreaterThan(try height(), pending)
-            XCTAssertLessThan(try height(), 240)
+            let photoHeight = OpenUIPresentation().thumbnailSize / OpenUIPresentation().coverAspectRatio
+            XCTAssertEqual(try height(), photoHeight, accuracy: 1,
+                "Resolving a local row must retain the shared photo aspect rather than switching to a 4:5 height")
             state.reset()
             state.push("root=Stack([Stack([Image(\"Photo\",null),TextContent(\"Known local row\")],\"row\",\"m\",\"stretch\",\"start\",false)")
-            XCTAssertGreaterThan(try height(), 100,
-                "A resolved local row must show its media without waiting for the whole outer response")
+            XCTAssertLessThan(try height(), photoHeight,
+                "An unresolved ancestor can still change this row's available width")
         }
 
         @MainActor func testNativeAndRichTextBothRespondToTheSameThemeFont() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()
-            func height(_ source: String, theme: OpenUITheme) throws -> CGFloat {
+            func height(_ source: String, theme: OpenUIThemeValues) throws -> CGFloat {
                 let state = OpenUIState(schema: library.library.toSchema())
                 state.setSource(source)
                 XCTAssertTrue(state.errors.isEmpty)
@@ -62,10 +62,11 @@
                 renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
                 return try XCTUnwrap(renderer.nsImage).size.height
             }
-            let ordinary = OpenUITheme()
+            let ordinary = OpenUIThemeValues()
             var enlarged = ordinary
-            enlarged.typography.body.size = 25
-            enlarged.typography.detail.size = 23
+            enlarged.textBodyDefault.size = 25
+            enlarged.textBodyDefaultHeavy.size = 25
+            enlarged.textBodySm.size = 23
             for source in ["root=TextContent(\"One line\",\"default\")",
                            "root=BoldText(\"text\",\"One line\",null,\"text\",\"md\")",
                            "root=ListBlock([ListItem(\"One line\",\"Supporting line\")],\"number\")"] {
@@ -97,18 +98,55 @@
                 "Number indicators must not turn into image rows when optional image data is present")
         }
 
+        @MainActor func testFollowUpChipsRenderAndSynthesizeContinueConversation() throws {
+            _ = NSApplication.shared
+            guard #available(macOS 13, *) else { throw XCTSkip("ImageRenderer requires macOS 13") }
+            let library = try OpenUIStandardComponents.library()
+            let state = OpenUIState(schema: library.library.toSchema())
+            state.setSource("root=FollowUpBlock([a,b])\na=FollowUpItem(\"Tell me more\")\nb=FollowUpItem(\"Show a comparison\")")
+            XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+            let renderer = ImageRenderer(content:
+                OpenUIRenderer(state: state, registry: library.registry)
+                    .environment(\.locale, Locale(identifier: "en_US"))
+                    .preferredColorScheme(.light).background(Color.white))
+            renderer.proposedSize = ProposedViewSize(width: 320, height: nil)
+            renderer.scale = 1
+            _ = try XCTUnwrap(renderer.cgImage)
+            let action = NativeFollowUpItem.action(for: "Tell me more")
+            guard case .object(let fields) = action else {
+                return XCTFail("follow-up action must be an object")
+            }
+            let byKey = Dictionary(uniqueKeysWithValues: fields.fields.map { ($0.key.displayString, $0.value) })
+            XCTAssertEqual(byKey["type"], .string(OpenUIString("continue_conversation")))
+            XCTAssertEqual(byKey["message"], .string(OpenUIString("Tell me more")))
+        }
+
         @MainActor func testCompactCardDoesNotFillAnUnrequestedParentHeight() throws {
             _ = NSApplication.shared
             let library = try OpenUIStandardComponents.library()
-            let state = OpenUIState(schema: library.library.toSchema())
-            state.setSource("root=Card([TextContent(\"A compact card\")])")
-            XCTAssertTrue(state.errors.isEmpty)
             guard #available(macOS 13, *) else { throw XCTSkip("Native Layout requires macOS 13") }
-            let renderer = ImageRenderer(content: OpenUIRenderer(state: state, registry: library.registry))
-            renderer.proposedSize = ProposedViewSize(width: 320, height: 400)
-            let image = try XCTUnwrap(renderer.nsImage)
-            XCTAssertGreaterThan(image.size.height, 32)
-            XCTAssertLessThan(image.size.height, 160, "A height proposal is a constraint, not a request to fill it")
+            func height(_ source: String, proposedHeight: CGFloat?) throws -> CGFloat {
+                let state = OpenUIState(schema: library.library.toSchema())
+                state.setSource(source)
+                XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+                let renderer = ImageRenderer(content: OpenUIRenderer(state: state, registry: library.registry))
+                renderer.proposedSize = ProposedViewSize(width: 320, height: proposedHeight)
+                return try XCTUnwrap(renderer.nsImage).size.height
+            }
+            let copy = "TextContent(\"A compact card\")"
+            let textHeight = try height("root=" + copy, proposedHeight: nil)
+            XCTAssertGreaterThan(textHeight, 0, "The card's content must actually render")
+            for variant in [nil, "card", "clear", "sunk"] as [String?] {
+                let argument = variant.map { ",\"\($0)\"" } ?? ""
+                let source = "root=Card([\(copy)]\(argument))"
+                let natural = try height(source, proposedHeight: nil)
+                XCTAssertEqual(try height(source, proposedHeight: 400), natural, accuracy: 1,
+                    "A height proposal is a constraint, not a request to fill it")
+                let theme = OpenUIThemeValues()
+                let inset = variant == "clear" ? 0 : 2 * theme.spaceML
+                XCTAssertEqual(natural, textHeight + inset, accuracy: 1,
+                    "Card height must include only its content and declared native inset")
+            }
         }
 
         @MainActor func testDatePlaceholderRendersUsingTheScopedSwiftUILocale() throws {

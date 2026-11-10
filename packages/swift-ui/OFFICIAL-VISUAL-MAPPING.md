@@ -1,0 +1,184 @@
+# Official visual mapping and native exceptions
+
+## Baseline and ownership
+
+The reference is thesysdev/openui `f08a660535e55b5b2a24a0eb68568edaf9e4fe4b`,
+`packages/react-ui`. The component implementation, its genui wrapper and the
+shared theme must be read together: a React prop is not automatically a Lang
+parameter. The separate open-intelligent-ui example is not this visual baseline.
+
+Task: make a generated assistant response easy to read, compare and act on, with
+stable geometry while it streams. The focus is the recommendation or answer;
+images support identification, and the object's action remains nearby. Secondary
+labels and containers must not compete with the content.
+
+- SDK: shared visual roles, component presentation, responsive placement,
+  resource states, stable mounted controls and action readiness.
+- Authored examples/caller prompt: recommendation order, explanation, amount of
+  content, supplied facts and selection of legal components.
+- Client: conversation bubble, outer reading width/insets, app navigation and
+  overall scroll container. This work does not add a Host fallback.
+- Language core: unchanged by this visual convergence. No new grammar,
+  component registration, positional argument, enum or prompt restriction.
+
+## Foundation mapping
+
+The table distinguishes reference CSS values from the native reading defaults;
+they scale through the receiving SwiftUI environment. This is a default visual
+mapping, not a claim that a CSS pixel equals a physical display pixel.
+
+| Role | Reference | Native default | Owner |
+| --- | --- | --- | --- |
+| Body / supporting / caption | 16 / 14 / 12 | 16 / 14 / 12 pt | OpenUIThemeValues text roles |
+| Card header / inline header | heading-small 18 / body-heavy 16 | 18 / 18 pt | NativeHeading |
+| Body large and large-heavy | both 18, weight differs | both 18, weight differs | NativeRichTextStyle |
+| Text xs / sm / md / lg | 14 / 16 / 16 / 18 | 14 / 16 / 16 / 18 pt | OpenUIThemeValues.inlineFont |
+| Text subtext xs,sm / md,lg | 14 / 16 | 14 pt at every parent size | NativeInlineText |
+| Tag text | label-small 14 at all densities | 12 / 14 / 16 pt for sm / md / lg | NativeTagPill |
+| Action small / regular | label-small 14 / default 16 | 14 / 16 pt | NativeActionButtonStyle |
+| MetricIndicator value | number-heavy 16 | 16 pt, tabular digits | NativeMetric |
+| Code | code-default 14 | 14 pt, native monospace | NativeCodeBlockContent |
+| Gap xs / s / m / l / xl / 2xl | 6 / 8 / 12 / 18 / 24 / 36 | same logical values | OpenUIThemeValues.spacing |
+| Neutral ink | neutral-1000 light / neutral-50 dark | #202024 / #F4F4F5 | OpenUITheme |
+| Secondary ink | primary at 60% | opaque #64646E / #A1A1AA | OpenUITheme |
+| Recessed / subtle surface | overlay at 4% / 2% | explicit appearance-aware surfaces | OpenUITheme |
+| Default / interactive border | overlay at 6% / 12% | separate opaque grouping/editing colors | OpenUITheme |
+| Accent | official brand and control-state colors are configurable | native neutral brand / host override | OpenUITheme.interactiveAccentDefault |
+| Surface border | 1 | 1 pt | OpenUIPresentation.borderWidth |
+| Composite padding / radius | 12 / 16 | 12 / 16 pt | NativeCardItem |
+| Overview, Snippet padding / radius | 10 / 14 | 12 / 14 pt, border only, no default fill | NativeCardItem |
+| Context padding / radius | 12 / 12 | 12 / 12 pt | NativeCardItem |
+| Media corner | radius-m 8 | 8 pt | OpenUITheme.radiusM |
+
+Native neutral swatches use the explicit sRGB values in UI-DESIGN.md.
+Semantic status colors retain their pinned reference relationship. Semantic tint backgrounds follow the host's semantic color at a
+shared low opacity; they are not claimed to reproduce every upstream source
+swatch/alpha combination. Theme overrides continue to work. An unrelated
+semantic color must not silently become the chart series palette.
+
+## Component presentation
+
+| Family | Reference relationship adopted | Native boundary / remaining review |
+| --- | --- | --- |
+| Stack, Card | declared direction/alignment/wrap and existing variants | native Card defaults to a padded foreground panel with a light border; clear is transparent and sunk uses a subtle fill without border/elevation; rounded backgrounds do not mask text |
+| TextContent, Markdown, Text, BoldText | shared type hierarchy, small does not imply gray, emphasis does not change reading size | system font metrics, MarkdownUI block layout |
+| CardHeader, InlineHeader, Label | role-specific typography, description priority and spacing | full text may grow at larger type |
+| Image, ImageBlock, ImageGallery, ImageTextLarge | shared media radius and stable slots | user-approved 16:9 photo covers instead of fixed 180px banner |
+| ImageText, IconText, Icon | authored size/direction, shared text roles, neutral/semantic ink, pinned Lucide artwork | horizontal IconText centers its glyph against the complete text block using shared tokens; unspecified thumbnails prefer80/reduce toward64 locally; status glyphs are unplated except inverted |
+| Callout, TextCallout | existing variant, content, binding and dismissal contracts | neutral/info use a quiet rule; success/warning/error use small semantic icons with ordinary text, no colored panels |
+| Tag, TagBlock | informational tint, primary neutral ink, 12/14/16pt reading sizes | vertical insets2/4/4; complete long labels wrap with readable corner limits |
+| Button, IconButton, Buttons | primary/secondary/tertiary hierarchy; transparent bordered secondary, capsule text actions and shared density | native hit target, focus, press/Reduce Motion; flat neutral assistant treatment |
+| EntityList | shared body roles, header/total priority and tabular numeric values | native text values stay regular and lead when stacked; number values remain emphasized; read-only body rows use spaceS |
+| ListBlock, ListItem, Steps | common reading roles, media/text gap, number and action hierarchy | width-derived photo previews, complete text and scalable step marker |
+| CompositeCardItem/Block | 12pt inset, 16pt corner, quiet surface, measured amount/action relationship | full-bleed 16:9 cover; amount/action share a row when they fit, otherwise stack; one mounted action remains inside card |
+| Overview, Snippet, Context, Visual cards | family-specific radius/inset from the same scale | photo cards use width-derived extent, neutral loading/failure and translucent charcoal tag capsules with soft white ink; native collection measurement retained; compact facts stack before splitting values |
+| Tabs | open labels with a selected capsule and shared selection color | native horizontal scrolling and focus; long accessibility labels wrap within the viewport |
+| Accordion | continuous clear disclosure list, no separate card per item | native DisclosureGroup affordance; streaming open-selection behavior retained |
+| Form, FormControl | open vertical flow, 16pt form gap, 8pt control gap | one input subtree; native field/picker interaction retained |
+| Input, TextArea, Select, DatePicker | shared reading role, subtle surface, interactive/error border | native keyboard, date sheet, text editor and minimum targets |
+| CheckBoxGroup, RadioGroup, SwitchGroup | shared labels, descriptions, spacing and semantic colors | iOS radio choices use a wrapping row without descriptions and a vertical list with descriptions; selection targets and feedback retained |
+| Chips, OptionCards | reference selection border/tint, density and corners | native targets; card columns adapt to complete copy without duplicate controls |
+| Slider | same field/text/spacing language | compact label/value header without an extra field panel; range and accessibility headers stack; native track, discrete picker and draft behavior retained |
+| Table, EditableTable | shared borders, insets and reading hierarchy | horizontal data-preserving overflow and native editing retained |
+| MetricIndicator family | 16pt numeric emphasis; units and old value stay secondary | current/previous values and trend wrap together above the explanation; oversized amounts scroll intact |
+| CodeBlock | shared mono role, header, surface and padding | native copy action and pinned syntax tokenizer retained |
+| Chart family | shared surrounding text and colors with existing series palette | native axis measurement, legend balance and canvas scaling; radar uses numbered axes plus complete category key |
+| Modal | shared content roles, overlay surface and spacing | ordinary iOS modals fit short content with expansion available; large modals retain full presentation; local Dynamic Type, safe area and dismissal preserved |
+| Loading, unavailable, empty | same visual tokens; localized user-facing state | preserve adjacent facts/actions and reserved media frame; diagnostics separate |
+
+Data-only registrations (Col, Series, ScatterSeries, Point, Slice, TabItem,
+AccordionItem, StepsItem, SelectItem and selection option nodes) are inspected in
+their consuming component. A blank standalone screenshot is not visual approval.
+
+## Approved exceptions
+
+1. Native system fonts and nearest-view Dynamic Type replace bundled Inter.
+   Native font metrics/leading and semibold emphasis approximate the reference;
+   the 440/560 variable axes and CSS line boxes are not reproduced. Explicit
+   host leading wins; omitted leading resolves by reading role.
+2. Photo covers use available width / (16 / 9) and crop proportionally before pixels
+   arrive. Original-image viewers and document images preserve full source
+   geometry. Square avatar/icon roles remain square. Content and actions are
+   never cropped just to equalize complete card heights.
+3. Input, focus, touch, keyboard, gestures and platform presentation are native.
+   Compact visible controls retain the larger native hit region.
+4. Native chart geometry and palette remain. Labels, legends and inspection must
+   stay legible at large type and cannot borrow fixed web heights blindly.
+5. The assistant uses a neutral brand, capsule text actions and flat controls.
+   The reference's blue default, per-size corners and button shadows are not
+   the native skin; the first blue candidate was rejected in user review.
+   Object footers share a row when both complete values fit and stack when they do
+   not. The always-column first candidate was rejected in user review.
+   Card/overlay elevation approximates CSS multi-layer shadows. This does not
+   authorize new local colors, font sizes or ornamental shadows.
+6. Tags use a capsule at ordinary heights with a corner limit for long wrapped
+   labels. Informational density uses 2/4/4pt vertical insets; declared text sizes
+   and variants remain unchanged. This is native presentation, not a Lang rule.
+7. Explicit supporting slots use14pt secondary reading even when their parent
+   value is larger. Generic TextContent size variants retain primary ink.
+   Field/disclosure and compact action labels use the existing medium label
+   tokens. Resource failure is a neutral photo placeholder with accessible status.
+
+Explicitly supplied legal parameters take priority over defaults. Defaults are
+not an allowlist; this document does not narrow the standard Lang contract.
+
+## Runtime adaptations that remain native
+
+The shared Lang core is pinned, not an unmodified byte copy. `core-manifest.json`
+and its adapter hash track the runtime and build inputs. The explicit
+`retainedPatches` list covers serializer precedence/lossless keys, materialization
+budgets, and bounded native pattern validation. In addition,
+`scripts/readiness.ts` and `scripts/readiness-compat.mjs` instrument the lexer,
+expression/parser, materialization and evaluation paths to carry source-complete
+metadata. That metadata and per-card action gating are native presentation
+behavior; no additional Lang syntax or business-scene dispatch is introduced.
+The retained-patch list alone is not a complete customization inventory.
+
+Stable element/control identity, prepared schema caches, request coalescing,
+resource ownership, cancellation and execution budgets are SDK runtime policy.
+They remain independent of hotel/travel/example content. The SDK catalogue
+contains 84 standard definitions.
+
+Scene catalogs, synthetic data and interaction samples belong to the separate
+visual review application, not to SDK targets or default prompt additions. UI verification of the review shell does
+not establish the consuming client's bubble, lifecycle or transport behavior.
+
+## Acceptance and change control
+
+The implementation is a candidate until reviewed in real native views. Required
+artifacts are the same-source component gallery, six complete authored scenes,
+representative narrow/wide/large-type/dark layouts, and offline streaming checks.
+Button/field/media identity and user selections must survive layout changes.
+A successful parser test, build or screenshot export is not visual acceptance.
+Client-bubble acceptance is separate from the SDK review shell.
+
+Record each deviation as: reference source -> native mapping -> reason -> proof.
+Change a shared role first; add a component exception only when its semantic role
+requires one. Preserve earlier dirty work and distinguish this batch's diff.
+
+## Theme convergence
+
+Spacing and radius tokens follow the pinned `ThemeProvider/types.ts` and
+`defaultTheme.ts`; component gap mappings follow `genui-lib/Stack/index.tsx` and
+`genui-lib/Card/index.tsx`. Existing native overrides retain precedence. Literal
+spacing in metrics, chart details and citations
+now reads those shared tokens with the same default values. Platform/control
+geometry is retained.
+
+`ImageTextLarge.tsx` selects `TextBlockView` with `highlight-text` and `sm`;
+`TextBlock/textBlock.scss` maps this to `body/heavy`. The native banner previously
+used `.medium`; it now uses the configurable `bodyHeavy` role (body size, native
+semibold). This is the intended default visual correction. Image cropping and
+footer composition are outside this change. Font-specific extra line spacing
+is optional; the existing global fallback remains unchanged.
+
+### Source organization and theme inheritance
+
+The native module separates Components, GenUILib, Context, Theme and internal
+helpers, while retaining its existing renderer/state entry files. This is a source-organization change, with no new
+products or component definitions. Local theme updates use SwiftUI
+`transformEnvironment`, preserving inherited values without a second resolver.
+The complete-value API still replaces its scope. TextContent, Text, BoldText and
+Markdown emphasis now select body typography rather than borrowing heading
+weights/sizes; defaults are retained. The reference Stack/Card gap map uses a
+literal zero for `none`, which is kept independent of `space000`.

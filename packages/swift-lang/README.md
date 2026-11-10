@@ -1,13 +1,24 @@
 # swift-lang
 
 Apple-platform bindings for the shared OpenUI `lang-core`. The SwiftPM product and
-import are `OpenUILang`; the package identity is `swift-lang`. Swift 6 tools build
+import are `OpenUILang`; the nested development package identity is `swift-lang`. Swift 6 tools build
 in Swift 5 language mode on iOS 16+ and macOS 13+. JavaScriptCore is required.
 
 Parsing, streaming completion, expression evaluation, library extension, Schema,
 Prompt generation, Store, query lifecycle and message handling delegate to the
 pinned shared core. Native code supplies typed values, lossless UTF-16 transport,
 async tools, cancellation and host action execution. There is no Linux fallback.
+
+## Installation
+
+The repository-root `Package.swift` exposes `OpenUILang` and `OpenUISwiftUI` for
+remote SwiftPM dependencies. A language-only consumer selects `OpenUILang` from
+the `openui` package; a native UI consumer selects `OpenUISwiftUI`, which depends
+on this module automatically. See the [Swift installation instructions](../swift-ui/README.md#installation)
+for local development and release availability.
+
+The manifest in this directory remains a local development entry point. Do not
+add it and the root package to the same application dependency graph.
 
 ## Use an exported library
 
@@ -51,13 +62,15 @@ node packages/swift-lang/scripts/build.mjs
 ```
 
 Ordinary SwiftPM consumers use the checked-in resource without Node or downloads.
-The fixed upstream is `9823ec05d4b29bc78d101676dc16b44fe17f1830`, core tree
-`2dfbddbc96809b80ffc6fdb441e10a03e8ae3575`. Exact dependency, source and resource
+The fixed upstream is `f08a660535e55b5b2a24a0eb68568edaf9e4fe4b`, core tree
+`bf6be546007f96c87689c7b47c29e1f09175f6f6`. Exact dependency, source and resource
 hashes live in `Sources/OpenUILang/Resources/core-manifest.json`.
 
-Three compatibility corrections remain explicit: serializer round-trip grouping
-and keys, materialization limits, and bounded ECMAScript pattern execution. The
-manifest records their reasons and removal conditions. Raw message-context and
+Compatibility adaptations remain explicit: serializer round-trip grouping and
+keys, materialization limits, bounded ECMAScript pattern execution, and native
+readiness source injection. The complete inventory, reasons and removal gates
+are embedded in the manifest. See [the compatibility contract](COMPATIBILITY.md)
+for strict oracle checks, native projection rules and resource exceptions. Raw message-context and
 legacy output-format compatibility have been removed. Upstream core source is
 unmodified; a source upgrade must revalidate the build corrections and reference
 fixtures. Third-party licenses ship with the bundle and bounded regex backend.

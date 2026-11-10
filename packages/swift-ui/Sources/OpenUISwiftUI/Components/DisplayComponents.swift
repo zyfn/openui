@@ -1,71 +1,61 @@
 import OpenUILang
 import SwiftUI
 
-enum OpenUIDisplayComponents {
-    static var components: [OpenUIComponent] {
-        return [
-            OpenUIReference.component("Label") {
-                Text($0.string("text") ?? "").openUIFont($0.theme.typography.detail.weight(.medium))
-            },
-            OpenUIReference.component("Separator") { context in NativeSeparator(context: context) },
-            OpenUIReference.component("CodeBlock") { NativeCodeBlock(context: $0) },
-            OpenUIReference.component("Col") { _ in EmptyView() },
-            OpenUIReference.component("Table") { NativeDataTable(context: $0) },
-            OpenUIReference.component("EditableTable") { NativeEditableTable(context: $0) },
-            OpenUIReference.component("AccordionItem") { _ in EmptyView() },
-            OpenUIReference.component("Accordion") { NativeAccordion(context: $0) },
-            OpenUIReference.component("MetricIndicatorWithStrikethrough") {
-                NativeMetric(context: $0, inline: false)
-            },
-            OpenUIReference.component("MetricIndicatorInline") {
-                NativeMetric(context: $0, inline: true)
-            },
-        ]
-    }
-}
 
-private struct NativeSeparator: View {
+struct NativeSeparator: View {
     let context: OpenUIComponentContext
+    @Environment(\.displayScale) private var displayScale
     @ViewBuilder var body: some View {
         Group {
             if context.string("orientation") == "vertical" {
-                Rectangle().fill(context.theme.border).frame(width: 1).frame(minHeight: 18)
+                Rectangle().fill(context.theme.borderDefault).frame(width: 1 / displayScale).frame(minHeight: 18)
             } else {
-                Divider()
+                Rectangle().fill(context.theme.borderDefault).frame(height: 1 / displayScale)
             }
         }.accessibilityHidden(context.flag("decorative") ?? true)
     }
 }
 
-private struct NativeMetric: View {
+struct NativeMetric: View {
     let context: OpenUIComponentContext
     var inline: Bool
+    @Environment(\.multilineTextAlignment) private var textAlignment
     var body: some View {
         Group {
             if inline {
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: context.theme.spacing("s")) {
                         value.fixedSize(horizontal: true, vertical: true)
                         details
                     }
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: textAlignment == .center ? .center : .leading,
+                      spacing: context.theme.spacing("2xs")) {
                         value; details
                     }
                 }
             } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    value; details
+                VStack(alignment: .leading, spacing: context.theme.spacing("2xs")) {
+                    NativeWrappingRow(gap: context.theme.spaceS) {
+                        value
+                        comparison
+                    }
+                    subtitle
                 }
             }
         }.accessibilityElement(children: .combine)
     }
     private var value: some View {
-        Text(context.string("value") ?? "")
-            .openUIFont(inline ? context.theme.typography.inlineMetric : context.theme.typography.metric).monospacedDigit()
+        NativeMetricValue(text: context.string("value") ?? "",
+            font: inline ? context.theme.textNumbersDefaultHeavy : context.theme.textNumbersDefaultHeavy,
+            theme: context.theme)
     }
     @ViewBuilder private var details: some View {
+        comparison
+        subtitle
+    }
+    @ViewBuilder private var comparison: some View {
         if let previous = context.string("previousValue") {
-            Text(previous).strikethrough().openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
+            Text(previous).strikethrough().nativeTextStyle(context.theme.textStyle(.caption))
         }
         if case .object(let trend) = context.value("trend"), case .number(let number) = trend["value"],
             number.isFinite,
@@ -75,11 +65,33 @@ private struct NativeMetric: View {
                 number.formatted(.number.precision(.fractionLength(0...2))) + "%",
                 systemImage: direction == "down" ? "arrow.down" : "arrow.up"
             )
-            .openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
+            .nativeTextStyle(context.theme.textStyle(.caption))
         }
+    }
+    @ViewBuilder private var subtitle: some View {
         if let subtext = context.string("subtext") {
-            Text(subtext).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+            Text(subtext).nativeTextStyle(context.theme.textStyle(.supporting))
         }
+    }
+}
+
+/// Keep one amount intact. A rare wider-than-viewport value can be read by
+/// horizontal scrolling; it is never split through its decimal or shrunk.
+struct NativeMetricValue: View {
+    let text: String
+    let font: OpenUIFont
+    let theme: OpenUIThemeValues
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+    private var label: some View { Text(text).openUIFont(font, role: .metric).monospacedDigit().fixedSize() }
+    var body: some View {
+        // These are text-only measurement candidates, without state, resources
+        // or actions. Only the selected presentation is exposed to accessibility.
+        ViewThatFits(in: .horizontal) {
+            label
+            ScrollView(.horizontal) { label }
+                .frame(height: font.resolved(for: .metric).measuredLineHeight(scale: scale))
+        }
+        .accessibilityElement(children: .ignore).accessibilityLabel(text)
     }
 }
 
@@ -99,8 +111,9 @@ struct NativeAccordionSelection {
     }
 }
 
-private struct NativeAccordion: View {
+struct NativeAccordion: View {
     let context: OpenUIComponentContext
+    @Environment(\.displayScale) private var displayScale
     @State private var local = NativeAccordionSelection()
     private var items: [OpenUIRenderChild] { context.children("items") }
     private var keys: [OpenUIString] {
@@ -110,7 +123,7 @@ private struct NativeAccordion: View {
         }
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(items) { child in
                 if case .element(let item) = child.value, let key = PropValue.codeUnitString(item, "value")
                 {
@@ -121,12 +134,18 @@ private struct NativeAccordion: View {
                                 local.choose(open ? key : nil)
                             })
                     ) {
-                        context.render(PropValue.value(item, "content") ?? .null).padding(.top, 6)
+                        context.render(PropValue.value(item, "content") ?? .null)
+                            .padding(.top, context.theme.spacing("m"))
                     } label: {
-                        Text(PropValue.string(item, "trigger") ?? "").openUIFont(context.theme.typography.heading)
+                        Text(PropValue.string(item, "trigger") ?? "").nativeTextStyle(context.theme.textStyle(.fieldLabel))
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(context.theme.cardPadding)
-                    .modifier(NativeCardSurface(theme: context.theme))
+                    .padding(.vertical, context.theme.spacing("l"))
+                    if child.id != items.last?.id {
+                        Rectangle().fill(context.theme.borderDefault).frame(height: 1 / displayScale)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
         }
@@ -136,21 +155,26 @@ private struct NativeAccordion: View {
 
 }
 
-private struct NativeDataTable: View {
+struct NativeDataTable: View {
     struct Column: Identifiable {
         let id: String
         let title: String
         let data: [Value]
+        let numeric: Bool
+        let source: NativeSourceReadiness
     }
     let context: OpenUIComponentContext
     @Environment(\.openUITableCellPolicy) private var cellPolicy
+    @Environment(\.displayScale) private var displayScale
     @ScaledMetric(relativeTo: .body) private var minimumWidth: CGFloat = 88
+    @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
     @State private var availableWidth: CGFloat = 0
     @State private var currentPage = 0
+    @State private var stableColumns: [Column]?
     @Namespace private var measurementScope
     private let pageSize = 10 // Pinned upstream Table's DEFAULT_PAGE_SIZE.
-    private let columnGap: CGFloat = 16
-    private var columns: [Column] {
+    private var columnGap: CGFloat { context.theme.spacing("ml") }
+    private var currentColumns: [Column] {
         context.children("columns").compactMap { child in
             guard case .element(let element) = child.value else { return nil }
             let raw = PropValue.value(element, "data") ?? .null
@@ -160,10 +184,35 @@ private struct NativeDataTable: View {
             } else {
                 data = raw == .null || raw == .undefined ? [] : [raw]
             }
-            return Column(id: child.id, title: PropValue.string(element, "label") ?? "", data: data)
+            return Column(id: child.id, title: PropValue.string(element, "label") ?? "", data: data,
+                numeric: PropValue.string(element, "type") == "number", source: element.sourceReadiness)
         }
     }
-    private var rowCount: Int { columns.map { $0.data.count }.max() ?? 0 }
+    private var waiting: Bool { !context.hasDataFailure && (context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete)) }
+    private var incomplete: Bool { !context.isStreaming && (!context.element.isSourceComplete || context.hasInterruptedData) && !context.hasPendingData }
+    private var columns: [Column] {
+        if !context.element.isSourceComplete || context.hasPendingData || context.hasDataFailure,
+           let stableColumns { return stableColumns }
+        return currentColumns
+    }
+    private var columnsReady: Bool {
+        if stableColumns != nil { return true }
+        let source = context.element.sourceReadiness["columns"]
+        return source.complete || (source.closed && source.expectedCount == columns.count)
+    }
+    private var rowCount: Int {
+        let maximum = columns.map { $0.data.count }.max() ?? 0
+        guard !context.element.isSourceComplete else { return maximum }
+        for row in 0..<maximum {
+            let ready = columns.allSatisfy { column in
+                let source = column.source["data"]
+                return source.complete || (row < column.data.count && source[row].complete)
+                    || (source.closed && row >= column.data.count)
+            }
+            if !ready { return row }
+        }
+        return maximum
+    }
     private var pageCount: Int { max(1, (rowCount + pageSize - 1) / pageSize) }
     private var safePage: Int { min(currentPage, pageCount - 1) }
     private var visibleRows: Range<Int> {
@@ -171,15 +220,29 @@ private struct NativeDataTable: View {
         return start..<min(start + pageSize, rowCount)
     }
     @ViewBuilder var body: some View {
-        if context.isQueryLoading && rowCount == 0 {
-            NativeTableSkeleton(columns: columns.count)
-        } else if !columns.isEmpty {
-            loadedTable
+        Group {
+            if columnsReady && !columns.isEmpty { loadedTable }
+            else if waiting {
+                NativePendingContent(loading: true, message: "Loading data")
+            } else { stateMessage }
         }
+        .onAppear(perform: rememberColumns)
+        .onChange(of: context.element) { _ in rememberColumns() }
+        .onChange(of: context.hasPendingData) { _ in rememberColumns() }
+        .onChange(of: context.element.isSourceComplete) { _ in rememberColumns() }
+    }
+    private func rememberColumns() {
+        if context.element.isSourceComplete && !context.hasPendingData && !context.hasDataFailure { stableColumns = currentColumns }
+    }
+    private var stateMessage: some View {
+        Text(context.hasDataFailure ? (stableColumns == nil ? "Unable to load data" : "Unable to refresh data")
+            : incomplete ? "Table is incomplete" : "No data", bundle: NativeControlResources.bundle)
+            .nativeTextStyle(context.theme.textStyle(.supporting)).padding(.vertical, context.theme.spaceS)
     }
     private var loadedTable: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ScrollView(.horizontal) { tableContent }
+        VStack(alignment: .leading, spacing: context.theme.spacing("s")) {
+            NativeTableViewport { tableContent }
+            if !waiting && (rowCount == 0 || incomplete || context.hasDataFailure) { stateMessage }
             if pageCount > 1 {
                 NativePageControls(page: safePage, count: pageCount, enabled: true, identifier: "openui.table") { currentPage = $0 }
             }
@@ -195,33 +258,44 @@ private struct NativeDataTable: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("openui.table")
+        .accessibilityValue(Text(waiting ? "Loading data" : "", bundle: NativeControlResources.bundle))
+        .overlay(alignment: .topTrailing) {
+            NativeDelayedPresentation(active: waiting) { visible in
+                if visible { NativeLoadingIndicator().padding(context.theme.space2xs) }
+            }
+        }
+        .environment(\.openUIInteractionScopeReady, context.canInteract && !context.hasPendingData && !context.hasDataFailure)
         .environment(\.openUIActionDensity, .compact)
     }
     @ViewBuilder private var tableContent: some View {
         NativeDataTableLayout(
             columns: columns.count, width: max(minimumWidth, availableWidth),
-            minimum: minimumWidth, gap: columnGap
+            minimum: minimumWidth, gap: columnGap,
+            columnMinimums: columns.map { $0.numeric ? minimumWidth : context.presentation.minimumTextColumnWidth * textScale }
         ) {
             ForEach(columns) { column in
-                Text(column.title).openUIFont(context.theme.typography.body.weight(.semibold))
-                    .foregroundStyle(context.theme.foreground)
+                Text(column.title).openUIFont(context.theme.textBodySmHeavy, role: .control)
+                    .foregroundStyle(context.theme.textNeutralPrimary)
                     .accessibilityAddTraits(.isHeader)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(.vertical, context.theme.spaceS)
+                    .multilineTextAlignment(column.numeric ? .trailing : .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: column.numeric ? .topTrailing : .topLeading)
             }
-            context.theme.border.frame(height: 0.5).layoutValue(key: NativeTableBoundaryKey.self, value: true)
+            context.theme.borderDefault.frame(height: 1 / displayScale).layoutValue(key: NativeTableBoundaryKey.self, value: true)
                 .accessibilityHidden(true)
             ForEach(visibleRows, id: \.self) { row in
                 ForEach(columns) { column in
                     cell(column.data.indices.contains(row) ? column.data[row] : .null)
+                        .openUIFont(column.numeric ? context.theme.textBodyDefault.monospacedDigit() : context.theme.textBodyDefault)
+                        .multilineTextAlignment(column.numeric ? .trailing : .leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .padding(.vertical, context.theme.spaceSM)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: column.numeric ? .topTrailing : .topLeading)
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier("openui.table.cell.\(row).\(column.id)")
                 }
                 if row < visibleRows.upperBound - 1 {
-                    context.theme.border.frame(height: 0.5).layoutValue(key: NativeTableBoundaryKey.self, value: true)
+                    context.theme.borderDefault.frame(height: 1 / displayScale).layoutValue(key: NativeTableBoundaryKey.self, value: true)
                         .accessibilityHidden(true)
                 }
             }
@@ -236,21 +310,77 @@ private struct NativeDataTable: View {
     }
 }
 
+/// Read-only and editable tables share the same overflow affordance. Measure
+/// actual content, including custom cells, rather than guessing from columns.
+struct NativeTableViewport<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    @Environment(\.openUITheme) private var theme
+    @Namespace private var scope
+    @State private var overflows = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: theme.spaceS) {
+            ScrollView(.horizontal) {
+                content().background(GeometryReader { geometry in
+                    Color.clear.preference(key: NativeTableExtentKey.self,
+                        value: [scope: .init(content: geometry.size.width)])
+                })
+            }
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: NativeTableExtentKey.self,
+                    value: [scope: .init(viewport: geometry.size.width)])
+            })
+            if overflows {
+                Label {
+                    Text("Scroll horizontally to see all columns", bundle: NativeControlResources.bundle)
+                } icon: {
+                    Image(systemName: "arrow.left.and.right").accessibilityHidden(true)
+                }
+                .nativeTextStyle(theme.textStyle(.caption))
+                .accessibilityIdentifier("openui.table.overflow-hint")
+            }
+        }
+        .onPreferenceChange(NativeTableExtentKey.self) { measurements in
+            guard let extent = measurements[scope], let content = extent.content,
+                  let viewport = extent.viewport, content.isFinite, viewport.isFinite,
+                  viewport > 0 else { return }
+            overflows = content > viewport + 1
+        }
+    }
+}
+
+private struct NativeTableExtent: Equatable {
+    var content: CGFloat? = nil
+    var viewport: CGFloat? = nil
+}
+
+private struct NativeTableExtentKey: PreferenceKey {
+    static let defaultValue: [Namespace.ID: NativeTableExtent] = [:]
+    static func reduce(value: inout [Namespace.ID: NativeTableExtent], nextValue: () -> [Namespace.ID: NativeTableExtent]) {
+        value.merge(nextValue()) { first, next in
+            .init(content: next.content ?? first.content, viewport: next.viewport ?? first.viewport)
+        }
+    }
+}
+
 /// Every column receives one shared proposal before any row is measured.
 /// Flexible columns share available space; intrinsic/fixed children can keep a
 /// wider scrollable table. Nothing depends on the component type in a cell.
 enum NativeTableColumnPlacement {
-    static func widths(ideal: [CGFloat], minimum: CGFloat, available: CGFloat, gap: CGFloat) -> [CGFloat] {
+    static func widths(ideal: [CGFloat], minimum: CGFloat, available: CGFloat, gap: CGFloat, minimums: [CGFloat]? = nil) -> [CGFloat] {
         guard !ideal.isEmpty else { return [] }
         let available = available.isFinite ? max(0, available) : 0
         let floor = minimum.isFinite ? max(1, minimum) : 1
         let preferred = ideal.map { $0.isFinite ? max(1, $0) : floor }
-        var widths = preferred.map { min($0, floor) }
+        var widths = preferred.enumerated().map { index, value in
+            let requested = minimums.flatMap { $0.indices.contains(index) ? $0[index] : nil } ?? floor
+            return min(value, requested.isFinite ? max(1, requested) : floor)
+        }
         var remaining = max(0, available - gap * CGFloat(ideal.count - 1) - widths.reduce(0, +))
         let order = preferred.indices.sorted { preferred[$0] < preferred[$1] }
         for (offset, index) in order.enumerated() {
             let target = preferred[index]
-            let extra = min(max(0, target - floor), remaining / CGFloat(order.count - offset))
+            let extra = min(max(0, target - widths[index]), remaining / CGFloat(order.count - offset))
             widths[index] += extra
             remaining -= extra
         }
@@ -268,6 +398,7 @@ private struct NativeDataTableLayout: Layout {
     let width: CGFloat
     let minimum: CGFloat
     let gap: CGFloat
+    var columnMinimums: [CGFloat]? = nil
 
     private func frames(_ views: Subviews) -> [CGRect] {
         guard columns > 0 else { return [] }
@@ -277,7 +408,7 @@ private struct NativeDataTableLayout: Layout {
             let measured = views[index].sizeThatFits(.unspecified).width
             if measured.isFinite { ideal[position % columns] = max(ideal[position % columns], measured) }
         }
-        var widths = NativeTableColumnPlacement.widths(ideal: ideal, minimum: minimum, available: width, gap: gap)
+        var widths = NativeTableColumnPlacement.widths(ideal: ideal, minimum: minimum, available: width, gap: gap, minimums: columnMinimums)
         // Some children explicitly refuse compression (for example a supplied
         // fixed media size). Widen that column for every row, not just its cell.
         for (position, index) in cells.enumerated() {

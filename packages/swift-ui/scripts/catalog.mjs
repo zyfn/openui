@@ -31,15 +31,26 @@ function eraseRender(source) {
   return source;
 }
 const tmp=join(root,'work/component-catalog'); mkdirSync(tmp,{recursive:true});
-const entry=`import {openuiLibrary} from 'catalog:library';
+const entry=`import {openuiLibrary,openuiPromptOptions} from 'catalog:library';
+import {openuiChatAdditionalRules,openuiChatExamples} from 'catalog:chat-presets';
+import {FollowUpBlock} from 'catalog:followup-block';
+import {FollowUpItem} from 'catalog:followup-item';
 import {compileSchema,createParser} from '${join(root,'packages/lang-core/src/parser/parser.ts')}';
 import {isReactiveSchema} from '${join(root,'packages/lang-core/src/reactive.ts')}';
-const library=openuiLibrary;
+const library=openuiLibrary.extend({components:{add:[FollowUpBlock,FollowUpItem]}});
 const spec=library.toSpec(), compiled=compileSchema(spec.schema);
+const followUpRule=openuiChatAdditionalRules.find(r=>r.includes('FollowUpBlock'));
+const followUpExample=openuiChatExamples.find(e=>e.includes('FollowUpBlock('));
+const promptOptions={...openuiPromptOptions,
+  additionalRules:followUpRule?[...openuiPromptOptions.additionalRules,followUpRule]:openuiPromptOptions.additionalRules,
+  examples:followUpExample?[...openuiPromptOptions.examples,followUpExample]:openuiPromptOptions.examples};
 export function parseReference(source){return createParser(spec.schema).parse(source).meta.errors;}
-export const catalog={revision:${JSON.stringify(pin)},root:library.root,componentGroups:library.componentGroups,components:Object.entries(library.components).map(([name,c])=>({name,description:c.description,params:compiled.get(name).params.map(p=>({name:p.name,required:p.required,hasDefault:Object.hasOwn(p.schema??{},'default'),defaultValue:p.defaultValue??null,isBindable:isReactiveSchema(c.props.shape[p.name]),schema:spec.schema.$defs[name].properties[p.name]}))})),spec};`;
+export const catalog={revision:${JSON.stringify(pin)},root:library.root,componentGroups:library.componentGroups,components:Object.entries(library.components).map(([name,c])=>({name,description:c.description,params:compiled.get(name).params.map(p=>({name:p.name,required:p.required,hasDefault:Object.hasOwn(p.schema??{},'default'),defaultValue:p.defaultValue??null,isBindable:isReactiveSchema(c.props.shape[p.name]),schema:spec.schema.$defs[name].properties[p.name]}))})),spec,promptOptions};`;
 const result=await build({stdin:{contents:entry,resolveDir:root,loader:'ts'},bundle:true,write:false,platform:'node',format:'esm',target:'node20',nodePaths:[join(root,'packages/swift-lang/scripts/node_modules')],plugins:[{name:'reference-catalog',setup(b){
   b.onResolve({filter:/^catalog:library$/},()=>({path:prefix+'openuiLibrary.tsx',namespace:'upstream'}));
+  b.onResolve({filter:/^catalog:chat-presets$/},()=>({path:prefix+'prompt-options/index.ts',namespace:'upstream'}));
+  b.onResolve({filter:/^catalog:followup-block$/},()=>({path:prefix+'FollowUpBlock/index.tsx',namespace:'upstream'}));
+  b.onResolve({filter:/^catalog:followup-item$/},()=>({path:prefix+'FollowUpItem/index.tsx',namespace:'upstream'}));
   b.onResolve({filter:/^@openuidev\/react-lang$/},()=>({path:'core',namespace:'bridge'}));
   b.onLoad({filter:/.*/,namespace:'bridge'},()=>({contents:`export const FormNameContext=null,FormValidationContext=null;export const useFormName=()=>{throw Error('Unexpected renderer execution')},useFormValidation=useFormName,useGetFieldValue=useFormName,useSetFieldValue=useFormName,useIsStreaming=useFormName,useCreateFormValidation=useFormName,useTriggerAction=useFormName;export * from '${join(root,'packages/lang-core/src/index.ts')}';import {markReactive} from '${join(root,'packages/lang-core/src/reactive.ts')}';export function reactive(schema){markReactive(schema);return schema;}`,loader:'ts',resolveDir:root}));
   b.onResolve({filter:/.*/,namespace:'upstream'},args=>{
@@ -58,7 +69,15 @@ const result=await build({stdin:{contents:entry,resolveDir:root,loader:'ts'},bun
 }}]});
 const modulePath=join(tmp,'reference.mjs');writeFileSync(modulePath,result.outputFiles[0].text);
 const {catalog}=await import(modulePath+'?'+Date.now());
-if(catalog.components.length!==82)throw Error('Expected 82 default components');
+// 82 pinned general-library components plus FollowUpBlock/FollowUpItem, which
+// upstream registers only in the chat preset; the native SDK adopts them too.
+if(catalog.components.length!==84)throw Error('Expected 84 default components');
+// These are the pinned general-library preset fields, not app/tool settings.
+if(Object.keys(catalog.promptOptions).sort().join(',')!=='additionalRules,examples')
+  throw Error('Review upstream prompt preset fields');
+for(const key of ['additionalRules','examples'])
+  if(!Array.isArray(catalog.promptOptions[key]) || !catalog.promptOptions[key].every(value=>typeof value==='string'))
+    throw Error('Invalid upstream prompt preset '+key);
 catalog.sources=Object.fromEntries([...inputs].sort());
 const destination=join(root,'packages/swift-ui/Sources/OpenUISwiftUI/Resources/upstream-catalog.json');
 const text=JSON.stringify(catalog,null,2)+'\n';

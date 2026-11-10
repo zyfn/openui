@@ -5,6 +5,38 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class ChartInspectionTests: XCTestCase {
+  func testRadarNumberRegionsStayInsideNarrowPlotsAtLargeTextSizes() {
+    for width: CGFloat in [160, 240, 320] {
+      for scale: CGFloat in [1, 2, 3] {
+        let size = CGSize(width: width, height: 250 * scale)
+        let measured = Dictionary(uniqueKeysWithValues: (0..<20).map {
+          ($0, CGSize(width: CGFloat(String($0 + 1).count) * 14 * scale, height: 22 * scale))
+        })
+        let frames = NativeRadarLabelPlacement.frames(size: size, count: 20, sizes: measured,
+          scale: scale, lineHeight: 22 * scale)
+        XCTAssertEqual(frames.count, 20)
+        let bounds = CGRect(origin: .zero, size: size)
+        XCTAssertTrue(frames.allSatisfy { bounds.contains($0) })
+        for (index, frame) in frames.enumerated() {
+          XCTAssertGreaterThanOrEqual(frame.width, measured[index]!.width)
+          XCTAssertGreaterThanOrEqual(frame.height, measured[index]!.height)
+        }
+      }
+    }
+  }
+
+  func testDeclaredChartHeightAndEditableColumnWidthAreNotSilentlyClamped() {
+    XCTAssertEqual(NativeChartHeight.value(explicit: 60, defaultHeight: 250, scale: 2), 60)
+    XCTAssertEqual(NativeChartHeight.value(explicit: 1500, defaultHeight: 250, scale: 1), 1500)
+    for invalid in [Double.nan, .infinity, -1, 0] {
+      XCTAssertEqual(NativeChartHeight.value(explicit: invalid, defaultHeight: 250, scale: 2), 500)
+      XCTAssertEqual(NativeEditableColumn.width(invalid), 160)
+    }
+    XCTAssertEqual(NativeEditableColumn.width(80), 80)
+    XCTAssertEqual(NativeEditableColumn.width(900), 900)
+    XCTAssertEqual(NativeEditableColumn.width(nil), 160)
+  }
+
   func testStreamingChartsKeepOnlyCommittedNumbers() {
     var current = NativeChartData()
     current.labels = ["Food", "Transport", "Activities", "Buffer"]

@@ -7,25 +7,6 @@ import UIKit
 import AppKit
 #endif
 
-struct NativeRichTextStyle {
-  var font: OpenUIFont?
-  var numeric = false
-  var color: Color?
-  static func textContent(_ size: String?, theme: OpenUITheme) -> Self {
-    let font: OpenUIFont?
-    switch size {
-    case "small": font = theme.typography.detail
-    case "small-heavy": font = theme.typography.detail.weight(theme.typography.heading.weight)
-    case "large": font = theme.typography.title.weight(theme.typography.body.weight)
-    case "large-heavy": font = theme.typography.display
-    case "default": font = theme.typography.body
-    default: font = nil
-    }
-    return .init(font: font,
-      color: size == "small" ? theme.secondary : theme.foreground)
-  }
-}
-
 /// Shared native Markdown presentation. Remark owns text parsing and extensions;
 /// MarkdownUI lays out native blocks, and CodeBlock shares the standard renderer.
 struct NativeMarkdownText: View {
@@ -37,6 +18,8 @@ struct NativeMarkdownText: View {
   @Environment(\.openUIResourceContext) private var resources
   @Environment(\.cardSources) private var sources
   @Environment(\.openURL) private var openURL
+  @Environment(\.openUIInlineLinksReady) private var linksReady
+  @Environment(\.openUIActivationIntent) private var activationIntent
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.multilineTextAlignment) private var textAlignment
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
@@ -44,7 +27,7 @@ struct NativeMarkdownText: View {
   @State private var prepared: String?
   @State private var preparedRequest: NativeRichTextRequest?
   @State private var citation: NativeCitationSelection?
-  private var foreground: Color { style.color ?? theme.foreground }
+  private var foreground: Color { style.color ?? theme.textNeutralPrimary }
   private var frameAlignment: Alignment {
     switch textAlignment {
     case .center: return .center
@@ -52,7 +35,7 @@ struct NativeMarkdownText: View {
     default: return .leading
     }
   }
-  private var font: OpenUIFont { theme.typography.resolve(style.font ?? inheritedFont ?? theme.typography.body) }
+  private var font: OpenUIFont { (style.font ?? inheritedFont ?? theme.textBodyDefault).resolved(for: style.role) }
   private var mathSize: CGFloat { font.size * scale }
   private var mathColor: String { NativeMathColor.css(foreground, scheme: colorScheme) }
   private var request: NativeRichTextRequest {
@@ -67,23 +50,24 @@ struct NativeMarkdownText: View {
         FontFamily(font.family.map(FontProperties.Family.custom) ?? .system(font.design))
         FontSize(font.size)
         FontWeight(font.weight)
+        TextTracking(font.letterSpacing * font.size)
         FontDigitVariant(style.numeric || font.monospacedDigits ? .monospaced : .normal)
       }
-      .markdownTextStyle(\.link) { ForegroundColor(theme.accent) }
-      .markdownTextStyle(\.strong) { FontWeight(theme.typography.heading.weight) }
+      .markdownTextStyle(\.link) { ForegroundColor(theme.textNeutralLink); UnderlineStyle(.single) }
+      .markdownTextStyle(\.strong) { FontWeight(style.emphasisWeight ?? theme.textBodyDefaultHeavy.weight) }
       .markdownSoftBreakMode(mode == .markdown ? .space : .lineBreak)
       .markdownBlockStyle(\.paragraph) { configuration in
         configuration.label.fixedSize(horizontal: false, vertical: true)
           .frame(maxWidth: .infinity, alignment: frameAlignment)
-          .relativeLineSpacing(.em(theme.typography.lineSpacing))
-          .markdownMargin(top: 0, bottom: mode == .inline ? 0 : theme.contentSpacing)
+          .relativeLineSpacing(.em(font.additionalLineSpacing() / max(1, font.size)))
+          .markdownMargin(top: 0, bottom: mode == .inline ? 0 : theme.spaceM)
       }
-      .markdownBlockStyle(\.heading1) { heading($0.label, role: theme.typography.display) }
-      .markdownBlockStyle(\.heading2) { heading($0.label, role: theme.typography.title) }
-      .markdownBlockStyle(\.heading3) { heading($0.label, role: theme.typography.heading) }
-      .markdownBlockStyle(\.heading4) { heading($0.label, role: theme.typography.heading) }
-      .markdownBlockStyle(\.heading5) { heading($0.label, role: theme.typography.detail.weight(.semibold)) }
-      .markdownBlockStyle(\.heading6) { heading($0.label, role: theme.typography.caption.weight(.semibold)) }
+      .markdownBlockStyle(\.heading1) { heading($0.label, font: theme.textHeadingMd, role: .display, before: theme.spaceXl) }
+      .markdownBlockStyle(\.heading2) { heading($0.label, font: theme.textHeadingSm, role: .section, before: theme.spaceXl) }
+      .markdownBlockStyle(\.heading3) { heading($0.label, font: theme.textHeadingXs, role: .title, before: theme.spaceL) }
+      .markdownBlockStyle(\.heading4) { heading($0.label, font: theme.textBodyDefaultHeavy, role: .title, before: theme.spaceM) }
+      .markdownBlockStyle(\.heading5) { heading($0.label, font: theme.textBodySmHeavy, role: .detail, before: theme.spaceM) }
+      .markdownBlockStyle(\.heading6) { heading($0.label, font: theme.textBodyXs.weight(theme.textBodySmHeavy.weight), role: .caption, before: theme.spaceM) }
       .markdownBlockStyle(\.codeBlock) { configuration in
         NativeCodeBlockContent(code: OpenUIString(configuration.content.trimmingCharacters(in: .whitespacesAndNewlines)),
           language: OpenUIString(NativeMarkdownCode.language(configuration.language)), theme: theme)
@@ -99,6 +83,7 @@ struct NativeMarkdownText: View {
           .accessibilityHidden(true).allowsHitTesting(false)
       }
       .environment(\.openURL, OpenURLAction { url in
+        guard linksReady, activationIntent?.permitsActivation != false else { return .discarded }
         if let selection = NativeCitationSelection(url: url, sources: sources) {
           citation = selection; return .handled
         }
@@ -128,15 +113,21 @@ struct NativeMarkdownText: View {
       }
       .onDisappear { math.cancel() }
   }
-  private func heading<Content: View>(_ content: Content, role: OpenUIFont) -> some View {
-    let resolved = theme.typography.resolve(role)
-    return content.markdownTextStyle {
+  @ViewBuilder private func heading<Content: View>(_ content: Content, font: OpenUIFont, role: NativeTextRole, before: CGFloat) -> some View {
+    let resolved = font.resolved(for: role)
+    let styled = content.markdownTextStyle {
       FontFamily(resolved.family.map(FontProperties.Family.custom) ?? .system(resolved.design))
-      FontSize(.em(resolved.size / font.size))
+      FontSize(.em(resolved.size / self.font.size))
       FontWeight(resolved.weight)
+      TextTracking(resolved.letterSpacing * resolved.size)
     }
     .fixedSize(horizontal: false, vertical: true)
-    .markdownMargin(top: theme.spacing("m"), bottom: theme.spacing("s"))
+    .markdownMargin(top: before, bottom: theme.spaceS)
+    if resolved.lineSpacing != nil || resolved.lineHeight != nil {
+      styled.relativeLineSpacing(.em(resolved.additionalLineSpacing() / max(1, resolved.size)))
+    } else {
+      styled
+    }
   }
 }
 
@@ -216,9 +207,16 @@ private struct NativeMathBlock: View {
           .accessibilityElement(children: .ignore).accessibilityLabel(descriptor.tex)
           .accessibilityAddTraits(.isImage).accessibilityIdentifier("openui.math.rendered")
       } else if failed {
-        Text(descriptor.tex).openUIFont(theme.typography.code).textSelection(.enabled)
+        Text(descriptor.tex).openUIFont(theme.textCodeDefault, role: .code).textSelection(.enabled)
           .accessibilityIdentifier("openui.math.fallback")
-      } else { ProgressView().frame(minHeight: fontSize * 1.5).accessibilityIdentifier("openui.math.loading") }
+      } else {
+        NativeDelayedPresentation(active: true) { visible in
+          NativeLoadingIndicator().opacity(visible ? 1 : 0)
+        }.frame(minHeight: fontSize * 1.5)
+          .accessibilityElement(children: .ignore)
+          .accessibilityLabel(Text("Loading data", bundle: NativeControlResources.bundle))
+          .accessibilityIdentifier("openui.math.loading")
+      }
     }.task(id: key) {
       image = nil; failed = false
       do {
@@ -236,7 +234,7 @@ private struct NativeMarkdownImage: View {
   @State private var status: NativeMediaStatus = .loading
   var body: some View {
     NativeRemoteImage(src: url?.absoluteString, layout: .intrinsic, onStatus: { phase, _ in status = phase })
-      .clipShape(RoundedRectangle(cornerRadius: theme.mediaCornerRadius, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: theme.radiusM, style: .continuous))
       .accessibilityElement(children: .ignore).accessibilityAddTraits(.isImage)
       .accessibilityIdentifier(identifier)
   }

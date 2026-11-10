@@ -9,7 +9,7 @@ struct OpenUIFlexGrowKey: LayoutValueKey {
 /// Pure placement is also used by tests; no global display state is consulted.
 enum OpenUIFlowPlacement {
     static func frames(sizes: [CGSize], width: CGFloat, gap: CGFloat, align: String, justify: String,
-                       wrap: Bool = true, baselines: [CGFloat] = [], crossExtent: CGFloat? = nil) -> [CGRect] {
+                       wrap: Bool = true, baselines: [CGFloat] = [], crossExtent: CGFloat? = nil, rowGap: CGFloat? = nil) -> [CGRect] {
         let width = max(0, width)
         var rows: [[Int]] = [], row: [Int] = [], used: CGFloat = 0
         for index in sizes.indices {
@@ -45,7 +45,7 @@ enum OpenUIFlowPlacement {
                 frames[index] = CGRect(x: x, y: y + offset, width: size.width, height: align == "stretch" ? height : size.height)
                 x += size.width + gap + extra
             }
-            y += height + gap
+            y += height + (rowGap ?? gap)
         }
         return frames
     }
@@ -59,6 +59,7 @@ struct OpenUIFlexLayout: Layout {
     var wrap: Bool
     var fillsHeight = false
     var wrapJustifyBetweenAsStart = false
+    var rowGap: CGFloat? = nil
 
     private func finite(_ value: CGFloat?) -> CGFloat? {
         value.flatMap { $0.isFinite ? max(0, $0) : nil }
@@ -82,6 +83,41 @@ struct OpenUIFlexLayout: Layout {
         let ideal = subviews.map { $0.sizeThatFits(.unspecified) }
         let width = finite(proposal.width) ?? ideal.reduce(0) { $0 + $1.width } + gap * CGFloat(subviews.count - 1)
         var proposals = ideal.map { min(width, $0.width) }
+        if wrap && subviews.contains(where: { $0[OpenUIFlexGrowKey.self] }) {
+            // flex:1 contributes its minimum to line breaking, then shares the
+            // line's available width. Intrinsic controls keep their own basis.
+            let minimums = subviews.map { view in
+                view.sizeThatFits(ProposedViewSize(width: 0, height: nil)).width
+            }
+            let growing = subviews.map { $0[OpenUIFlexGrowKey.self] }
+            let rows = OpenUIWrappedFlexRows.allocate(ideal: ideal.map(\.width), minimums: minimums,
+                growing: growing, width: width, gap: gap)
+            var result = Array(repeating: CGRect.zero, count: subviews.count)
+            var y: CGFloat = 0
+            for row in rows {
+                var dimensions = row.map { item in
+                    subviews[item.index].dimensions(in: ProposedViewSize(width: item.width, height: nil))
+                }
+                if align == "stretch" {
+                    let height = row.map { item in
+                        subviews[item.index].sizeThatFits(ProposedViewSize(width: item.width, height: 0)).height
+                    }.max() ?? 0
+                    if height > 0 {
+                        dimensions = row.map { item in
+                            subviews[item.index].dimensions(in: ProposedViewSize(width: item.width, height: height))
+                        }
+                    }
+                }
+                let placed = OpenUIFlowPlacement.frames(
+                    sizes: zip(row, dimensions).map { CGSize(width: $0.0.width, height: $0.1.height) },
+                    width: width, gap: gap, align: align,
+                    justify: wrapJustifyBetweenAsStart && justify == "between" ? "start" : justify,
+                    wrap: false, baselines: dimensions.map { $0[.firstTextBaseline] })
+                for (item, frame) in zip(row, placed) { result[item.index] = frame.offsetBy(dx: 0, dy: y) }
+                y += (placed.map(\.maxY).max() ?? 0) + (rowGap ?? gap)
+            }
+            return result
+        }
         if !wrap {
             // Offer the least flexible children space first, as a native stack
             // does. No media/content percentage or component-type heuristic.
@@ -123,7 +159,7 @@ struct OpenUIFlexLayout: Layout {
         return OpenUIFlowPlacement.frames(sizes: dimensions.map { CGSize(width: $0.width, height: $0.height) },
             width: width, gap: gap, align: align,
             justify: wrap && wrapJustifyBetweenAsStart && justify == "between" ? "start" : justify,
-            wrap: wrap, baselines: dimensions.map { $0[.firstTextBaseline] }, crossExtent: finite(proposal.height))
+            wrap: wrap, baselines: dimensions.map { $0[.firstTextBaseline] }, crossExtent: finite(proposal.height), rowGap: rowGap)
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -141,7 +177,56 @@ struct OpenUIFlexLayout: Layout {
     }
 }
 
+/// Content-independent flex allocation; views are measured by the Layout above.
+enum OpenUIWrappedFlexRows {
+    struct Item { let index: Int; var width: CGFloat }
+    static func allocate(ideal: [CGFloat], minimums: [CGFloat], growing: [Bool],
+                         width: CGFloat, gap: CGFloat) -> [[Item]] {
+        func bounded(_ value: CGFloat) -> CGFloat { value.isFinite ? min(max(0, width), max(0, value)) : 0 }
+        let basis = ideal.indices.map { bounded(growing[$0] ? minimums[$0] : ideal[$0]) }
+        var lines: [[Int]] = [], line: [Int] = [], used: CGFloat = 0
+        for index in basis.indices {
+            if !line.isEmpty && used + gap + basis[index] > width { lines.append(line); line = []; used = 0 }
+            used += (line.isEmpty ? 0 : gap) + basis[index]; line.append(index)
+        }
+        if !line.isEmpty { lines.append(line) }
+        return lines.map { indices in
+            var widths = Dictionary(uniqueKeysWithValues: indices.map { ($0, basis[$0]) })
+            var flexible = indices.filter { growing[$0] }
+            var remaining = max(0, width - CGFloat(max(0, indices.count - 1)) * gap
+                - indices.filter { !growing[$0] }.reduce(0) { $0 + basis[$1] })
+            while !flexible.isEmpty {
+                let share = remaining / CGFloat(flexible.count)
+                let fixed = flexible.filter { basis[$0] > share }
+                if fixed.isEmpty {
+                    flexible.forEach { widths[$0] = share }; break
+                }
+                for index in fixed { widths[index] = basis[index]; remaining = max(0, remaining - basis[index]) }
+                flexible.removeAll { fixed.contains($0) }
+            }
+            return indices.map { Item(index: $0, width: widths[$0] ?? 0) }
+        }
+    }
+}
+
 enum NativeMediaRowAxis { case horizontal, vertical }
+
+/// Only an unspecified thumbnail may trade image width for reading space.
+/// All values are local presentation hints; authored imageSize stays fixed.
+struct NativeAdaptiveThumbnail {
+    let preferred: CGFloat
+    let minimum: CGFloat
+    let readingWidth: CGFloat
+
+    func side(in width: CGFloat, gap: CGFloat, axis: NativeMediaRowAxis) -> CGFloat {
+        let preferred = preferred.isFinite && preferred > 0 ? preferred : OpenUIPresentation.defaults.inlineThumbnailSize
+        guard width.isFinite, width > 0 else { return preferred }
+        if axis == .vertical { return min(preferred, width) }
+        let minimum = minimum.isFinite ? min(preferred, max(1, minimum)) : preferred
+        let copy = readingWidth.isFinite ? max(0, readingWidth) : 0
+        return min(preferred, max(minimum, width - max(0, gap) - copy))
+    }
+}
 
 /// Resolve once for a list, so every item keeps the same media column and axis.
 /// Thresholds are visual roles supplied by the theme, not device breakpoints.
@@ -216,9 +301,12 @@ enum NativeMediaRowPlacement {
 /// Ordinary media rows participate directly in their parent's Layout pass.
 /// Only real horizontal overflow uses a scroll viewport and measured height.
 struct NativeMediaRow<Media: View, Copy: View>: View {
+    @Environment(\.openUIPresentation) private var nativePresentation
+
     var axis: NativeMediaRowAxis
     var gap: CGFloat
     var centered = false
+    var adaptiveThumbnail: NativeAdaptiveThumbnail? = nil
     @ViewBuilder var media: Media
     @ViewBuilder var copy: Copy
     @Environment(\.openUITheme) private var theme
@@ -236,7 +324,7 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
                 row
             }
         }
-        .frame(idealWidth: theme.minimumCompactCardWidth, maxWidth: .infinity, alignment: .leading)
+        .frame(idealWidth: nativePresentation.minimumCompactCardWidth, maxWidth: .infinity, alignment: .leading)
         .background(GeometryReader { geometry in
             Color.clear.preference(key: NativeMediaRowWidths.self, value: [scope: geometry.size.width])
         })
@@ -251,7 +339,8 @@ struct NativeMediaRow<Media: View, Copy: View>: View {
         .accessibilityElement(children: .contain).accessibilityIdentifier("openui.media-row")
     }
     private var row: some View {
-        NativeMediaRowLayout(fallbackWidth: max(1, width), gap: gap, axis: axis, centered: centered) {
+        NativeMediaRowLayout(fallbackWidth: max(1, width), gap: gap, axis: axis, centered: centered,
+                            adaptiveThumbnail: adaptiveThumbnail) {
             media
             copy
         }
@@ -267,6 +356,7 @@ private struct NativeMediaRowLayout: Layout {
     let gap: CGFloat
     let axis: NativeMediaRowAxis
     let centered: Bool
+    let adaptiveThumbnail: NativeAdaptiveThumbnail?
 
     private func measured(_ proposal: ProposedViewSize, _ subviews: Subviews) -> NativeMediaRowPlacement.Result {
         let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? fallbackWidth
@@ -274,7 +364,12 @@ private struct NativeMediaRowLayout: Layout {
             let size = subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)) ?? .zero
             return .init(media: .zero, text: CGRect(origin: .zero, size: size), size: size, stacked: true)
         }
-        return NativeMediaRowPlacement.measure(width: width, media: subviews[0].sizeThatFits(.unspecified),
+        let mediaProposal: ProposedViewSize
+        if let adaptiveThumbnail {
+            let side = adaptiveThumbnail.side(in: width, gap: gap, axis: axis)
+            mediaProposal = .init(width: side, height: side)
+        } else { mediaProposal = .unspecified }
+        return NativeMediaRowPlacement.measure(width: width, media: subviews[0].sizeThatFits(mediaProposal),
             gap: gap, axis: axis, centered: centered) { subviews[1].sizeThatFits(ProposedViewSize(width: $0, height: nil)) }
     }
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -311,6 +406,7 @@ struct NativeLabelValueLayout: Layout {
     let minimumLabelWidth: CGFloat
     var allowsStacking = true
     var centerVertically = false
+    var collapsesEmptySlots = false
 
     private func frames(_ proposal: ProposedViewSize, _ views: Subviews) -> [CGRect] {
         guard !views.isEmpty else { return [] }
@@ -322,6 +418,15 @@ struct NativeLabelValueLayout: Layout {
         let width =
             proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil }
             ?? ideals[0].width + gap + ideals[1].width
+        if collapsesEmptySlots {
+            let empty = ideals.map { $0.width == 0 && $0.height == 0 }
+            if empty[0] || empty[1] {
+                return views.enumerated().map { index, view in
+                    CGRect(origin: .zero, size: empty[index] ? .zero
+                        : CGSize(width: width, height: view.sizeThatFits(ProposedViewSize(width: width, height: nil)).height))
+                }
+            }
+        }
         let valueWidth = min(width, ideals[1].width)
         let labelMinimum = min(minimumLabelWidth, ideals[0].width)
         if labelMinimum + gap + valueWidth <= width || !allowsStacking {

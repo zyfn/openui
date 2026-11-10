@@ -1,32 +1,40 @@
 import SwiftUI
 
+private struct NativeArtworkTagKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+  var openUIArtworkTag: Bool {
+    get { self[NativeArtworkTagKey.self] }
+    set { self[NativeArtworkTagKey.self] = newValue }
+  }
+}
+
 /// Standard badge presentation, shared by Tag/TagBlock and IconText. These
 /// metrics implement component sizes; they do not depend on the host or content.
 struct NativeBadgeColors {
   let foreground: Color
   let background: Color
 
-  init(variant: String?, theme: OpenUITheme) {
+  init(variant: String?, theme: OpenUIThemeValues) {
     switch variant {
     case "inverted":
-      foreground = theme.canvas
-      background = theme.foreground
+      foreground = theme.textAccentPrimary ?? NativeControlPalette.adaptive(light: 0xFFFFFF, dark: 0x0B0B0D)
+      background = theme.invertedBackground
     case "info":
-      foreground = theme.info
-      background = theme.info.opacity(0.12)
+      foreground = theme.textInfoPrimary
+      background = theme.infoBackground
     case "success":
-      foreground = theme.success
-      background = theme.success.opacity(0.12)
+      foreground = theme.textSuccessPrimary
+      background = theme.successBackground
     case "warning":
-      foreground = theme.warning
-      background = theme.warning.opacity(0.12)
+      foreground = theme.textAlertPrimary
+      background = theme.alertBackground
     case "danger":
-      foreground = theme.error
-      background = theme.error.opacity(0.12)
+      foreground = theme.textDangerPrimary
+      background = theme.dangerBackground
     default:
       // Upstream IconText normalizes filled/soft to neutral.
-      foreground = theme.foreground
-      background = theme.surface
+      foreground = theme.textNeutralPrimary
+      background = theme.sunk
     }
   }
 }
@@ -35,24 +43,36 @@ struct NativeTagPill<Icon: View>: View {
   let text: String
   let size: String?
   let variant: String?
-  let theme: OpenUITheme
+  let theme: OpenUIThemeValues
   @ViewBuilder var icon: Icon
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+  @Environment(\.openUIArtworkTag) private var onArtwork
 
-  private var density: CGFloat { size == "sm" ? 2 / 3 : size == "lg" ? 4 / 3 : 1 }
-  private var font: OpenUIFont { size == "sm" ? theme.typography.label : size == "lg" ? theme.typography.body : theme.typography.detail }
+  private var font: OpenUIFont {
+    size == "sm" ? theme.textBodyXs : size == "lg" ? theme.textBodyDefault : theme.textLabelSm
+  }
+  private var horizontalInset: CGFloat { theme.spacing(size == "sm" ? "xs" : size == "lg" ? "m" : "s") }
+  private var verticalInset: CGFloat {
+    onArtwork ? theme.space2xs : size == "sm" ? theme.space3xs : theme.space2xs
+  }
   private var colors: NativeBadgeColors { NativeBadgeColors(variant: variant, theme: theme) }
+  private var shape: NativeButtonShape {
+    .init(radius: nil, maximumRadius: min(max(0, theme.radiusFull) * scale,
+      NativeButtonShape.readableRadius(horizontal: horizontalInset * scale, vertical: verticalInset * scale)))
+  }
 
   var body: some View {
-    HStack(spacing: theme.contentSpacing / 2 * density * scale) {
+    HStack(spacing: theme.spacing(size == "sm" ? "2xs" : "xs") * scale) {
       icon.environment(\.openUIIconSize, font.size)
       Text(text).fixedSize(horizontal: false, vertical: true)
     }
-    .openUIFont(font.weight(theme.typography.label.weight))
-    .padding(.horizontal, theme.contentSpacing * density * scale)
-    .padding(.vertical, theme.spacing("xs") * (size == "lg" ? 1.5 : 1) * scale)
-    .foregroundStyle(colors.foreground)
-    .background(colors.background, in: RoundedRectangle(cornerRadius: theme.controlCornerRadius))
+    .openUIFont(font, role: .control)
+    .padding(.horizontal, horizontalInset * scale)
+    .padding(.vertical, verticalInset * scale)
+    .foregroundStyle(onArtwork ? Color.white.opacity(0.94) : colors.foreground)
+    // A quiet translucent plate integrates with the photo while keeping the
+    // existing capsule and reading metrics. Off-photo tags use their host theme.
+    .background(onArtwork ? Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.64) : colors.background, in: shape)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(text)
     .accessibilityIdentifier("openui.tag")

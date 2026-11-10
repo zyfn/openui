@@ -15,8 +15,10 @@ public struct OpenUIActionEvaluation {
 @MainActor
 public final class OpenUIState: ObservableObject {
     @Published public private(set) var root: EvaluatedElement?
+    @Published private(set) var presentationRoot: NativeSourceReadiness?
     @Published public private(set) var errors: [OpenUIError] = []
     @Published public private(set) var isComplete = false
+    @Published public private(set) var isInterrupted = false
     @Published public private(set) var queryStates: [String: QueryState] = [:]
     @Published public private(set) var mutationStates: [String: MutationState] = [:]
     /// Matches the reference context's loading signal, including declared
@@ -44,6 +46,129 @@ public final class OpenUIState: ObservableObject {
     private let functions: [String: CustomFunction]
     private let toolProvider: ToolProvider?
     private var latestResult: ParseResult?
+    /// Stream termination alone does not make a truncated preview executable.
+    /// Recoverable rendering diagnostics remain local to their components.
+    var canExecuteActions: Bool {
+        guard isComplete, !isInterrupted, let result = latestResult else { return false }
+        return !result.meta.incomplete && result.meta.unresolved.isEmpty
+    }
+    private var liveElements: [String: [EvaluatedElement]] = [:]
+    private var liveElementCache: [ObjectIdentifier: (snapshot: EvaluatedElement, current: EvaluatedElement)] = [:]
+    func liveElement(matching element: EvaluatedElement) -> EvaluatedElement {
+        guard let root, root !== element else { return element }
+        let key = ObjectIdentifier(element)
+        if let cached = liveElementCache[key], cached.snapshot === element { return cached.current }
+        func same(_ a: Value, _ b: Value, depth: Int) -> Bool {
+            guard depth < 256 else { return false }
+            switch (a,b) {
+            case (.element(let x), .element(let y)):
+                return x.typeName == y.typeName && x.statementId == y.statementId && props(x,y,depth:depth+1)
+            case (.array(let x), .array(let y)):
+                return x.count == y.count && zip(x,y).allSatisfy { same($0,$1,depth:depth+1) }
+            case (.object(let x), .object(let y)):
+                return x.count == y.count && zip(x,y).allSatisfy { $0.key == $1.key && same($0.value,$1.value,depth:depth+1) }
+            default: return a == b
+            }
+        }
+        func props(_ x: EvaluatedElement, _ y: EvaluatedElement, depth: Int) -> Bool {
+            x.props.count == y.props.count && zip(x.props,y.props).allSatisfy {
+                $0.0 == $1.0 && same($0.1,$1.1,depth:depth+1)
+            }
+        }
+        // A stable native child may hold an earlier readiness snapshot even
+        // when its displayed props have not changed. Match nested values too;
+        // never borrow readiness from a semantically different control.
+        let matches = (liveElements[element.typeName] ?? []).filter {
+            $0.statementId == element.statementId && props($0, element, depth: 0)
+        }
+        func readiness(_ a: Value, _ b: Value, depth: Int) -> Bool {
+            guard depth < 256 else { return false }
+            switch (a, b) {
+            case (.element(let x), .element(let y)): return metadata(x, y, depth: depth + 1)
+            case (.actionPlan(let x), .actionPlan(let y)): return x.isSourceComplete == y.isSourceComplete
+            case (.array(let x), .array(let y)):
+                return x.count == y.count && zip(x,y).allSatisfy { readiness($0,$1,depth:depth+1) }
+            case (.object(let x), .object(let y)):
+                return x.count == y.count && zip(x,y).allSatisfy { readiness($0.value,$1.value,depth:depth+1) }
+            default: return true
+            }
+        }
+        func metadata(_ x: EvaluatedElement, _ y: EvaluatedElement, depth: Int) -> Bool {
+            x.isSourceComplete == y.isSourceComplete && x.sourceReadiness == y.sourceReadiness && x.props.count == y.props.count
+                && zip(x.props,y.props).allSatisfy { readiness($0.1,$1.1,depth:depth+1) }
+        }
+        let current = matches.first.flatMap { first in
+            matches.allSatisfy { metadata(first,$0,depth:0) } ? first : nil
+        } ?? element
+        liveElementCache[key] = (element, current)
+        return current
+    }
+    private func indexLiveElements(_ root: EvaluatedElement?) {
+        liveElements.removeAll(keepingCapacity: true)
+        liveElementCache.removeAll(keepingCapacity: true)
+        var seen: Set<ObjectIdentifier> = []
+        func visit(_ value: Value, depth: Int) {
+            guard depth < 256 else { return }
+            switch value {
+            case .element(let element):
+                guard seen.insert(ObjectIdentifier(element)).inserted else { return }
+                liveElements[element.typeName, default: []].append(element)
+                element.props.forEach { visit($0.1, depth: depth + 1) }
+            case .array(let values):
+                guard seen.insert(ObjectIdentifier(values)).inserted else { return }
+                values.forEach { visit($0, depth: depth + 1) }
+            case .object(let values):
+                guard seen.insert(ObjectIdentifier(values)).inserted else { return }
+                values.forEach { visit($0.value, depth: depth + 1) }
+            default: break
+            }
+        }
+        if let root { visit(.element(root), depth: 0) }
+    }
+    func isElementReady(_ snapshot: EvaluatedElement) -> Bool {
+        let element = snapshot.isSourceComplete ? snapshot : liveElement(matching: snapshot)
+        guard latestResult != nil, element.isSourceComplete else { return false }
+        func ready(_ value: Value) -> Bool {
+            switch value {
+            case .actionPlan(let plan): return isPlanReady(plan)
+            case .array(let values): return values.allSatisfy(ready)
+            case .object(let fields): return fields.allSatisfy { ready($0.value) }
+            default: return true
+            }
+        }
+        return element.props.allSatisfy { ready($0.1) }
+    }
+    func isPlanReady(_ plan: ActionPlan) -> Bool {
+        guard plan.isSourceComplete else { return false }
+        if canExecuteActions { return true }
+        func ready(_ node: ASTNode) -> Bool {
+            var complete = true
+            walkAST(node) { node in
+                switch node {
+                case .ph, .ref: complete = false
+                case .stateRef(let name):
+                    if name != "$value", store.get(name) == nil { complete = false }
+                case .runtimeRef(let name, let type):
+                    if type == .query, queryManager.queryState(for: name)?.data == nil { complete = false }
+                    if type == .mutation, queryManager.mutationState(for: name)?.status != .success { complete = false }
+                case .runtimeValue(let value):
+                    if case .undefined = value { complete = false }
+                default: break
+                }
+            }
+            return complete
+        }
+        return plan.steps.allSatisfy { step in
+            switch step {
+            case .openUrl(let node): return ready(node)
+            case .continueConversation(let message, let context): return ready(message) && context.map(ready) != false
+            case .set(_, let node): return ready(node)
+            case .reset: return true
+            case .custom(_, let args): return args.allSatisfy { ready($0.1) }
+            case .run: return canExecuteActions
+            }
+        }
+    }
     private var streamGeneration = 0
     private var persistedState: [OpenUIString: Value]
     private var unsubscribe: (() -> Void)?
@@ -52,6 +177,8 @@ public final class OpenUIState: ObservableObject {
     private var querySourceGeneration = -1
     private var queryStoreSnapshot: [OpenUIString: Value] = [:]
     private var idleMutations: [String: Value] = [:]
+    let mediaCache = NativeMediaCache()
+    let resourceStore = NativeResourceStore()
 
     public init(schema: LibrarySchema, functions: [String: CustomFunction] = [:],
                 toolProvider: ToolProvider? = nil, persistedState: [OpenUIString: Value] = [:]) {
@@ -62,7 +189,17 @@ public final class OpenUIState: ObservableObject {
         observeQueries()
     }
 
-    deinit { unsubscribe?(); queryManager.dispose() }
+    deinit {
+        unsubscribe?(); queryManager.dispose()
+        // In-flight callers can retain the caches beyond this state. Cancel
+        // their work when the owning state ends, on the caches' actor.
+        let mediaCache = self.mediaCache
+        let resourceStore = self.resourceStore
+        Task { @MainActor in
+            mediaCache.removeAll()
+            resourceStore.removeAll()
+        }
+    }
 
     private func observeQueries() {
         let generation = streamGeneration
@@ -86,16 +223,29 @@ public final class OpenUIState: ObservableObject {
         acceptSource(parser.getResult(complete: true))
     }
 
+    /// A host's Stop action ends generation without committing its trailing
+    /// token or starting deferred tools. Already completed content is retained.
+    /// Use complete() for a normally finished response, not for cancellation.
+    public func interrupt() {
+        guard !isComplete else { return }
+        isInterrupted = true
+        isComplete = true
+        acceptSource(parser.getResult(complete: false))
+    }
+
     public func reset() {
         let hadErrors = !errors.isEmpty
         streamGeneration += 1
+        mediaCache.removeAll()
+        resourceStore.removeAll()
         presentationRevision += 1
         unsubscribe?(); queryManager.dispose()
         queryManager = QueryManager(provider: toolProvider)
         parser = createStreamingParser(schema: schema); store = createStore()
         latestResult = nil; source = ""; persistedState = [:]
+        indexLiveElements(nil)
         queryRequests = [:]; querySourceGeneration = -1; queryStoreSnapshot = [:]; idleMutations = [:]
-        root = nil; errors = []; queryStates = [:]; mutationStates = [:]; isComplete = false
+        root = nil; presentationRoot = nil; errors = []; queryStates = [:]; mutationStates = [:]; isComplete = false; isInterrupted = false
         errorRevision = nil
         observeQueries()
         if hadErrors { onError?([]) }
@@ -111,10 +261,10 @@ public final class OpenUIState: ObservableObject {
 
     private func replaceSource(_ text: String, streaming: Bool, replacesPresentation: Bool) {
         streamGeneration += 1
-        if replacesPresentation { presentationRevision += 1 }
+        if replacesPresentation { presentationRevision += 1; mediaCache.removeAll(); resourceStore.removeAll() }
         unsubscribe?(); observeQueries()
         queryManager.invalidateMutations(); idleMutations = [:]
-        source = text; isComplete = !streaming
+        source = text; isComplete = !streaming; isInterrupted = false
         acceptSource(parser.set(text, complete: !streaming))
     }
 
@@ -203,8 +353,11 @@ public final class OpenUIState: ObservableObject {
     /// Button dispatch including the legacy action-object wire shape. JSON
     /// objects cannot impersonate a declared custom action; only @Name calls do.
     public func triggerAction(_ userMessage: String, formName: OpenUIString? = nil, action: Value? = nil) async -> [ActionEvent] {
-        guard isComplete, latestResult != nil else { return [] }
-        if case .actionPlan(let plan) = action { return await perform(plan, formName: formName) }
+        await triggerAction(userMessage, formName: formName, action: action, source: nil)
+    }
+    func triggerAction(_ userMessage: String, formName: OpenUIString?, action: Value?, source: EvaluatedElement?, onDispatch: ((ActionEvent) -> Void)? = nil) async -> [ActionEvent] {
+        guard source.map(isElementReady) ?? canExecuteActions else { return [] }
+        if case .actionPlan(let plan) = action { return await perform(plan, formName: formName, source: source, onDispatch: onDispatch) }
         if case .object(let fields) = action {
             func field(_ key: String) -> Value? { fields.last(where: { $0.key == key })?.value }
             let type: OpenUIString
@@ -219,14 +372,37 @@ public final class OpenUIState: ObservableObject {
             }
             let event = ActionEvent(type: type, params: params.map { ($0.key, $0.value) }, humanFriendlyMessage: OpenUIString(userMessage),
                                     formState: formPayload(formName), formName: formName)
-            onAction?(event); return [event]
+            onDispatch?(event); onAction?(event); return [event]
         }
         guard action == nil || action == .null else { return [] }
-        return await perform(ActionPlan(steps: [.continueConversation(messageAST: .str(userMessage), contextAST: nil)]), formName: formName)
+        return await perform(ActionPlan(steps: [.continueConversation(messageAST: .str(userMessage), contextAST: nil)]), formName: formName, source: source, onDispatch: onDispatch)
+    }
+
+    /// A retained control can outlive a parser readiness snapshot. Resolve only
+    /// the same action in the same live source before checking or dispatching it.
+    func currentActionPlan(_ plan: ActionPlan, source: EvaluatedElement?) -> ActionPlan {
+        var plan = plan
+        if !plan.isSourceComplete, let source {
+            let live = liveElement(matching: source)
+            func matching(_ value: Value) -> ActionPlan? {
+                switch value {
+                case .actionPlan(let current): return current == plan && current.isSourceComplete ? current : nil
+                case .array(let values): return values.lazy.compactMap(matching).first
+                case .object(let fields): return fields.lazy.compactMap { matching($0.value) }.first
+                default: return nil
+                }
+            }
+            if live !== source, let refreshed = live.props.lazy.compactMap({ matching($0.1) }).first { plan = refreshed }
+        }
+        return plan
     }
 
     public func perform(_ plan: ActionPlan, formName: OpenUIString? = nil) async -> [ActionEvent] {
-        guard isComplete, latestResult != nil else { return [] }
+        await perform(plan, formName: formName, source: nil)
+    }
+    func perform(_ plan: ActionPlan, formName: OpenUIString?, source: EvaluatedElement?, onDispatch: ((ActionEvent) -> Void)? = nil) async -> [ActionEvent] {
+        let plan = currentActionPlan(plan, source: source)
+        guard source.map(isElementReady) ?? canExecuteActions, source == nil || isPlanReady(plan) else { return [] }
         let generation = streamGeneration
         let defaults = createStore()
         defaults.initialize(defaults: latestResult!.stateDeclarations, persisted: [:])
@@ -254,6 +430,7 @@ public final class OpenUIState: ObservableObject {
             },
             onEvent: { [weak self] event in
                 guard let self, self.streamGeneration == generation else { return }
+                onDispatch?(event)
                 self.onAction?(event)
             }
         )
@@ -346,12 +523,12 @@ public final class OpenUIState: ObservableObject {
         store.initialize(defaults: result.stateDeclarations, persisted: persistedState)
         persistedState = [:]
         let evaluator = makeEvaluator(result: result)
-        if isComplete { queryManager.registerMutations(Dictionary(result.mutationStatements.map { mutation in
+        if isComplete && !isInterrupted { queryManager.registerMutations(Dictionary(result.mutationStatements.map { mutation in
             let tool = mutation.toolAST.map { evaluator.evaluate($0) }
             if case .string(let name) = tool { return (mutation.statementId, name) }
             return (mutation.statementId, "")
         }, uniquingKeysWith: { _, new in new })) }
-        if isComplete && synchronizeQueries {
+        if isComplete && !isInterrupted && synchronizeQueries {
             let sourceChanged = querySourceGeneration != streamGeneration
             querySourceGeneration = streamGeneration
             let snapshot = store.getSnapshot()
@@ -379,7 +556,10 @@ public final class OpenUIState: ObservableObject {
                 queryManager.synchronizeQueries(requests)
             }
         }
-        root = evaluator.evaluateRoot(result)
+        let evaluatedRoot = evaluator.evaluateRoot(result)
+        presentationRoot = result.presentationRoot
+        indexLiveElements(evaluatedRoot)
+        root = evaluatedRoot
         var queryValues: [String: QueryState] = [:]
         for query in result.queryStatements {
             queryValues[query.statementId] = queryManager.queryState(for: query.statementId)

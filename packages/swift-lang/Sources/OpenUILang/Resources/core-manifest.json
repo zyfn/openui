@@ -1,10 +1,10 @@
 {
-  "upstream": "9823ec05d4b29bc78d101676dc16b44fe17f1830",
-  "sourceTree": "2dfbddbc96809b80ffc6fdb441e10a03e8ae3575",
-  "sha256": "f18a06bb0c4fc052ad2cf5d23c418413a7c2fbf82b9a229cd41826fb2d4bed62",
-  "bytes": 719614,
+  "upstream": "f08a660535e55b5b2a24a0eb68568edaf9e4fe4b",
+  "sourceTree": "053f51d4da2f151c36581f80cfd125d1fb6aa8af",
+  "sha256": "10227f1773ec35d0cadee6937cb5f1ca93eb04461d3885cd78d9074c9cbb24af",
+  "bytes": 726095,
   "lockSha256": "1c8c81dc00c8717afd390d204c683bf1851baf01f0ed9b9f395d01b43b5a497e",
-  "adapterSha256": "473109e9e5f4f2b8072d04669700f5debde09d076d173fe84ba703c2151bed9b",
+  "adapterSha256": "27e45570e09903a93d2ef00bd2359b687a64bd229ab22565ba968b48452ac923",
   "telemetry": "excluded at build time: native host has no process, fetch or install telemetry",
   "bridge": "opaque captures resolve through upstream EvaluationContext.resolveRef; core-created ActionPlan objects retain provenance; host-authored plans execute at the native boundary",
   "authoring": {
@@ -33,6 +33,176 @@
     "serializer precedence and lossless keys",
     "materialization depth/node budgets"
   ],
+  "adaptations": [
+    {
+      "id": "packaging",
+      "category": "platform-bridge",
+      "locations": [
+        "scripts/build.mjs",
+        "Resources/core-manifest.json"
+      ],
+      "reason": "Pin and bundle the official core for JavaScriptCore",
+      "observable": "Core identity, no runtime imports",
+      "verification": "Resource hash and clean pinned source checks",
+      "removal": "Upstream supplies an equivalent Apple resource"
+    },
+    {
+      "id": "value-bridge",
+      "category": "platform-bridge",
+      "locations": [
+        "scripts/entry.ts",
+        "Sources/OpenUILang/SharedCore.swift",
+        "Sources/OpenUILang/OpenUIString.swift"
+      ],
+      "reason": "Ordered UTF16 values and native callback transport",
+      "observable": "Identity, undefined, surrogate and key order semantics",
+      "verification": "Strict parser traces and semantic oracle vectors",
+      "removal": "Equivalent lossless upstream native transport"
+    },
+    {
+      "id": "captures",
+      "category": "platform-bridge",
+      "locations": [
+        "scripts/captures.ts",
+        "Sources/OpenUILang/Actions.swift"
+      ],
+      "reason": "Opaque native values and ActionPlan provenance",
+      "observable": "Deferred evaluation and ordered native actions",
+      "verification": "Official adapter action traces and interaction tests",
+      "removal": "Equivalent upstream capture and executor interface"
+    },
+    {
+      "id": "authoring",
+      "category": "platform-bridge",
+      "locations": [
+        "scripts/authoring.ts",
+        "Sources/OpenUILang/LibraryBridge.swift",
+        "Sources/OpenUILang/SchemaDocument.swift"
+      ],
+      "reason": "Lossless JSON/Zod references and compatible editable schema projections",
+      "observable": "Definitions, constraints, positional fields and native binding metadata",
+      "verification": "Authoring oracle and compiled schema mutation tests",
+      "removal": "Equivalent upstream native authoring interface; mutable public setters require a migration"
+    },
+    {
+      "id": "serializer",
+      "category": "upstream-defect-fix",
+      "locations": [
+        "scripts/compat.mjs",
+        "scripts/patches/serializer-roundtrip.patch"
+      ],
+      "reason": "Pinned serializer loses precedence and nonidentifier keys",
+      "observable": "Serialized spelling changes; parsed computed meaning is retained",
+      "verification": "Unmodified official parser accepts emitted programs and evaluates the same meaning",
+      "removal": "Upstream passes these round-trip regressions"
+    },
+    {
+      "id": "readiness",
+      "category": "native-presentation-metadata",
+      "locations": [
+        "scripts/readiness-compat.mjs",
+        "scripts/readiness.ts",
+        "Sources/OpenUILang/NativeSourceReadiness.swift"
+      ],
+      "reason": "Distinguish structural closure, committed data boundaries, local query ownership and interaction readiness",
+      "observable": "Existing syntax marks remain private; new per-property/index boundaries and query dependencies live in WeakMaps, outside protocol values and serialized ASTs",
+      "verification": "Strict intermediate snapshots, source-tail boundary tests, staged chart/table and complete-control/incomplete-action UI tests",
+      "removal": "Upstream exposes equivalent source/dependency provenance; injection is explicitly retained until then"
+    },
+    {
+      "id": "materialization-budget",
+      "category": "resource-limit",
+      "locations": [
+        "scripts/compat.mjs"
+      ],
+      "reason": "Bound native materialization to 256 levels and 100000 nodes",
+      "observable": "Existing parse-exception diagnostic, outside stock equivalence domain",
+      "verification": "Budget tests separate from strict equivalence cases",
+      "removal": "Equivalent upstream or platform execution bounds"
+    },
+    {
+      "id": "source-budget",
+      "category": "resource-limit",
+      "locations": [
+        "Sources/OpenUILang/RuntimeLimits.swift",
+        "Sources/OpenUILang/ProtocolTypes.swift"
+      ],
+      "reason": "Bound source nesting/operators and JSON decoding",
+      "observable": "Existing parse-exception or native JSON error; no DSL additions",
+      "verification": "Boundary, comment and selected-message budget tests",
+      "removal": "Equivalent bounded upstream parsing"
+    },
+    {
+      "id": "transport-depth",
+      "category": "unproven-equivalence",
+      "locations": [
+        "Sources/OpenUILang/SharedCore.swift"
+      ],
+      "reason": "Native value conversion retains a 256-level defensive guard",
+      "observable": "Inputs requiring deeper transport are outside the verified domain",
+      "verification": "Recorded limitation; strict fixtures remain within transport bounds",
+      "removal": "Lossless bounded transport with explicit exhaustion propagation is verified"
+    },
+    {
+      "id": "regexp",
+      "category": "resource-limit",
+      "locations": [
+        "scripts/build.mjs",
+        "Sources/OpenUILang/RegExp.swift",
+        "Sources/COpenUIRegExp"
+      ],
+      "reason": "Bound no-flag ECMAScript pattern execution",
+      "observable": "Invalid patterns keep official leniency; exhaustion blocks validation with a distinct message",
+      "verification": "Pinned engine vectors and exhaustion/form rejection tests",
+      "removal": "Equivalent bounded official backend; never remove budgets to obtain parity"
+    },
+    {
+      "id": "timers-tools",
+      "category": "platform-bridge",
+      "locations": [
+        "Sources/OpenUILang/SharedCore.swift",
+        "Sources/OpenUILang/QueryManager.swift"
+      ],
+      "reason": "Native timers, controlled tools and disposal",
+      "observable": "Callbacks, in-flight replacement and cancellation",
+      "verification": "Controlled official manager traces and Swift lifecycle tests",
+      "removal": "Equivalent Apple async execution integration"
+    },
+    {
+      "id": "telemetry",
+      "category": "platform-bridge",
+      "locations": [
+        "scripts/build.mjs"
+      ],
+      "reason": "Apple host has no process/fetch/install telemetry capability",
+      "observable": "Telemetry excluded; oracle retains upstream source with opt-in disabled",
+      "verification": "Build import checks and strict semantic traces",
+      "removal": "Appropriate upstream Apple platform entry point"
+    },
+    {
+      "id": "helper-exports",
+      "category": "platform-bridge",
+      "locations": [
+        "scripts/build.mjs"
+      ],
+      "reason": "Expose official preprocess and source-split helpers",
+      "observable": "Visibility only, no algorithm substitution",
+      "verification": "Pinned replace-once checks",
+      "removal": "Equivalent public upstream exports"
+    },
+    {
+      "id": "typed-diagnostic-source",
+      "category": "platform-bridge",
+      "locations": [
+        "Sources/OpenUILang/ProtocolTypes.swift",
+        "Sources/OpenUILang/SharedCore.swift"
+      ],
+      "reason": "Keep the legacy nonoptional native source property without inventing a source in protocol diagnostics",
+      "observable": "protocolSource preserves official omission; source retains its existing parser display fallback",
+      "verification": "Raw diagnostics compare all fields and order; typed protocolSource matches exact source presence",
+      "removal": "A separately versioned public native API migration can remove the legacy fallback"
+    }
+  ],
   "retainedPatches": [
     {
       "module": "parser/serialize.ts",
@@ -48,6 +218,11 @@
       "module": "utils/validation.ts",
       "reason": "Delegate pattern execution to the existing bounded native backend; stock JSC RegExp has no portable per-call budget.",
       "removal": "Equivalent bounded pattern execution in the shared core or host runtime."
+    },
+    {
+      "module": "parser/lexer.ts, parser/expressions.ts, parser/parser.ts, parser/materialize.ts, runtime/evaluator.ts, runtime/evaluate-tree.ts",
+      "reason": "Readiness source provenance is private native metadata; the pinned core has no equivalent complete-control/dependency API.",
+      "removal": "Equivalent source/dependency readiness supplied by upstream and verified against strict intermediate snapshots."
     }
   ],
   "removedSemanticOverrides": [

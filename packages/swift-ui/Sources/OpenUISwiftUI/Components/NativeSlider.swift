@@ -17,17 +17,27 @@ struct NativeSliderConfiguration: Equatable {
     let count = floor((maximum - minimum) / step)
     return count.isFinite ? count : Double.greatestFiniteMagnitude
   }
-  func value(at index: Double) -> Double { min(maximum, max(minimum, minimum + index * step)) }
+  func value(at index: Double) -> Double {
+    let raw = minimum + index * step
+    func precision(_ number: Double) -> Int {
+      let parts = jsNumberString(number).lowercased().split(separator: "e")
+      let fractional = parts[0].split(separator: ".", omittingEmptySubsequences: false).dropFirst().first?.count ?? 0
+      let exponent = parts.count > 1 ? Int(parts[1]) ?? 0 : 0
+      return max(0, fractional - exponent)
+    }
+    // The lattice is minimum + n*step, so its origin contributes precision.
+    // A non-divisible maximum remains an endpoint, as in the reference slider.
+    let digits = max(precision(minimum), precision(step))
+    // toFixed supports at most 100 digits. Smaller representable steps retain
+    // their finite arithmetic value rather than being rounded down to zero.
+    let rounded = raw.isFinite && digits <= 100 ? Double(jsNumberToFixed(raw, digits: digits)) ?? raw : raw
+    return min(maximum, max(minimum, rounded))
+  }
   func snapped(_ value: Double) -> Double {
     guard valid else { return minimum }
     let index = ((min(maximum, max(minimum, value)) - minimum) / step).rounded()
     guard index.isFinite else { return min(maximum, max(minimum, value)) }
-    let raw = self.value(at: index)
-    let parts = jsNumberString(step).lowercased().split(separator: "e")
-    let fractional = parts[0].split(separator: ".", omittingEmptySubsequences: false).dropFirst().first?.count ?? 0
-    let exponent = parts.count > 1 ? Int(parts[1]) ?? 0 : 0
-    let digits = min(100, max(0, fractional - exponent))
-    return Double(jsNumberToFixed(raw, digits: digits)) ?? raw
+    return self.value(at: index)
   }
   func error(for values: [Double], index: Int) -> String? {
     guard values.indices.contains(index) else { return nil }
@@ -96,6 +106,8 @@ private struct NativeSliderTarget: Equatable {
   static func == (lhs: Self, rhs: Self) -> Bool {
     lhs.context.presentationSourceRevision == rhs.context.presentationSourceRevision
       && lhs.context.isStreaming == rhs.context.isStreaming
+      && lhs.context.element.isSourceComplete == rhs.context.element.isSourceComplete
+      && lhs.context.interactionScopeReady == rhs.context.interactionScopeReady
       && lhs.context.element == rhs.context.element
       && lhs.context.exactFormName == rhs.context.exactFormName
   }
@@ -104,12 +116,14 @@ private struct NativeSliderTarget: Equatable {
 struct NativeSliderField: View {
   let context: OpenUIComponentContext
   @Environment(\.openUIFieldLabel) private var fieldLabel
+  @Environment(\.dynamicTypeSize) private var typeSize
+  @ScaledMetric(relativeTo: .body) private var valueWidth: CGFloat = 88
   @StateObject private var draft = NativeSliderDraft()
   @State private var picker: NativeSliderPickerRequest?
   private var field: NativeFieldState { .init(context: context) }
   private var configuration: NativeSliderConfiguration {
-    .init(minimum: context.number("min") ?? 0, maximum: context.number("max") ?? 100,
-      step: context.number("step"), discrete: context.string("variant") == "discrete")
+    .init(minimum: context.presentationNumber("min") ?? 0, maximum: context.presentationNumber("max") ?? 100,
+      step: context.presentationNumber("step"), discrete: context.presentationString("variant") == "discrete")
   }
   private var external: [Double] {
     let values = NativeChartData.numbers(field.value)
@@ -119,30 +133,31 @@ struct NativeSliderField: View {
   private var label: String { context.string("label") ?? field.name.displayString }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      if fieldLabel == nil { Text(label).openUIFont(context.theme.typography.detail) }
+    VStack(alignment: .leading, spacing: context.theme.spacing("s")) {
+      header
       if configuration.valid {
-        if !context.isStreaming {
-          HStack(alignment: .top, spacing: 12) {
-            ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
-              valueControl(index)
-            }
-          }
-        }
         NativeSliderTrack(values: draft.values.isEmpty ? external : draft.values,
           configuration: configuration, enabled: context.canInteract,
-          showsDots: configuration.discrete && !context.isStreaming, label: label,
+          showsDots: configuration.discrete && context.canInteract, label: label,
           select: { value, index in draft.select(value, at: index) })
+        ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
+          if let error = configuration.error(for: draft.values, index: index) {
+            Text(error).nativeTextStyle(context.theme.textStyle(.fieldError))
+              .fixedSize(horizontal: false, vertical: true)
+              .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
+          }
+        }
       } else {
-        Text("Value unavailable", bundle: NativeControlResources.bundle).foregroundStyle(context.theme.secondary)
+        Text("Value unavailable", bundle: NativeControlResources.bundle).foregroundStyle(context.theme.textNeutralSecondary)
       }
     }
-    .modifier(NativeFieldSurface(theme: context.theme))
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .foregroundStyle(context.theme.textNeutralPrimary)
     .onAppear { configure(target); draft.receive(external) }
     .onChange(of: target) { configure($0) }
     .onChange(of: external) { draft.receive($0) }
     .onChange(of: context.presentationSourceRevision) { _ in picker = nil }
-    .onChange(of: context.isStreaming) { streaming in if streaming { picker = nil } }
+    .onChange(of: context.canInteract) { ready in if !ready { picker = nil } }
     .onChange(of: draft.values.count) { count in if let picker, picker.index >= count { self.picker = nil } }
     .onDisappear { draft.flush() }
     .sheet(item: $picker) { request in
@@ -163,26 +178,52 @@ struct NativeSliderField: View {
       NativeFieldState(context: target.context).write(.array(values.map(Value.number)))
     }
   }
+  private var header: some View {
+    let stacked = typeSize.isAccessibilitySize || external.count > 1
+    let layout = stacked
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: context.theme.spaceS))
+      : AnyLayout(HStackLayout(alignment: .center, spacing: context.theme.spaceM))
+    return layout {
+      if fieldLabel == nil {
+        Text(label).nativeTextStyle(context.theme.textStyle(.fieldLabel))
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      if configuration.valid {
+        HStack(spacing: context.theme.spaceS) {
+          ForEach(Array(external.indices.prefix(2)), id: \.self) { index in
+            Group {
+              if context.canInteract && draft.values.indices.contains(index) {
+                valueControl(index)
+              } else {
+                Text(jsNumberString(external[index])).monospacedDigit()
+                  .padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
+              }
+            }.frame(width: valueWidth)
+          }
+        }.openUIFont(context.theme.textBodyDefaultHeavy)
+      }
+    }
+  }
   @ViewBuilder private func valueControl(_ index: Int) -> some View {
-    VStack(alignment: .leading, spacing: 4) {
+    VStack(alignment: .leading, spacing: context.theme.spacing("2xs")) {
       if configuration.discrete {
         Button { picker = .init(index: index) } label: {
           HStack {
             Text(jsNumberString(draft.values[index])).monospacedDigit()
-            Spacer(minLength: 8)
-            Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.typography.caption)
-          }.padding(10).frame(minHeight: 44).background(context.theme.surface, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
+            Spacer(minLength: context.theme.spacing("s"))
+            Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.textBodyXs, role: .caption)
+          }.padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
+            .background(context.theme.sunk, in: RoundedRectangle(cornerRadius: context.theme.radiusL))
         }.buttonStyle(.plain).accessibilityIdentifier("openui.slider.choice.\(field.name.displayString).\(index)")
       } else {
-        TextField(label, text: Binding(get: { draft.text.indices.contains(index) ? draft.text[index] : "" },
+        TextField("", text: Binding(get: { draft.text.indices.contains(index) ? draft.text[index] : "" },
           set: { draft.edit($0, at: index) }))
           .textFieldStyle(.plain).monospacedDigit().nativeSliderKeyboard()
-          .padding(10).frame(minHeight: 44).background(context.theme.surface, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
+          .multilineTextAlignment(.trailing).accessibilityLabel(label)
+          .padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
+          .background(context.theme.sunk, in: RoundedRectangle(cornerRadius: context.theme.radiusL))
           .accessibilityIdentifier("openui.slider.input.\(field.name.displayString).\(index)")
-        if let error = configuration.error(for: draft.values, index: index) {
-          Text(error).openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.error)
-            .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
-        }
       }
     }.frame(maxWidth: .infinity)
   }
@@ -265,10 +306,10 @@ private struct NativeSliderTrack: View {
     GeometryReader { geometry in
       let width = max(1, geometry.size.width - 28)
       ZStack(alignment: .leading) {
-        Capsule().fill(theme.border).frame(height: 5).padding(.horizontal, 14)
+        Capsule().fill(theme.borderDefault).frame(height: 5).padding(.horizontal, 14)
         let low = values.count > 1 ? values.min() ?? configuration.minimum : configuration.minimum
         let high = values.max() ?? configuration.minimum
-        Capsule().fill(theme.accent).frame(width: max(0, width * (fraction(high) - fraction(low))), height: 5)
+        Capsule().fill(theme.interactiveAccentDefault).frame(width: max(0, width * (fraction(high) - fraction(low))), height: 5)
           .offset(x: 14 + width * fraction(low))
         if showsDots {
           Canvas { canvas, size in
@@ -278,13 +319,13 @@ private struct NativeSliderTrack: View {
             var index = 0.0
             while index <= count {
               let x = 14 + available * fraction(configuration.value(at: index))
-              canvas.fill(Path(ellipseIn: CGRect(x: x - 2, y: size.height / 2 - 2, width: 4, height: 4)), with: .color(theme.secondary))
+              canvas.fill(Path(ellipseIn: CGRect(x: x - 2, y: size.height / 2 - 2, width: 4, height: 4)), with: .color(theme.textNeutralSecondary))
               index += stride
             }
           }.allowsHitTesting(false)
         }
         ForEach(values.indices, id: \.self) { index in
-          Circle().fill(theme.controlSurface).overlay(Circle().strokeBorder(theme.accent, lineWidth: 2))
+          Circle().fill(theme.foreground).overlay(Circle().strokeBorder(theme.interactiveAccentDefault, lineWidth: 2))
             .frame(width: 28, height: 28).shadow(color: .black.opacity(0.08), radius: 2, y: 1)
             .frame(width: 44, height: 44).offset(x: width * fraction(values[index]) - 8)
             .accessibilityRepresentation {

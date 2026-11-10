@@ -2,73 +2,89 @@
 
 The native SwiftUI adapter for OpenUI Lang. It depends on the sibling `OpenUILang` SwiftPM product; applications supply component views and tool transports. The dependency direction is `swift-ui → swift-lang → lang-core`. The SwiftPM product and module are `OpenUISwiftUI`.
 
-See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONENTS.md) and the [native review](Tests/Review/README.md) for the public API and validation entry points.
+See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONENTS.md) and the [design and validation boundaries](UI-DESIGN.md) for the public API. SDK regressions are in `Tests/OpenUISwiftUITests`.
 
 For matched schema/native registrations, host-authored named slots, semantic themes, message-scoped resources and the optional standard component collection, see [component authoring](COMPONENTS.md). `OpenUIStandardComponents.library()` supplies an opt-in reference catalog; extend this library when adding product definitions, preserving imported field order; applications can extend or override it while existing dictionary registrations remain supported.
 
-The standard collection defaults to neutral native typography, grouped forms and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
+The standard collection defaults to role-based native typography, open forms, capsule actions and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
 
-The [native SDK review](Tests/Review/README.md) keeps composition programs, the preview workspace and acceptance assertions separate. Its finite matrix uses the installed registry and unchanged language runtime, with Swift/XCUITest checks and actual simulator captures.
+Composition programs, preview applications and Simulator acceptance captures are maintained separately from this SDK-only distribution. They consume the installed registry and unchanged language runtime; they are not library dependencies or part of the SDK unit-test suite.
 
-## Optional native map
+For source organization and theme ownership, see [Architecture](ARCHITECTURE.md).
 
-`OpenUIStandardComponents.library()` retains the 82 pinned upstream registrations.
-When an app needs a map in an `openui-lang` answer, use the SDK extension:
+## Installation
 
-```swift
-let installed = try OpenUIMapComponents.library(
-    id: "my-agent", basemapCoordinateSystem: .gcj02)
-let schema = installed.library.toSchema()
-let registry = installed.registry
-```
+The repository-root `Package.swift` exposes `OpenUISwiftUI` and `OpenUILang`.
+Select `OpenUISwiftUI` for native rendering; it includes the language dependency.
+Swift 6 tools, iOS 16+ and macOS 13+ are required.
 
-The resulting library has 83 definitions: the original 82 plus `Map`. Its Schema,
-prompt and native registry come from the same library. An app can keep the Map
-renderer installed while deriving a generation subset with the existing
-`Library.extend(removeComponents:)` API. `Map` is also accepted in `Card`,
-`TabItem` and `AccordionItem` slots through the core's existing extension rule.
-
-`Map(points, routes?, value?, size?, crs?, content?)` accepts supplied `{id,title,lat,lng}`
-points, optional subtitle/imageSrc/url, and routes as arrays of actual `{lat,lng}`
-vertices. `value` may bind to a local `$selected` point id; `size` is compact,
-regular or expanded. `crs` declares the input coordinates (`wgs84` by default,
-or `gcj02`). Set `basemapCoordinateSystem` to the coordinate system your
-MapKit basemap displays in the region. The SDK converts only this platform
-coordinate representation. It does not fetch places, geocode, calculate paths,
-or draw a route when no polyline was supplied.
-
-Map is a general spatial component. Valid supplied points automatically receive
-compact place cards inside the map's bottom edge: title plus available subtitle
-and image. Missing optional facts consume no space; no score, route or business
-fact is inferred. Markers use compact icon logos, not rating badges. Optional
-`icon` is an SF Symbol name; the default is a location symbol.
-
-Swiping cards and selecting markers share `value`. The map viewport follows the
-container width and declared size; card measurements do not increase map height.
-Pages use their measured content height and scroll vertically only when they
-exceed the available area. Camera padding reserves the visible card height.
-With no valid point or route the component renders no
-map. Explicit routes can render without place cards. Optional `content` overrides
-pages by point id with ordinary components; missing overrides use default facts,
-while an empty object or explicit null page hides the corresponding cards.
-Map does not geocode or calculate routes. The caller supplies factual coordinates
-and declares their CRS.
-
-## Optional web and contextual content
-
-Add the optional SwiftPM product `OpenUIWeb` when SVG or web content is required:
+To develop or review the SDK before release, add the repository checkout as a
+local package in Xcode, or use:
 
 ```swift
-import OpenUIWeb
-let native = try OpenUIPopoverComponents.install(into: OpenUIMapComponents.library())
-let installed = try OpenUIWebComponents.install(into: native)
+.package(path: "../openui")
 ```
 
-Popover is a pure SwiftUI extension. SVG and WebView use WebKit in the separate
-target; page JavaScript is disabled by default and can be enabled by host policy.
-All native media use `OpenUIResourceContext`; WebKit owns its document subresources.
-The base product also uses a private WebKit renderer for offline mathematical
-equations. It does not register a general web component.
+A consuming package target selects:
+
+```swift
+.product(name: "OpenUISwiftUI", package: "openui")
+```
+
+```swift
+import OpenUILang
+import OpenUISwiftUI
+```
+
+After the SDK is merged and released, use `https://github.com/thesysdev/openui.git`
+in Xcode's **File > Add Package Dependencies** and select a release containing
+the Swift SDK. For other distributions, use the repository URL and version
+listed in that distribution's release notes.
+
+For a language-only consumer, select `OpenUILang`. The nested manifests in
+`packages/swift-lang` and `packages/swift-ui` are local development entry points;
+use either the root package or the nested packages in an application's dependency
+graph. Consumers do not need Node.js to build the checked-in runtime and UI resources.
+
+## Official prompt preset
+
+Use the pinned general-purpose library's examples and rules explicitly:
+
+```swift
+let components = try OpenUIStandardComponents.library()
+let prompt = components.prompt(OpenUIStandardComponents.promptOptions)
+```
+
+`prompt()` without options keeps its existing behavior. The preset is exported
+from upstream `openuiPromptOptions`; it does not include application tools. When
+removing components, curate the preset and group notes to match the selected
+library. This is the general-purpose preset, not `openuiChatPromptOptions`.
+
+## Appearance
+
+The default theme requires no setup. Override the supported React-named tokens
+without changing the generated content:
+
+```swift
+var light = OpenUITheme()
+light.spaceM = 16
+light.textBodyDefault = OpenUIFont(size: 17)
+
+OpenUIRenderer(state: state, registry: components.registry)
+    .openUITheme(mode: .system, lightTheme: light)
+```
+
+Use `darkTheme:` for independent dark overrides. Each nested theme scope starts
+from SDK defaults; omitted fields do not inherit parent overrides. Custom
+components read resolved values from `context.theme`. Media sizes, cover ratio
+and motion belong to `OpenUIPresentation`, applied with `.openUIPresentation(...)`.
+See [theme overrides and the RC migration](COMPONENTS.md#theme-overrides).
+
+## Component catalogue
+
+`OpenUIStandardComponents.library()` registers the 84 pinned upstream components.
+Generate the prompt and render using the same library. Host-owned additions can
+use the existing library extension API; the SDK does not ship an extra component catalogue.
 
 ## Rich text and source citations
 
@@ -106,8 +122,8 @@ OpenUIRenderer(state: state, registry: installed.registry)
     .openUITableCellPolicy(.readOnly)
 ```
 
-The read-only policy permits text/numbers and 11 lightweight components, applying
-the same reduced registry recursively through Stack, arrays and Popover. A custom
+The read-only policy permits text/numbers and 9 lightweight components, applying
+the same reduced registry recursively through Stack and arrays. A custom
 policy can name another registered subset. Outside this opt-in subtree the full
 component library remains available; the language and Col contract are unchanged.
 
@@ -124,14 +140,15 @@ Native Layout handles measured baseline, stretch and main-axis distribution on
 the minimum supported iOS 16/macOS 13 versions. There is one layout implementation;
 older stack/grid approximations have been removed.
 Accessibility text and parent width are environment inputs, not screen-global
-breakpoints. The 82-component schema has no CSS/media-query or arbitrary flex-weight
+breakpoints. The 84-component schema has no CSS/media-query or arbitrary flex-weight
 API. A fixed row should therefore not be described as automatic column reflow.
 
-The standard 82 registration names and their parameter contracts stay intact.
+The standard 84 registration names and their parameter contracts stay intact.
 Visual design belongs to the SDK's shared theme and native presentation; it can
 improve on upstream styling without renaming components or dropping capabilities.
-Image preserves source proportions; ImageBlock and ImageTextLarge use the theme's
-cover role (3:2 by default). ImageText accepts an explicit imageSize in both
+Image uses a 16:9/fill cover default; ImageBlock and ImageTextLarge use
+that same theme cover role. Document illustrations in Markdown and original-image
+viewing retain complete source proportions. ImageText accepts an explicit imageSize in both
 orientations, and Table paginates at ten rows. Design defaults
 are distinct from imposing a native-only 40% table-column cap or ignoring a field.
 
@@ -224,11 +241,14 @@ swift build --package-path packages/swift-ui \
   --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)"
 ```
 
-For Xcode GUI builds, open `Package.swift` or an application that consumes the package and choose an Apple destination. The [native review](Tests/Review/README.md) provides reproducible Simulator interaction and screenshot checks. Package tests, Simulator builds and physical-device runs are distinct validation scopes.
+For Xcode GUI builds, open `Package.swift` or an application that consumes the package and choose an Apple destination. Package tests, a consuming application’s Simulator checks, and physical-device runs are distinct validation scopes. The SDK-only branch does not include the separate preview/acceptance application.
 
 The repository's `Build Swift` workflow configures package suites and the iOS Simulator compile on macOS, using the bundled shared core. The JavaScriptCore adapter targets Apple platforms. This is independent of pnpm/npm packaging. A local consumer can use `.package(path: "../openui/packages/swift-ui")` and select the `OpenUISwiftUI` product.
 
-Native value and ToolProvider interfaces are documented in the language package. Package identities are `swift-lang` and `swift-ui`; products are `OpenUILang`, `OpenUISwiftUI` and the optional `OpenUIWeb`.
+Native value and ToolProvider interfaces are documented in the language package.
+The remote package identity is `openui`, with products `OpenUILang` and
+`OpenUISwiftUI`. The nested `swift-lang` and `swift-ui` packages remain local
+SDK development entry points.
 
 Maintainers rebuilding the rich-text resources use Node.js at development time:
 
@@ -243,7 +263,7 @@ Commit the generated resources, dependency lockfile and license notices together
 resource hashes and embedded font count. npm is not invoked by SwiftPM or the app.
 
 
-## Scoped resources and embedded content
+## Scoped resources
 
 Apply `.openUIResourceContext(OpenUIResourceContext(baseURL: ...))` once to the
 renderer. Image, ImageBlock, ImageText, ImageTextLarge, ImageGallery, ListItem,
@@ -255,26 +275,8 @@ The default uses URLSession, accepts HTTP(S), and treats HTTP failures as failur
 A changed request cancels the previous load; an obsolete result cannot replace
 current content. Gallery previews share the same loaded resource.
 
-`OpenUIPopoverComponents.install(into:)` registers the native Popover extension.
-`OpenUIWebComponents.install(into:)` from the optional OpenUIWeb target registers
-SVG and WebView. They do not change the 82 upstream component contracts.
-SVG accepts an inline XML document or resource URL and preserves its viewBox.
-WebView accepts HTML or a URL, measures content by default, and uses a scrollable
-viewport when height is supplied. Both use WebKit's standard document renderer.
-Page JavaScript is disabled by default and enabled only through
-`.openUIWebPolicy(OpenUIWebPolicy(allowsJavaScript: true))`; there is no model-to-native
-script action bridge. WebKit owns document subresource loading; the shared resource
-context supplies base URLs and top-level requests, while native image and remote
-SVG data use the injected async transport. Popover accepts any ordinary trigger
-and content, so icons and concise labels can expose optional context without
-inserting content into the document flow.
-
 Chart inspection is anchored within the chart. Tap selects/deselects a datum;
 a deliberate hold supports scrubbing while ordinary vertical swipes still scroll.
-Map content is ordinary components keyed by point id, presented inside its lower
-edge as swipeable content without page controls. The native camera reserves the
-measured content inset. Supplied place facts create compact default cards when
-custom component pages are absent; no missing facts or ratings are invented.
 
 `OpenUIState.onActionEvaluation` is an optional diagnostic hook exposing the real
 action AST, source revision, prior state and evaluated value before the state write.
@@ -308,9 +310,12 @@ photos or selection.
 
 Image loading and failure use the same declared slot as successful images:
 thumbnail dimensions, cover aspect ratios and background bounds are preserved.
-An intrinsic Image has no source dimensions until decoding succeeds; before that,
-it uses the documented unresolved-image placeholder ratio. The source proportion
-is preserved after decoding rather than guessed from a URL.
+The standard Image reserves its cover before decoding, without a separate 4:5
+row mode or shared resource-level thumbnail cap. A local container with an
+unresolved positional direction can still reserve a compact 16:9 proposal until
+its direction arrives. Markdown document illustrations can still
+use intrinsic source proportions; their unresolved placeholder ratio is not
+inferred from URLs. Original-image viewing uses fit rather than the cover crop.
 
 Snippet cards retain their compact left-label/right-value structure. Their
 adaptive grid gives a row enough room instead of changing it into a vertical

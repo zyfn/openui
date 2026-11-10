@@ -1,6 +1,29 @@
 @_spi(RuntimeInspection) import OpenUILang
 import SwiftUI
 
+/// Drawing, category annotations and inspection use the same radar projection.
+struct NativeRadarGeometry {
+  let center: CGPoint
+  let radius: CGFloat
+  let scale: CGFloat
+  init(size: CGSize, scale: CGFloat) {
+    self.scale = max(1, scale)
+    center = CGPoint(x: size.width / 2, y: size.height / 2)
+    let inset = max(24, 16 * self.scale)
+    radius = max(1, min(size.width / 2 - inset, size.height / 2 - inset))
+  }
+  func point(index: Int, count: Int, fraction: Double) -> CGPoint {
+    let angle = Double(index) * 2 * .pi / Double(max(1, count)) - .pi / 2
+    let distance = radius * fraction
+    return CGPoint(x: center.x + cos(angle) * distance, y: center.y + sin(angle) * distance)
+  }
+  func labelIndices(count: Int) -> [Int] {
+    guard count > 0 else { return [] }
+    let capacity = max(1, Int(2 * .pi * radius * 1.12 / (24 * scale)))
+    return Array(stride(from: 0, to: count, by: max(1, Int(ceil(Double(count) / Double(capacity))))))
+  }
+}
+
 enum NativeChartNumber {
   static func percentage(_ value: Double, total: Double) -> String {
     total == 0 ? "0%" : jsNumberToFixed(value / total * 100, digits: 1) + "%"
@@ -92,11 +115,14 @@ struct NativeChartInspection {
 }
 
 extension NativeChartData {
+  func colorIndex(at index: Int) -> Int {
+    colorIndices.indices.contains(index) ? colorIndices[index] : index
+  }
   func inspection(at index: Int, locale: Locale) -> NativeChartInspection? {
     guard index >= 0 else { return nil }
     func number(_ value: Double) -> String { NativeChartNumber.tooltip(value, locale: locale) }
     func colorIndex(_ index: Int) -> Int {
-      colorIndices.indices.contains(index) ? colorIndices[index] : index
+      self.colorIndex(at: index)
     }
     if !scatter.isEmpty {
       var remaining = index
@@ -114,10 +140,12 @@ extension NativeChartData {
     }
     guard labels.indices.contains(index) else { return nil }
     if !series.isEmpty {
-      return .init(title: labels[index], rows: series.enumerated().map { seriesIndex, series in
-        .init(id: OpenUIString(series.name), label: series.name,
+      let rows: [NativeChartInspection.Row] = series.enumerated().compactMap { seriesIndex, series in
+        guard hasValue(seriesIndex, index) else { return nil }
+        return .init(id: OpenUIString(series.name), label: series.name,
           value: number(value(seriesIndex, index)), colorIndex: colorIndex(seriesIndex))
-      })
+      }
+      return rows.isEmpty ? nil : .init(title: labels[index], rows: rows)
     }
     return .init(title: labels[index], rows: [
       .init(id: "value", label: nil, value: number(slices.indices.contains(index) ? slices[index] : 0),
@@ -126,6 +154,7 @@ extension NativeChartData {
   }
   func prepared(for name: String) -> Self {
     var result = self
+    result.colorIndices = Array(legendNames(for: name).indices).map { colorIndex(at: $0) }
     if ["PieChart", "RadialChart"].contains(name), !slices.isEmpty {
       let order = labels.indices.sorted {
         let a = slices.indices.contains($0) ? slices[$0] : 0
@@ -134,8 +163,9 @@ extension NativeChartData {
       }
       result.labels = order.map { labels[$0] }
       result.slices = order.map { slices.indices.contains($0) ? slices[$0] : 0 }
+      // Ranking changes presentation order, never a category's assigned color.
+      result.colorIndices = order.map { colorIndex(at: $0) }
     }
-    result.colorIndices = Array(result.legendNames(for: name).indices)
     return result
   }
 
@@ -159,11 +189,15 @@ extension NativeChartData {
   }
 
   func hasContent(for name: String) -> Bool {
+    if isProgressive {
+      return name == "ScatterChart" ? scatter.contains { !$0.points.isEmpty }
+        : !labels.isEmpty && series.contains { !$0.values.isEmpty }
+    }
     if name == "ScatterChart" { return !scatter.isEmpty }
     if ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name) {
       return !labels.isEmpty && !slices.isEmpty
     }
-    return !labels.isEmpty
+    return !labels.isEmpty && !series.isEmpty
   }
 }
 

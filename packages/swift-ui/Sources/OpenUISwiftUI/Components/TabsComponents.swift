@@ -1,12 +1,6 @@
 @_spi(RuntimeInspection) import OpenUILang
 import SwiftUI
 
-enum OpenUISelectionComponents {
-    static var components: [OpenUIComponent] {
-        [OpenUIReference.component("TabItem") { _ in EmptyView() },
-         OpenUIReference.component("Tabs") { NativeTabsView(context: $0) }]
-    }
-}
 
 struct NativeTabPanel: Identifiable, Equatable {
     let id: OpenUIString
@@ -26,17 +20,17 @@ struct NativeTabPanel: Identifiable, Equatable {
     }
 }
 
-/// Matches react-ui's TabsRenderer: follow the last item whose JSON content
-/// grows until onValueChange records a manual selection. This also applies to a
-/// complete initial render, not only to streaming. Removing a manually selected
-/// value does not invent a fallback absent from the upstream controlled Tabs.
+/// Follow the reference's last-growing-content rule until a native button tap
+/// records user intent, including a tap on the currently selected tab. Initial
+/// complete renders follow growth too. Removing a manually selected value does
+/// not invent a fallback absent from the upstream controlled Tabs.
 struct NativeTabsSelection {
     private(set) var selected: OpenUIString?
     private var userHasInteracted = false
     private var previousContentSizes: [OpenUIString: Int] = [:]
     mutating func choose(_ value: OpenUIString) {
-        guard value != selected else { return }
         userHasInteracted = true
+        guard value != selected else { return }
         selected = value
     }
     mutating func reconcile(_ panels: [NativeTabPanel]) {
@@ -54,22 +48,26 @@ struct NativeTabsSelection {
     }
 }
 
-private struct NativeTabsView: View {
+struct NativeTabsView: View {
     let context: OpenUIComponentContext
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var local = NativeTabsSelection()
     @State private var width: CGFloat = 0
+    @State private var contentWidth: CGFloat = 0
     @Namespace private var viewport
     private var panels: [NativeTabPanel] { NativeTabPanel.read(context.children("items")) }
     private var selected: OpenUIString? { local.selected }
     private var active: NativeTabPanel? { panels.first { $0.id == selected } }
+    private var showsOverflowHint: Bool {
+        NativeTabsOverflow.shouldShowHint(contentWidth: contentWidth, viewportWidth: width)
+    }
     private var nativeSelection: Binding<OpenUIString> {
         Binding(
             get: { active?.id ?? "" },
             set: { local.choose($0) })
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
+        VStack(alignment: .leading, spacing: context.theme.spacing("l")) {
             if !panels.isEmpty {
                 selector
                     .accessibilityIdentifier(
@@ -84,22 +82,45 @@ private struct NativeTabsView: View {
     private var selector: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
+                HStack(spacing: context.theme.space2xs) {
                     ForEach(panels) { panel in
                         Button { nativeSelection.wrappedValue = panel.id } label: {
-                            Text(panel.label)
-                                .openUIFont(context.theme.typography.detail.weight(active?.id == panel.id ? .semibold : .regular))
-                                .foregroundStyle(active?.id == panel.id ? context.theme.foreground : context.theme.secondary)
-                                .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-                                .padding(.horizontal, 12).padding(.vertical, 10)
+                            NativeBoundedLabelLayout(maximumWidth: width > 0 ? min(width, 232) : 232) {
+                              Text(panel.label)
+                                .openUIFont(context.theme.textLabelDefaultHeavy, role: .control)
+                                .foregroundStyle(active?.id == panel.id ? context.theme.textNeutralPrimary : context.theme.textNeutralSecondary)
+                                .lineLimit(textSize.isAccessibilitySize ? nil : 2)
+                                .truncationMode(.tail).fixedSize(horizontal: false, vertical: true)
+                            }
+                                .padding(.horizontal, context.theme.spaceM)
+                                .padding(.vertical, context.theme.spaceS)
+                                .background(active?.id == panel.id ? context.theme.componentStyle.selectedSurface : .clear,
+                                  in: Capsule(style: .continuous))
+                                .overlay(
+                                  Capsule(style: .continuous).strokeBorder(
+                                    active?.id == panel.id ? context.theme.componentStyle.selectedBorder : .clear,
+                                    lineWidth: context.presentation.borderWidth))
                                 .openUIControlTarget()
-                                .background(active?.id == panel.id ? context.theme.surface : .clear, in: Capsule())
                         }
                         .buttonStyle(.plain)
                         .accessibilityAddTraits(active?.id == panel.id ? .isSelected : [])
                         .accessibilityIdentifier("openui.tab." + panel.id.displayString)
                         .id(panel.id)
                     }
+                }.padding(.trailing, showsOverflowHint ? context.presentation.minimumControlTargetSize : 0)
+                .background(GeometryReader { geometry in
+                    Color.clear.preference(key: NativeTabsContentWidthKey.self, value: [viewport: geometry.size.width])
+                })
+            }
+            .overlay(alignment: .trailing) {
+                if showsOverflowHint {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(context.theme.textNeutralSecondary)
+                        .padding(.trailing, 4)
+                        .accessibilityLabel(Text("More tabs", bundle: NativeControlResources.bundle))
+                        .accessibilityIdentifier("openui.tabs.overflow")
+                        .allowsHitTesting(false)
                 }
             }
             .onChange(of: selected) { value in
@@ -110,6 +131,9 @@ private struct NativeTabsView: View {
             })
             .onPreferenceChange(NativeTabsWidthKey.self) { sizes in
                 if let next = sizes[viewport], next.isFinite, next > 0, abs(next - width) > 0.5 { width = next }
+            }
+            .onPreferenceChange(NativeTabsContentWidthKey.self) { sizes in
+                if let next = sizes[viewport], next.isFinite, next >= 0, abs(next - contentWidth) > 0.5 { contentWidth = next }
             }
             .task(id: NativeTabsLayoutKey(labels: panels.map(\.label), width: width, textSize: textSize)) {
                 // Wait for the changed font/container proposal to enter layout.
@@ -131,5 +155,16 @@ private struct NativeTabsWidthKey: PreferenceKey {
     static let defaultValue: [Namespace.ID: CGFloat] = [:]
     static func reduce(value: inout [Namespace.ID: CGFloat], nextValue: () -> [Namespace.ID: CGFloat]) {
         value.merge(nextValue(), uniquingKeysWith: { _, next in next })
+    }
+}
+private struct NativeTabsContentWidthKey: PreferenceKey {
+    static let defaultValue: [Namespace.ID: CGFloat] = [:]
+    static func reduce(value: inout [Namespace.ID: CGFloat], nextValue: () -> [Namespace.ID: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, next in next })
+    }
+}
+enum NativeTabsOverflow {
+    static func shouldShowHint(contentWidth: CGFloat, viewportWidth: CGFloat) -> Bool {
+        contentWidth > viewportWidth + 1
     }
 }

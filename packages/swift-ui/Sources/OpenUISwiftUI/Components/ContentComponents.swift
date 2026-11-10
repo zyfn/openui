@@ -1,62 +1,23 @@
 import OpenUILang
 import SwiftUI
 
-/// Native presentation for the pinned standard catalog, without extra DSL names.
-enum OpenUIContentComponents {
-  static var components: [OpenUIComponent] {
-    [
-      OpenUIReference.component("CardHeader") { NativeHeading(context: $0, compact: false) },
-      OpenUIReference.component("InlineHeader") { NativeHeading(context: $0, compact: true) },
-      OpenUIReference.component("MarkDownRenderer") { NativeMarkdown(context: $0) },
-      OpenUIReference.component("Callout") { NativeCallout(context: $0, reactive: true) },
-      OpenUIReference.component("TextCallout") { NativeCallout(context: $0, reactive: false) },
-      OpenUIReference.component("ImageBlock") { NativeImageBlock(context: $0) },
-      OpenUIReference.component("ImageGallery") { NativeImageGallery(context: $0) },
-      OpenUIReference.component("Text") { NativeInlineText(context: $0, bold: false) },
-      OpenUIReference.component("BoldText") { NativeInlineText(context: $0, bold: true) },
-      OpenUIReference.component("IconText") {
-        NativeMediaText(context: $0, media: .icon)
-      },
-      OpenUIReference.component("ImageText") {
-        NativeMediaText(context: $0, media: .thumbnail)
-      },
-      OpenUIReference.component("ImageTextLarge") {
-        NativeMediaText(context: $0, media: .banner)
-      },
-      OpenUIReference.component("Icon") { NativeIcon(context: $0) },
-      OpenUIReference.component("IconButton") { NativeIconButton(context: $0) },
-      OpenUIReference.component("Tag") { NativeTag(context: $0) },
-      OpenUIReference.component("TagBlock") { NativeTagBlock(context: $0) },
-      OpenUIReference.component("EntityList") { NativeEntityList(context: $0) },
-      OpenUIReference.component("ListBlock") { NativeListBlock(context: $0) },
-      OpenUIReference.component("ListItem") { NativeListItem(context: $0) },
-      OpenUIReference.component("Steps") { NativeSteps(context: $0) },
-      OpenUIReference.component("StepsItem") { _ in EmptyView() },
-      OpenUIReference.component("Carousel") { NativeCarousel(context: $0) },
-      OpenUIReference.component("Modal") { NativeModal(context: $0) },
-    ]
-      + ["Snippet", "Overview", "Context", "Composite", "Visual"].flatMap { kind in
-        [
-          OpenUIReference.component(kind + "CardItem") { NativeCardItem(context: $0, kind: kind) },
-          OpenUIReference.component(kind + "CardBlock") {
-            NativeCardBlock(context: $0, kind: kind)
-          },
-        ]
-      }
+
+enum NativeHeadingStyle {
+  static func titleFont(compact: Bool, theme: OpenUIThemeValues) -> OpenUIFont {
+    compact ? theme.textHeadingXs : theme.textBodyLgHeavy
   }
 }
-
 struct NativeHeading: View {
   let context: OpenUIComponentContext
   let compact: Bool
   var body: some View {
-    VStack(alignment: .leading, spacing: 4) {
+    VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       if let title = context.string(compact ? "heading" : "title") {
-        Text(title).openUIFont(compact ? context.theme.typography.title : context.theme.typography.heading).accessibilityAddTraits(
+        Text(title).openUIFont(NativeHeadingStyle.titleFont(compact: compact, theme: context.theme), role: .title).accessibilityAddTraits(
           .isHeader)
       }
       if let detail = context.string(compact ? "description" : "subtitle") {
-        Text(detail).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+        Text(detail).nativeTextStyle(context.theme.textStyle(.supporting))
       }
     }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -65,26 +26,32 @@ struct NativeHeading: View {
 struct NativeMarkdown: View {
   let context: OpenUIComponentContext
   var body: some View {
+    let surface = NativeContentSurface(context.string("variant"), fallback: .clear)
     NativeMarkdownText(text: context.string("textMarkdown") ?? "")
       .padding(
         context.string("variant") == "clear" || context.string("variant") == nil
-          ? 0 : context.theme.cardPadding
+          ? 0 : context.theme.spaceM
       )
       .background(
-        context.string("variant") == "card"
-          ? context.theme.controlSurface
-          : context.string("variant") == "sunk" ? context.theme.surface : .clear,
-        in: RoundedRectangle(cornerRadius: context.theme.cornerRadius))
+        surface.fill(context.theme),
+        in: RoundedRectangle(cornerRadius: context.theme.radiusM))
+      .overlay {
+        RoundedRectangle(cornerRadius: context.theme.radiusM)
+          .strokeBorder(surface.bordered
+            ? context.presentation.resolvedCardBorderColor(with: context.theme) : .clear,
+            lineWidth: context.presentation.borderWidth)
+          .allowsHitTesting(false)
+      }
   }
 }
 
-private func semanticColor(_ variant: String?, theme: OpenUITheme) -> Color {
+private func semanticColor(_ variant: String?, theme: OpenUIThemeValues) -> Color {
   switch variant {
-  case "danger", "error": return theme.error
-  case "success": return theme.success
-  case "warning": return theme.warning
-  case "info": return theme.info
-  default: return theme.secondary
+  case "danger", "error": return theme.textDangerPrimary
+  case "success": return theme.textSuccessPrimary
+  case "warning": return theme.textAlertPrimary
+  case "info": return theme.textInfoPrimary
+  default: return theme.textNeutralSecondary
   }
 }
 
@@ -96,25 +63,51 @@ struct NativeCallout: View {
   private var visible: Bool {
     binding.map { $0.wrappedValue == .boolean(true) || $0.wrappedValue == .string("true") } ?? true
   }
+  private var statusIcon: String? {
+    switch context.string("variant") {
+    case "success": return "checkmark.circle"
+    case "warning": return "exclamationmark.circle"
+    case "error", "danger": return "xmark.circle"
+    default: return nil
+    }
+  }
+  private var hasCopy: Bool {
+    [context.string("title"), context.string("description")].contains {
+      !($0 ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+  }
   var body: some View {
     Group {
-      if visible {
-        HStack(alignment: .top, spacing: 10) {
-          Image(
-            systemName: context.string("variant") == "success" ? "checkmark.circle" : "info.circle"
-          )
-          .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
-          VStack(alignment: .leading, spacing: 4) {
-            if let title = context.string("title") { Text(title).openUIFont(context.theme.typography.heading) }
-            if let detail = context.string("description") {
-              NativeMarkdownText(text: detail, style: .init(font: context.theme.typography.detail, color: context.theme.secondary))
+      if visible && hasCopy {
+        HStack(alignment: .firstTextBaseline, spacing: context.theme.spaceM) {
+          if let statusIcon {
+            Image(systemName: statusIcon)
+              .openUIFont(context.theme.textLabelDefaultHeavy, role: .control)
+              .foregroundStyle(semanticColor(context.string("variant"), theme: context.theme))
+              .accessibilityHidden(true)
+          }
+          VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
+            if let title = context.string("title"), !title.isEmpty {
+              Text(title).openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
+            }
+            if let detail = context.string("description"), !detail.isEmpty {
+              NativeMarkdownText(text: detail, style: .init(font: context.theme.textBodyDefault,
+                color: context.theme.textNeutralPrimary))
             }
           }
-          Spacer(minLength: 0)
-        }.padding(context.theme.cardPadding)
-          .background(
-            semanticColor(context.string("variant"), theme: context.theme).opacity(0.08),
-            in: RoundedRectangle(cornerRadius: context.theme.cornerRadius))
+        }
+        .padding(.leading, statusIcon == nil ? context.theme.spaceML : 0)
+        .padding(.vertical, context.theme.spaceS)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .leading) {
+          if statusIcon == nil {
+            RoundedRectangle(cornerRadius: context.theme.radius3xs, style: .continuous)
+              .fill(context.theme.borderDefault).frame(width: 3)
+              .padding(.vertical, context.theme.space2xs).accessibilityHidden(true)
+          }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(Text(statusLabel, bundle: NativeControlResources.bundle))
       }
     }.task(id: "\(state.sourceRevision):\(visible):\(context.canInteract)") {
       guard visible, context.canInteract, binding != nil else { return }
@@ -123,14 +116,22 @@ struct NativeCallout: View {
       binding?.wrappedValue = .boolean(false)
     }
   }
+  private var statusLabel: LocalizedStringKey {
+    switch context.string("variant") {
+    case "success": return "Success"
+    case "warning": return "Warning"
+    case "error", "danger": return "Error"
+    default: return "Information"
+    }
+  }
 }
 
 struct NativeImageBlock: View {
   let context: OpenUIComponentContext
   var body: some View {
     NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "",
-      layout: .aspect(context.theme.coverAspectRatio))
-      .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
+      layout: .aspect(context.presentation.coverAspectRatio))
+      .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
   }
 }
 
@@ -176,23 +177,26 @@ struct NativeInlineText: View {
   let bold: Bool
   private var style: NativeRichTextStyle {
     let size = context.string("size") ?? "sm"
-    let font = context.theme.typography.inline(size)
-    return .init(font: bold ? font.weight(context.theme.typography.heading.weight) : font,
-      numeric: context.string("variant") == "number")
+    let font = context.theme.inlineFont(size, emphasized: bold)
+    return .init(font: font,
+      numeric: context.string("variant") == "number", role: size == "xs" ? .detail : .body,
+      emphasisWeight: context.theme.inlineFont(size, emphasized: true).weight)
   }
   var body: some View {
-    VStack(alignment: .leading, spacing: 4) {
+    VStack(alignment: .leading, spacing: 0) {
       NativeMarkdownText(text: context.string("value") ?? "", mode: .inline, style: style)
       if let sub = context.string("subtext") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.typography.detail, color: subtextColor(sub)))
+        NativeMarkdownText(text: sub, mode: .inline,
+          style: context.theme.textStyle(.supporting).richText(
+            numeric: context.string("subtextVariant") == "number", color: subtextColor(sub)))
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
   private func subtextColor(_ value: String) -> Color {
-    guard context.string("subtextVariant") == "metric" else { return context.theme.secondary }
+    guard context.string("subtextVariant") == "metric" else { return context.theme.textNeutralSecondary }
     if value.hasPrefix("+") { return semanticColor("success", theme: context.theme) }
     if value.hasPrefix("-") { return semanticColor("danger", theme: context.theme) }
-    return context.theme.secondary
+    return context.theme.textNeutralSecondary
   }
 }
 private struct NativeCardHeaderInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
@@ -205,71 +209,79 @@ extension EnvironmentValues {
 
 struct NativeMediaText: View {
   @Environment(\.openUICardHeaderInset) private var cardHeaderInset
+  @Environment(\.multilineTextAlignment) private var textAlignment
+  @ScaledMetric(relativeTo: .body) private var iconScale: CGFloat = 1
   enum Media { case icon, thumbnail, banner }
   let context: OpenUIComponentContext
   let media: Media
-  private var hasIconBadge: Bool {
-    switch context.string("iconVariant") {
-    case "inverted", "info", "success", "warning", "danger": return true
-    default: return false
-    }
+  private var vertical: Bool { context.string("layout") == "vertical" }
+  private var centered: Bool { vertical && textAlignment == .center }
+  private var adaptiveThumbnail: NativeAdaptiveThumbnail? {
+    guard media == .thumbnail, explicitImageSize == nil else { return nil }
+    return .init(preferred: imageSize,
+      minimum: context.presentation.minimumInlineThumbnailSize,
+      readingWidth: context.presentation.minimumTextColumnWidth * iconScale)
   }
   var body: some View {
     Group {
       if media == .banner {
-        VStack(alignment: .leading, spacing: context.theme.contentSpacing) {
+        VStack(alignment: .leading, spacing: context.theme.spaceM) {
           NativeRemoteImage(
             src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
-            layout: .aspect(context.theme.coverAspectRatio))
-            .clipShape(RoundedRectangle(cornerRadius: cardHeaderInset > 0 ? 0 : context.theme.mediaCornerRadius, style: .continuous))
+            layout: .aspect(context.presentation.coverAspectRatio))
+            .clipShape(RoundedRectangle(cornerRadius: cardHeaderInset > 0 ? 0 : context.theme.radiusM, style: .continuous))
             .padding(.horizontal, -cardHeaderInset)
             .padding(.top, -cardHeaderInset)
           words
         }.frame(maxWidth: .infinity, alignment: .leading)
       } else {
-        NativeMediaRow(axis: context.string("layout") == "vertical" ? .vertical : .horizontal,
-          gap: media == .icon && !hasIconBadge ? context.theme.contentSpacing * 2 / 3 : context.theme.contentSpacing,
-          centered: true,
+        NativeMediaRow(axis: vertical ? .vertical : .horizontal,
+          gap: context.theme.spaceM * (media == .icon ? iconScale : 1),
+          centered: !vertical ? true : centered,
+          adaptiveThumbnail: adaptiveThumbnail,
           media: { leadingMedia }, copy: {
-            words.frame(maxWidth: .infinity, alignment: context.string("layout") == "vertical" ? .center : .leading)
-              .multilineTextAlignment(context.string("layout") == "vertical" ? .center : .leading)
+            words.frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
+              .multilineTextAlignment(centered ? .center : .leading)
           })
       }
     }
   }
   @ViewBuilder private var leadingMedia: some View {
     if media == .icon {
-      let colors = NativeBadgeColors(variant: context.string("iconVariant"), theme: context.theme)
-      if hasIconBadge {
-        context.slot("icon").environment(\.openUIIconSize, 16)
-          .foregroundStyle(colors.foreground)
-          .frame(width: 36, height: 36)
-          .background(colors.background, in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius))
-          .accessibilityIdentifier("openui.icon-text.badge")
-      } else {
-        context.slot("icon").environment(\.openUIIconSize, 16)
-          .foregroundStyle(colors.foreground)
-          .frame(width: 16, height: 16)
-      }
+      let style = NativeIconTextStyle(variant: context.presentationString("iconVariant"), theme: context.theme)
+      context.slot("icon").environment(\.openUIIconSize, glyphSize)
+        .foregroundStyle(style.foreground)
+        .frame(width: (glyphSize + style.inset * 2) * iconScale, height: (glyphSize + style.inset * 2) * iconScale)
+        .background(style.background,
+          in: RoundedRectangle(cornerRadius: context.theme.radiusM))
+        .accessibilityIdentifier("openui.icon-text.badge")
     } else {
       NativeRemoteImage(
         src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
-        layout: .thumbnail(CGSize(width: imageSize, height: imageSize)))
-        .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
+        layout: explicitImageSize.map { .thumbnail(CGSize(width: $0, height: $0)) } ?? .aspect(1))
+        .frame(idealWidth: imageSize)
+        .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
     }
   }
+  private var glyphSize: CGFloat { NativeIconTextMetrics.glyph(context.presentationString("iconSize")) }
+  private var explicitImageSize: CGFloat? {
+    if let size = context.presentationNumber("imageSize"), size.isFinite, size > 0 { return CGFloat(size) }
+    return nil
+  }
   private var imageSize: CGFloat {
-    // The reference CSS has a default thumbnail in either orientation;
-    // an explicit imageSize overrides it without native-only bounds.
-    if let size = context.number("imageSize"), size.isFinite, size > 0 { return CGFloat(size) }
-    return context.theme.inlineThumbnailSize
+    if let explicitImageSize { return explicitImageSize }
+    let preferred = context.presentation.inlineThumbnailSize
+    return preferred.isFinite && preferred > 0 ? preferred : OpenUIPresentation.defaults.inlineThumbnailSize
   }
   private var words: some View {
-    VStack(alignment: .leading, spacing: 4) {
+    VStack(alignment: centered ? .center : .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       NativeMarkdownText(text: context.string("title") ?? "", mode: .inline,
-        style: .init(font: context.theme.typography.body.weight(context.flag("bold") == true ? .semibold : .regular)))
+        style: .init(font: media == .banner ? context.theme.textBodyLgHeavy
+          : context.theme.inlineFont("sm", emphasized: context.flag("bold") == true), role: .title,
+          emphasisWeight: media == .banner ? context.theme.textBodyLgHeavy.weight : context.theme.textBodyDefaultHeavy.weight))
+
       if let sub = context.string("subtitle") {
-        NativeMarkdownText(text: sub, mode: .inline, style: .init(font: context.theme.typography.detail, color: context.theme.secondary))
+        NativeMarkdownText(text: sub, mode: .inline, style: context.theme.textStyle(.supporting).richText())
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -287,11 +299,8 @@ struct NativeIconButton: View {
     }.buttonStyle(
       NativeActionButtonStyle(
         theme: context.theme, variant: context.string("variant") ?? "secondary",
-        size: context.string("size"), destructive: false)
-    )
-    .clipShape(
-      RoundedRectangle(
-        cornerRadius: context.string("shape") == "circle" ? 100 : context.theme.controlCornerRadius)
+        size: context.string("size"), destructive: false,
+        iconOnly: true, circular: context.string("shape") == "circle")
     )
     .accessibilityLabel(context.string("name") ?? "")
   }
@@ -306,7 +315,7 @@ struct NativeTag: View {
 struct NativeTagBlock: View {
   let context: OpenUIComponentContext
   var body: some View {
-    NativeWrappingRow(gap: 8) {
+    NativeWrappingRow(gap: context.theme.spacing("s")) {
       ForEach(context.children("tags")) { tag in
         NativeTagPill(text: NativeValue.string(tag.value), size: context.string("size"),
           variant: nil, theme: context.theme) { EmptyView() }
@@ -316,9 +325,10 @@ struct NativeTagBlock: View {
 }
 struct NativeWrappingRow<Content: View>: View {
   var gap: CGFloat = 12
+  var rowGap: CGFloat? = nil
   @ViewBuilder let content: Content
   var body: some View {
-    OpenUIFlexLayout(direction: "row", gap: gap, align: "start", justify: "start", wrap: true) { content }
+    OpenUIFlexLayout(direction: "row", gap: gap, align: "start", justify: "start", wrap: true, rowGap: rowGap) { content }
   }
 }
 
@@ -344,18 +354,21 @@ struct NativeEntityList: View {
   private func row(_ value: Value, kind: RowKind) -> some View {
     let small = context.string("size") == "small"
     let numeric = NativeValue.string(value, "rightVariant") == "number"
-    let font = small ? context.theme.typography.detail : context.theme.typography.body
-    let color = context.theme.foreground
+    let font = small ? context.theme.textBodySm : context.theme.textBodyDefault
+    let color = kind == .header ? context.theme.textNeutralSecondary : context.theme.textNeutralPrimary
     return NativeLabelValueLayout(
-      gap: context.theme.spacing("m"), minimumLabelWidth: context.theme.minimumTextColumnWidth
+      gap: context.theme.spacing("m"), minimumLabelWidth: context.presentation.minimumTextColumnWidth
     ) {
       NativeMarkdownText(text: NativeValue.string(value, "left") ?? "", mode: .inline,
-        style: .init(font: font.weight(kind == .body ? .regular : .semibold), color: color))
+        style: .init(font: font, color: color, role: small ? .detail : .body))
       NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
-        style: .init(font: (kind == .footer ? context.theme.typography.title : font).weight(.semibold), numeric: numeric, color: color))
-      .multilineTextAlignment(.trailing)
+        style: .init(font: kind == .footer ? context.theme.textBodyLgHeavy
+          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true) : font), numeric: numeric, color: color, role: kind == .footer ? .title : small ? .detail : .body))
+      // Horizontal layout still anchors a short value at the row's right edge.
+      // A full-width text value must read from the left when the row stacks.
+      .multilineTextAlignment(numeric ? .trailing : .leading)
     }
-    .padding(.vertical, context.theme.spacing(small ? "xs" : "s")).textSelection(.enabled)
+    .padding(.vertical, context.theme.spacing(kind == .body ? "s" : "m")).textSelection(.enabled)
     .accessibilityIdentifier("openui.entity-list.row")
   }
 }
@@ -384,22 +397,22 @@ struct NativeListBlock: View {
   private var compact: Bool { context.string("size") == "small" }
   private var mediaLayout: NativeListMediaLayout {
     NativeListMediaLayout(width: containerWidth,
-      preferredImageWidth: compact ? context.theme.compactThumbnailSize : context.theme.thumbnailSize,
-      minimumImageWidth: context.theme.inlineThumbnailSize,
-      textWidth: context.theme.minimumTextColumnWidth * textScale,
-      gap: context.theme.contentSpacing)
+      preferredImageWidth: compact ? context.presentation.compactThumbnailSize : context.presentation.thumbnailSize,
+      minimumImageWidth: context.presentation.inlineThumbnailSize,
+      textWidth: context.presentation.minimumTextColumnWidth * textScale,
+      gap: context.theme.spaceM)
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       ForEach(Array(context.children("items").enumerated()), id: \.element.id) { index, item in
         if index > 0 {
-          Rectangle().fill(context.theme.border).frame(height: 1 / displayScale)
+          Rectangle().fill(context.theme.borderDefault).frame(height: 1 / displayScale)
             .padding(.vertical, context.theme.spacing(compact ? "s" : "m"))
         }
-        HStack(alignment: .top, spacing: context.theme.contentSpacing) {
+        HStack(alignment: .top, spacing: context.theme.spaceM) {
           if !imageList {
-            Text("\(index + 1)").openUIFont(context.theme.typography.detail.monospacedDigit()).foregroundStyle(
-              context.theme.secondary
+            Text("\(index + 1)").openUIFont(context.theme.textBodySm.monospacedDigit()).foregroundStyle(
+              context.theme.textNeutralSecondary
             ).frame(minWidth: 22)
           }
           context.render(item.value)
@@ -428,7 +441,7 @@ private struct NativeListContainerWidths: PreferenceKey {
 struct NativeListItem: View {
   let context: OpenUIComponentContext
   @Environment(\.openUIListPresentation) private var presentation
-  private var imageWidth: CGFloat { presentation.imageWidth ?? context.theme.inlineThumbnailSize }
+  private var imageWidth: CGFloat { presentation.imageWidth ?? context.presentation.inlineThumbnailSize }
   private var hasImage: Bool {
     imageWidth > 0 && context.value("image") != nil && context.value("image") != .null
   }
@@ -449,7 +462,7 @@ struct NativeListItem: View {
   @ViewBuilder private var content: some View {
     Group {
       if hasImage {
-        NativeMediaRow(axis: presentation.axis, gap: context.theme.contentSpacing,
+        NativeMediaRow(axis: presentation.axis, gap: context.theme.spaceM,
           media: { photo }, copy: { words })
       } else { words }
     }.fixedSize(horizontal: false, vertical: true).contentShape(Rectangle())
@@ -461,25 +474,25 @@ struct NativeListItem: View {
         layout: .thumbnail(CGSize(width: imageWidth, height: imageWidth))
       )
       .frame(width: imageWidth, height: imageWidth)
-      .clipShape(RoundedRectangle(cornerRadius: context.theme.mediaCornerRadius, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
     }
   }
   private var words: some View {
-    HStack(alignment: .center, spacing: context.theme.contentSpacing) {
-      VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
+    HStack(alignment: .center, spacing: context.theme.spaceM) {
+      VStack(alignment: .leading, spacing: context.theme.componentStyle.titleDetailGap) {
         Text(context.string("title") ?? "").openUIFont(presentation.compact
-          ? context.theme.typography.detail.weight(.semibold) : context.theme.typography.heading)
+          ? context.theme.textBodySmHeavy : context.theme.textBodyDefaultHeavy, role: .title)
         if let detail = context.string("subtitle") {
-          Text(detail).openUIFont(context.theme.typography.detail).foregroundStyle(context.theme.secondary)
+          Text(detail).nativeTextStyle(context.theme.textStyle(.supporting))
         }
         if hasAction, let label = context.string("actionLabel"), !label.isEmpty {
-          Text(label).openUIFont(context.theme.typography.actionCompact)
-            .foregroundStyle(context.theme.secondary).padding(.top, 2).accessibilityHidden(true)
+          Text(label).nativeTextStyle(context.theme.textStyle(.compactAction))
+            .padding(.top, 2).accessibilityHidden(true)
         }
       }.frame(maxWidth: .infinity, alignment: .leading)
       if hasAction {
-        Image(systemName: "chevron.right").openUIFont(context.theme.typography.caption.weight(.semibold))
-          .foregroundStyle(context.theme.secondary).accessibilityHidden(true)
+        Image(systemName: "chevron.right").openUIFont(context.theme.textBodyXs.weight(.semibold))
+          .foregroundStyle(context.theme.textNeutralSecondary).accessibilityHidden(true)
       }
     }.fixedSize(horizontal: false, vertical: true)
   }
@@ -487,25 +500,25 @@ struct NativeListItem: View {
 struct NativeSteps: View {
   let context: OpenUIComponentContext
   @Environment(\.displayScale) private var displayScale
+  @ScaledMetric(relativeTo: .body) private var markerDiameter: CGFloat = 28
   var body: some View {
     let items = context.children("items")
     VStack(alignment: .leading, spacing: 0) {
       ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-        HStack(alignment: .top, spacing: 12) {
-          Text("\(index + 1)").openUIFont(context.theme.typography.detail.weight(.semibold)).frame(width: 28, height: 28)
-            .background(context.theme.surface, in: Circle())
-          VStack(alignment: .leading, spacing: 6) {
-            Text(NativeValue.string(item.value, "title") ?? "").openUIFont(context.theme.typography.heading)
+        HStack(alignment: .top, spacing: context.theme.spacing("m")) {
+          NativeStepMarker(number: index + 1, theme: context.theme, diameter: markerDiameter)
+          VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
+            Text(NativeValue.string(item.value, "title") ?? "").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
             NativeMarkdownText(text: NativeValue.string(item.value, "details") ?? "",
-              style: .init(font: context.theme.typography.detail, color: context.theme.secondary))
+              style: context.theme.textStyle(.supporting).richText())
           }
         }
         .padding(.bottom, index < items.count - 1 ? context.theme.spacing("m") : 0)
         .background(alignment: .topLeading) {
           if index < items.count - 1 {
-            Rectangle().fill(context.theme.border)
-              .frame(width: 1 / displayScale)
-              .padding(.top, 32).offset(x: 14)
+            Rectangle().fill(context.theme.borderInteractive)
+              .frame(width: 1.5 / displayScale)
+              .padding(.top, markerDiameter + context.theme.spacing("xs")).offset(x: markerDiameter / 2)
               .accessibilityHidden(true)
           }
         }
@@ -513,6 +526,19 @@ struct NativeSteps: View {
     }
   }
 }
+/// The badge follows its text's measured size, including custom fonts and Dynamic Type.
+struct NativeStepMarker: View {
+  let number: Int
+  let theme: OpenUIThemeValues
+  let diameter: CGFloat
+  var body: some View {
+    Text("\(number)").openUIFont(theme.textBodySmHeavy, role: .detail)
+      .fixedSize().frame(minWidth: diameter, minHeight: diameter)
+      .background(theme.sunk, in: Circle())
+      .accessibilityIdentifier("openui.steps.marker")
+  }
+}
+
 struct NativeCarousel: View {
   let context: OpenUIComponentContext
   @State private var page = 0
@@ -529,6 +555,8 @@ struct NativeCarousel: View {
 struct NativeModal: View {
   let context: OpenUIComponentContext
   @EnvironmentObject private var state: OpenUIState
+  @Environment(\.dynamicTypeSize) private var typeSize
+  @State private var contentHeight: CGFloat = 420
   private var presented: Binding<Bool> {
     Binding(
       get: {
@@ -550,31 +578,70 @@ struct NativeModal: View {
   var body: some View {
     Color.clear.frame(width: 0, height: 0)
       .sheet(isPresented: presented) {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: context.theme.spacing("ml")) {
           HStack {
-            Text(context.string("title") ?? "").openUIFont(context.theme.typography.heading).accessibilityAddTraits(.isHeader)
+            Text(context.string("title") ?? "").openUIFont(context.theme.textBodyDefaultHeavy, role: .title).accessibilityAddTraits(.isHeader)
             Spacer()
             Button {
               presented.wrappedValue = false
             } label: {
-              Image(systemName: "xmark").openUIFont(context.theme.typography.actionRegular).openUIControlTarget()
+              Image(systemName: "xmark").openUIFont(context.theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
             }
             .buttonStyle(.plain).keyboardShortcut(.cancelAction)
             .accessibilityLabel(Text("Close", bundle: NativeControlResources.bundle))
           }
-          ScrollView { context.slot().frame(maxWidth: .infinity, alignment: .leading) }
-        }.padding(context.theme.cardPadding).frame(
+          .background(GeometryReader { geometry in
+            Color.clear.preference(key: NativeModalSizes.self, value: [0: geometry.size.height])
+          })
+          ScrollView {
+            context.slot().frame(maxWidth: .infinity, alignment: .leading)
+              .fixedSize(horizontal: false, vertical: true)
+              .background(GeometryReader { geometry in
+                Color.clear.preference(key: NativeModalSizes.self, value: [1: geometry.size.height])
+              })
+          }
+        }.padding(context.theme.spaceM).frame(
           idealWidth: context.string("size") == "lg"
             ? 720 : context.string("size") == "sm" ? 360 : 520, idealHeight: 420
         )
+        .onPreferenceChange(NativeModalSizes.self) { parts in
+          guard let header = parts[0], let body = parts[1] else { return }
+          let height = header + body + context.theme.spaceML + context.theme.spaceM * 2
+          if height.isFinite, height > 0, abs(height - contentHeight) > 0.5 { contentHeight = height }
+        }
+        .environment(\.dynamicTypeSize, typeSize)
+        #if os(iOS)
+        .presentationDetents(context.string("size") == "lg" ? [.large] : [
+          .height(min(420, max(context.presentation.minimumControlTargetSize * 2, contentHeight))), .large
+        ])
+        .presentationDragIndicator(.visible)
+        #endif
       }
+  }
+}
+
+private struct NativeModalSizes: PreferenceKey {
+  static let defaultValue: [Int: CGFloat] = [:]
+  static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+    value.merge(nextValue(), uniquingKeysWith: { _, next in next })
   }
 }
 
 private struct NativeCardActionKey: EnvironmentKey {
   static let defaultValue = false
 }
+fileprivate struct NativeCardGroupAction {
+  let message: String
+  let action: Value
+}
+private struct NativeCardGroupActionKey: EnvironmentKey {
+  static let defaultValue: NativeCardGroupAction? = nil
+}
 extension EnvironmentValues {
+  fileprivate var openUICardGroupAction: NativeCardGroupAction? {
+    get { self[NativeCardGroupActionKey.self] }
+    set { self[NativeCardGroupActionKey.self] = newValue }
+  }
   var openUICardIsAction: Bool {
     get { self[NativeCardActionKey.self] }
     set { self[NativeCardActionKey.self] = newValue }
@@ -584,44 +651,149 @@ extension EnvironmentValues {
 struct NativeCardItem: View {
   let context: OpenUIComponentContext
   let kind: String
+  private var summary: Bool { kind == "Overview" || kind == "Snippet" }
+  private var centeredOverview: Bool {
+    guard kind == "Overview", case .element(let top) = context.value("top") else { return false }
+    return ["IconText", "ImageText"].contains(top.typeName) && PropValue.string(top, "layout") == "vertical"
+  }
+  private var copyAlignment: Alignment { centeredOverview ? .center : .leading }
+  private var itemTheme: OpenUIThemeValues {
+    var theme = context.theme
+    // The official families share tokens, not an identical outline: Context
+    // uses radius-xl, compact fact cards radius-2xl, photo cards radius-3xl.
+    theme.radius3xl = context.theme.cardRadius(for: kind)
+    // Insets are owned by the component recipe; do not mutate a shared spacing token.
+    return theme
+  }
   @Environment(\.openUICardIsAction) private var isAction
+  @Environment(\.openUICardGroupAction) private var pendingGroupAction
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.dynamicTypeSize) private var typeSize
+  @Environment(\.openUIResourceContext) private var artworkResources
+  @Environment(\.openUIMediaCache) private var artworkCache
+  @State private var artworkImageState: NativeArtworkImageState?
+  @State private var copyBelowArtwork = false
+  @Namespace private var artworkLayoutScope
+  private var groupAction: NativeCardGroupAction? { pendingGroupAction }
   private var bannerHeaderInset: CGFloat {
     guard case .element(let header) = context.value("header"), header.typeName == "ImageTextLarge" else { return 0 }
-    return context.theme.cardPadding
+    return context.theme.spaceM
   }
   private var artworkSource: String? {
     guard ["Visual", "Context"].contains(kind), let source = context.string("bgImageSrc"),
       !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
     return source
   }
-  private var contentTheme: OpenUITheme {
+  private var artworkRequest: NativeResourceRequestID? {
+    guard let source = artworkSource else { return nil }
+    return .init(request: artworkResources.request(for: source),
+      loader: ObjectIdentifier(artworkResources.loader), attempt: 0)
+  }
+  private var hasLoadedArtwork: Bool {
+    guard context.element.sourceReadiness["bgImageSrc"].complete, let request = artworkRequest else { return false }
+    return artworkCache?[request] != nil
+      || (artworkImageState?.request == request && artworkImageState?.status == .loaded)
+  }
+  private var usesArtworkOverlay: Bool {
+    hasLoadedArtwork && !typeSize.isAccessibilitySize && !copyBelowArtwork
+  }
+  private var contentTheme: OpenUIThemeValues {
     var theme = context.theme
-    if artworkSource != nil {
-      theme.foreground = .white
-      theme.secondary = .white.opacity(0.86)
-      theme.surface = .black.opacity(0.55)
-      theme.controlSurface = .black.opacity(0.75)
-      theme.metricSurface = .black.opacity(0.55)
-      theme.border = .white.opacity(0.2)
-      theme.canvas = .black
+    if usesArtworkOverlay {
+      theme.textNeutralPrimary = .white
+      theme.textNeutralSecondary = .white.opacity(0.86)
+      theme.sunk = .black.opacity(0.55)
+      theme.foreground = .black.opacity(0.75)
+      theme.borderDefault = .white.opacity(0.2)
+      theme.background = .black
     }
     return theme
   }
   @ViewBuilder private var actionIndicator: some View {
     if isAction {
-      Image(systemName: "chevron.right").openUIFont(context.theme.typography.actionCompact)
-        .foregroundStyle(contentTheme.secondary).accessibilityHidden(true)
+      Image(systemName: "chevron.right").openUIFont(context.theme.textLabelSmHeavy, role: .control)
+        .foregroundStyle(contentTheme.textNeutralSecondary).accessibilityHidden(true)
     }
   }
   var body: some View {
-    VStack(alignment: .leading, spacing: context.theme.contentSpacing * (["Overview", "Snippet"].contains(kind) ? 2 / 3 : 1)) {
+    Group {
+      if summary { content }
+      else { content.clipShape(RoundedRectangle(cornerRadius: itemTheme.radius3xl, style: .continuous)) }
+    }
+    .environment(\.openUITheme, contentTheme)
+    .foregroundStyle(contentTheme.textNeutralPrimary)
+    .modifier(NativeCardSurface(
+      theme: itemTheme,
+      // Facts are outlined without a fill so they stay part of the reply;
+      // independent offers keep the raised surface. Explicit gray and artwork
+      // treatments remain item properties.
+      fill: artworkSource != nil ? .clear
+        : context.string("bgColor") == "gray" ? context.theme.sunk
+        : summary ? .clear : context.theme.foreground,
+      bordered: artworkSource == nil && kind != "Context"))
+    .environment(\.openUIActionDensity, .compact)
+    .environment(\.colorScheme, usesArtworkOverlay ? .dark : colorScheme)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("openui.card-item." + kind.lowercased())
+    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
+    .layoutValue(key: NativeOverviewMetricKey.self,
+      value: kind == "Overview" && context.value("bottom") != nil && context.value("bottom") != .null)
+  }
+  @ViewBuilder private var content: some View {
+      if let source = artworkSource, let request = artworkRequest {
+        NativeArtworkCardLayout(aspectRatio: context.presentation.coverAspectRatio,
+          fallbackWidth: context.presentation.minimumCardWidth, accessibility: typeSize.isAccessibilitySize) {
+          ZStack {
+            context.theme.sunk
+            NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .cover,
+              onStatus: { status, _ in
+                guard context.isCurrentPresentation else { return }
+                let next = NativeArtworkImageState(request: request, status: status)
+                if artworkImageState != next { artworkImageState = next }
+              })
+              .environment(\.openUITheme, context.theme)
+              .environment(\.colorScheme, colorScheme)
+              .environment(\.openUIMediaSourceReady, context.element.sourceReadiness["bgImageSrc"].complete)
+          }.allowsHitTesting(false)
+          copy.background {
+            GeometryReader { geometry in
+              Color.clear.preference(key: NativeArtworkCopyPlacementKey.self,
+                value: [artworkLayoutScope: geometry.frame(in: .named(artworkLayoutScope)).minY > 0.5])
+            }
+            if usesArtworkOverlay {
+              LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)],
+                startPoint: .top, endPoint: .bottom).allowsHitTesting(false)
+            }
+          }
+        }
+        .coordinateSpace(name: artworkLayoutScope)
+        .onPreferenceChange(NativeArtworkCopyPlacementKey.self) { values in
+          if let below = values[artworkLayoutScope], below != copyBelowArtwork { copyBelowArtwork = below }
+        }
+        .background(usesArtworkOverlay ? Color.black : hasLoadedArtwork ? context.theme.foreground : context.theme.sunk)
+      } else {
+        copy
+      }
+  }
+  @ViewBuilder private var contextTitle: some View {
+    if artworkSource != nil, case .element(let title) = context.value("title"), title.typeName == "Tag" {
+      context.slot("title")
+        .environment(\.openUIArtworkTag, usesArtworkOverlay)
+        .environment(\.openUITheme, context.theme)
+        .environment(\.colorScheme, colorScheme)
+    } else {
+      context.slot("title").openUIFont(context.theme.textBodyDefaultHeavy, role: .title)
+    }
+  }
+  private var copy: some View {
+    VStack(alignment: centeredOverview ? .center : .leading,
+      spacing: ["Overview", "Context"].contains(kind) ? context.theme.spaceS : context.theme.spaceM) {
       switch kind {
       case "Snippet":
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .center, spacing: context.theme.spacing("s")) {
           NativeLabelValueLayout(
-            gap: 12, minimumLabelWidth: context.theme.minimumCompactCardWidth,
-            allowsStacking: false, centerVertically: true
+            gap: context.theme.spaceM, minimumLabelWidth: context.presentation.minimumCompactCardWidth,
+            centerVertically: true
           ) {
             context.slot("lhs")
             context.slot("rhs")
@@ -629,25 +801,31 @@ struct NativeCardItem: View {
           actionIndicator
         }
       case "Overview":
-        HStack(alignment: .top, spacing: 8) {
-          context.slot("top").frame(maxWidth: .infinity, alignment: .center)
+        HStack(alignment: .top, spacing: context.theme.spacing("s")) {
+          context.slot("top").multilineTextAlignment(centeredOverview ? .center : .leading)
+            .frame(maxWidth: .infinity, alignment: copyAlignment)
           if isAction {
             Spacer(minLength: 0)
             actionIndicator
           }
         }
-        context.slot("bottom").frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
+        context.slot("bottom").multilineTextAlignment(centeredOverview ? .center : .leading)
+          .frame(maxWidth: .infinity, alignment: copyAlignment)
+          .alignmentGuide(.nativeOverviewMetricTop) { _ in 0 }
       case "Context":
-        context.slot("title").openUIFont(context.theme.typography.caption)
-          .foregroundStyle(contentTheme.secondary)
-        if artworkSource != nil { Spacer(minLength: context.theme.contentSpacing) }
+        contextTitle
+        if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }
         if let body = context.string("body") {
-          NativeMarkdownText(text: body, mode: .inline, style: .init(font: context.theme.typography.detail.weight(.semibold)))
+          NativeMarkdownText(text: body, mode: .inline, style: contentTheme.textStyle(.compactBody).richText())
         }
       case "Visual":
         context.slot("tag")
-        if artworkSource != nil { Spacer(minLength: context.theme.contentSpacing) }
-        HStack(alignment: .top, spacing: 8) {
+          .environment(\.openUIArtworkTag, usesArtworkOverlay)
+          .environment(\.openUITheme, context.theme)
+          .environment(\.colorScheme, colorScheme)
+        if artworkSource != nil { Spacer(minLength: context.theme.spaceM) }
+        HStack(alignment: .center, spacing: context.theme.spacing("s")) {
           context.slot("body")
           if isAction {
             Spacer(minLength: 0)
@@ -662,57 +840,45 @@ struct NativeCardItem: View {
             .frame(maxHeight: .infinity, alignment: .bottom)
         }
       }
+      groupEntry
     }
-      .environment(\.openUITheme, contentTheme)
-      .foregroundStyle(contentTheme.foreground)
-      .padding(context.theme.cardPadding)
-      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-      .frame(minHeight: artworkSource == nil ? nil
-        : kind == "Visual" ? context.theme.minimumCardWidth : context.theme.contentSpacing * 8,
-        alignment: .topLeading)
-      .background {
-        if let source = artworkSource {
-          ZStack {
-            Color.black
-          NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .fill,
-            showsFailureSymbol: false)
-          LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)], startPoint: .top, endPoint: .bottom)
-        }.allowsHitTesting(false)
+      .environment(\.openUICardGroupAction, nil)
+      .padding(context.theme.componentStyle.objectInset)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: centeredOverview ? .top : .topLeading)
+  }
+  @ViewBuilder private var groupEntry: some View {
+    if let groupAction {
+      // A sibling of content/links, inside this item's single surface.
+      OpenUIActionSurface(context: context, message: groupAction.message, action: groupAction.action) {
+        HStack(spacing: context.theme.spacing("s")) {
+          Text(groupAction.message).multilineTextAlignment(.leading)
+          Spacer(minLength: 0)
+          Image(systemName: "chevron.right").accessibilityHidden(true)
         }
+        .openUIFont(context.theme.textLabelSmHeavy, role: .control)
+        .foregroundStyle(contentTheme.textNeutralPrimary)
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
-      .clipShape(RoundedRectangle(cornerRadius: context.theme.cornerRadius))
-    .modifier(NativeCardSurface(
-      theme: context.theme,
-      fill: kind == "Overview" ? context.theme.metricSurface
-        : context.string("bgColor") == "gray" ? context.theme.surface : nil,
-      bordered: artworkSource == nil && kind != "Overview" && context.string("bgColor") != "gray"))
-    .environment(\.openUIActionDensity, .compact)
-    .environment(\.colorScheme, artworkSource == nil ? colorScheme : .dark)
-    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
+      .disabled(!context.canDispatch(groupAction.action))
+      .accessibilityIdentifier("openui.card-item.group-action")
+    }
   }
 }
 
-private struct NativeCompositeFooter: View {
+struct NativeCompositeFooter: View {
   let context: OpenUIComponentContext
   let footer: Value
   var body: some View {
-    ViewThatFits(in: .horizontal) {
-      row
-      VStack(alignment: .leading, spacing: 12) {
-        price
-        button
-      }.frame(maxWidth: .infinity, alignment: .leading)
+    // An object footer balances amount and action when their complete widths
+    // fit. It becomes a column before compressing either reading value. The
+    // same mounted action survives that placement change.
+    NativeLabelValueLayout(gap: context.theme.componentStyle.footerGap,
+      minimumLabelWidth: .greatestFiniteMagnitude, centerVertically: true,
+      collapsesEmptySlots: true) {
+      context.render(NativeValue.prop(footer, "price") ?? .null)
+      context.render(NativeValue.prop(footer, "button") ?? .null)
     }
   }
-  private var row: some View {
-    HStack(alignment: .center, spacing: 12) {
-      price
-      Spacer(minLength: 0)
-      button
-    }
-  }
-  private var price: some View { context.render(NativeValue.prop(footer, "price") ?? .null) }
-  private var button: some View { context.render(NativeValue.prop(footer, "button") ?? .null) }
 }
 struct NativeCardBlock: View {
   let context: OpenUIComponentContext
@@ -725,45 +891,47 @@ struct NativeCardBlock: View {
     Binding(get: { children.contains(where: { $0.id == selectedID }) ? selectedID : children.first?.id ?? "" },
       set: { selectedID = $0 })
   }
-  private var minimumWidth: CGFloat {
-    kind == "Overview"
-      ? context.theme.minimumCompactCardWidth : context.theme.minimumCardWidth
-  }
   private var gap: CGFloat {
     CGFloat(
       min(
-        128, max(0, context.number("gap") ?? Double(context.theme.spacing(context.string("gap"))))))
+        128, max(0, context.presentationNumber("gap") ?? Double(context.theme.spacing(context.presentationString("gap"))))))
+  }
+  private var grid: NativeCardGrid? {
+    let layout = context.string("layout")
+    // The standard component host admits only a committed layout. No guessed
+    // carousel is needed while positional collection arguments are arriving.
+    guard layout != "carousel" else { return nil }
+    return NativeCardGrid(maxPerRow: ["Overview", "Context", "Visual"].contains(kind) ? 3 : 2,
+      responsive: context.flag("responsive") != false,
+      singleColumn: typeSize.isAccessibilitySize,
+      minimumColumnWidth: kind == "Overview" ? overviewMinimumWidth : nil, spacing: gap)
+  }
+  private var overviewMinimumWidth: CGFloat {
+    // Horizontal media needs a real reading column next to the thumbnail;
+    // compact text/icon metrics can share the row. This follows declared
+    // component/layout roles, never the wording or length of a particular case.
+    let hasHorizontalMedia = children.contains { child in
+      guard case .element(let top) = NativeValue.prop(child.value, "top") else { return false }
+      return top.typeName == "ImageText" && PropValue.string(top, "layout") != "vertical"
+    }
+    return hasHorizontalMedia ? context.presentation.minimumCardWidth : context.presentation.minimumCompactCardWidth
   }
   var body: some View {
     Group {
       if children.isEmpty {
         EmptyView()
-      } else if context.string("layout") == "carousel" {
+      } else {
         NativePager(ids: children.map(\.id), selection: selection, enabled: true,
-          identifier: "openui.card-block.\(kind.lowercased())", showsControls: false,
-          maximumPageWidth: context.theme.maximumCarouselCardWidth,
-          trailingPeek: context.theme.carouselPeek, pageSpacing: gap) { id in
+          identifier: "openui.card-block.\(kind.lowercased())",
+          showsControls: false,
+          maximumPageWidth: context.presentation.maximumCarouselCardWidth,
+          trailingPeek: context.presentation.carouselPeek, pageSpacing: gap, grid: grid, supportsAdjustment: false) { id in
           if let index = children.firstIndex(where: { $0.id == id }) {
             item(children[index], index: index)
           }
         }
-      } else {
-        LazyVGrid(
-          columns: context.flag("responsive") == false
-            ? [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)]
-            : typeSize.isAccessibilitySize
-              ? [GridItem(.flexible(), alignment: .topLeading)]
-              : [GridItem(.adaptive(minimum: minimumWidth), spacing: gap, alignment: .topLeading)],
-          alignment: .leading, spacing: gap
-        ) {
-          ForEach(Array(children.enumerated()), id: \.element.id) { index, child in
-            item(child, index: index)
-          }
-        }
       }
     }
-    .environment(\.openUIMediaLayoutPending,
-      context.isStreaming && context.element.partial && !["grid", "carousel"].contains(context.string("layout") ?? ""))
   }
   @ViewBuilder private func item(_ item: OpenUIRenderChild, index: Int) -> some View {
     if let value = context.value("action"), value != .null {
@@ -776,21 +944,55 @@ struct NativeCardBlock: View {
           context.render(item.value).environment(\.openUICardIsAction, true)
         }.accessibilityLabel(message)
       } else {
-        // Composite children and Context Markdown may contain independent
-        // controls or links. Keep their group action a sibling Button.
-        VStack(alignment: .leading, spacing: 8) {
+        if case .element = item.value {
+          context.render(item.value).environment(\.openUICardGroupAction,
+            NativeCardGroupAction(message: message, action: action))
+        } else {
           context.render(item.value)
-          OpenUIActionSurface(context: context, message: message, action: action) {
-            HStack {
-              Text(message)
-              Spacer()
-              Image(systemName: "chevron.right")
-            }.padding(10)
-          }
         }
       }
     } else {
       context.render(item.value)
     }
+  }
+}
+
+struct NativeFollowUpBlock: View {
+  let context: OpenUIComponentContext
+  var body: some View {
+    NativeWrappingRow(gap: context.theme.spacing("s")) {
+      ForEach(context.children("items")) { item in
+        context.render(item.value)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+struct NativeFollowUpItem: View {
+  let context: OpenUIComponentContext
+  private var text: String { context.string("text") ?? "" }
+  var body: some View {
+    OpenUIActionSurface(context: context, message: text, action: Self.action(for: text)) {
+      Text(text)
+        .fixedSize(horizontal: false, vertical: true)
+        .nativeTextStyle(context.theme.textStyle(.compactAction))
+        .padding(.horizontal, context.theme.spacing("m"))
+        .padding(.vertical, context.theme.spacing("s"))
+        .background(context.theme.sunk, in: Capsule(style: .continuous))
+        .overlay(
+          Capsule(style: .continuous).strokeBorder(context.theme.borderDefault,
+            lineWidth: context.presentation.borderWidth))
+        .openUIControlTarget(alignment: .leading)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(text)
+    .accessibilityIdentifier("openui.followup")
+  }
+  static func action(for text: String) -> Value {
+    .object(OpenUIObject([
+      ObjectField(key: OpenUIString("type"), value: .string(OpenUIString("continue_conversation"))),
+      ObjectField(key: OpenUIString("message"), value: .string(OpenUIString(text))),
+    ]))
   }
 }

@@ -1,6 +1,6 @@
 # Native standard component catalog
 
-`OpenUIStandardComponents.library()` registers the 82 pinned upstream default
+`OpenUIStandardComponents.library()` registers the 84 pinned upstream default
 component names. Names, positional argument order, defaults and component slots
 follow `react-ui/src/genui-lib`. SwiftUI owns the platform appearance and measured
 layout; library and schema rules use shared `lang-core`.
@@ -34,17 +34,6 @@ upstream current-page state when rows temporarily disappear. Tabs, Accordion,
 Carousel and Table pagination are local browsing, available during streaming;
 form writes and business actions keep their separate completion checks.
 
-## Optional extensions
-
-- `OpenUIMapComponents`: Map for supplied locations, icon markers, default place
-  cards and optional ordinary component pages. No geocoding or fabricated routes.
-- `OpenUIPopoverComponents`: native contextual explanations.
-- `OpenUIWebComponents` from the optional OpenUIWeb product: SVG and WebView.
-
-These extensions are not part of the upstream default 82. Installation extends
-existing slots through the core; hosts can independently choose their generation
-subset. Component selection and business actions belong to the caller.
-
 ## Native presentation scope
 
 Registration and positional-schema parity do not imply web pixel equivalence.
@@ -53,7 +42,7 @@ The native renderer implements these standard presentation contracts:
 | Component | Native presentation |
 | --- | --- |
 | CodeBlock | Upstream refractor/Prism grammars, selectable native text, lossless copy and copy feedback; unknown languages remain plain text |
-| EntityList | Inline Markdown in both cells, text/number variants, default header/footer and compact rows |
+| EntityList | Inline Markdown in both cells; ordinary text values, emphasized number values/totals, compact read-only rows and leading text when stacked |
 | Tag / TagBlock | Distinct small, medium and large metrics; shared icon and semantic color presentation |
 | IconText | Semantic icon badges including inverted, with upstream filled/soft normalization |
 | TextContent | Block Markdown, GFM tables, shared fenced-code rendering, numbered source citations and offline KaTeX equations |
@@ -69,10 +58,14 @@ is separate from lang-core, carries dependency licenses and requires no runtime
 downloads. Rebuild it with `npm ci --ignore-scripts` then `npm run build` in
 `scripts/code-highlighting`. SwiftPM consumers use the checked-in resource.
 
+The native view receives typed tokens from Internal/NativeCodeSyntax; it does
+not import JavaScriptCore. Syntax colors live in NativeControlPalette and the
+copy button follows OpenUIPresentation's existing platform hit target.
+
 Rich text similarly bundles the pinned Remark/KaTeX dependencies. Native blocks
 remain SwiftUI; a private nonpersistent WebKit view rasterizes equations using
-embedded fonts. General SVG/WebView components still require the optional
-OpenUIWeb product. Citation metadata is supplied by `CardSourceProvider`, using
+embedded fonts. This private math implementation is not a general web component.
+Citation metadata is supplied by `CardSourceProvider`, using
 the upstream source fields rather than extending the language syntax.
 
 Chart inspection uses a shared native detail panel: the selected category is a
@@ -101,14 +94,14 @@ These are component presentation semantics, not travel-specific layouts.
 ## SDK and review boundaries
 
 Scene catalogs, authored sample programs, language switching, bubble simulation,
-mock transports and review diagnostics UI belong to the independent review application in
-`Tests/Review`. None are part of the library's `Sources` targets. SDK controls
+mock transports and diagnostics UI belong to a separate review application, which
+is not included in the SDK-only distribution. None are part of the library's `Sources` targets. SDK controls
 still use ordinary platform localization for labels such as Close and Retry;
 model-supplied content is not translated by the renderer.
 
 ## Validation
 
-Run the package tests and `scripts/visual-tests.swift` on an owned phone simulator.
-The review project separates composition catalog, host shell and native assertions.
-Screenshots without approved baselines are visual evidence, not pixel-regression
-acceptance. See `Tests/Review/README.md` for reproducible commands.
+Run `swift test --package-path packages/swift-ui` for SDK regressions.
+A consuming application can separately exercise the native views on an owned
+Simulator. Screenshots without approved baselines are visual evidence, not
+pixel-regression acceptance; that acceptance application is not shipped here.

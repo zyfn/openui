@@ -28,15 +28,13 @@ public struct ElementErrorBoundary<Content: View>: View {
 
     public var body: some View {
         Group {
-            if let element = element {
-                content(element)
-                    .onAppear { lastGood = element }
-                    .onChange(of: element) { lastGood = $0 }
-            } else if let lastGood = lastGood {
-                content(lastGood)
+            if let shown = element ?? lastGood {
+                content(shown)
             } else {
                 EmptyView()
             }
         }
+        .onAppear { if let element { lastGood = element } }
+        .onChange(of: element) { if let element = $0 { lastGood = element } }
     }
 }

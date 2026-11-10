@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'Package.swift'
       - 'packages/swift-lang/**'
       - 'packages/swift-ui/**'
       - 'packages/lang-core/**'
@@ -13,6 +14,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'Package.swift'
       - 'packages/swift-lang/**'
       - 'packages/swift-ui/**'
       - 'packages/lang-core/**'
@@ -26,7 +28,7 @@ permissions:
 jobs:
   test:
     runs-on: macos-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
@@ -36,21 +38,18 @@ jobs:
           npm ci --prefix packages/swift-lang/scripts --ignore-scripts
           node packages/swift-lang/scripts/build.mjs
           git diff --exit-code -- packages/swift-lang/Sources/OpenUILang/Resources
-      - name: Language protocol and TypeScript reference cases
-        run: swift test --package-path packages/swift-lang
+      - name: SDK tests through the distribution manifest
+        run: swift test
       - name: Authoring validator
         run: node --test packages/swift-lang/validation/validation.test.mjs
       - name: Language runtime memory checks
         run: >-
           swift test --package-path packages/swift-lang
           --scratch-path "$RUNNER_TEMP/openui-asan" --sanitize=address
-      - name: SwiftUI adapter and upstream interaction cases
-        run: swift test --package-path packages/swift-ui
       - name: Compile the standalone macOS example
         run: swift build --package-path examples/app-frameworks/swiftui-macos
-      - name: Compile for iOS 16 Simulator
+      - name: iOS Simulator compile through the distribution manifest
         run: >-
-          swift build --package-path packages/swift-ui
-          --scratch-path "$RUNNER_TEMP/openui-ios"
+          swift build --scratch-path "$RUNNER_TEMP/openui-ios"
           --triple arm64-apple-ios16.0-simulator
           --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)"

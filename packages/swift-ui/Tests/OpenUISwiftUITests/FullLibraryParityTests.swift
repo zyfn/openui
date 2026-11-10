@@ -48,7 +48,7 @@ final class FullLibraryParityTests: XCTestCase {
     let visible = prepared.excluding(Set(["Large"]), for: "PieChart")
     XCTAssertEqual(visible.labels, ["Mid", "Small"])
     XCTAssertEqual(visible.slices, [5, 1])
-    XCTAssertEqual(visible.colorIndices, [1, 2], "Toggling cannot recolor the remaining slices")
+    XCTAssertEqual(visible.colorIndices, [2, 0], "Mid and Small retain their input category colors after sorting and toggling")
     let table = EvaluatedElement(typeName: "BarChart", props: [
       ("labels", .array([.string("day"), .string("2026"), .string("2025")])),
       ("series", .array([.array([.string("Mon"), .string("12.5"), .number(8)]),

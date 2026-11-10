@@ -296,3 +296,29 @@ describe("Library type", () => {
     expect(mock.functions).toBeUndefined();
   });
 });
+
+// ─── Positional signatures ──────────────────────────────────────────────────
+
+describe("positional signatures", () => {
+  it("a defaulted param before a required one is not printed optional", () => {
+    const Line = defineComponent({
+      name: "Line",
+      props: z.object({
+        variant: z.enum(["text", "number"]).default("text"),
+        value: z.string(),
+        subtext: z.string().optional(),
+      }),
+      description: "A line",
+      component: Dummy,
+    });
+
+    const lib = createLibrary({ components: [Line], root: "Line" });
+
+    // Skipping `variant` positionally would shift `value` into its slot, so the
+    // signature must not offer `variant?`; the trailing optional keeps its `?`.
+    expect(lib.prompt()).toContain('Line(variant: "text" | "number", value: string, subtext?: string)');
+    expect(lib.toSpec().components?.Line?.signature).toBe(
+      'Line(variant: "text" | "number", value: string, subtext?: string)',
+    );
+  });
+});

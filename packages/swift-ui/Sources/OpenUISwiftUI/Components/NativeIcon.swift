@@ -1,5 +1,36 @@
 import SwiftUI
 
+/// The public IconText sizes select a base glyph; drawing and its box use
+/// the same nearest-view Dynamic Type scale. Aliases retain the same meaning.
+enum NativeIconTextMetrics {
+  static func glyph(_ size: String?) -> CGFloat {
+    switch size {
+    case "xs": return 12
+    case "s", "sm": return 14
+    case "l", "lg": return 20
+    case "xl": return 24
+    default: return 16
+    }
+  }
+}
+
+/// The variant changes meaning/ink, never the text column's starting position.
+struct NativeIconTextStyle {
+  let variant: String
+  let foreground: Color
+  let background: Color
+  let inset: CGFloat
+
+  init(variant: String?, theme: OpenUIThemeValues) {
+    self.variant = ["filled", "soft"].contains(variant ?? "neutral") ? "neutral" : variant ?? "neutral"
+    let colors = NativeBadgeColors(variant: self.variant, theme: theme)
+    foreground = self.variant == "neutral" ? theme.textNeutralSecondary : colors.foreground
+    // Inverted needs its contrasting plate. Status colors remain on the glyph.
+    background = self.variant == "inverted" ? colors.background : .clear
+    inset = theme.space2xs
+  }
+}
+
 private struct NativeIconSizeKey: EnvironmentKey { static let defaultValue: CGFloat? = nil }
 extension EnvironmentValues {
   var openUIIconSize: CGFloat? {
@@ -73,6 +104,8 @@ struct NativeIcon: View {
   var body: some View {
     let name = context.string("name") ?? ""
     let resolved = NativeIconCatalog.resolvedName(name, category: context.string("category"))
+    let ready = context.element.sourceReadiness["name"].complete
+      && (NativeIconCatalog.catalog.icons[name] != nil || context.element.sourceReadiness["category"].complete)
     Canvas { canvas, dimensions in
       let scale = min(dimensions.width, dimensions.height) / 24
       canvas.translateBy(x: (dimensions.width - 24 * scale) / 2, y: (dimensions.height - 24 * scale) / 2)
@@ -83,6 +116,7 @@ struct NativeIcon: View {
       }
     }
     .frame(width: size * (requestedSize ?? 18) / 18, height: size * (requestedSize ?? 18) / 18)
+    .opacity(ready ? 1 : 0).accessibilityHidden(!ready)
     .accessibilityLabel(name).accessibilityAddTraits(.isImage)
     .accessibilityIdentifier("openui.icon." + resolved)
   }

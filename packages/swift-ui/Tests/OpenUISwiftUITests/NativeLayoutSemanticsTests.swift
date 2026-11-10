@@ -1,8 +1,51 @@
 import SwiftUI
 import XCTest
 @testable import OpenUISwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 final class NativeLayoutSemanticsTests: XCTestCase {
+  func testWrappedFlexChildrenShareAvailableRowsWithoutResizingIntrinsicControls() {
+    let cards = OpenUIWrappedFlexRows.allocate(ideal: [80, 260], minimums: [32, 32],
+      growing: [true, true], width: 350, gap: 12)
+    XCTAssertEqual(cards.count, 1)
+    XCTAssertEqual(cards[0].map(\.width), [169, 169])
+    let mixed = OpenUIWrappedFlexRows.allocate(ideal: [80, 260, 280], minimums: [80, 32, 280],
+      growing: [false, true, false], width: 350, gap: 12)
+    XCTAssertEqual(mixed.count, 2)
+    XCTAssertEqual(mixed[0].map(\.width), [80, 258])
+    XCTAssertEqual(mixed[1].map(\.width), [280])
+    let bounded = OpenUIWrappedFlexRows.allocate(ideal: [240, 90], minimums: [220, 32],
+      growing: [true, true], width: 350, gap: 12)
+    XCTAssertEqual(bounded[0].map(\.width), [220, 118])
+  }
+
+  func testPagerHeightDoesNotDependOnSelectionOrDragDirection() {
+    for selected in 0..<3 {
+      for drag in [CGFloat(-200), 0, 200] {
+        XCTAssertEqual(NativePagerContentHeight.measure([40, 240, 80], selected: selected,
+          translation: drag, stride: 300), 240)
+      }
+    }
+    XCTAssertEqual(NativePagerContentHeight.measure([.nan, -2, .infinity], selected: 0), 0)
+  }
+
+  #if os(macOS)
+  @MainActor func testMountedPagerReservesTheSameTrackInBothReadingDirections() {
+    _ = NSApplication.shared
+    for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+      for selected in [0, 1] {
+        let pager = NativePager(ids: [0, 1], selection: .constant(selected), enabled: true,
+          identifier: "track", showsControls: false) { index in
+            Color.clear.frame(height: index == 0 ? 40 : 200)
+          }
+          .environment(\.layoutDirection, direction).frame(width: 300)
+        XCTAssertEqual(NSHostingView(rootView: pager).fittingSize.height, 200, accuracy: 1)
+      }
+    }
+  }
+  #endif
   func testAroundAndEvenlyHaveDifferentEdgeSpaceWithoutChangingContentSize() {
     let sizes = [CGSize(width: 40, height: 20), CGSize(width: 40, height: 20)]
     let around = OpenUIFlowPlacement.frames(sizes: sizes, width: 200, gap: 8, align: "start", justify: "around", wrap: false)
@@ -65,4 +108,54 @@ extension NativeLayoutSemanticsTests {
             maximumPageWidth: 320, minimumPageWidth: 240, peek: 32, spacing: 16)
         XCTAssertEqual(single.pageWidth, 300)
     }
+}
+
+extension NativeLayoutSemanticsTests {
+  func testWrappedRowsSeparateHorizontalAndVerticalSpacing() {
+    let sizes = [CGSize(width: 70, height: 44), CGSize(width: 70, height: 60),
+                 CGSize(width: 70, height: 44), CGSize(width: 70, height: 44)]
+    let original = OpenUIFlowPlacement.frames(sizes: sizes, width: 160, gap: 16, align: "start", justify: "start")
+    let dense = OpenUIFlowPlacement.frames(sizes: sizes, width: 160, gap: 16, align: "start", justify: "start", rowGap: 0)
+    let spaced = OpenUIFlowPlacement.frames(sizes: sizes, width: 160, gap: 16, align: "start", justify: "start", rowGap: 4)
+    XCTAssertEqual(dense.map(\.minX), original.map(\.minX), "Changing row spacing must not change horizontal wrapping")
+    XCTAssertEqual(dense.map(\.size), sizes, "Control targets keep their measured sizes")
+    XCTAssertEqual(dense[1].minX - dense[0].maxX, 16)
+    XCTAssertEqual(original[2].minY, 76, "Existing callers retain gap on both axes")
+    XCTAssertEqual(dense[2].minY, 60, "The next row follows the tallest item, without an extra row gap")
+    XCTAssertEqual(spaced[2].minY, 64)
+    let oneRow = Array(sizes.prefix(2))
+    XCTAssertEqual(
+      OpenUIFlowPlacement.frames(sizes: oneRow, width: 320, gap: 16, align: "start", justify: "start"),
+      OpenUIFlowPlacement.frames(sizes: oneRow, width: 320, gap: 16, align: "start", justify: "start", rowGap: 0))
+  }
+
+  func testDenseRowsKeepMeasuredControlsOrderedAndNonoverlappingAtPhoneWidths() {
+    let measured = [CGSize(width: 140, height: 44), CGSize(width: 80, height: 70),
+                    CGSize(width: 170, height: 44), CGSize(width: 100, height: 56),
+                    CGSize(width: 150, height: 44), CGSize(width: 200, height: 68)]
+    for width in [CGFloat(280), CGFloat(320), CGFloat(350)] {
+      for count in [2, 4, 6] {
+        let sizes = Array(measured.prefix(count))
+        let frames = OpenUIFlowPlacement.frames(sizes: sizes, width: width, gap: 16,
+                                                align: "start", justify: "start", rowGap: 0)
+        XCTAssertEqual(frames.map(\.size), sizes)
+        XCTAssertTrue(frames.allSatisfy { $0.minX >= 0 && $0.maxX <= width })
+        for index in frames.indices.dropFirst() {
+          let prior = frames[index - 1], current = frames[index]
+          XCTAssertGreaterThanOrEqual(current.minY, prior.minY, "Wrapping preserves source order")
+          if current.minY == prior.minY { XCTAssertEqual(current.minX - prior.maxX, 16) }
+        }
+        for first in frames.indices {
+          for second in frames.indices where second > first {
+            XCTAssertTrue(frames[first].intersection(frames[second]).isEmpty, "Distinct touch targets never overlap")
+          }
+        }
+        let rowTops = Array(Set(frames.map(\.minY))).sorted()
+        for index in rowTops.indices.dropFirst() {
+          let previousBottom = frames.filter { $0.minY == rowTops[index - 1] }.map(\.maxY).max()!
+          XCTAssertEqual(rowTops[index], previousBottom, "Row height comes from real measured item heights")
+        }
+      }
+    }
+  }
 }

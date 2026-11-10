@@ -8,10 +8,11 @@ struct OpenUINativeField: View {
     @Environment(\.openUIFormValidation) private var validation
     @Environment(\.openUIFieldLabel) private var fieldLabel
     @Environment(\.locale) private var locale
+    @Environment(\.isEnabled) private var enabled
     @Environment(\.openUIFieldPresentation) private var presentation
     @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
-    private var inputFont: OpenUIFont { context.theme.typography.field(context.string("size")) }
-    private var lineHeight: CGFloat { inputFont.size * (1.2 + context.theme.typography.lineSpacing) * textScale }
+    private var inputFont: OpenUIFont { context.theme.fieldFont(context.string("size")).resolved(for: .control) }
+    private var lineHeight: CGFloat { inputFont.measuredLineHeight(scale: textScale) }
     @FocusState private var focused: Bool
     @State private var localError: String?
     @State private var registration = UUID()
@@ -19,6 +20,7 @@ struct OpenUINativeField: View {
     private var field: NativeFieldState { .init(context: context) }
     private var label: String { fieldLabel ?? field.name.displayString }
     private var placeholder: String { context.string("placeholder") ?? "" }
+    private var canEdit: Bool { enabled && context.canInteract }
 
     var body: some View {
         feedback.disabled(!context.canInteract)
@@ -56,11 +58,11 @@ struct OpenUINativeField: View {
         }
     }
     private func fieldBody(_ error: String?) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
             control.accessibilityIdentifier("openui.field.\(field.name.displayString)")
             if let error {
                 Label(error, systemImage: "exclamationmark.circle.fill")
-                    .openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.error)
+                    .nativeTextStyle(context.theme.textStyle(.fieldError))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("openui.error.\(field.name.displayString)")
             }
@@ -100,7 +102,7 @@ struct OpenUINativeField: View {
                     .frame(minHeight: CGFloat(min(20, max(2, context.number("rows") ?? 4))) * lineHeight)
                     .accessibilityLabel(label)
                 if field.text.wrappedValue.isEmpty {
-                    Text(placeholder).openUIFont(inputFont).foregroundStyle(context.theme.secondary)
+                    Text(placeholder).openUIFont(inputFont).foregroundStyle(canEdit ? context.theme.textNeutralSecondary : context.theme.textNeutralTertiary)
                         .padding(.horizontal, 5).padding(.vertical, 8).allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
@@ -114,15 +116,15 @@ struct OpenUINativeField: View {
                     ForEach(options) { option in Text(option.label).tag(option.value) }
                 }
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: context.theme.spacing("s")) {
                     if presentation == .inline { Spacer(minLength: 0) }
                     Text(selectionTitle).fixedSize(horizontal: false, vertical: true)
                         .foregroundStyle(
-                            field.selected.wrappedValue.isEmpty
-                                ? context.theme.secondary : context.theme.foreground)
+                            !canEdit ? context.theme.textNeutralTertiary : field.selected.wrappedValue.isEmpty
+                                ? context.theme.textNeutralSecondary : context.theme.textNeutralPrimary)
                     if presentation != .inline { Spacer(minLength: 8) }
-                    Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.typography.caption.weight(.semibold)).foregroundStyle(
-                        context.theme.secondary)
+                    Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.textBodyXs.weight(.semibold)).foregroundStyle(
+                        context.theme.textNeutralSecondary)
                 }.frame(maxWidth: .infinity, alignment: .leading)
                     .modifier(NativeFieldSurface(theme: context.theme, size: context.string("size")))
             }.buttonStyle(.plain).accessibilityLabel(label).accessibilityValue(selectionTitle)
@@ -137,47 +139,29 @@ struct OpenUINativeField: View {
                     Text(label)
                 }
                 .pickerStyle(.radioGroup).openUIHideLabel(fieldLabel != nil)
-                .modifier(NativeFieldSurface(theme: context.theme))
+                .openUIFont(context.theme.textBodyDefault)
             #else
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(options) { option in
-                        let selected = option.value == field.selected.wrappedValue
-                        Button {
-                            field.selected.wrappedValue = option.value
-                        } label: {
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                                    .openUIFont(context.theme.typography.body).foregroundStyle(
-                                        selected ? context.theme.accent : context.theme.secondary
-                                    )
-                                    .padding(.top, 2)
-                                optionLabel(option).frame(maxWidth: .infinity, alignment: .leading)
-                            }.frame(minHeight: 44)
-                            .modifier(NativeFieldSurface(theme: context.theme))
-                        }.buttonStyle(.plain)
-                            .accessibilityLabel(option.label).accessibilityHint(option.description)
-                            .accessibilityValue(
-                                selected
-                                    ? Text("Selected", bundle: NativeControlResources.bundle)
-                                    : Text("Not selected", bundle: NativeControlResources.bundle)
-                            )
-                            .accessibilityAddTraits(selected ? .isSelected : [])
+                Group {
+                    if options.contains(where: { !$0.description.isEmpty }) {
+                        VStack(alignment: .leading, spacing: context.theme.spaceS) { radioOptions(expanded: true) }
+                    } else {
+                        NativeWrappingRow(gap: context.theme.spaceML) { radioOptions(expanded: false) }
                     }
-                }.accessibilityElement(children: .contain).accessibilityLabel(label)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .contain).accessibilityLabel(label)
             #endif
         case .checkbox, .switches:
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: context.theme.spacing("s")) {
                 ForEach(options) { option in
                     Toggle(isOn: field.toggle(option.value)) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(option.label).openUIFont(context.theme.typography.body).foregroundStyle(context.theme.foreground)
+                        VStack(alignment: .leading, spacing: context.theme.spacing("3xs")) {
+                            Text(option.label).openUIFont(context.theme.textBodyDefault).foregroundStyle(canEdit ? context.theme.textNeutralPrimary : context.theme.textNeutralTertiary)
                             if !option.description.isEmpty {
-                                Text(option.description).openUIFont(context.theme.typography.caption).foregroundStyle(
-                                    context.theme.secondary)
+                                Text(option.description).nativeTextStyle(context.theme.textStyle(.supporting))
                             }
                         }.fixedSize(horizontal: false, vertical: true)
                     }.openUIToggleStyle(checkbox: kind == .checkbox, theme: context.theme)
-                        .tint(context.theme.accent).frame(minHeight: choiceHeight)
+                        .tint(context.theme.interactiveAccentDefault).frame(minHeight: choiceHeight)
                 }
             }.openUISwitchSurface(kind == .switches ? context.string("variant") : nil, theme: context.theme)
         case .slider: NativeSliderField(context: context)
@@ -187,14 +171,36 @@ struct OpenUINativeField: View {
         }
     }
     // Text.foregroundColor preserves a Text value for the prompt API.
-    private var inputPrompt: Text { Text(placeholder).foregroundColor(context.theme.secondary) }
+    private var inputPrompt: Text { Text(placeholder).foregroundColor(canEdit ? context.theme.textNeutralSecondary : context.theme.textNeutralTertiary) }
     private func optionLabel(_ option: NativeFieldOption) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(option.label).openUIFont(context.theme.typography.body).foregroundStyle(context.theme.foreground)
+        VStack(alignment: .leading, spacing: context.theme.spacing("3xs")) {
+            Text(option.label).openUIFont(context.theme.textBodyDefault).foregroundStyle(canEdit ? context.theme.textNeutralPrimary : context.theme.textNeutralTertiary)
             if !option.description.isEmpty {
-                Text(option.description).openUIFont(context.theme.typography.caption).foregroundStyle(context.theme.secondary)
+                Text(option.description).nativeTextStyle(context.theme.textStyle(.supporting),
+                  color: canEdit ? nil : context.theme.textNeutralTertiary)
             }
         }.fixedSize(horizontal: false, vertical: true)
+    }
+    private func radioOptions(expanded: Bool) -> some View {
+        ForEach(options) { option in
+            let selected = option.value == field.selected.wrappedValue
+            Button { field.selected.wrappedValue = option.value } label: {
+                HStack(alignment: .firstTextBaseline, spacing: context.theme.spaceS) {
+                    Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                        .openUIFont(context.theme.textBodyDefault)
+                        .foregroundStyle(!canEdit ? context.theme.textNeutralTertiary : selected ? context.theme.interactiveAccentDefault : context.theme.textNeutralSecondary)
+                    optionLabel(option)
+                }
+                .frame(maxWidth: expanded ? .infinity : nil, alignment: .leading)
+                .openUIControlTarget(alignment: .leading)
+                .contentShape(Rectangle())
+            }.buttonStyle(.plain)
+                .accessibilityLabel(option.label).accessibilityHint(option.description)
+                .accessibilityValue(selected
+                    ? Text("Selected", bundle: NativeControlResources.bundle)
+                    : Text("Not selected", bundle: NativeControlResources.bundle))
+                .accessibilityAddTraits(selected ? .isSelected : [])
+        }
     }
     private var options: [NativeFieldOption] { NativeFieldOption.read(field.options) }
     private var choiceHeight: CGFloat {
@@ -240,17 +246,22 @@ struct NativeFieldOption: Identifiable {
 }
 
 private struct NativeCheckboxStyle: ToggleStyle {
-    let theme: OpenUITheme
+    let theme: OpenUIThemeValues
+    @Environment(\.isEnabled) private var enabled
+    @Environment(\.isFocused) private var focused
     func makeBody(configuration: Configuration) -> some View {
         Button {
             configuration.isOn.toggle()
         } label: {
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: theme.spacing("sm")) {
                 Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                    .openUIFont(theme.typography.body).foregroundStyle(configuration.isOn ? theme.accent : theme.secondary).padding(
+                    .openUIFont(theme.textBodyDefault).foregroundStyle(!enabled ? theme.textNeutralTertiary : configuration.isOn ? theme.interactiveAccentDefault : theme.textNeutralSecondary).padding(
                         .top, 2)
                 configuration.label.frame(maxWidth: .infinity, alignment: .leading)
-            }.frame(minHeight: 44).modifier(NativeFieldSurface(theme: theme))
+            }.openUIControlTarget(alignment: .leading)
+                .overlay(RoundedRectangle(cornerRadius: theme.radiusM)
+                    .strokeBorder(theme.interactiveAccentDefault, lineWidth: 2)
+                    .opacity(focused && enabled ? 1 : 0).allowsHitTesting(false))
         }.buttonStyle(.plain)
             .accessibilityValue(
                 configuration.isOn ? Text("On", bundle: NativeControlResources.bundle) : Text("Off", bundle: NativeControlResources.bundle)
@@ -260,16 +271,16 @@ private struct NativeCheckboxStyle: ToggleStyle {
 }
 
 extension View {
-    @ViewBuilder fileprivate func openUISwitchSurface(_ variant: String?, theme: OpenUITheme) -> some View {
+    @ViewBuilder fileprivate func openUISwitchSurface(_ variant: String?, theme: OpenUIThemeValues) -> some View {
         switch variant {
         case "card":
             self.padding(12).background(
-                theme.controlSurface, in: RoundedRectangle(cornerRadius: theme.controlCornerRadius)
+                theme.foreground, in: RoundedRectangle(cornerRadius: theme.radiusL)
             )
-            .overlay(RoundedRectangle(cornerRadius: theme.controlCornerRadius).strokeBorder(theme.border))
+            .overlay(RoundedRectangle(cornerRadius: theme.radiusL).strokeBorder(theme.borderDefault))
         case "sunk":
             self.padding(12).background(
-                theme.surface, in: RoundedRectangle(cornerRadius: theme.controlCornerRadius))
+                theme.sunk, in: RoundedRectangle(cornerRadius: theme.radiusL))
         default: self
         }
     }
@@ -292,7 +303,7 @@ extension View {
             self
         #endif
     }
-    @ViewBuilder fileprivate func openUIToggleStyle(checkbox: Bool, theme: OpenUITheme) -> some View {
+    @ViewBuilder fileprivate func openUIToggleStyle(checkbox: Bool, theme: OpenUIThemeValues) -> some View {
         if checkbox {
             #if os(macOS)
                 self.toggleStyle(.checkbox)

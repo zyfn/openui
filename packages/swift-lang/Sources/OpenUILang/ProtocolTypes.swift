@@ -251,18 +251,25 @@ public final class EvaluatedElement: Sendable, Equatable {
     public let props: [(String, Value)]
     public let statementId: String?
     public let partial: Bool
+    /// Native source readiness, independent of the protocol's program-wide
+    /// partial flag. This advisory metadata is never serialized as OpenUI Lang.
+    public let isSourceComplete: Bool
+    /// Advisory native boundaries; deliberately excluded from Lang serialization/equality.
+    public let sourceReadiness: NativeSourceReadiness
 
-    public init(typeName: String, props: [(String, Value)] = [], statementId: String? = nil, partial: Bool = false) {
+    public init(typeName: String, props: [(String, Value)] = [], statementId: String? = nil, partial: Bool = false, isSourceComplete: Bool? = nil, sourceReadiness: NativeSourceReadiness? = nil) {
         self.typeName = typeName
         self.props = props
         self.statementId = statementId
         self.partial = partial
+        self.isSourceComplete = isSourceComplete ?? !partial
+        self.sourceReadiness = sourceReadiness ?? .init(complete: isSourceComplete ?? !partial, closed: isSourceComplete ?? !partial)
     }
 
     public static func == (lhs: EvaluatedElement, rhs: EvaluatedElement) -> Bool {
-        lhs.typeName == rhs.typeName && lhs.statementId == rhs.statementId &&
+        lhs === rhs || (lhs.typeName == rhs.typeName && lhs.statementId == rhs.statementId &&
         lhs.partial == rhs.partial && lhs.props.count == rhs.props.count &&
-        zip(lhs.props, rhs.props).allSatisfy { $0.0 == $1.0 && $0.1 == $1.1 }
+        zip(lhs.props, rhs.props).allSatisfy { $0.0 == $1.0 && $0.1 == $1.1 })
     }
 }
 
@@ -301,7 +308,11 @@ public enum OpenUIErrorCode: String, Sendable {
 
 /// Structured, LLM-friendly error. Mirrors parser/types.ts OpenUIError.
 public struct OpenUIError: Sendable {
-    public var source: OpenUIErrorSource
+    public var source: OpenUIErrorSource { didSet { hasProtocolSource = true } }
+    var hasProtocolSource = true
+    /// Exact source presence in the official diagnostic. `source` keeps its
+    /// legacy nonoptional parser fallback for existing native callers.
+    public var protocolSource: OpenUIErrorSource? { hasProtocolSource ? source : nil }
     public var code: OpenUIErrorCode
     public var message: String
     public var statementId: String?
@@ -366,17 +377,19 @@ public struct ParseResult: Sendable {
     private var expressionOverridden: Bool
     public var root: ElementNode? {
         get { rootOverridden ? nativeRoot : coreSnapshot?.root }
-        set { nativeRoot = newValue; rootOverridden = true }
+        set { nativeRoot = newValue; rootOverridden = true; presentationRoot = nil }
     }
     public var rootExpression: ASTNode? {
         get { expressionOverridden ? nativeExpression : coreSnapshot?.expression }
-        set { nativeExpression = newValue; expressionOverridden = true }
+        set { nativeExpression = newValue; expressionOverridden = true; presentationRoot = nil }
     }
     public var meta: ParseMeta
     /// $name → materialized default value.
     public var stateDeclarations: [(String, Materialized)]
     public var queryStatements: [QueryStatementInfo]
     public var mutationStatements: [MutationStatementInfo]
+    /// Native-only layout plan; not part of the parsed/serialized Lang tree.
+    public internal(set) var presentationRoot: NativeSourceReadiness? = nil
     /// Keeps the original lang-core value for evaluation within its serialized
     /// JavaScript realm. Native fields remain the public typed representation.
     var coreSnapshot: CoreParseSnapshot? = nil
@@ -448,8 +461,10 @@ extension ASTNode: Equatable {
 
 public final class ActionPlan: Sendable {
     public let steps: [ActionStep]
-    public init(steps: [ActionStep] = []) {
+    public let isSourceComplete: Bool
+    public init(steps: [ActionStep] = [], isSourceComplete: Bool = true) {
         self.steps = steps
+        self.isSourceComplete = isSourceComplete
     }
 }
 
@@ -688,12 +703,25 @@ public struct FunctionSchema: Sendable {
 /// The compiled library schema used by the parser/validator.
 /// Mirrors the ParamMap produced by compileSchema.
 public struct LibrarySchema: Sendable {
-    var wireSchema: JSONValue? = nil
+    // Copies share the prepared immutable library until either copy is edited.
+    var coreLibraryCache = CoreLibraryCache()
+    var wireSchema: JSONValue? = nil { didSet { coreLibraryCache = CoreLibraryCache() } }
     /// Component name → params (positional order).
-    public var components: [String: [ParamDef]]
+    /// Prefer editing Library with extend() and recompiling. These mutable
+    /// projections remain supported and update the retained full wire document.
+    public var components: [String: [ParamDef]] { didSet {
+        if let wire = wireSchema { wireSchema = SchemaDocument.components(wire, old: oldValue, new: components) }
+        coreLibraryCache = CoreLibraryCache()
+    } }
     /// Built-in + custom function/action call defs.
-    public var callDefs: [String: CallDef]
-    public var rootComponent: String?
+    public var callDefs: [String: CallDef] { didSet {
+        if let wire = wireSchema { wireSchema = SchemaDocument.calls(wire, old: oldValue, new: callDefs) }
+        coreLibraryCache = CoreLibraryCache()
+    } }
+    public var rootComponent: String? { didSet {
+        if let wire = wireSchema { wireSchema = SchemaDocument.setting(wire, "root", rootComponent.map(JSONValue.string)) }
+        coreLibraryCache = CoreLibraryCache()
+    } }
     public init(components: [String: [ParamDef]] = [:], callDefs: [String: CallDef] = [:], rootComponent: String? = nil) {
         self.components = components
         self.callDefs = callDefs

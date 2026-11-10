@@ -41,6 +41,7 @@ struct NativeTableDraft {
   }
   mutating func reset() { rows = baseline }
   mutating func commit() { baseline = rows }
+  var hasChanges: Bool { rows != baseline }
   var value: Value {
     .array(
       rows.map {
@@ -52,11 +53,44 @@ struct NativeTableDraft {
   }
 }
 
+/// Owns only an unsubmitted native draft and one local save attempt. The
+/// language Store remains authoritative for committed data.
+@MainActor final class NativeTableEditingState: ObservableObject {
+  @Published var draft = NativeTableDraft()
+  @Published private(set) var saving = false
+  private var revision: Int?
+  private var saveID: UUID?
+
+  func receive(_ value: Value, revision: Int) {
+    if self.revision != revision {
+      self.revision = revision; saveID = nil; saving = false
+      draft.load(value)
+    } else if !saving && !draft.hasChanges {
+      draft.load(value)
+    }
+    // Store publication from a rejected save must not turn the retryable
+    // draft into a new baseline. Source replacement still resets it above.
+  }
+
+  func save(context: OpenUIComponentContext, name: OpenUIString, columns: Int) async {
+    guard context.canActivate, !saving, draft.changes(columns: columns) > 0 else { return }
+    let id = UUID(), pending = draft.value
+    saveID = id; saving = true
+    defer { if saveID == id { saving = false; saveID = nil } }
+    var delivered = false
+    _ = await context.commitFieldAndTrigger("Save Changes", form: name, name: name,
+      value: pending, componentType: "EditableTable", onDispatch: { delivered = true })
+    guard saveID == id, context.isCurrentPresentation else { return }
+    if delivered { draft.commit() }
+  }
+}
+
 struct NativeEditableTable: View {
   let context: OpenUIComponentContext
   @EnvironmentObject private var state: OpenUIState
-  @State private var draft = NativeTableDraft()
-  @State private var saving = false
+  @StateObject private var editing = NativeTableEditingState()
+  private var draft: NativeTableDraft { editing.draft }
+  private var saving: Bool { editing.saving }
   private var name: OpenUIString { context.codeUnitString("name") ?? "" }
   private var columns: [Value] { NativeValue.array(context.value("columns")) }
   private var source: Value {
@@ -65,60 +99,69 @@ struct NativeEditableTable: View {
   private var changed: Int { draft.changes(columns: columns.count) }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      ScrollView(.horizontal) {
+    VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
+      NativeTableViewport {
         VStack(spacing: 0) {
           HStack(spacing: 0) {
             ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
-              Text(NativeValue.string(column, "header") ?? "").openUIFont(context.theme.typography.detail.weight(.semibold))
-                .frame(width: width(index), alignment: .leading).padding(12)
+              Text(NativeValue.string(column, "header") ?? "").openUIFont(context.theme.textBodySmHeavy, role: .detail)
+                .multilineTextAlignment(NativeValue.string(column, "type") == "number" ? .trailing : .leading)
+                .frame(width: width(index), alignment: alignment(column)).padding(context.theme.spaceM)
             }
-          }.background(context.theme.surface)
+          }.background(context.theme.sunk)
           ForEach(Array(draft.rows.enumerated()), id: \.offset) { row, item in
             Divider()
             HStack(alignment: .center, spacing: 0) {
               ForEach(Array(columns.enumerated()), id: \.offset) { column, definition in
                 cell(definition, row: row, column: column)
-                  .frame(width: width(column), alignment: .leading).padding(12)
+                  .frame(width: width(column), alignment: alignment(definition)).padding(context.theme.spaceM)
                   .accessibilityIdentifier(
                     "openui.table.\(name.displayString).\(item.id.displayString).\(column)")
               }
             }
           }
         }
-      }.disabled(!context.canInteract || saving)
         .background(
-          context.theme.controlSurface,
-          in: RoundedRectangle(cornerRadius: context.theme.controlCornerRadius)
+          context.theme.foreground,
+          in: RoundedRectangle(cornerRadius: context.theme.radiusL)
         )
         .overlay(
-          RoundedRectangle(cornerRadius: context.theme.controlCornerRadius).strokeBorder(
-            context.theme.border))
+          RoundedRectangle(cornerRadius: context.theme.radiusL).strokeBorder(
+            context.theme.borderDefault, lineWidth: context.presentation.borderWidth))
+      }.disabled(!context.canInteract || saving)
       if changed > 0 {
-        HStack(spacing: 12) {
-          Text("\(changed)").monospacedDigit()
-          Text("Changed cells", bundle: NativeControlResources.bundle).foregroundStyle(
-            context.theme.secondary)
-          Spacer(minLength: 8)
-          Button {
-            draft.reset()
-          } label: {
-            Text("Reset", bundle: NativeControlResources.bundle)
+        NativeLabelValueLayout(gap: context.theme.spaceM,
+          minimumLabelWidth: .greatestFiniteMagnitude, centerVertically: true) {
+          HStack(spacing: context.theme.spaceXs) {
+            Text("\(changed)").monospacedDigit()
+            Text("Changed cells", bundle: NativeControlResources.bundle)
+              .foregroundStyle(context.theme.textNeutralSecondary)
           }
-          .buttonStyle(
-            NativeActionButtonStyle(theme: context.theme, variant: "tertiary", size: "small"))
-          Button(action: save) { Text("Save Changes", bundle: NativeControlResources.bundle) }
+          NativeButtonsLayout(rowGap: context.theme.spaceS, columnGap: context.theme.spaceS) {
+            Button {
+              editing.draft.reset()
+            } label: {
+              Text("Reset", bundle: NativeControlResources.bundle)
+            }
             .buttonStyle(
-              NativeActionButtonStyle(theme: context.theme, variant: "primary", size: "small"))
-        }.openUIFont(context.theme.typography.detail).disabled(!context.canInteract || saving)
+              NativeActionButtonStyle(theme: context.theme, variant: "tertiary", size: "small"))
+            Button(action: save) { Text("Save Changes", bundle: NativeControlResources.bundle) }
+              .buttonStyle(
+                NativeActionButtonStyle(theme: context.theme, variant: "primary", size: "small"))
+          }
+        }.openUIFont(context.theme.textBodySm, role: .detail).disabled(!context.canInteract || saving)
       }
     }
-    .onAppear { draft.load(source) }
-    .onChange(of: source) { value in draft.load(value) }
-    .onChange(of: state.sourceRevision) { _ in draft.load(source) }
+    .onAppear { editing.receive(source, revision: state.sourceRevision) }
+    .onChange(of: source) { value in editing.receive(value, revision: state.sourceRevision) }
+    .onChange(of: state.sourceRevision) { revision in editing.receive(source, revision: revision) }
   }
   private func width(_ index: Int) -> CGFloat {
-    CGFloat(min(600, max(100, NativeValue.number(columns[index], "width") ?? 160)))
+    NativeEditableColumn.width(context.element.sourceReadiness["columns"][index]["width"].complete
+      ? NativeValue.number(columns[index], "width") : nil)
+  }
+  private func alignment(_ definition: Value) -> Alignment {
+    NativeValue.string(definition, "type") == "number" ? .trailing : .leading
   }
   private func binding(_ row: Int, _ column: Int) -> Binding<String> {
     Binding(
@@ -133,9 +176,9 @@ struct NativeEditableTable: View {
         guard context.canInteract else { return }
         let numeric = NativeValue.string(columns[column], "type") == "number"
         if numeric, let value = Double(text), value.isFinite {
-          draft.write(.number(value), row: row, column: column)
+          editing.draft.write(.number(value), row: row, column: column)
         } else {
-          draft.write(.string(text), row: row, column: column)
+          editing.draft.write(.string(text), row: row, column: column)
         }
       })
   }
@@ -162,19 +205,29 @@ struct NativeEditableTable: View {
     }
   }
   private func save() {
-    guard context.canInteract, !saving, changed > 0 else { return }
-    saving = true
-    state.setFieldValue(form: name, name: name, value: draft.value, componentType: "EditableTable")
-    draft.commit()
+    guard context.canActivate, !saving, changed > 0 else { return }
     Task { @MainActor in
-      defer { saving = false }
-      guard context.canInteract else { return }
-      _ = await state.triggerAction("Save Changes", formName: name)
+      await editing.save(context: context, name: name, columns: columns.count)
     }
   }
 }
 
+enum NativeEditableColumn {
+  static func width(_ declared: Double?) -> CGFloat {
+    guard let declared, declared.isFinite, declared > 0 else { return 160 }
+    return CGFloat(declared)
+  }
+}
+
+extension NativeEditableTable {
+  @MainActor init(context: OpenUIComponentContext, editing: NativeTableEditingState) {
+    self.init(context: context)
+    _editing = StateObject(wrappedValue: editing)
+  }
+}
+
 private struct NativeTableDateCell: View {
+  @Environment(\.openUITheme) private var theme
   @Binding var value: String
   let label: String
   @State private var showing = false
@@ -197,7 +250,7 @@ private struct NativeTableDateCell: View {
       }
     }.buttonStyle(.plain).accessibilityLabel(label)
       .popover(isPresented: $showing) {
-        VStack(spacing: 16) {
+        VStack(spacing: theme.spacing("ml")) {
           DatePicker(label, selection: $draft, displayedComponents: .date).datePickerStyle(
             .graphical)
           HStack {
@@ -214,7 +267,7 @@ private struct NativeTableDateCell: View {
               Text("Done", bundle: NativeControlResources.bundle)
             }
           }
-        }.padding(16).frame(minWidth: 300)
+        }.padding(theme.spacing("ml")).frame(minWidth: 300)
       }
   }
 }

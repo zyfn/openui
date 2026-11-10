@@ -13,6 +13,8 @@ import OpenUILang
 public struct ComponentRegistry: ExpressibleByDictionaryLiteral {
     public typealias Builder = (EvaluatedElement, ComponentRegistry) -> AnyView
     private var builders: [String: Builder]
+    private var presentationPlaceholders = Set<String>()
+    private var layoutFields: [String: [String]] = [:]
 
     public init(_ builders: [String: Builder] = [:]) { self.builders = builders }
     public init(dictionaryLiteral elements: (String, Builder)...) {
@@ -20,8 +22,15 @@ public struct ComponentRegistry: ExpressibleByDictionaryLiteral {
     }
     public subscript(_ name: String) -> Builder? {
         get { builders[name] }
-        set { builders[name] = newValue }
+        set { builders[name] = newValue; presentationPlaceholders.remove(name); layoutFields.removeValue(forKey: name) }
     }
+    mutating func setPresentationPlaceholder(_ name: String, enabled: Bool) {
+        if enabled { presentationPlaceholders.insert(name) }
+        else { presentationPlaceholders.remove(name) }
+    }
+    func supportsPresentationPlaceholder(_ name: String) -> Bool { presentationPlaceholders.contains(name) }
+    mutating func setLayoutFields(_ name: String, fields: [String]) { layoutFields[name] = fields }
+    func presentationLayoutFields(_ name: String) -> [String] { layoutFields[name] ?? [] }
 }
 
 /// Recursively renders an `EvaluatedElement` tree.

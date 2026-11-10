@@ -1,5 +1,6 @@
 import { capture, hasCapture, capturedValue, nativePlan, isNativePlan, evaluationContext } from './captures';
 export { capture, hasCapture, capturedValue, nativePlan };
+export { sourceComplete, sourcePresentation, tagNativeSource } from './readiness';
 import * as core from '../../lang-core/src/index';
 import { isASTNode } from '../../lang-core/src/parser/ast';
 import {

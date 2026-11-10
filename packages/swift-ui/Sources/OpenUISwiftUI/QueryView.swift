@@ -1,7 +1,7 @@
 // OpenUISwiftUI — Query loading view.
 //
-// Shows a customizable spinner ONLY while a Query is loading.
-// (The renderer itself has no spinners; this is the single loading UI.)
+// Optional host-owned Query UI. Standard data/media components separately own
+// their source-aware loading surfaces; custom loading closures remain untouched.
 
 import SwiftUI
 import OpenUILang
@@ -16,6 +16,7 @@ public struct QueryView<Loading: View, Content: View>: View {
     private let state: QueryState?
     private let loading: () -> Loading
     private let content: (Value) -> Content
+    private let usesDefaultLoading: Bool
 
     public init(
         state: QueryState?,
@@ -25,6 +26,7 @@ public struct QueryView<Loading: View, Content: View>: View {
         self.state = state
         self.loading = loading
         self.content = content
+        self.usesDefaultLoading = false
     }
 
     /// Convenience init with the default `ProgressView` spinner.
@@ -35,13 +37,20 @@ public struct QueryView<Loading: View, Content: View>: View {
         self.state = state
         self.loading = { ProgressView() }
         self.content = content
+        self.usesDefaultLoading = true
     }
 
     public var body: some View {
         Group {
             switch state?.status {
             case .loading:
-                loading()
+                if usesDefaultLoading {
+                    NativeDelayedPresentation(active: true) { visible in
+                        NativeLoadingIndicator().opacity(visible ? 1 : 0)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text("Loading data", bundle: NativeControlResources.bundle))
+                } else { loading() }
             case .success:
                 if let data = state?.data {
                     content(data)
