@@ -312,13 +312,24 @@ final class SharedCore {
     }
     private func sourceReadiness(_ js: JSValue, depth: Int = 0) -> NativeSourceReadiness {
         guard depth < 256 else { return .init(complete: false, closed: false) }
+        let hint = js.forProperty("placeholder")!
+        let placeholder: NativeComponentPlaceholder? = hint.isObject && hint.forProperty("name").isString
+            ? .init(typeName: hint.forProperty("name").toString(), statementId: optionalString(hint.forProperty("id")),
+                properties: Dictionary(entries(hint.forProperty("props")).filter {
+                    $0.1.isString || $0.1.isNumber || $0.1.isBoolean
+                }.map { ($0.0, decode($0.1)) }, uniquingKeysWith: { _, last in last })) : nil
         return .init(complete: js.forProperty("complete")?.toBool() ?? false,
             closed: js.forProperty("closed")?.toBool() ?? false,
             children: Dictionary(entries(js.forProperty("children")).map {
                 ($0.0, sourceReadiness($0.1, depth: depth + 1))
             }, uniquingKeysWith: { _, last in last }),
             expectedCount: js.forProperty("count").isNumber ? Int(js.forProperty("count").toInt32()) : nil,
-            queryDependencies: items(js.forProperty("queries")).map { string($0) })
+            queryDependencies: items(js.forProperty("queries")).map { string($0) },
+            queryDependenciesObserved: js.forProperty("observed").toBool(),
+            valueIndices: js.forProperty("slots").isArray ? items(js.forProperty("slots")).map { $0.isNumber ? Int($0.toInt32()) : nil } : nil,
+            pendingChildren: Dictionary(entries(js.forProperty("pending")).compactMap { entry in
+                Int(entry.0.displayString).map { ($0, sourceReadiness(entry.1, depth: depth + 1)) }
+            }, uniquingKeysWith: { _, last in last }), placeholder: placeholder)
     }
     func element(_ js: JSValue) -> ElementNode {
         ElementNode(typeName: js.forProperty("typeName").toString(), props: entries(js.forProperty("props")).map { PropEntry(key: $0.0.displayString, value: materialized($0.1)) }, statementId: optionalString(js.forProperty("statementId")), partial: js.forProperty("partial").toBool(), hasDynamicProps: js.forProperty("hasDynamicProps").isUndefined || js.forProperty("hasDynamicProps").toBool())
@@ -334,8 +345,22 @@ final class SharedCore {
             ("closed", JSValue(bool: value.closed, in: context)!),
             ("children", object(value.children.map { ($0.key, encodeReadiness($0.value)) })),
             ("queries", array(value.queryDependencies.map(string))),
+            ("observed", JSValue(bool: value.queryDependenciesObserved, in: context)!),
         ]
         if let count = value.expectedCount { fields.append(("count", JSValue(int32: Int32(clamping: count), in: context)!)) }
+        if let slots = value.valueIndices {
+            fields.append(("slots", array(slots.map { index in
+                index.map { JSValue(int32: Int32(clamping: $0), in: context)! } ?? JSValue(nullIn: context)!
+            })))
+        }
+        if !value.pendingChildren.isEmpty {
+            fields.append(("pending", object(value.pendingChildren.map { (OpenUIString(String($0.key)), encodeReadiness($0.value)) })))
+        }
+        if let hint = value.placeholder {
+            var properties: [(OpenUIString, JSValue)] = [("name", string(OpenUIString(hint.typeName))), ("props", object(hint.properties.map { ($0.key, encode($0.value)) }))]
+            if let id = hint.statementId { properties.append(("id", string(OpenUIString(id)))) }
+            fields.append(("placeholder", object(properties)))
+        }
         return object(fields)
     }
     func materialized(_ value: Materialized) -> JSValue {
@@ -429,7 +454,7 @@ extension SharedCore {
     }
     func parseResult(_ js: JSValue) -> ParseResult {
         let meta = js.forProperty("meta")!
-        return ParseResult(snapshot: CoreParseSnapshot(value: js),
+        var result = ParseResult(snapshot: CoreParseSnapshot(value: js),
             meta: ParseMeta(incomplete: meta.forProperty("incomplete").toBool(), unresolved: items(meta.forProperty("unresolved")).map { $0.toString() }, orphaned: items(meta.forProperty("orphaned")).map { $0.toString() }, statementCount: Int(meta.forProperty("statementCount").toInt32()), errors: items(meta.forProperty("errors")).map(error)),
             stateDeclarations: entries(js.forProperty("stateDeclarations")).map { ($0.0.displayString, .stateDefault(StateDefault(materialized($0.1)))) },
             queryStatements: items(js.forProperty("queryStatements")).map { q in
@@ -438,6 +463,8 @@ extension SharedCore {
             }, mutationStatements: items(js.forProperty("mutationStatements")).map { m in
                 MutationStatementInfo(statementId: m.forProperty("statementId").toString(), toolAST: m.forProperty("toolAST").isUndefined ? nil : decodeAST(m.forProperty("toolAST")), argsAST: m.forProperty("argsAST").isUndefined ? nil : decodeAST(m.forProperty("argsAST")))
             })
+        result.presentationRoot = sourceReadiness(call("sourcePresentation", [js]))
+        return result
     }
 }
 

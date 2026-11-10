@@ -377,17 +377,19 @@ public struct ParseResult: Sendable {
     private var expressionOverridden: Bool
     public var root: ElementNode? {
         get { rootOverridden ? nativeRoot : coreSnapshot?.root }
-        set { nativeRoot = newValue; rootOverridden = true }
+        set { nativeRoot = newValue; rootOverridden = true; presentationRoot = nil }
     }
     public var rootExpression: ASTNode? {
         get { expressionOverridden ? nativeExpression : coreSnapshot?.expression }
-        set { nativeExpression = newValue; expressionOverridden = true }
+        set { nativeExpression = newValue; expressionOverridden = true; presentationRoot = nil }
     }
     public var meta: ParseMeta
     /// $name → materialized default value.
     public var stateDeclarations: [(String, Materialized)]
     public var queryStatements: [QueryStatementInfo]
     public var mutationStatements: [MutationStatementInfo]
+    /// Native-only layout plan; not part of the parsed/serialized Lang tree.
+    public internal(set) var presentationRoot: NativeSourceReadiness? = nil
     /// Keeps the original lang-core value for evaluation within its serialized
     /// JavaScript realm. Native fields remain the public typed representation.
     var coreSnapshot: CoreParseSnapshot? = nil

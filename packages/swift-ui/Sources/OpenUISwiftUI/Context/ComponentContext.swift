@@ -137,6 +137,9 @@ public struct OpenUIComponentContext {
     public func children(_ name: String = "children") -> [OpenUIRenderChild] {
         OpenUIRenderChild.children(of: value(name) ?? .null)
     }
+    func presentationChildren(_ name: String = "children") -> [OpenUIRenderChild] {
+        NativePresentationProxy.children(value(name) ?? .null, source: element.sourceReadiness[name], registry: registry)
+    }
     @MainActor public func binding(_ name: String) -> Binding<Value>? {
         guard let binding = state.binding(for: element, prop: name) else { return nil }
         return Binding(get: { binding.wrappedValue }, set: { if canInteract { binding.wrappedValue = $0 } })
@@ -214,7 +217,14 @@ struct OpenUIComponentHost<Content: View>: View {
         context.interactionScopeReady = interactionScopeReady
         context.activationIntent = activationIntent
         let atomic = ["Card", "Form", "CompositeCardItem", "VisualCardItem", "ContextCardItem", "OverviewCardItem", "SnippetCardItem"].contains(element.typeName)
-        let view = content(context).environment(\.openUIStretchHeight, false)
+        let presented = Group {
+            if registry.supportsPresentationPlaceholder(element.typeName),
+               let field = NativePresentationProxy.primaryTextField(element.typeName),
+               element.sourceReadiness.placeholder != nil || context.codeUnitString(field) == nil {
+                NativeTextPlaceholder(context: context)
+            } else { content(context) }
+        }
+        let view = presented.environment(\.openUIStretchHeight, false)
             .environment(\.openUIFillControlWidth, false)
             .environment(\.openUIInteractionScopeReady, interactionScopeReady && (!atomic || context.canInteract))
             .environment(\.openUIInlineLinksReady, context.canInteract)
@@ -222,6 +232,7 @@ struct OpenUIComponentHost<Content: View>: View {
                 ["Image", "ImageBlock", "ImageText", "ImageTextLarge"].contains(element.typeName)
                     ? element.sourceReadiness["src"].complete : element.isSourceComplete)
             .environment(\.openUIStreamActive, context.isStreaming)
+            .allowsHitTesting(element.sourceReadiness.placeholder == nil)
         // Reset once at the native tree's entry, including direct RenderNode
         // hosts. Repeating one explicit id on every descendant makes lazy
         // containers merge distinct siblings, losing cards and their content.

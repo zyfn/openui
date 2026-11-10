@@ -95,8 +95,13 @@ struct NativeChartPlaceholder: View {
           }
         }
       } else {
-        Text(message, bundle: NativeControlResources.bundle)
-          .nativeTextStyle(theme.textStyle(.supporting)).padding(theme.spaceML)
+        ViewThatFits(in: .vertical) {
+          Text(message, bundle: NativeControlResources.bundle)
+            .nativeTextStyle(theme.textStyle(.supporting)).lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true).padding(theme.spaceML)
+          Image(systemName: "chart.xyaxis.line")
+            .nativeTextStyle(theme.textStyle(.supporting))
+        }
       }
     }
     .clipShape(RoundedRectangle(cornerRadius: theme.radiusM))

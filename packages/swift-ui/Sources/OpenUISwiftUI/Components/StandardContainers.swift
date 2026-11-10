@@ -37,7 +37,7 @@ struct OpenUIStack: View {
     // Upstream Stack normalizes wrapped space-between; upstream Card does not.
     var wrapJustifyBetweenAsStart = false
     private var gap: CGFloat { context.theme.spacing(context.string("gap")) }
-    private var children: [OpenUIRenderChild] { context.children() }
+    private var children: [OpenUIRenderChild] { context.presentationChildren() }
 
     var body: some View {
         OpenUIFlexLayout(

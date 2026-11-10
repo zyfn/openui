@@ -3,6 +3,59 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class StreamingPresentationMetadataTests: XCTestCase {
+  @MainActor func testDeclaredChartGetsAPresentationSlotWithoutChangingTheLangTree() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=Stack([before,plot,after])\nbefore=TextContent(\"Before\")\nafter=TextContent(\"After\")\nplot=LineChart(labels,series)\n")
+    var context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertEqual(context.children().count, 2, "Normative materialization still omits the unresolved chart")
+    let presented = context.presentationChildren()
+    XCTAssertEqual(presented.count, 3)
+    guard case .element(let proxy) = presented[1].value else { return XCTFail("Missing native slot") }
+    XCTAssertEqual(proxy.typeName, "LineChart")
+    XCTAssertFalse(proxy.isSourceComplete)
+    XCTAssertNil(proxy.props.first { $0.0 == "series" }, "No samples are invented")
+    XCTAssertFalse(OpenUIComponentContext(element: proxy, registry: library.registry, state: state).canInteract)
+    var overridden = library.registry
+    overridden["LineChart"] = library.registry["LineChart"]
+    let custom = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: overridden, state: state)
+    XCTAssertEqual(custom.presentationChildren().count, 2, "Custom renderers do not inherit guessed SDK geometry")
+    state.push("labels=[\"A\",\"B\"]\nseries=[Series(\"S\",[1,2])]\n"); state.complete()
+    context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertEqual(context.children().count, 3)
+    XCTAssertEqual(context.presentationChildren().map(\.id), presented.map(\.id))
+  }
+
+  @MainActor func testMissingSeriesDataDoesNotBlockOtherDeclaredSeries() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=LineChart(labels,[first,second])\nlabels=[\"A\",\"B\"]\nfirst=Series(\"First\",firstValues)\nsecond=Series(\"Second\",secondValues)\nfirstValues=[1,")
+    let context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertEqual(NativeValue.array(context.value("series")).count, 1)
+    let staged = try XCTUnwrap(NativeChartStreamingPresentation.staged(context: context))
+    XCTAssertEqual(staged.series.map(\.name), ["First", "Second"])
+    XCTAssertEqual(staged.series[0].values, [1])
+    XCTAssertTrue(staged.series[1].values.isEmpty)
+    XCTAssertFalse(staged.hasValue(1, 0))
+  }
+
+  @MainActor func testInactiveBranchesAndDeferredActionsDoNotOwnLoading() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.setSource("$use=false\ndata=Query(\"fixture\",{},[1])\nroot=LineChart([\"A\"],[Series(\"S\",$use?data:[1])])\n", streaming: true)
+    var context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertFalse(context.hasPendingData)
+    state.setState("$use", value: .boolean(true))
+    context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertTrue(context.hasPendingData)
+    state.setSource("data=Query(\"fixture\",{},[])\nroot=Button(\"Retry\",@Run(data))\n", streaming: true)
+    context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertTrue(context.element.sourceReadiness.queryDependencies.isEmpty)
+    state.setSource("root=Stack([false?LineChart(missingLabels,missingSeries):null,TextContent(\"Visible\")])\n", streaming: true)
+    context = OpenUIComponentContext(element: try XCTUnwrap(state.root), registry: library.registry, state: state)
+    XCTAssertEqual(context.presentationChildren().count, 1, "The presentation plan must not revive an inactive branch")
+  }
+
   @MainActor func testInterruptDoesNotCommitTheTailOrStartDeferredTools() async throws {
     let library = try OpenUIStandardComponents.library()
     let provider = UnstartedStreamingTool()

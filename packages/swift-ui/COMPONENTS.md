@@ -230,12 +230,22 @@ names may establish the legend early. Complex unresolved expressions stay
 conservative; later declarations can still change unknown labels or geometry.
 This is not an animation that replays a fully received chart as if it streamed.
 
+When the parser omits a declared component whose required forward references are
+still unresolved, a native presentation sidecar records its source position and
+committed layout hints. Opt-in standard renderers reserve that slot through a
+data-free view proxy, including a root chart. The proxy never enters the parsed
+root, Store, serialized document or action evaluator. Replacing a standard
+renderer opts out of this geometry policy. Unknown branches and unknown content
+lengths are not guessed; text reserves only its known role's minimum line height.
+
 Loading surfaces share theme tokens and motion. Animated indication starts after
 `presentation.motion.loadingIndicatorDelay` (default 0.2s); the existing 1.6s
 loading cycle and 0.18s media reveal remain. Reduce Motion uses static feedback,
 and loading sweeps pause outside an active scene. A table does not invent five
 rows or three columns while its structure is unknown. Query loading/error state
 is scoped to dependencies of the consuming component; refresh retains prior data.
+Dependency observation follows actual expression reads: inactive conditional
+branches and deferred action bodies do not make a component show query loading.
 
 An incomplete Button reserves its measured slot but does not paint a guessed
 primary/gray capsule. Once its appearance is known, source-pending and performing

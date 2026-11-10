@@ -209,7 +209,14 @@ private struct NativeMathBlock: View {
       } else if failed {
         Text(descriptor.tex).openUIFont(theme.textCodeDefault, role: .code).textSelection(.enabled)
           .accessibilityIdentifier("openui.math.fallback")
-      } else { ProgressView().frame(minHeight: fontSize * 1.5).accessibilityIdentifier("openui.math.loading") }
+      } else {
+        NativeDelayedPresentation(active: true) { visible in
+          NativeLoadingIndicator().opacity(visible ? 1 : 0)
+        }.frame(minHeight: fontSize * 1.5)
+          .accessibilityElement(children: .ignore)
+          .accessibilityLabel(Text("Loading data", bundle: NativeControlResources.bundle))
+          .accessibilityIdentifier("openui.math.loading")
+      }
     }.task(id: key) {
       image = nil; failed = false
       do {

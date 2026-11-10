@@ -147,7 +147,7 @@ struct NativeChart: View {
   @Namespace private var measurementScope
   private var name: String { context.element.typeName }
   private var currentData: NativeChartData { presentationCache.values(context).current }
-  private var waiting: Bool { context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete) }
+  private var waiting: Bool { !context.hasDataFailure && (context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete)) }
   private var incomplete: Bool { !context.isStreaming && (!context.element.isSourceComplete || context.hasInterruptedData) && !context.hasPendingData }
   private var allData: NativeChartData {
     if context.hasPendingData || context.hasDataFailure, let stableData { return stableData }
@@ -160,6 +160,14 @@ struct NativeChart: View {
     context.theme.chartColors(forSeriesCount: legend.count, chartType: name)
   }
   private var legend: [String] { allData.legendNames(for: name) }
+  private struct LegendEntry: Identifiable {
+    let id: Int
+    let index: Int
+    let title: String
+  }
+  private var legendEntries: [LegendEntry] {
+    legend.enumerated().map { .init(id: allData.colorIndex(at: $0.offset), index: $0.offset, title: $0.element) }
+  }
   private var showsLegend: Bool {
     legend.count > 1 || ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(name)
   }
@@ -261,6 +269,7 @@ struct NativeChart: View {
           }
         }
         .accessibilityValue(Text(waiting ? "Loading data" : incomplete ? "Chart is incomplete" : "", bundle: NativeControlResources.bundle))
+        .allowsHitTesting(data.hasContent(for: name))
       }.frame(height: NativeChartHeight.value(explicit: context.presentationNumber("height"),
         defaultHeight: defaultHeight, scale: axisScale,
         minimumHeight: name == "SingleStackedBarChart" ? 0 : 100))
@@ -270,7 +279,9 @@ struct NativeChart: View {
       if showsLegend {
         // Legend items already own vertical padding and their full control target.
         NativeChartLegendLayout(rightToLeft: direction == .rightToLeft) {
-          ForEach(Array(legend.enumerated()), id: \.offset) { index, title in
+          ForEach(legendEntries) { entry in
+            let index = entry.index
+            let title = entry.title
             if name == "SingleStackedBarChart" {
               legendLabel(index: index, title: title).accessibilityElement(children: .combine)
             } else {

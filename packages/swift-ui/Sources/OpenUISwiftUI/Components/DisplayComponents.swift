@@ -188,7 +188,7 @@ struct NativeDataTable: View {
                 numeric: PropValue.string(element, "type") == "number", source: element.sourceReadiness)
         }
     }
-    private var waiting: Bool { context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete) }
+    private var waiting: Bool { !context.hasDataFailure && (context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete)) }
     private var incomplete: Bool { !context.isStreaming && (!context.element.isSourceComplete || context.hasInterruptedData) && !context.hasPendingData }
     private var columns: [Column] {
         if !context.element.isSourceComplete || context.hasPendingData || context.hasDataFailure,

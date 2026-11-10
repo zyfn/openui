@@ -6,6 +6,21 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class StreamingVisualStateTests: XCTestCase {
+  @MainActor func testRootChartReservesSpaceWhileRequiredReferencesAreStillAbsent() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=LineChart(labels,series)\n")
+    XCTAssertNil(state.root)
+    XCTAssertEqual(state.presentationRoot?.placeholder?.typeName, "LineChart")
+    let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 320))
+    let initial = host.fittingSize.height
+    XCTAssertGreaterThanOrEqual(initial, 250)
+    state.push("labels=[\"A\",\"B\"]\nseries=[Series(\"S\",[1,2])]\n"); state.complete()
+    host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.06))
+    XCTAssertEqual(host.fittingSize.height, initial, accuracy: 1)
+  }
+
   @MainActor func testTableAddsOnlyCommittedRowsWithoutInventedSkeletonRows() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()

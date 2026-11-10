@@ -1,10 +1,10 @@
 {
   "upstream": "f08a660535e55b5b2a24a0eb68568edaf9e4fe4b",
   "sourceTree": "053f51d4da2f151c36581f80cfd125d1fb6aa8af",
-  "sha256": "9772a1fb9a410af1d973b6a95d49932e7543b917854fbe71751f8aebea11be4d",
-  "bytes": 723563,
+  "sha256": "10227f1773ec35d0cadee6937cb5f1ca93eb04461d3885cd78d9074c9cbb24af",
+  "bytes": 726095,
   "lockSha256": "1c8c81dc00c8717afd390d204c683bf1851baf01f0ed9b9f395d01b43b5a497e",
-  "adapterSha256": "4ea31aa2e20c499c670bea9ff402658803264f00e3244218931c77aab46b44a3",
+  "adapterSha256": "27e45570e09903a93d2ef00bd2359b687a64bd229ab22565ba968b48452ac923",
   "telemetry": "excluded at build time: native host has no process, fetch or install telemetry",
   "bridge": "opaque captures resolve through upstream EvaluationContext.resolveRef; core-created ActionPlan objects retain provenance; host-authored plans execute at the native boundary",
   "authoring": {

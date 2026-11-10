@@ -132,7 +132,7 @@ budgets, and bounded native pattern validation. In addition,
 expression/parser, materialization and evaluation paths to carry source-complete
 metadata. That metadata and per-card action gating are native presentation
 behavior; no additional Lang syntax or business-scene dispatch is introduced.
-The three-item retained-patch list alone is not a complete customization inventory.
+The retained-patch list alone is not a complete customization inventory.
 
 Stable element/control identity, prepared schema caches, request coalescing,
 resource ownership, cancellation and execution budgets are SDK runtime policy.

@@ -47,7 +47,7 @@ public struct OpenUIRenderer: View {
 
     public var body: some View {
         Group {
-            if let root = state.root {
+            if let root = state.root ?? state.presentationRoot.flatMap({ NativePresentationProxy.element($0, registry: registry) }) {
                 RenderNode(element: root, registry: registry)
             } else {
                 // Nothing to render yet (or root failed).

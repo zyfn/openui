@@ -45,6 +45,8 @@ enum OpenUIReference {
     guard let definition = definitions.first(where: { $0.name == name }) else {
       preconditionFailure("Component absent from pinned upstream catalog: " + name)
     }
-    return OpenUIComponent(definition, content: content)
+    var component = OpenUIComponent(definition, content: content)
+    component.supportsPresentationPlaceholder = NativePresentationProxy.supportedNames.contains(name)
+    return component
   }
 }

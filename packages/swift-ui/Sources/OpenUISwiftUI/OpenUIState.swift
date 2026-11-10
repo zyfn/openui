@@ -15,6 +15,7 @@ public struct OpenUIActionEvaluation {
 @MainActor
 public final class OpenUIState: ObservableObject {
     @Published public private(set) var root: EvaluatedElement?
+    @Published private(set) var presentationRoot: NativeSourceReadiness?
     @Published public private(set) var errors: [OpenUIError] = []
     @Published public private(set) var isComplete = false
     @Published public private(set) var isInterrupted = false
@@ -244,7 +245,7 @@ public final class OpenUIState: ObservableObject {
         latestResult = nil; source = ""; persistedState = [:]
         indexLiveElements(nil)
         queryRequests = [:]; querySourceGeneration = -1; queryStoreSnapshot = [:]; idleMutations = [:]
-        root = nil; errors = []; queryStates = [:]; mutationStates = [:]; isComplete = false; isInterrupted = false
+        root = nil; presentationRoot = nil; errors = []; queryStates = [:]; mutationStates = [:]; isComplete = false; isInterrupted = false
         errorRevision = nil
         observeQueries()
         if hadErrors { onError?([]) }
@@ -556,6 +557,7 @@ public final class OpenUIState: ObservableObject {
             }
         }
         let evaluatedRoot = evaluator.evaluateRoot(result)
+        presentationRoot = result.presentationRoot
         indexLiveElements(evaluatedRoot)
         root = evaluatedRoot
         var queryValues: [String: QueryState] = [:]

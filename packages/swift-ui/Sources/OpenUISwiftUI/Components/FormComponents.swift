@@ -48,7 +48,7 @@ struct OpenUINativeButtons: View {
             rowGap: context.theme.spacing("m"), columnGap: context.theme.spacing("m")) { buttons }
     }
     private var buttons: some View {
-        ForEach(context.children("buttons")) {
+        ForEach(context.presentationChildren("buttons")) {
             context.render($0.value)
                 .environment(\.openUIFillControlWidth, context.string("direction") == "column")
                 .environment(\.openUIStretchHeight, context.string("direction") != "column")

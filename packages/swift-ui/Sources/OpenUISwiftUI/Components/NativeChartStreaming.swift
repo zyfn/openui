@@ -15,31 +15,31 @@ extension NativeChartStreamingPresentation {
     }
     if name == "ScatterChart" {
       let rows = NativeValue.array(context.value("datasets"))
-      guard aligned(rows, ready["datasets"]) else { return nil }
+      guard let sources = entries(rows, ready["datasets"], expectedType: "ScatterSeries") else { return nil }
       var result = NativeChartData()
       result.isProgressive = true
-      for (index, row) in rows.enumerated() {
-        let rowReady = metadata(row, fallback: ready["datasets"][index])
-        guard rowReady["name"].complete else { break }
-        let points = NativeValue.array(NativeValue.prop(row, "points"))
+      for source in sources {
+        let rowReady = source.readiness
+        guard rowReady["name"].complete, let name = source.string("name") else { break }
+        let points = NativeValue.array(NativeValue.prop(source.value ?? .null, "points"))
         var known: [NativeChartData.Point] = []
         if aligned(points, rowReady["points"]) {
           for (i, point) in points.enumerated() {
-            guard metadata(point, fallback: rowReady["points"][i]).complete,
+            guard rowReady["points"][i].complete,
               let x = NativeValue.number(point, "x"), let y = NativeValue.number(point, "y") else { break }
             known.append(.init(x: x, y: y, z: NativeValue.number(point, "z")))
           }
         }
-        result.scatter.append(.init(name: NativeValue.string(row, "name") ?? "", points: known))
+        result.scatter.append(.init(name: name, points: known))
       }
       return result.scatter.isEmpty ? nil : result.prepared(for: name)
     }
     guard ["BarChart", "HorizontalBarChart", "LineChart", "AreaChart"].contains(name),
       ready["labels"].complete else { return nil }
     let rows = NativeValue.array(context.value("series"))
-    guard aligned(rows, ready["series"]) else { return nil }
     // Matrix rows are atomic: no partially received cell may become a zero.
     if case .array = rows.first {
+      guard aligned(rows, ready["series"]) else { return nil }
       var count = 0
       for i in rows.indices {
         guard ready["series"][i].complete else { break }
@@ -51,11 +51,12 @@ extension NativeChartStreamingPresentation {
       result.isProgressive = true
       return result
     }
+    guard let sources = entries(rows, ready["series"], expectedType: "Series") else { return nil }
     var pairs: [ObjectField] = []
-    for (index, row) in rows.enumerated() {
-      let rowReady = metadata(row, fallback: ready["series"][index])
-      guard rowReady["category"].complete else { break }
-      let values = NativeValue.array(NativeValue.prop(row, "values"))
+    for source in sources {
+      let rowReady = source.readiness
+      guard rowReady["category"].complete, let category = source.string("category") else { break }
+      let values = NativeValue.array(NativeValue.prop(source.value ?? .null, "values"))
       var count = 0
       if aligned(values, rowReady["values"]) {
         for i in values.indices {
@@ -63,7 +64,11 @@ extension NativeChartStreamingPresentation {
           count += 1
         }
       }
-      pairs.append(.init(key: NativeValue.string(row, "category") ?? "", value: .array(Array(values.prefix(count)))))
+      let key = OpenUIString(category)
+      // A later duplicate series replaces values only after that replacement
+      // is complete; it must not erase an already readable series with zeros.
+      if pairs.contains(where: { $0.key == key }), !rowReady["values"].complete { continue }
+      pairs.append(.init(key: key, value: .array(Array(values.prefix(count)))))
     }
     var result = current
     let keyed = OpenUIObject(pairs)
@@ -79,10 +84,26 @@ extension NativeChartStreamingPresentation {
   private static func aligned(_ values: [Value], _ source: NativeSourceReadiness) -> Bool {
     source.complete || source.expectedCount == values.count
   }
-  private static func metadata(_ value: Value, fallback: NativeSourceReadiness) -> NativeSourceReadiness {
-    // The parent's path owns the boundary. Reused element objects can occur
-    // through multiple references with different source completion states.
-    return fallback
+  private struct Entry {
+    let value: Value?
+    let readiness: NativeSourceReadiness
+    func string(_ key: String) -> String? {
+      if let value { return NativeValue.string(value, key) }
+      if case .string(let text) = readiness.placeholder?.properties[OpenUIString(key)] { return text.displayString }
+      return nil
+    }
+  }
+  private static func entries(_ values: [Value], _ source: NativeSourceReadiness, expectedType: String) -> [Entry]? {
+    if let slots = source.valueIndices, slots.compactMap({ $0 }) == Array(values.indices) {
+      return slots.enumerated().map { position, index in
+        if let index { return Entry(value: values[index], readiness: source[index]) }
+        let pending = source.pendingChildren[position]
+        return Entry(value: nil, readiness: pending?.placeholder?.typeName == expectedType
+          ? pending! : .init(complete: false, closed: false))
+      }
+    }
+    guard aligned(values, source) else { return nil }
+    return values.indices.map { Entry(value: values[$0], readiness: source[$0]) }
   }
 }
 

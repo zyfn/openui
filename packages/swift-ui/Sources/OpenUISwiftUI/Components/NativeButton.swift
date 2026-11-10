@@ -7,7 +7,8 @@ struct OpenUINativeButton: View {
     private var variant: String { context.string("variant") ?? "primary" }
     private var presentationReady: Bool {
         let source = context.element.sourceReadiness
-        return source.closed && ["label", "variant", "type", "size"].allSatisfy { source[$0].complete }
+        return context.codeUnitString("label") != nil && source.closed
+          && ["label", "variant", "type", "size"].allSatisfy { source[$0].complete }
     }
     var body: some View {
         button.buttonStyle(

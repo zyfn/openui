@@ -6,6 +6,7 @@ import OpenUILang
 public struct OpenUIComponent {
     public let definition: DefinedComponent
     fileprivate let builder: ComponentRegistry.Builder
+    var supportsPresentationPlaceholder = false
 
     public init<Content: View>(name: String, description: String, params: [ParamDef],
                                @ViewBuilder content: @escaping (OpenUIComponentContext) -> Content) {
@@ -15,7 +16,9 @@ public struct OpenUIComponent {
     /// Replace a typed contract while retaining the original native renderer.
     /// The builder still receives the final extended registry and shared state.
     public func replacingDefinition(_ definition: DefinedComponent) -> OpenUIComponent {
-        OpenUIComponent(definition: definition, builder: builder)
+        var result = OpenUIComponent(definition: definition, builder: builder)
+        result.supportsPresentationPlaceholder = supportsPresentationPlaceholder
+        return result
     }
 
     private init(definition: DefinedComponent, builder: @escaping ComponentRegistry.Builder) {
@@ -51,7 +54,10 @@ public struct OpenUIComponentLibrary {
         let library = try createLibrary(components: components.map(\.definition), functions: functions,
                                         actions: actions, root: root, id: id, componentGroups: componentGroups)
         var registry = ComponentRegistry()
-        for component in components { registry[component.definition.name] = component.builder }
+        for component in components {
+            registry[component.definition.name] = component.builder
+            registry.setPresentationPlaceholder(component.definition.name, enabled: component.supportsPresentationPlaceholder)
+        }
         self.library = library
         self.registry = registry
     }
@@ -75,7 +81,10 @@ public struct OpenUIComponentLibrary {
             addComponentSlots: slots))
         var next = registry
         for name in removing { next[name] = nil }
-        for component in adding + overriding { next[component.definition.name] = component.builder }
+        for component in adding + overriding {
+            next[component.definition.name] = component.builder
+            next.setPresentationPlaceholder(component.definition.name, enabled: component.supportsPresentationPlaceholder)
+        }
         return OpenUIComponentLibrary(library: extended, registry: next)
     }
 
