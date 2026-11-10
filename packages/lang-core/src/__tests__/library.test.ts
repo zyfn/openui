@@ -316,7 +316,9 @@ describe("positional signatures", () => {
 
     // Skipping `variant` positionally would shift `value` into its slot, so the
     // signature must not offer `variant?`; the trailing optional keeps its `?`.
-    expect(lib.prompt()).toContain('Line(variant: "text" | "number", value: string, subtext?: string)');
+    expect(lib.prompt()).toContain(
+      'Line(variant: "text" | "number", value: string, subtext?: string)',
+    );
     expect(lib.toSpec().components?.Line?.signature).toBe(
       'Line(variant: "text" | "number", value: string, subtext?: string)',
     );
