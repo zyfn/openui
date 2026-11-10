@@ -32,6 +32,10 @@ slots and must not be wrapped as display components.
   a neutral reading flow. It stops at a complex or unresolved item and never
   skips it to show later content first. This is provisional presentation, not a
   new meaning of Stack. The final declared layout is applied when known.
+  The prefix is selected before dropping unresolved source slots. Later unknown
+  items cannot erase earlier text. The same container and keyed child views
+  remain mounted when its layout becomes known; there is no replacement reading
+  tree. Nested containers inherit the unresolved ancestor geometry state.
 - A row's unfinished intrinsic content can still change its width. Fluid media
   in that scope waits compactly instead of displaying a repeatedly resized
   picture; committed sources can continue loading. Fixed-size thumbnails retain

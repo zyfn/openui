@@ -29,34 +29,37 @@ enum NativeLayoutContract {
 
 /// Preserve a readable leading text prefix while its enclosing layout is still
 /// unknown. Never skip an unresolved/complex item to expose later content first.
-struct NativeDeferredLayout: View {
-  let context: OpenUIComponentContext
-  private func readable(_ value: Value, depth: Int = 0) -> Bool {
-    guard depth < 128 else { return false }
-    guard case .element(let element) = value else { return false }
-    if NativePresentationProxy.textNames.contains(element.typeName) || element.typeName == "MarkDownRenderer" { return true }
-    if element.typeName == "Stack", let children = PropValue.value(element, "children"), case .array(let values) = children {
-      return !values.isEmpty && values.allSatisfy { readable($0, depth: depth + 1) }
-    }
-    return false
-  }
-  var body: some View {
-    let children = context.presentationChildren()
-    let source = context.element.sourceReadiness["children"]
-    let hasOmittedSlots = source.valueIndices?.contains(where: { $0 == nil }) == true
-    let prefix = hasOmittedSlots ? [] : Array(children.prefix { readable($0.value) })
-    VStack(alignment: .leading, spacing: context.theme.spaceM) {
-      ForEach(prefix) { child in context.render(child.value) }
-      if prefix.isEmpty || prefix.count < children.count {
-        NativePendingContent(loading: !context.hasDataFailure && (context.isStreaming || context.hasPendingData),
-          terminalMessage: context.hasDataFailure ? "Content unavailable" : "Content is incomplete")
+extension NativeLayoutContract {
+  static func readingPrefix(_ value: Value, depth: Int = 0) -> (value: Value, blocked: Bool) {
+    guard depth < 128 else { return (.null, true) }
+    switch value {
+    case .array(let values):
+      var prefix: [Value] = []
+      for child in values {
+        let next = readingPrefix(child, depth: depth + 1)
+        prefix.append(next.value)
+        if next.blocked { return (.array(prefix), true) }
       }
-    }.frame(maxWidth: .infinity, alignment: .leading)
+      return (.array(prefix), false)
+    case .element(let element):
+      // Nested containers inherit the unresolved ancestor state and apply this
+      // same prefix rule without discarding their already mounted text.
+      if NativePresentationProxy.textNames.contains(element.typeName)
+          || ["MarkDownRenderer", "Stack", "Card"].contains(element.typeName) { return (value, false) }
+      return (.null, true)
+    case .string, .number, .boolean: return (value, false)
+    default: return (.null, true)
+    }
   }
 }
 
 private struct NativeMediaWidthReadyKey: EnvironmentKey { static let defaultValue = true }
+private struct NativeAncestorLayoutReadyKey: EnvironmentKey { static let defaultValue = true }
 extension EnvironmentValues {
+  var openUIAncestorLayoutReady: Bool {
+    get { self[NativeAncestorLayoutReadyKey.self] }
+    set { self[NativeAncestorLayoutReadyKey.self] = newValue }
+  }
   var openUIMediaWidthReady: Bool {
     get { self[NativeMediaWidthReadyKey.self] }
     set { self[NativeMediaWidthReadyKey.self] = newValue }

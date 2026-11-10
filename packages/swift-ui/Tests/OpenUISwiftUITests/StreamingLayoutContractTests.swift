@@ -36,6 +36,38 @@ final class StreamingLayoutContractTests: XCTestCase {
   }
 
   #if os(macOS)
+  @MainActor func testLaterUnresolvedSiblingDoesNotRemoveOrRemountAnAlreadyVisibleText() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    let log = LayoutTextMountLog()
+    var registry = library.registry
+    let original = try XCTUnwrap(registry["TextContent"])
+    registry["TextContent"] = { element, registry in
+      AnyView(original(element, registry).background {
+        if PropValue.string(element, "text") == "Stable" { LayoutTextMountMarker(log: log) }
+      })
+    }
+    state.push("root=Stack([TextContent(\"Stable\")")
+    let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: registry).frame(width: 320))
+    let window = NSWindow(contentRect: .init(x:0,y:0,width:320,height:700), styleMask:[.borderless], backing:.buffered, defer:false)
+    window.isReleasedWhenClosed=false; window.contentView=host
+    window.setFrameOrigin(.init(x:-10000,y:-10000)); window.orderFront(nil)
+    defer { window.close() }
+    func settle() { host.layoutSubtreeIfNeeded(); RunLoop.main.run(until:Date().addingTimeInterval(0.10)) }
+    settle()
+    let first = try XCTUnwrap(log.view)
+    state.push(",later")
+    settle()
+    XCTAssertEqual(log.removed, 0, "A later unresolved slot cannot erase the readable prefix")
+    XCTAssertTrue(log.view === first)
+    state.push("],\"column\",\"m\")\nlater=TextContent(\"Later\")")
+    settle()
+    XCTAssertTrue(log.view === first, "Settling layout must preserve the existing text view identity")
+    XCTAssertEqual(log.created, 1)
+    XCTAssertEqual(log.removed, 0)
+  }
+
   @MainActor func testFluidMediaWaitsCompactlyButKnownThumbnailKeepsItsFixedSize() {
     _ = NSApplication.shared
     let fluid = NSHostingView(rootView: NativeRemoteImage(src: nil, layout: .cover,
@@ -85,3 +117,20 @@ final class StreamingLayoutContractTests: XCTestCase {
   }
   #endif
 }
+
+#if os(macOS)
+@MainActor private final class LayoutTextMountLog {
+  var view: NSView?
+  var created = 0
+  var removed = 0
+}
+private struct LayoutTextMountMarker: NSViewRepresentable {
+  let log: LayoutTextMountLog
+  func makeCoordinator() -> LayoutTextMountLog { log }
+  func makeNSView(context: Context) -> NSView {
+    let view = NSView(); log.view = view; log.created += 1; return view
+  }
+  func updateNSView(_ view: NSView, context: Context) {}
+  static func dismantleNSView(_ view: NSView, coordinator: LayoutTextMountLog) { coordinator.removed += 1 }
+}
+#endif

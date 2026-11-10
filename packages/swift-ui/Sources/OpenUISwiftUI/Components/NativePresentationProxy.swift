@@ -38,6 +38,10 @@ enum NativePresentationProxy {
   }
 
   static func children(_ value: Value, source: NativeSourceReadiness, registry: ComponentRegistry) -> [OpenUIRenderChild] {
+    OpenUIRenderChild.children(of: expandedValue(value, source: source, registry: registry))
+  }
+
+  static func expandedValue(_ value: Value, source: NativeSourceReadiness, registry: ComponentRegistry) -> Value {
     func expanded(_ value: Value, _ source: NativeSourceReadiness, depth: Int = 0) -> Value {
       guard depth < 256 else { return value }
       if case .array(let values) = value {
@@ -53,7 +57,7 @@ enum NativePresentationProxy {
       if value.isNullish, let proxy = element(source, registry: registry) { return .element(proxy) }
       return value
     }
-    return OpenUIRenderChild.children(of: expanded(value, source))
+    return expanded(value, source)
   }
 }
 

@@ -24,7 +24,7 @@ public enum OpenUIStandardComponents {
             OpenUIReference.component("Button") { OpenUINativeButton(context: $0) },
             OpenUIReference.component("Card") { context in
                 OpenUIStack(context: context)
-                    .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant")))
+                    .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant"), active: context.layoutConfigurationReady))
                     .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
             }
         ]
