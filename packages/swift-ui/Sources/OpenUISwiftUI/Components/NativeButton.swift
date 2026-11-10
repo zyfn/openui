@@ -3,7 +3,6 @@ import SwiftUI
 
 struct OpenUINativeButton: View {
     let context: OpenUIComponentContext
-    @Environment(\.openUIFormActions) private var formActions
     private var role: ButtonRole? { context.string("type") == "destructive" ? .destructive : nil }
     private var variant: String { context.string("variant") ?? "primary" }
     var body: some View {
@@ -20,7 +19,8 @@ struct OpenUINativeButton: View {
             role: role, useNativeStyle: true, validateForm: variant == "primary", showsProgress: true
         ) {
             Text(context.string("label") ?? "").fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: formActions ? .infinity : nil)
+                .frame(maxWidth: context.fillsControlWidth ? .infinity : nil,
+                       maxHeight: context.stretchesVertically ? .infinity : nil)
         }
     }
 }

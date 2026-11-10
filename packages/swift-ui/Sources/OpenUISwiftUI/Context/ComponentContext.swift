@@ -53,6 +53,7 @@ public struct OpenUIComponentContext {
     // A one-level native layout proposal. Component hosts consume it so a
     // stretched row item cannot accidentally stretch all nested descendants.
     var stretchesVertically = false
+    var fillsControlWidth = false
     var interactionScopeReady = true
     var activationIntent: NativeActivationIntent?
     private let state: OpenUIState
@@ -179,6 +180,7 @@ struct OpenUIComponentHost<Content: View>: View {
     @Environment(\.openUIFormName) private var formName
     @Environment(\.openUIExactFormName) private var exactFormName
     @Environment(\.openUIStretchHeight) private var stretchesVertically
+    @Environment(\.openUIFillControlWidth) private var fillsControlWidth
     @Environment(\.openUIProgramScoped) private var programScoped
     @Environment(\.openUIInteractionScopeReady) private var interactionScopeReady
     @Environment(\.openUIActivationIntent) private var activationIntent
@@ -188,10 +190,12 @@ struct OpenUIComponentHost<Content: View>: View {
         var context = OpenUIComponentContext(element: element, registry: registry, state: state,
             theme: theme, presentation: presentation, resources: resources, formName: formName, exactFormName: exactFormName)
         context.stretchesVertically = stretchesVertically
+        context.fillsControlWidth = fillsControlWidth
         context.interactionScopeReady = interactionScopeReady
         context.activationIntent = activationIntent
         let atomic = ["Card", "Form", "CompositeCardItem", "VisualCardItem", "ContextCardItem", "OverviewCardItem", "SnippetCardItem"].contains(element.typeName)
         let view = content(context).environment(\.openUIStretchHeight, false)
+            .environment(\.openUIFillControlWidth, false)
             .environment(\.openUIInteractionScopeReady, interactionScopeReady && (!atomic || context.canInteract))
             .environment(\.openUIInlineLinksReady, context.canInteract)
             .environment(\.openUIMediaSourceReady, element.isSourceComplete)

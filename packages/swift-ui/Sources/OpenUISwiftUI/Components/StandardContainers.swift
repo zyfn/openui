@@ -20,7 +20,12 @@ struct OpenUICardSurface: ViewModifier {
 }
 
 private struct OpenUIStretchHeightKey: EnvironmentKey { static let defaultValue = false }
+private struct OpenUIControlWidthKey: EnvironmentKey { static let defaultValue = false }
 extension EnvironmentValues {
+    var openUIFillControlWidth: Bool {
+        get { self[OpenUIControlWidthKey.self] }
+        set { self[OpenUIControlWidthKey.self] = newValue }
+    }
     var openUIStretchHeight: Bool {
         get { self[OpenUIStretchHeightKey.self] }
         set { self[OpenUIStretchHeightKey.self] = newValue }
@@ -43,6 +48,8 @@ struct OpenUIStack: View {
         ) {
             ForEach(children) { child in
                 context.render(child.value)
+                    .environment(\.openUIFillControlWidth,
+                        (context.string("direction") ?? "column") == "column" && stretches)
                     .environment(\.openUIStretchHeight, context.string("direction") == "row" && stretches)
             }
         }

@@ -214,7 +214,7 @@ struct NativeMediaText: View {
       } else {
         NativeMediaRow(axis: vertical ? .vertical : .horizontal,
           gap: media == .icon ? context.theme.spaceS * iconScale : context.theme.spaceM,
-          centered: centered,
+          centered: media == .thumbnail && !vertical ? true : centered,
           adaptiveThumbnail: adaptiveThumbnail,
           media: { leadingMedia }, copy: {
             words.frame(maxWidth: .infinity, alignment: centered ? .center : .leading)

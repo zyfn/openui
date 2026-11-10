@@ -77,34 +77,37 @@ struct NativeChoiceCardsLayout: Layout {
   }
 }
 
-/// The same buttons stay mounted when their complete labels need a column.
+/// The same buttons stay mounted while horizontal groups wrap item by item.
 struct NativeButtonsLayout: Layout {
   var column = false
   var rightToLeft = false
   var rowGap: CGFloat = 12
-  var columnGap: CGFloat = 8
+  var columnGap: CGFloat = 12
   private func frames(_ proposal: ProposedViewSize, _ views: Subviews) -> [CGRect] {
     guard !views.isEmpty else { return [] }
     let ideal = views.map { $0.sizeThatFits(.unspecified) }
-    let idealWidth = ideal.reduce(CGFloat.zero) { $0 + $1.width } + rowGap * CGFloat(views.count - 1)
+    let idealWidth = column ? ideal.map(\.width).max() ?? 0
+      : ideal.reduce(CGFloat.zero) { $0 + $1.width } + rowGap * CGFloat(views.count - 1)
     let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? idealWidth
-    let stacked = column || idealWidth > width + 0.5
     let sizes = views.indices.map {
-      views[$0].sizeThatFits(.init(width: min(width, ideal[$0].width), height: nil))
+      views[$0].sizeThatFits(.init(width: column ? width : min(width, ideal[$0].width), height: nil))
     }
-    let rowHeight = sizes.map(\.height).max() ?? 0
-    var offset: CGFloat = 0
-    return sizes.map { size in
-      let x = stacked ? 0 : offset
-      let result = CGRect(x: rightToLeft ? width - x - size.width : x,
-        y: stacked ? offset : (rowHeight - size.height) / 2, width: size.width, height: size.height)
-      offset += stacked ? size.height + columnGap : size.width + rowGap
-      return result
+    if column {
+      var y: CGFloat = 0
+      return sizes.map { size in
+        defer { y += size.height + columnGap }
+        return CGRect(x: 0, y: y, width: width, height: size.height)
+      }
     }
+    return OpenUIFlowPlacement.frames(sizes: sizes, width: width, gap: rowGap,
+      align: "stretch", justify: "start", wrap: true, rowGap: columnGap).map {
+        CGRect(x: rightToLeft ? width - $0.maxX : $0.minX, y: $0.minY, width: $0.width, height: $0.height)
+      }
   }
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
     let frames = frames(proposal, subviews)
-    return CGSize(width: frames.map(\.maxX).max() ?? 0, height: frames.map(\.maxY).max() ?? 0)
+    return CGSize(width: proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil }
+      ?? frames.map(\.maxX).max() ?? 0, height: frames.map(\.maxY).max() ?? 0)
   }
   func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
     for (view, frame) in zip(subviews, frames(.init(width: bounds.width, height: nil), subviews)) {

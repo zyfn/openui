@@ -45,9 +45,13 @@ struct OpenUINativeButtons: View {
     var body: some View {
         NativeButtonsLayout(column: context.string("direction") == "column",
             rightToLeft: direction == .rightToLeft,
-            rowGap: context.theme.spacing("m"), columnGap: context.theme.spacing("s")) { buttons }
+            rowGap: context.theme.spacing("m"), columnGap: context.theme.spacing("m")) { buttons }
     }
     private var buttons: some View {
-        ForEach(context.children("buttons")) { context.render($0.value) }
+        ForEach(context.children("buttons")) {
+            context.render($0.value)
+                .environment(\.openUIFillControlWidth, context.string("direction") == "column")
+                .environment(\.openUIStretchHeight, context.string("direction") != "column")
+        }
     }
 }

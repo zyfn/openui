@@ -15,7 +15,6 @@ public enum OpenUIStandardComponents {
             + OpenUIChartComponents.components + [
             OpenUIReference.component("Stack") {
                 OpenUIStack(context: $0, wrapJustifyBetweenAsStart: true)
-                    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
             },
             OpenUIReference.component("TextContent") { context in
                 NativeMarkdownText(text: context.string("text") ?? "", mode: .textContent,

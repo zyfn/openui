@@ -109,6 +109,13 @@ TextContent small/small-heavy keep primary ink. No content-priority inference or
 new text role parameter is added to the language.
 
 Spacing uses the official `space*` tokens. `gap="none"` is always zero.
+Buttons groups occupy their available width. Column groups stretch each text
+button; row groups wrap item by item using spaceM on both axes. Stack column
+stretch reaches a direct text button's visible surface; center/start/end retain
+its content width. Nested Stack does not implicitly grow along a parent's row;
+Card retains its explicit row-sharing behavior. These policies preserve the same
+mounted controls when placement changes. Horizontal ImageText centers image and
+copy vertically; horizontal IconText retains top alignment.
 Card families consume their own tokens directly: object and fact-card padding
 uses `spaceM`; generic Card uses `spaceML` (clear has zero vertical inset).
 Fact-card groups add no outer margin. The corresponding
