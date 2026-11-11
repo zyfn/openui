@@ -79,7 +79,7 @@ Agent消费方同步本目录的生成文档与源码；SDK默认提示词保持
 
 ## 选择后继续对话
 
-Case04 使用现有 Form + OptionCards(multiple) + Buttons(column)；主要提交按钮紧随选择区，保持一个通栏入口，不逐张触发Agent。主按钮走现有required校验。@ToAssistant的文案说明任务，实际选择由事件formState携带；消费宿主必须把formName/formState和消息一起交给Agent，不能只取humanFriendlyMessage。CaseLab仅记录和预览本地事件，不伪称已发送模型。取消选中后再次提交应携带最新值，不能沿用上次快照。
+Case04 使用现有 Form + OptionCards(multiple) + Buttons(column)；主要提交按钮紧随选择区，保持一个通栏入口，不逐张触发Agent。主按钮走现有required校验。@ToAssistant的文案说明任务，实际选择由事件formState携带；消费宿主必须把formName/formState和消息一起交给Agent，不能只取humanFriendlyMessage。测试宿主的调试、预览说明不进入提交给Agent的消息。取消选中后再次提交应携带最新值，不能沿用上次快照。
 
 ## Form 的使用边界
 
