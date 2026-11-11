@@ -47,6 +47,23 @@ final class NativeLayoutSemanticsTests: XCTestCase {
   }
 
   #if os(macOS)
+  @MainActor func testChoiceColumnsDependOnWidthRatherThanCopyHeight() {
+    _ = NSApplication.shared
+    func height(width: CGFloat, secondHeight: CGFloat, single: Bool = false) -> CGFloat {
+      NSHostingView(rootView: NativeChoiceCardsLayout(minimumWidth: 136, gap: 12, singleColumn: single) {
+        Color.clear.frame(height: 40)
+        Color.clear.frame(height: secondHeight)
+        Color.clear.frame(height: 60)
+      }.frame(width: width)).fittingSize.height
+    }
+    XCTAssertEqual(height(width: 320, secondHeight: 40), 112, accuracy: 1)
+    XCTAssertEqual(height(width: 320, secondHeight: 200), 272, accuracy: 1,
+      "A taller cell grows its row, without collapsing the two-column structure")
+    XCTAssertEqual(height(width: 600, secondHeight: 200), 200, accuracy: 1)
+    XCTAssertEqual(height(width: 240, secondHeight: 200), 324, accuracy: 1)
+    XCTAssertEqual(height(width: 320, secondHeight: 200, single: true), 324, accuracy: 1)
+  }
+
   @MainActor func testKnownGalleryShapeAllocatesTheFirstImageAtItsFinalColumnWidth() {
     _ = NSApplication.shared
     let first = NSHostingView(rootView: NativeGalleryGridLayout(minimumWidth: 112, gap: 12, maximumColumns: nil, layoutCount: 2) {

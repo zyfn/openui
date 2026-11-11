@@ -194,7 +194,7 @@ slots and very large text retain the glyph and accessible unavailable status.
 
 ### Density and mounted controls
 
-OptionCards choose their column count from the current container and measured title/subtitle height. A narrower cell may add at most about one body line over the full-width copy; otherwise the group reduces its column count. Accessibility text sizes use a single column. These are density preferences, not truncation limits: complete copy remains visible. Copy-only probes never render topContent, load images, or create actions.
+OptionCards choose column count from available width and the existing minimumChoiceWidth. Titles and descriptions grow vertically in their assigned cells; copy height does not reduce column count. Accessibility text sizes retain a single column, and a narrower container naturally fits fewer columns. Each option has one rendered control; no hidden copy-probe subtree is mounted.
 
 Buttons use one layout subtree across row/column reflow, preserving native control identity. The explicit column direction remains authoritative. Form retains one vertical field/action subtree and now defaults to the same task-panel surface as Card. FormControl remains the field label/control/hint unit. Hosts may explicitly set formShowsCardSurface=false when a surrounding panel already owns the boundary. This native visual policy differs from the reference open Form and adds no Lang field; it does not infer business intent or automatically inspect ancestor surfaces.
 

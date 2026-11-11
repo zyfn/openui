@@ -47,8 +47,7 @@ struct NativeChoiceField: View {
     Group {
       if cards {
         NativeChoiceCardsLayout(minimumWidth: context.presentation.minimumChoiceWidth * textScale,
-          gap: context.theme.spacing("m"), padding: context.theme.componentStyle.objectInset,
-          extraCopyHeight: context.theme.textBodySm.resolved(for: .detail).measuredLineHeight(scale: textScale),
+          gap: context.theme.spacing("m"),
           singleColumn: typeSize.isAccessibilitySize, rightToLeft: direction == .rightToLeft) { options }
       } else {
         NativeWrappingRow(gap: context.theme.spacing("s")) { options }
@@ -59,11 +58,6 @@ struct NativeChoiceField: View {
     ForEach(Array(field.options.enumerated()), id: \.offset) { _, item in
       if let key = PropValue.codeUnitString(item, "value"), !key.isEmpty {
         let selected = selection.contains(key)
-        if cards {
-          // Only text/symbols participate in density measurement. topContent
-          // may own media or state and belongs exclusively to the real button.
-          cardCopy(item, selected: selected).hidden().allowsHitTesting(false).accessibilityHidden(true)
-        }
         Button {
           guard PropValue.value(item, "disabled") != .boolean(true) else { return }
           field.write(

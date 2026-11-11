@@ -22,43 +22,31 @@ struct NativeBoundedLabelLayout: Layout {
   }
 }
 
-/// Each option contributes a copy-only measuring view followed by its one real
-/// button. Measuring text never mounts a second field, image loader or action.
+/// Width owns the column structure; copy grows vertically inside its cell.
+/// Text arriving or changing must not reassign an already viable column.
 struct NativeChoiceCardsLayout: Layout {
   let minimumWidth: CGFloat
   let gap: CGFloat
-  let padding: CGFloat
-  let extraCopyHeight: CGFloat
   var singleColumn = false
   var rightToLeft = false
 
   private func frames(_ proposal: ProposedViewSize, _ views: Subviews) -> [CGRect] {
-    let count = views.count / 2
+    let count = views.count
     guard count > 0 else { return [] }
     let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? minimumWidth
-    var columns = singleColumn ? 1 : min(count, max(1, Int((width + gap) / max(1, minimumWidth + gap))))
-    let fullCopyWidth = max(1, width - 2 * padding)
-    let fullHeights = (0..<count).map { views[$0 * 2].sizeThatFits(.init(width: fullCopyWidth, height: nil)).height }
-    while columns > 1 {
-      let copyWidth = max(1, (width - CGFloat(columns - 1) * gap) / CGFloat(columns) - 2 * padding)
-      let fits = (0..<count).allSatisfy {
-        views[$0 * 2].sizeThatFits(.init(width: copyWidth, height: nil)).height <= fullHeights[$0] + extraCopyHeight
-      }
-      if fits { break }
-      columns -= 1
-    }
+    let columns = singleColumn ? 1 : min(count, max(1, Int((width + gap) / max(1, minimumWidth + gap))))
     let cellWidth = max(1, (width - CGFloat(columns - 1) * gap) / CGFloat(columns))
-    var result = Array(repeating: CGRect.zero, count: count * 2)
+    var result = Array(repeating: CGRect.zero, count: count)
     var y: CGFloat = 0
     for start in stride(from: 0, to: count, by: columns) {
       let end = min(count, start + columns)
       let rowHeight = (start..<end).map {
-        views[$0 * 2 + 1].sizeThatFits(.init(width: cellWidth, height: nil)).height
+        views[$0].sizeThatFits(.init(width: cellWidth, height: nil)).height
       }.max() ?? 0
       for index in start..<end {
         let column = index - start
         let x = CGFloat(column) * (cellWidth + gap)
-        result[index * 2 + 1] = CGRect(x: rightToLeft ? width - x - cellWidth : x,
+        result[index] = CGRect(x: rightToLeft ? width - x - cellWidth : x,
           y: y, width: cellWidth, height: rowHeight)
       }
       y += rowHeight + gap
