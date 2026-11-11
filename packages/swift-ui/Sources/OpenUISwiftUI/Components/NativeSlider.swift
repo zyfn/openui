@@ -121,6 +121,7 @@ struct NativeSliderField: View {
   @ScaledMetric(relativeTo: .body) private var valueWidth: CGFloat = 88
   @StateObject private var draft = NativeSliderDraft()
   @State private var picker: NativeSliderPickerRequest?
+  @FocusState private var focusedValue: Int?
   private var field: NativeFieldState { .init(context: context) }
   private var configuration: NativeSliderConfiguration {
     .init(minimum: context.presentationNumber("min") ?? 0, maximum: context.presentationNumber("max") ?? 100,
@@ -131,7 +132,14 @@ struct NativeSliderField: View {
     return values.isEmpty ? [configuration.minimum] : values
   }
   private var target: NativeSliderTarget { .init(context: context) }
-  private var label: String { context.string("label") ?? field.name.displayString }
+  private var label: String { fieldLabel ?? context.string("label") ?? field.name.displayString }
+  private var showsDots: Bool {
+    #if os(macOS)
+    configuration.discrete && context.canInteract
+    #else
+    false
+    #endif
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.spacing("s")) {
@@ -139,7 +147,7 @@ struct NativeSliderField: View {
       if configuration.valid {
         NativeSliderTrack(values: draft.values.isEmpty ? external : draft.values,
           configuration: configuration, enabled: context.canInteract,
-          showsDots: configuration.discrete && context.canInteract, label: label,
+          showsDots: showsDots, label: label,
           select: { value, index in draft.select(value, at: index) })
         ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
           if let error = configuration.error(for: draft.values, index: index) {
@@ -185,11 +193,9 @@ struct NativeSliderField: View {
       ? AnyLayout(VStackLayout(alignment: .leading, spacing: context.theme.spaceS))
       : AnyLayout(HStackLayout(alignment: .center, spacing: context.theme.spaceM))
     return layout {
-      if fieldLabel == nil {
-        Text(label).nativeTextStyle(context.theme.textStyle(.fieldLabel))
-          .fixedSize(horizontal: false, vertical: true)
-          .frame(maxWidth: .infinity, alignment: .leading)
-      }
+      Text(label).nativeTextStyle(context.theme.textStyle(.fieldLabel))
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
       if configuration.valid {
         HStack(spacing: context.theme.spaceS) {
           ForEach(Array(external.indices.prefix(2)), id: \.self) { index in
@@ -202,7 +208,7 @@ struct NativeSliderField: View {
               }
             }.frame(width: valueWidth)
           }
-        }.openUIFont(context.theme.textBodyDefaultHeavy)
+        }.openUIFont(context.theme.textNumbersDefaultHeavy)
       }
     }
   }
@@ -214,16 +220,19 @@ struct NativeSliderField: View {
             Text(jsNumberString(draft.values[index])).monospacedDigit()
             Spacer(minLength: context.theme.spacing("s"))
             Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.textBodyXs, role: .caption)
-          }.padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
-            .background(context.theme.sunk, in: RoundedRectangle(cornerRadius: context.theme.radiusL))
+              .foregroundStyle(context.theme.textNeutralSecondary)
+          }.openUIControlTarget()
         }.buttonStyle(.plain).accessibilityIdentifier("openui.slider.choice.\(field.name.displayString).\(index)")
       } else {
         TextField("", text: Binding(get: { draft.text.indices.contains(index) ? draft.text[index] : "" },
           set: { draft.edit($0, at: index) }))
           .textFieldStyle(.plain).monospacedDigit().nativeSliderKeyboard()
+          .focused($focusedValue, equals: index).submitLabel(.done)
+          .onSubmit { draft.flush(); focusedValue = nil }
           .multilineTextAlignment(.trailing).accessibilityLabel(label)
-          .padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
-          .background(context.theme.sunk, in: RoundedRectangle(cornerRadius: context.theme.radiusL))
+          .padding(.horizontal, context.theme.spaceXs).openUIControlTarget()
+          .background(focusedValue == index ? context.theme.sunk : .clear,
+            in: RoundedRectangle(cornerRadius: context.theme.radiusS))
           .accessibilityIdentifier("openui.slider.input.\(field.name.displayString).\(index)")
       }
     }.frame(maxWidth: .infinity)

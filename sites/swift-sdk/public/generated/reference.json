@@ -360,7 +360,7 @@
       "signature": "FormControl(label: string, input: Input | TextArea | Select | DatePicker | Slider | CheckBoxGroup | RadioGroup | Chips | OptionCards, hint?: string)",
       "description": "Field with label, input component, and optional hint text",
       "purpose": "单个字段单元",
-      "treatment": "将 label、input、hint 关联；自身不再套任务卡；错误与字段就近显示",
+      "treatment": "将 label、input、hint 关联；复合控件可通过渲染注册信息承接标题，避免再插一行标签；普通输入保留外部标题；错误与字段就近显示",
       "examples": [
         "specimen-controls",
         "official-2",
@@ -440,7 +440,7 @@
       "signature": "Slider(name: string, variant: \"continuous\" | \"discrete\", min: number, max: number, step?: number, defaultValue?: number[], label?: string, rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<number[]>)",
       "description": "Numeric slider input; supports continuous and discrete (stepped) variants",
       "purpose": "数值范围调整",
-      "treatment": "遵守 min／max／step，离散索引稳定、精度独立处理；支持原生替代选择方式，错误样式共享",
+      "treatment": "标题与当前值同排，下方轨道及辅助说明；不重复叠放数值灰框。连续值保留精确编辑，离散值保留选择器；iOS 不铺满刻度圆点，取值和步长语义不变",
       "examples": [
         "specimen-controls"
       ]
@@ -853,7 +853,7 @@
       "signature": "ImageTextLarge(src: string, alt: string, title: string, subtitle?: string, bold?: boolean)",
       "description": "A full-width banner image above a bold title and optional subtitle. src must be a real image URL.",
       "purpose": "大图对象头",
-      "treatment": "大图承担外观观察，名称与说明走统一角色；卡内可与外层边界协调出图，不给每个业务做特殊图片比例",
+      "treatment": "在稳定的媒体框中完整容纳原图，不裁掉商品文字或封面边缘；不同原图比例可以留边。名称和说明走统一角色；照片背景型 VisualCard 仍采用覆盖裁切",
       "examples": [
         "case-05"
       ]
@@ -1274,6 +1274,6 @@
     "body": 1.5,
     "code": 1.5
   },
-  "sourceFingerprint": "829e9506904f25a548c095e0762aedfe7ad06f83bcef4a5ed927b0db68151298",
+  "sourceFingerprint": "446d7fb0888c4ab1dc9c25a9247b933f9c2a0a13a5faf38c0617535bf9f2a95f",
   "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
 }

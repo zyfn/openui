@@ -8,6 +8,7 @@ public struct OpenUIComponent {
     fileprivate let builder: ComponentRegistry.Builder
     var supportsPresentationPlaceholder = false
     var presentationLayoutFields: [String] = []
+    var ownsFormControlLabel = false
 
     public init<Content: View>(name: String, description: String, params: [ParamDef],
                                @ViewBuilder content: @escaping (OpenUIComponentContext) -> Content) {
@@ -19,6 +20,7 @@ public struct OpenUIComponent {
     public func replacingDefinition(_ definition: DefinedComponent) -> OpenUIComponent {
         var result = OpenUIComponent(definition: definition, builder: builder)
         result.supportsPresentationPlaceholder = supportsPresentationPlaceholder
+        result.ownsFormControlLabel = ownsFormControlLabel
         result.presentationLayoutFields = presentationLayoutFields.filter { name in definition.params.contains { $0.name == name } }
         return result
     }
@@ -60,6 +62,7 @@ public struct OpenUIComponentLibrary {
             registry[component.definition.name] = component.builder
             registry.setPresentationPlaceholder(component.definition.name, enabled: component.supportsPresentationPlaceholder)
             registry.setLayoutFields(component.definition.name, fields: component.presentationLayoutFields)
+            registry.setFormControlLabelOwner(component.definition.name, enabled: component.ownsFormControlLabel)
         }
         self.library = library
         self.registry = registry
@@ -88,6 +91,7 @@ public struct OpenUIComponentLibrary {
             next[component.definition.name] = component.builder
             next.setPresentationPlaceholder(component.definition.name, enabled: component.supportsPresentationPlaceholder)
             next.setLayoutFields(component.definition.name, fields: component.presentationLayoutFields)
+            next.setFormControlLabelOwner(component.definition.name, enabled: component.ownsFormControlLabel)
         }
         return OpenUIComponentLibrary(library: extended, registry: next)
     }

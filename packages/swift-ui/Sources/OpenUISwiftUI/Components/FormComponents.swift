@@ -25,11 +25,19 @@ struct OpenUINativeForm: View {
 
 struct OpenUINativeFormControl: View {
     let context: OpenUIComponentContext
+    private var inputOwnsLabel: Bool {
+        let type: String?
+        if case .element(let input) = context.value("input") { type = input.typeName }
+        else { type = context.element.sourceReadiness["input"].placeholder?.typeName }
+        return type.map { context.componentOwnsFormControlLabel($0) } ?? false
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("s")) {
-            Text(context.string("label") ?? "")
-                .nativeTextStyle(context.theme.textStyle(.fieldLabel))
-                .fixedSize(horizontal: false, vertical: true)
+            if !inputOwnsLabel {
+                Text(context.string("label") ?? "")
+                    .nativeTextStyle(context.theme.textStyle(.fieldLabel))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             context.slot("input")
             if let hint = context.string("hint"), !hint.isEmpty {
                 Text(hint).nativeTextStyle(context.theme.textStyle(.supporting))

@@ -114,6 +114,9 @@ public struct OpenUIComponentContext {
     func presentationString(_ name: String) -> String? {
         element.sourceReadiness[name].complete ? string(name) : nil
     }
+    func componentOwnsFormControlLabel(_ name: String) -> Bool {
+        registry.ownsFormControlLabel(name)
+    }
     /// Native display text. Use codeUnitString/value for semantic action data.
     public func string(_ name: String) -> String? { codeUnitString(name)?.displayString }
     public func codeUnitString(_ name: String) -> OpenUIString? {

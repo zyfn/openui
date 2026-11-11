@@ -132,6 +132,7 @@ struct NativeRemoteImage: View {
   let src: String?
   var alt = ""
   var layout: NativeMediaLayout = .cover
+  var contentMode: ContentMode = .fill
   var showsFailureSymbol = true
   var cachedImage: Image?
   var attempt = 0
@@ -220,8 +221,8 @@ struct NativeRemoteImage: View {
   }
   private func picture(_ image: Image, retainedSize: CGSize? = nil, reveal: Bool = true) -> some View {
     Group {
-      switch layout {
-      case .intrinsic, .fit:
+      switch (layout, contentMode) {
+      case (.intrinsic, _), (.fit, _), (_, .fit):
         canvas(sourceSize: retainedSize) { image.resizable().scaledToFit().modifier(NativeMediaReveal(enabled: reveal)) }
       default:
         canvas(sourceSize: retainedSize) { image.resizable().scaledToFill().modifier(NativeMediaReveal(enabled: reveal)) }

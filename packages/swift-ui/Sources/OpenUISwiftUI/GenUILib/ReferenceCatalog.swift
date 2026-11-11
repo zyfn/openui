@@ -47,6 +47,7 @@ enum OpenUIReference {
     }
     var component = OpenUIComponent(definition, content: content)
     component.supportsPresentationPlaceholder = NativePresentationProxy.supportedNames.contains(name)
+    component.ownsFormControlLabel = name == "Slider"
     component.presentationLayoutFields = NativeLayoutContract.fields(for: name).filter { field in definition.params.contains { $0.name == field } }
     return component
   }

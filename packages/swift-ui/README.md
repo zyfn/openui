@@ -159,8 +159,9 @@ API. A fixed row should therefore not be described as automatic column reflow.
 The standard 84 registration names and their parameter contracts stay intact.
 Visual design belongs to the SDK's shared theme and native presentation; it can
 improve on upstream styling without renaming components or dropping capabilities.
-Image uses a 16:9/fill cover default; ImageBlock and ImageTextLarge use
-that same theme cover role. Document illustrations in Markdown and original-image
+Image and ImageBlock use a 16:9/fill cover default. ImageTextLarge keeps
+the same stable frame but fits the full source inside it, preserving product artwork
+and embedded copy instead of cropping it. VisualCard photo backgrounds retain fill. Document illustrations in Markdown and original-image
 viewing retain complete source proportions. ImageText accepts an explicit imageSize in both
 orientations, and Table paginates at ten rows. Design defaults
 are distinct from imposing a native-only 40% table-column cap or ignoring a field.
