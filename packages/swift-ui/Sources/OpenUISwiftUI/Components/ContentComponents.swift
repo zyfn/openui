@@ -220,8 +220,7 @@ struct NativeMediaText: View {
         VStack(alignment: .leading, spacing: context.theme.spaceM) {
           NativeRemoteImage(
             src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
-            layout: .aspect(context.presentation.coverAspectRatio), contentMode: .fit)
-            .background(context.theme.sunkLight)
+            layout: .aspect(context.presentation.coverAspectRatio))
             .clipShape(RoundedRectangle(cornerRadius: cardHeaderInset > 0 ? 0 : context.theme.radiusM, style: .continuous))
             .padding(.horizontal, -cardHeaderInset)
             .padding(.top, -cardHeaderInset)
