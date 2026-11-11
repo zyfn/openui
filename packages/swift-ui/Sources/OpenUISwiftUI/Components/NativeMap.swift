@@ -221,7 +221,7 @@ private struct NativeMap: View {
         Map(position: fullscreen ? $fullscreenCamera : $camera, interactionModes: fullscreen ? .all : [.zoom]) {
             ForEach(places) { place in
                 Annotation(place.title, coordinate: place.coordinate) { marker(place) }
-                    .annotationTitles(.visible)
+                    .annotationTitles(selectedID == place.id ? .visible : .hidden)
             }
         }
         .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll, showsTraffic: false))

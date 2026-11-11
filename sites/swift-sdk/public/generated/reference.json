@@ -1044,7 +1044,7 @@
       "signature": "Map(points: (MapPoint)[], crs?: \"wgs84\" | \"gcj02\")",
       "description": "Use when spatial relationships help the user understand content, compare locations, or plan a route. Place data and coordinates must come from reliable sources.",
       "purpose": "地点位置、标记和关联对象浏览",
-      "treatment": "SDK 使用 MapKit，支持标记、地点卡联动与全屏；地图要求 iOS 17／macOS 14，旧系统明确提示；地点图不等于已取得导航路线或实时交通",
+      "treatment": "SDK 使用 MapKit，支持标记、地点卡联动与全屏；仅选中地点显示地图标题，避免邻近地名叠在一起；地图要求 iOS 17／macOS 14，旧系统明确提示；地点图不等于已取得导航路线或实时交通",
       "examples": [
         "specimen-map",
         "case-01",
@@ -1274,6 +1274,6 @@
     "body": 1.5,
     "code": 1.5
   },
-  "sourceFingerprint": "35310c3f5fd69e1a7bdb2ff31b5644061fe7e931e493bffbe6c008b893d422b1",
+  "sourceFingerprint": "829e9506904f25a548c095e0762aedfe7ad06f83bcef4a5ed927b0db68151298",
   "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
 }

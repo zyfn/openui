@@ -24,7 +24,7 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeIcon.swift" : "ee38b0baedc62d23e59bac04f9db5e2b151fe4e530b2af5b28eba64294ce68e0",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeLayoutContract.swift" : "6762998082207e416e70c511d4ddc2d7c5d3060ab13e580b624d0ee87f2c9f61",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeLoadingViews.swift" : "244695e7b0db0640e7caaa5120b92596ca5add9490c607e854b4cc3fdc06ab5c",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMap.swift" : "b1a816527f9cb3d453e5037f542621813a928c23d829a88ec28209a05e2ab718",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMap.swift" : "39533c25fa7e49e6444f9b0acc4804ac1ed064aaab472faef5b1f061251f00b0",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMarkdownText.swift" : "9c91fd628eb8368cff5543f0cb6c965b7ef6f6e5bf08ae5b38e4f0b91d54af00",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMath.swift" : "e97d16ded5ce93f6ca02f5dfb2bca6132f828e8e0df86551e5bce6c45afa84f5",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMedia.swift" : "778a001ccec7238d504c3c75fd9e08ea8daea80f4f51bb0c6668e11e328d7160",
@@ -71,5 +71,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "35310c3f5fd69e1a7bdb2ff31b5644061fe7e931e493bffbe6c008b893d422b1"
+  "fingerprint" : "829e9506904f25a548c095e0762aedfe7ad06f83bcef4a5ed927b0db68151298"
 }
