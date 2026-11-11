@@ -52,7 +52,7 @@
       "title": "执行用户代码 · 隔离方案决策",
       "purpose": "容器、虚拟机与沙箱架构比较",
       "file": "case-06-decide-code-execution-isolation.openui",
-      "sha256": "d7affbcf82bb4759fa58be4282c60094f33ebcf379104e178423adb7e7ad9837",
+      "sha256": "63c0c9a49a86b9663b9dbd048a199537640bd48fb0863d34ea42041d27b09511",
       "sourceSHA256": "1b229af79855a4f69eebcfb02aa018e35d53bae845a8c9bba2e2317e5d02f8e9"
     },
     {

@@ -89,6 +89,8 @@ Form 用于收集同一任务的一组选择/输入并统一提交。Swift SDK�
 
 商品卡不展示“demo／示例记录价”等测试话术；来源时间和必要价格条件统一放在卡外，不能把历史记录冒充实时查询。没有可核对的规格或商品介绍时不填造。实体列表用于成对字段/条件与结果；左右单元格各自换行，不通过增加外层Card模拟列表结构。
 
+短属性、适用条件可使用中性Tag/TagBlock帮助扫读与比较，长解释仍在正文；不重复已在标题或价格口径里明确的信息。仅在有真实状态语义时使用状态色，不按对象类别随机配色。
+
 <!-- Generated from the .openui sources; do not edit this copy. -->
 
 ## Case 01 · 杭州周末 · 场景发现
@@ -375,15 +377,18 @@ kubeCode = CodeBlock("yaml", "apiVersion: v1\nkind: Pod\nmetadata:\n  name: user
 kubernetesNote = TextContent("示例中的 RuntimeClass 名称取决于实际安装配置，镜像名称也是占位符。这只是运行时选型示例，不是完整生产安全配置。Kata 需要支持 KVM 的宿主节点，普通云主机不一定支持嵌套虚拟化。", "small")
 recommendation = Stack([recommendationHeading, primaryRecommendation, firecrackerChoice, gvisorChoice, finalNote], "column", "l")
 recommendationHeading = MarkDownRenderer("## 05 · 按现有条件选型")
-primaryRecommendation = Stack([primaryRecommendation_title, primaryRecommendation_body], "column", "s")
-primaryRecommendation_title = CardHeader("优先评估 Kata Containers", "已有 Kubernetes · 节点支持 KVM")
+primaryRecommendation = Stack([primaryRecommendation_title, primaryRecommendation_tags, primaryRecommendation_body], "column", "s")
+primaryRecommendation_title = CardHeader("优先评估 Kata Containers")
+primaryRecommendation_tags = TagBlock(["已有 K8s", "需 KVM"], "sm")
 primaryRecommendation_body = TextContent("运行时兼容性验证通过后，可保留 Pod 编排方式，以独立 VM 提供隔离边界。仍需配合网络、凭证、存储及资源约束。")
-firecrackerChoice = Stack([firecrackerChoice_title, firecrackerChoice_body], "column", "s")
-firecrackerChoice_title = CardHeader("Firecracker", "高频短任务 · 自建执行平台")
+firecrackerChoice = Stack([firecrackerChoice_title, firecrackerChoice_tags, firecrackerChoice_body], "column", "s")
+firecrackerChoice_title = CardHeader("Firecracker")
+firecrackerChoice_tags = TagBlock(["高频短任务", "自建调度"], "sm")
 firecrackerChoice_body = TextContent("适合追求低冷启动和高密度执行，并愿意投入宿主机、镜像、快照、网络及调度工程的平台；需要配套执行调度。")
-gvisorChoice = Stack([gvisorChoice_title, gvisorChoice_body], "column", "s")
-gvisorChoice_title = CardHeader("gVisor", "常见轻量脚本 · 保留容器体验")
-gvisorChoice_body = TextContent("适合目标语言和系统调用兼容性满足要求的场景；上线前仍需验证兼容性与实际性能。")
+gvisorChoice = Stack([gvisorChoice_title, gvisorChoice_tags, gvisorChoice_body], "column", "s")
+gvisorChoice_title = CardHeader("gVisor")
+gvisorChoice_tags = TagBlock(["轻量脚本"], "sm")
+gvisorChoice_body = TextContent("保留容器使用方式，适合目标语言和系统调用兼容性满足要求的场景；上线前仍需验证兼容性与实际性能。")
 finalNote = TextContent("选型还需要明确沙箱按任务还是按会话创建、何时复用、何时销毁。", "small")
 references = Stack([referenceHeading, referenceLinks], "column", "xs")
 referenceHeading = TextContent("参考资料", "small-heavy")
