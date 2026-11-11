@@ -76,3 +76,7 @@ Case08保留原生细线，采用统一的时间/价格主层级与辅助信息�
 此轮不要求大字号专项验收，也不删除SDK已有的无障碍能力。
 
 Agent消费方同步本目录的生成文档与源码；SDK默认提示词保持通用，不自动塞入全部旅行案例。
+
+## 选择后继续对话
+
+Case04 使用现有 Form + OptionCards(multiple) + Buttons(column)；主要提交按钮紧随选择区，保持一个通栏入口，不逐张触发Agent。主按钮走现有required校验。@ToAssistant的文案说明任务，实际选择由事件formState携带；消费宿主必须把formName/formState和消息一起交给Agent，不能只取humanFriendlyMessage。CaseLab仅记录和预览本地事件，不伪称已发送模型。取消选中后再次提交应携带最新值，不能沿用上次快照。

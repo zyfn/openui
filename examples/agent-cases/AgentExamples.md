@@ -77,6 +77,10 @@ Case08保留原生细线，采用统一的时间/价格主层级与辅助信息�
 
 Agent消费方同步本目录的生成文档与源码；SDK默认提示词保持通用，不自动塞入全部旅行案例。
 
+## 选择后继续对话
+
+Case04 使用现有 Form + OptionCards(multiple) + Buttons(column)；主要提交按钮紧随选择区，保持一个通栏入口，不逐张触发Agent。主按钮走现有required校验。@ToAssistant的文案说明任务，实际选择由事件formState携带；消费宿主必须把formName/formState和消息一起交给Agent，不能只取humanFriendlyMessage。CaseLab仅记录和预览本地事件，不伪称已发送模型。取消选中后再次提交应携带最新值，不能沿用上次快照。
+
 <!-- Generated from the .openui sources; do not edit this copy. -->
 
 ## Case 01 · 杭州周末 · 场景发现
@@ -268,14 +272,16 @@ intro = Stack([intro1, intro2], "column", "s")
 intro1 = MarkDownRenderer("我建议先别急着给卧室定一个「日式」「北欧」之类的风格标签。**先找到一种你愿意每天回家后待在里面的感觉**，再考虑家具、颜色和装饰。")
 intro2 = TextContent("先看看三种配色、灯光和材质不同的卧室，凭直觉选择吸引你的部分，再逐步确认自己的偏好。")
 section1 = MarkDownRenderer("## 01｜找到你喜欢的卧室氛围")
-chooser = Form("bedroom-style-exploration", Buttons([Button("按我的选择继续", @ToAssistant("根据我刚才选中的卧室氛围，帮我提炼共同偏好，给出租房可执行的配色、灯光和软装建议。优先不破坏房屋、可搬走的改变，不要直接推荐购物商品。"), "secondary", "normal", "medium")]), [chooser_part1])
-chooser_part1 = FormControl("选最想住进去的感觉，也可以组合两种", OptionCards("卧室氛围", "multiple", [styleA, styleB, styleC], {required: true}))
+chooser = Form("bedroom-style-exploration", chooserActions, [chooser_part1])
+chooser_part1 = FormControl("选择喜欢的卧室氛围", OptionCards("卧室氛围", "multiple", [styleA, styleB, styleC], {required: true}), "可多选；选好后一起生成布置建议。")
 styleA = OptionCard("自然松弛", "A · 自然松弛", "奶油白、浅木、棉麻；像阳光晒过的房间。", imgA)
 imgA = Image("自然松弛、浅木色和暖白床品的卧室", "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=900&q=85")
 styleB = OptionCard("安静克制", "B · 安静克制", "深木、亚麻、间接暖光；安静而有秩序。", imgB)
 imgB = Image("安静克制、柔和照明的卧室", "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&q=85")
 styleC = OptionCard("温暖复古", "C · 温暖复古", "胡桃木、藤编、焦糖色；温润、有生活感。", imgC)
 imgC = Image("胡桃木与复古氛围的温暖卧室", "https://images.unsplash.com/photo-1615874694520-474822394e73?w=900&q=85")
+chooserActions = Buttons([continueChoice], "column")
+continueChoice = Button("生成布置建议", @ToAssistant("根据随附表单中“卧室氛围”的当前选择，提炼共同偏好，给出适合出租房的配色、灯光和软装建议。优先不破坏房屋、可搬走的改变，暂不推荐具体商品。"), "primary", "normal", "medium")
 section2 = MarkDownRenderer("## 02｜舒服，不一定需要重新装修")
 tips = VisualCardBlock([tipA, tipB, tipC], "carousel", true)
 tipA = VisualCardItem(tipTextA, "light", "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=85")

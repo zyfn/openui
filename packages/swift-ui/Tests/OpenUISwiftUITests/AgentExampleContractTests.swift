@@ -42,6 +42,37 @@ final class AgentExampleContractTests: XCTestCase {
     }
   }
 
+  @MainActor func testBedroomSubmitCarriesLatestSelectionsInItsFormPayload() async throws {
+    let spec = try LibrarySpec(jsonString: String(contentsOf: directory.appendingPathComponent("test-library-spec.json"), encoding: .utf8))
+    let state = OpenUIState(schema: compileLibrarySchema(spec))
+    state.setSource(try String(contentsOf: directory.appendingPathComponent("case-04-explore-bedroom-style.openui"), encoding: .utf8))
+    func submit(_ value: Value) -> EvaluatedElement? {
+      switch value {
+      case .element(let element):
+        if element.typeName == "Button", PropValue.string(element, "label") == "生成布置建议" { return element }
+        return element.props.compactMap { submit($0.1) }.first
+      case .array(let values): return values.compactMap(submit).first
+      default: return nil
+      }
+    }
+    let button = try XCTUnwrap(submit(.element(try XCTUnwrap(state.root))))
+    XCTAssertEqual(PropValue.string(button, "variant"), "primary", "Primary form submission uses required validation")
+    let action = try XCTUnwrap(PropValue.actionPlan(button, "action"))
+    for selected in [["自然松弛", "温暖复古"], ["温暖复古"]] {
+      state.setFieldValue(form: "bedroom-style-exploration", name: "卧室氛围",
+        value: .array(selected.map { .string(OpenUIString($0)) }), componentType: "OptionCards")
+      let events = await state.perform(action, formName: "bedroom-style-exploration")
+      XCTAssertEqual(events.count, 1)
+      let event = try XCTUnwrap(events.first)
+      XCTAssertEqual(event.type, "continue_conversation")
+      XCTAssertEqual(event.formName, "bedroom-style-exploration")
+      guard case .object(let form)? = event.formState?.first?.1,
+        case .object(let field)? = form["卧室氛围"] else { return XCTFail("Missing submitted selections") }
+      XCTAssertEqual(field["value"], .array(selected.map { .string(OpenUIString($0)) }),
+        "Deselecting an option must remove it from the next event")
+    }
+  }
+
   @MainActor func testVisualExampleCanPresentItsFirstCardBeforeTheRestOfTheGroupArrives() throws {
     let spec=try LibrarySpec(jsonString:String(contentsOf:directory.appendingPathComponent("test-library-spec.json"),encoding:.utf8))
     let state=OpenUIState(schema:compileLibrarySchema(spec))
