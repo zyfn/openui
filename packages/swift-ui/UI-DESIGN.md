@@ -343,3 +343,5 @@ Hosts that previously styled these titles through textBodyLgHeavy or
 textBodyDefaultHeavy should move that object-title override to textHeadingXs.
 Default-size emphasized numeric Text/BoldText and numeric EntityList values
 resolve textNumbersDefaultHeavy; body emphasis overrides no longer resize them.
+
+EntityList uses stable two-column allocation with per-cell wrapping, secondary labels and medium text values. Body-row separators express record boundaries; no separator after the final record. Long values stay in their column. Numeric values retain their existing numeric scale/alignment. Other name/value layouts keep their own responsive policies.

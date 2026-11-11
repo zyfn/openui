@@ -309,3 +309,5 @@ prompt generation and unrestricted Table rendering retain the upstream default
 capabilities.
 
 Form defaults to the same native surface as Card (border, corners and inset). Do not add an outer Card merely to frame a Form. An enclosing host panel may explicitly opt out through OpenUIPresentation.formShowsCardSurface=false. This is native presentation policy; Lang fields, form scope, validation and ActionEvent payloads are unchanged.
+
+EntityList owns stable equal-width name/value columns. Each cell wraps vertically; text length never changes a row into a stacked label/value arrangement. Labels use secondary ink, text values use medium emphasis, numeric values remain trailing-aligned, and body rows have a single light divider between them. This does not change other users of NativeLabelValueLayout.

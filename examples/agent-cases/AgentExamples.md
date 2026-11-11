@@ -87,6 +87,8 @@ Form 用于收集同一任务的一组选择/输入并统一提交。Swift SDK�
 
 不要为了加框或排版使用Form：商品/景点展示卡、单个查看或预订跳转、即时本地筛选、无需提交的勾选清单、纯说明或整段回答都不应包装成Form。多个独立任务也不要共用一个Form提交。当前8例只有Case04使用Form，选择和按钮属于同一次提交；Case07准备清单仅本地勾选，不使用Form。
 
+商品卡不展示“demo／示例记录价”等测试话术；来源时间和必要价格条件统一放在卡外，不能把历史记录冒充实时查询。没有可核对的规格或商品介绍时不填造。实体列表用于成对字段/条件与结果；左右单元格各自换行，不通过增加外层Card模拟列表结构。
+
 <!-- Generated from the .openui sources; do not edit this copy. -->
 
 ## Case 01 · 杭州周末 · 场景发现
@@ -313,10 +315,10 @@ preferences = TextContent("小桌面 · 阅读用途 · 先比较折叠与夹式
 products = Stack([productsHeader, productsCarousel, priceNote], "column", "s")
 productsHeader = InlineHeader("三款台灯候选", "比较摆放方式，并核对具体规格")
 productsCarousel = CompositeCardBlock([folding, rechargeable, clipLamp], "carousel", true)
-folding = CompositeCardItem("taobao-971628097659", ImageTextLarge("https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg", "惠普折叠阅读台灯商品图", "惠普折叠阅读台灯", "惠普照明旗舰店", true), [], {"price":BoldText("number", "¥84.00", "示例记录价", "text", "lg"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=971628097659"), "primary", "normal", "small")})
-rechargeable = CompositeCardItem("taobao-1014479690931", ImageTextLarge("https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg", "欧普充电折叠台灯商品图", "欧普充电折叠台灯", "欧普照明官方旗舰店", true), [], {"price":BoldText("number", "¥116.20", "示例记录价", "text", "lg"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=1014479690931"), "primary", "normal", "small")})
-clipLamp = CompositeCardItem("taobao-1087331917809", ImageTextLarge("https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg", "充电夹式阅读台灯商品图", "充电夹式阅读台灯", "国货严选旗舰", true), [], {"price":BoldText("number", "¥49.90", "示例记录价", "text", "lg"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=1087331917809"), "primary", "normal", "small")})
-priceNote = TextContent("以上商品名称、店铺、图片与价格沿用 2026-11-10 的示例记录，不代表本次实时查询结果；具体规格与结算条件以商品页为准。", "small")
+folding = CompositeCardItem("taobao-971628097659", ImageTextLarge("https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg", "惠普折叠阅读台灯商品图", "惠普折叠阅读台灯", "惠普照明旗舰店", true), [], {"price":BoldText("number", "¥84.00", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=971628097659"), "primary", "normal", "small")})
+rechargeable = CompositeCardItem("taobao-1014479690931", ImageTextLarge("https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg", "欧普充电折叠台灯商品图", "欧普充电折叠台灯", "欧普照明官方旗舰店", true), [], {"price":BoldText("number", "¥116.20", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=1014479690931"), "primary", "normal", "small")})
+clipLamp = CompositeCardItem("taobao-1087331917809", ImageTextLarge("https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg", "充电夹式阅读台灯商品图", "充电夹式阅读台灯", "国货严选旗舰", true), [], {"price":BoldText("number", "¥49.90", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=1087331917809"), "primary", "normal", "small")})
+priceNote = TextContent("价格记录于 2026-11-10；具体规格、优惠和结算金额以商品页为准。", "small")
 fit = Stack([fitTitle, fitList], "column", "xs")
 fitTitle = MarkDownRenderer("## 用法不同，选择也不同")
 fitList = EntityList([{"left":"读完需要收起来","right":"先比较折叠款的尺寸"},{"left":"桌面几乎放不下灯座","right":"核对夹式灯与桌沿是否匹配"},{"left":"希望移动使用","right":"比较充电方式和续航条件"}], "small")

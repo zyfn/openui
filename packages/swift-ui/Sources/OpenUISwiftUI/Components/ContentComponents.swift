@@ -338,17 +338,24 @@ struct NativeEntityList: View {
     VStack(alignment: .leading, spacing: 0) {
       if context.string("size") != "small", let header = context.value("header"), header != .null {
         row(header, kind: .header)
-        Divider()
+        separator
       }
       let rows = context.children("rows")
-      ForEach(rows) { item in
+      ForEach(Array(rows.enumerated()), id: \.element.id) { index, item in
         row(item.value, kind: .body)
+        if index < rows.count - 1 {
+          separator
+        }
       }
       if context.string("size") != "small", let footer = context.value("footer"), footer != .null {
-        Divider()
+        separator
         row(footer, kind: .footer)
       }
     }
+  }
+  private var separator: some View {
+    Rectangle().fill(context.theme.borderDefault)
+      .frame(height: context.presentation.borderWidth).accessibilityHidden(true)
   }
   private enum RowKind { case header, body, footer }
   private func row(_ value: Value, kind: RowKind) -> some View {
@@ -357,15 +364,14 @@ struct NativeEntityList: View {
     let font = small ? context.theme.textBodySm : context.theme.textBodyDefault
     let color = kind == .header ? context.theme.textNeutralSecondary : context.theme.textNeutralPrimary
     return NativeLabelValueLayout(
-      gap: context.theme.spacing("m"), minimumLabelWidth: context.presentation.minimumTextColumnWidth
+      gap: context.theme.spacing("m"), minimumLabelWidth: context.presentation.minimumTextColumnWidth, equalColumns: true
     ) {
       NativeMarkdownText(text: NativeValue.string(value, "left") ?? "", mode: .inline,
-        style: .init(font: font, color: color, role: small ? .detail : .body))
+        style: .init(font: font, color: context.theme.textNeutralSecondary, role: small ? .detail : .body))
       NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
         style: .init(font: kind == .footer ? context.theme.textBodyLgHeavy
-          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true, numeric: numeric) : font), numeric: numeric, color: color, role: kind == .footer ? .title : small ? .detail : .body))
-      // Horizontal layout still anchors a short value at the row's right edge.
-      // A full-width text value must read from the left when the row stacks.
+          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true, numeric: numeric) : font.weight(context.theme.textLabelDefaultHeavy.weight)), numeric: numeric, color: color, role: kind == .footer ? .title : small ? .detail : .body))
+      // Text wraps in its own stable column; numeric values keep trailing alignment.
       .multilineTextAlignment(numeric ? .trailing : .leading)
     }
     .padding(.vertical, context.theme.spacing(kind == .body ? "s" : "m")).textSelection(.enabled)

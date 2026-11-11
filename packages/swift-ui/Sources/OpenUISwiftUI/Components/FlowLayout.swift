@@ -404,6 +404,7 @@ private struct NativeMediaRowSizes: PreferenceKey {
 struct NativeLabelValueLayout: Layout {
     let gap: CGFloat
     let minimumLabelWidth: CGFloat
+    var equalColumns = false
     var allowsStacking = true
     var centerVertically = false
     var collapsesEmptySlots = false
@@ -418,6 +419,13 @@ struct NativeLabelValueLayout: Layout {
         let width =
             proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil }
             ?? ideals[0].width + gap + ideals[1].width
+        if equalColumns {
+            let cellWidth = max(1, (width - gap) / 2)
+            let left = views[0].sizeThatFits(.init(width: cellWidth, height: nil))
+            let right = views[1].sizeThatFits(.init(width: cellWidth, height: nil))
+            return [CGRect(x: 0, y: 0, width: cellWidth, height: left.height),
+                    CGRect(x: cellWidth + gap, y: 0, width: cellWidth, height: right.height)]
+        }
         if collapsesEmptySlots {
             let empty = ideals.map { $0.width == 0 && $0.height == 0 }
             if empty[0] || empty[1] {

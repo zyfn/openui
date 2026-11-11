@@ -222,7 +222,7 @@ final class ReadingRhythmTests: XCTestCase {
       "Read-only row spacing uses spaceS; spaceM remains the column and group gap")
   }
 
-  @MainActor func testWrappedTextValuesReadFromTheLeadingEdge() throws {
+  @MainActor func testLongEntityValuesWrapInsideTheirColumnWithoutMovingBelowTheLabel() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
@@ -232,6 +232,7 @@ final class ReadingRhythmTests: XCTestCase {
     XCTAssertTrue(state.errors.isEmpty)
     var theme = OpenUIThemeValues()
     theme.textNeutralPrimary = .black
+    theme.textNeutralSecondary = Color(red: 1, green: 0, blue: 0)
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
       .openUITheme(theme)
       .frame(width: 300).padding(10).background(Color.white))
@@ -241,7 +242,16 @@ final class ReadingRhythmTests: XCTestCase {
     host.cacheDisplay(in: host.bounds, to: bitmap)
     let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
     var bands: [(first: Int, last: Int, left: Int)] = []
+    var firstLabelInk: Int?
     for y in 0..<bitmap.pixelsHigh {
+      if firstLabelInk == nil {
+        for x in 0..<bitmap.pixelsWide {
+          if let c = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+            c.redComponent > 0.7 && c.greenComponent < 0.3 && c.blueComponent < 0.3 {
+            firstLabelInk = y; break
+          }
+        }
+      }
       let ink = (0..<bitmap.pixelsWide).filter { x in
         guard let c = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { return false }
         return c.alphaComponent > 0.8 && max(c.redComponent, c.greenComponent, c.blueComponent) < 0.4
@@ -253,9 +263,12 @@ final class ReadingRhythmTests: XCTestCase {
     }
     let lines = bands.filter { CGFloat($0.last - $0.first + 1) >= 6 * scale }
     XCTAssertGreaterThanOrEqual(lines.count, 3, "The rendered fixture must contain wrapped text and a short final line")
+    XCTAssertEqual(CGFloat(try XCTUnwrap(firstLabelInk)) / scale,
+      CGFloat(try XCTUnwrap(lines.first).first) / scale, accuracy: 5,
+      "The first value line must align with the label instead of stacking below it")
     for line in lines {
-      XCTAssertLessThan(CGFloat(line.left) / scale, 18,
-        "A stacked text value, including its short last line, must start at the leading edge")
+      XCTAssertEqual(CGFloat(line.left) / scale, 10 + (300 + theme.spaceM) / 2, accuracy: 8,
+        "Every wrapped value line, including the short last line, must stay in the right column")
     }
   }
 
