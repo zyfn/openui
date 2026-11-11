@@ -75,3 +75,17 @@
 "Content is incomplete" = "Content is incomplete";
 
 "This field is required" = "This field is required";
+
+"Unable to load graphic" = "Unable to load graphic";
+"Graphic requires a valid SVG viewBox" = "Graphic requires a valid SVG viewBox";
+"Map requires iOS 17 or macOS 14" = "Map requires iOS 17 or macOS 14";
+"Show all places" = "Show all places";
+"Choose a place" = "Choose a place";
+"Close map" = "Close map";
+"Previous place" = "Previous place";
+"Next place" = "Next place";
+"Recenter on selection" = "Recenter on selection";
+"Expand map" = "Expand map";
+"Selected" = "Selected";
+"Not selected" = "Not selected";
+"Details for %@" = "Details for %@";

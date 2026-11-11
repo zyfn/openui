@@ -32,8 +32,8 @@ final class ReferenceCatalogTests: XCTestCase {
       return group
     }
     XCTAssertNotNil(installed.registry["EditableTable"])
-    XCTAssertEqual(installed.library.components.count, 84)
-    XCTAssertEqual(generation.components.count, 83)
+    XCTAssertEqual(installed.library.components.count, 87)
+    XCTAssertEqual(generation.components.count, 86)
     XCTAssertFalse(generation.toSpec().components.contains { $0.name == "EditableTable" })
     XCTAssertFalse(
       generation.componentGroups?.contains { $0.components.contains("EditableTable") } ?? true)
@@ -66,14 +66,17 @@ final class ReferenceCatalogTests: XCTestCase {
 
   func testAll84RenderersUseThePinnedUpstreamDefinitions() throws {
     let library = try OpenUIStandardComponents.library()
-    XCTAssertEqual(library.library.components.count, 84)
-    XCTAssertEqual(library.library.components.map(\.name), OpenUIReference.definitions.map(\.name))
+    XCTAssertEqual(library.library.components.count, 87)
+    XCTAssertEqual(Array(library.library.components.prefix(84)).map(\.name), OpenUIReference.definitions.map(\.name))
     for expected in OpenUIReference.definitions {
       let actual = try XCTUnwrap(library.library.components.first { $0.name == expected.name })
       XCTAssertNotNil(library.registry[expected.name])
       XCTAssertEqual(actual.description, expected.description, expected.name)
       XCTAssertEqual(actual.params.map(\.name), expected.params.map(\.name), expected.name)
       for (a, b) in zip(actual.params, expected.params) {
+        if ["Card", "TabItem", "AccordionItem"].contains(expected.name), ["children", "content"].contains(a.name) {
+          continue // Explicit SDK Map/SVG slot extensions are verified separately.
+        }
         XCTAssertEqual(
           a.schema.map(Self.canonicalSchema), b.schema.map(Self.canonicalSchema),
           "\(expected.name).\(a.name)")

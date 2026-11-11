@@ -115,6 +115,11 @@ public enum OpenUIParameter {
         return ParamDef(name: name, required: required, schema: .object(fields))
     }
 
+    public static func number(_ name: String, required: Bool = false) -> ParamDef {
+        ParamDef(name: name, required: required,
+                 schema: .object([JSONField(key: "type", value: .string("number"))]))
+    }
+
     public static func flag(_ name: String, required: Bool = false) -> ParamDef {
         ParamDef(name: name, required: required, schema: .object([JSONField(key: "type", value: .string("boolean"))]))
     }

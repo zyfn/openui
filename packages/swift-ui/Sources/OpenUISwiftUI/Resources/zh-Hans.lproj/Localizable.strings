@@ -75,3 +75,17 @@
 "Content is incomplete" = "内容尚未完整";
 
 "This field is required" = "请填写或选择此项";
+
+"Unable to load graphic" = "图形加载失败";
+"Graphic requires a valid SVG viewBox" = "图形需要有效的 SVG viewBox";
+"Map requires iOS 17 or macOS 14" = "地图需要 iOS 17 或 macOS 14";
+"Show all places" = "显示全部地点";
+"Choose a place" = "跳转到地点";
+"Close map" = "关闭地图";
+"Previous place" = "上一个地点";
+"Next place" = "下一个地点";
+"Recenter on selection" = "回到选中地点";
+"Expand map" = "展开地图";
+"Selected" = "已选择";
+"Not selected" = "未选择";
+"Details for %@" = "查看%@详情";

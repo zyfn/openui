@@ -1,0 +1,34 @@
+{
+  "name": "openui-swift-sdk-guide",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4178",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4178",
+    "generate": "swift run --package-path tools GuideExport public/generated && python3 tools/complete-reference.py",
+    "check:data": "python3 tools/complete-reference.py --check",
+    "validate:examples": "swift run --package-path tools GuideExport --validate public/generated/reference.json",
+    "format:check": "prettier --check src package.json vite.config.ts tsconfig.json"
+  },
+  "dependencies": {
+    "@openuidev/react-headless": "0.18.1",
+    "@openuidev/react-lang": "1.1.0",
+    "@openuidev/react-ui": "0.18.1",
+    "leaflet": "1.9.4",
+    "lucide-react": "0.562.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "4.3.6",
+    "zustand": "4.5.7"
+  },
+  "devDependencies": {
+    "@types/leaflet": "1.9.21",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "prettier": "3.7.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.1"
+  }
+}

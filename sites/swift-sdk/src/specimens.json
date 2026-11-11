@@ -1,0 +1,82 @@
+[
+  {
+    "id": "specimen-card",
+    "name": "对象边界与短说明",
+    "source": "root=Card([CardHeader(\"住在步行方便的地方\",\"离主要目的地较近\"),TextContent(\"名称识别对象，短介绍提供判断依据。\",\"small\"),TagBlock([\"步行友好\",\"位置\"])])"
+  },
+  {
+    "id": "specimen-callout",
+    "name": "说明与状态",
+    "source": "root=Stack([Callout(\"neutral\",\"补充说明\",\"用于交代背景、口径与假设。\"),TextCallout(\"info\",\"相关信息\",\"静态说明不执行自动消退。\")])"
+  },
+  {
+    "id": "specimen-chart-line",
+    "name": "趋势与比较",
+    "source": "root=Stack([LineChart([\"一\",\"二\",\"三\"],[Series(\"数量\",[12,18,15])]),AreaChart([\"一\",\"二\",\"三\"],[Series(\"数量\",[12,18,15])])])"
+  },
+  {
+    "id": "specimen-chart-horizontal",
+    "name": "长分类与数量",
+    "source": "root=HorizontalBarChart([\"公共交通\",\"步行空间\",\"绿化环境\"],[Series(\"评分\",[7,9,8])])"
+  },
+  {
+    "id": "specimen-chart-radar",
+    "name": "多维轮廓",
+    "source": "root=RadarChart([\"交通\",\"步行\",\"环境\",\"服务\"],[Series(\"评价\",[7,9,8,6])])"
+  },
+  {
+    "id": "specimen-chart-share",
+    "name": "部分与整体",
+    "source": "root=Stack([PieChart([\"甲\",\"乙\",\"丙\"],[20,30,50],\"donut\"),RadialChart([\"甲\",\"乙\"],[40,60]),SingleStackedBarChart([\"甲\",\"乙\",\"丙\"],[20,30,50])])"
+  },
+  {
+    "id": "specimen-chart-scatter",
+    "name": "二维分布",
+    "source": "root=ScatterChart([ScatterSeries(\"观测\",[Point(1,2),Point(2,4),Point(3,3),Point(4,6)])],\"X\",\"Y\")"
+  },
+  {
+    "id": "specimen-controls",
+    "name": "字段与原生选择",
+    "source": "root=Form(\"preferences\",Buttons([Button(\"提交选择\",@ToAssistant(\"根据当前选择继续\"))]),[FormControl(\"日期\",DatePicker(\"date\")),FormControl(\"阅读时长\",Slider(\"duration\",\"continuous\",0,60,5,[30],\"分钟\")),FormControl(\"内容形式\",RadioGroup(\"format\",[RadioItem(\"简洁\",\"只呈现核心信息\",\"short\"),RadioItem(\"详细\",\"保留完整解释\",\"full\")],\"short\")),FormControl(\"显示选项\",SwitchGroup(\"display\",[SwitchItem(\"显示图注\",\"补充来源信息\",\"captions\",true)]))])"
+  },
+  {
+    "id": "specimen-icons",
+    "name": "图标与图标操作",
+    "source": "root=Stack([Label(\"普通图标不自动带状态色\"),IconText(Icon(\"message-circle\"),\"neutral\",\"m\",\"空白聊天页\",\"输入入口是主角\",true),IconButton(\"继续\",Icon(\"arrow-right\"),@ToAssistant(\"继续\"),\"secondary\",\"small\",\"circle\")])"
+  },
+  {
+    "id": "specimen-steps",
+    "name": "有序的过程",
+    "source": "root=Steps([StepsItem(\"确定结构\",\"由容器分配空间。\"),StepsItem(\"接收内容\",\"保留已呈现的前缀。\"),StepsItem(\"开放交互\",\"就绪后处理用户动作。\")])"
+  },
+  {
+    "id": "specimen-carousel",
+    "name": "页面与横向浏览",
+    "source": "root=Carousel([[CardHeader(\"第一组\",\"页面数组保留分组\"),TextContent(\"这一页的内容。\")],[CardHeader(\"第二组\",\"滑动查看下一页\"),TextContent(\"另一页的内容。\")]],\"sunk\")"
+  },
+  {
+    "id": "specimen-metric",
+    "name": "当前值与比较基准",
+    "source": "root=Card([MetricIndicatorWithStrikethrough(\"128\",\"当前值\",\"150\",{direction:\"down\",value:14.7})])"
+  },
+  {
+    "id": "specimen-modal",
+    "name": "独立的临时面板",
+    "source": "$open=false\nroot=Stack([Buttons([Button(\"打开说明\",@Set($open,true))]),Modal(\"说明\",$open,[TextContent(\"关闭面板会写回 open 状态。\")],\"sm\")])"
+  },
+  {
+    "id": "specimen-image",
+    "name": "独立图片与媒体说明",
+    "source": "root=ImageBlock(\"https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg\",\"苏堤沿湖步道实景\")"
+  },
+  {
+    "id": "specimen-map",
+    "name": "地点与地图",
+    "source": "root=Map([MapPoint(\"苏堤\",30.242637,120.134544,null,null,\"西湖西侧长堤\"),MapPoint(\"德寿宫\",30.2412,120.16862,null,null,\"宫苑遗址博物馆\")],\"wgs84\")"
+  },
+  {
+    "id": "specimen-svg",
+    "name": "由 viewBox 确定图解比例",
+    "source": "root=SVG(\"<svg viewBox='0 0 320 100' xmlns='http://www.w3.org/2000/svg'><rect x='10' y='20' width='100' height='60' rx='10' fill='none' stroke='currentColor'/><path d='M125 50h70m-8-6 8 6-8 6' fill='none' stroke='currentColor'/><rect x='210' y='20' width='100' height='60' rx='10' fill='none' stroke='currentColor'/></svg>\",null,\"两个对象之间的关系\")"
+  }
+]

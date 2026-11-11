@@ -2,7 +2,7 @@
 
 The native SwiftUI adapter for OpenUI Lang. It depends on the sibling `OpenUILang` SwiftPM product; applications supply component views and tool transports. The dependency direction is `swift-ui → swift-lang → lang-core`. The SwiftPM product and module are `OpenUISwiftUI`.
 
-For a concise Chinese explanation of the RC18 design, all 84 standard components, host extensions and streaming decisions, see [SDK 设计与组件说明](SDK-REFERENCE.zh-CN.md).
+For a concise Chinese explanation of the SDK design, all 87 standard components and streaming decisions, see [SDK 设计与组件说明](SDK-REFERENCE.zh-CN.md).
 
 See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONENTS.md) and the [design and validation boundaries](UI-DESIGN.md) for the public API. SDK regressions are in `Tests/OpenUISwiftUITests`.
 
@@ -88,9 +88,16 @@ See [theme overrides and the RC migration](COMPONENTS.md#theme-overrides).
 
 ## Component catalogue
 
-`OpenUIStandardComponents.library()` registers the 84 pinned upstream components.
-Generate the prompt and render using the same library. Host-owned additions can
-use the existing library extension API; the SDK does not ship an extra component catalogue.
+`OpenUIStandardComponents.library()` registers the 84 pinned upstream components plus
+`Map`, `MapPoint` and `SVG` (87 total). Map uses MapKit on iOS 17/macOS 14 and later;
+older supported systems show an availability message. SVG uses an isolated WebKit
+renderer with validated viewBox and restricted content. Existing host parameter
+order is retained. Remove duplicate host registrations when migrating.
+
+Generate the prompt and render using the same library. Further host additions use
+the existing library extension API. The interactive guide lives in
+[`sites/swift-sdk`](../../sites/swift-sdk); its tokens and contracts are generated
+from this SDK.
 
 ## Rich text and source citations
 
@@ -146,7 +153,7 @@ Native Layout handles measured baseline, stretch and main-axis distribution on
 the minimum supported iOS 16/macOS 13 versions. There is one layout implementation;
 older stack/grid approximations have been removed.
 Accessibility text and parent width are environment inputs, not screen-global
-breakpoints. The 84-component schema has no CSS/media-query or arbitrary flex-weight
+breakpoints. The pinned component schema has no CSS/media-query or arbitrary flex-weight
 API. A fixed row should therefore not be described as automatic column reflow.
 
 The standard 84 registration names and their parameter contracts stay intact.

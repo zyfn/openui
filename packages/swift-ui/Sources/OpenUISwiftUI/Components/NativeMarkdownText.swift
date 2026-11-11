@@ -37,7 +37,7 @@ struct NativeMarkdownText: View {
   }
   private var font: OpenUIFont { (style.font ?? inheritedFont ?? theme.textBodyDefault).resolved(for: style.role) }
   private var mathSize: CGFloat { font.size * scale }
-  private var mathColor: String { NativeMathColor.css(foreground, scheme: colorScheme) }
+  private var mathColor: String { NativeCSSColor.css(foreground, scheme: colorScheme) }
   private var request: NativeRichTextRequest {
     .init(source: OpenUIString(text), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
   }
@@ -138,7 +138,7 @@ enum NativeMarkdownCode {
   }
 }
 
-private enum NativeMathColor {
+enum NativeCSSColor {
   static func css(_ color: Color, scheme: ColorScheme) -> String {
     #if os(iOS)
     let value = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light))

@@ -1,0 +1,1279 @@
+{
+  "components": [
+    {
+      "name": "Card",
+      "group": "Content",
+      "signature": "Card(children: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock | Tabs | Carousel | Stack | Map | SVG)[], variant?: \"card\" | \"sunk\" | \"clear\", direction?: \"row\" | \"column\", gap?: \"none\" | \"xs\" | \"s\" | \"m\" | \"l\" | \"xl\" | \"2xl\", align?: \"start\" | \"center\" | \"end\" | \"stretch\" | \"baseline\", justify?: \"start\" | \"center\" | \"end\" | \"between\" | \"around\" | \"evenly\", wrap?: boolean)",
+      "description": "Styled container. variant: \"card\" (default, elevated) | \"sunk\" (recessed) | \"clear\" (transparent). Always full width. Accepts all Stack flex params (default: direction \"column\"). Cards flex to share space in row/wrap layouts.",
+      "purpose": "完整对象或独立内容单元",
+      "treatment": "共享横排空间；card／sunk／clear 各自边界规则固定；不裁掉内容边缘字形，不用它包装所有章节",
+      "examples": [
+        "specimen-metric",
+        "specimen-card",
+        "official-6",
+        "case-03",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "CardHeader",
+      "group": "Content",
+      "signature": "CardHeader(title?: string, subtitle?: string)",
+      "description": "Header with optional title and subtitle",
+      "purpose": "对象名称与副标题",
+      "treatment": "标题走对象角色，subtitle 走辅助角色；两字段均可选，只有 subtitle 也能正常显示",
+      "examples": [
+        "specimen-card",
+        "specimen-carousel",
+        "case-02",
+        "case-07",
+        "case-06"
+      ]
+    },
+    {
+      "name": "TextContent",
+      "group": "Content",
+      "signature": "TextContent(text: string, size?: \"small\" | \"default\" | \"large\" | \"small-heavy\" | \"large-heavy\")",
+      "description": "Text block. Supports markdown. Optional size: \"small\" | \"default\" | \"large\" | \"small-heavy\" | \"large-heavy\".",
+      "purpose": "普通讲述",
+      "treatment": "支持 Markdown；大小和加重选项映射既有文字角色；可直接写文字，不强制每句话拆变量",
+      "examples": [
+        "specimen-card",
+        "specimen-modal",
+        "specimen-carousel",
+        "official-1",
+        "official-0",
+        "official-6",
+        "official-3",
+        "official-2",
+        "case-04",
+        "case-05",
+        "case-01",
+        "case-03",
+        "case-02",
+        "case-07",
+        "case-06"
+      ]
+    },
+    {
+      "name": "MarkDownRenderer",
+      "group": "Content",
+      "signature": "MarkDownRenderer(textMarkdown: string, variant?: \"clear\" | \"card\" | \"sunk\")",
+      "description": "Renders markdown text with optional container variant",
+      "purpose": "带章节的正文",
+      "treatment": "标题层级走主题映射；链接下划线；card／sunk 外观按参数；不重复包章节 Card",
+      "examples": [
+        "case-04",
+        "case-05",
+        "case-01",
+        "case-03",
+        "case-02",
+        "case-07",
+        "case-06"
+      ]
+    },
+    {
+      "name": "Callout",
+      "group": "Content",
+      "signature": "Callout(variant: \"info\" | \"warning\" | \"error\" | \"success\" | \"neutral\", title: string, description: string, visible?: $binding<boolean>)",
+      "description": "Callout banner. Optional visible is a reactive $boolean — auto-dismisses after 3s by setting $visible to false.",
+      "purpose": "说明或可反馈状态",
+      "treatment": "普通说明采用轻量竖线；成功／警告／错误保留小状态图标和语义；reactive visible 支持自动消退",
+      "examples": [
+        "specimen-callout",
+        "official-3"
+      ]
+    },
+    {
+      "name": "TextCallout",
+      "group": "Content",
+      "signature": "TextCallout(variant?: \"neutral\" | \"info\" | \"warning\" | \"success\" | \"danger\", title?: string, description?: string)",
+      "description": "Text callout with variant, title, and description",
+      "purpose": "静态提示",
+      "treatment": "复用提示视觉，但不假装执行 Callout 的响应式消退；说明与真正状态区分",
+      "examples": [
+        "specimen-callout"
+      ]
+    },
+    {
+      "name": "Image",
+      "group": "Content",
+      "signature": "Image(alt: string, src?: string)",
+      "description": "Image with alt text and optional URL",
+      "purpose": "单图",
+      "treatment": "媒体比例依据角色；等待已确定的父级宽度，中性缺图占位；图片下载不决定正文宽度",
+      "examples": [
+        "case-04",
+        "case-01",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "ImageBlock",
+      "group": "Content",
+      "signature": "ImageBlock(src: string, alt?: string)",
+      "description": "Image block with loading state",
+      "purpose": "独立图片块",
+      "treatment": "按媒体比例与圆角显示一张图片；SDK 渲染库支持；当前客户端生成库明确排除，模型应以客户端实际 spec 为准",
+      "examples": [
+        "specimen-image"
+      ]
+    },
+    {
+      "name": "ImageGallery",
+      "group": "Content",
+      "signature": "ImageGallery(images: {src: string, alt?: string, details?: string}[])",
+      "description": "Gallery grid of images with modal preview",
+      "purpose": "一组相关图片",
+      "treatment": "图项、列结构与下载分开；已知集合形状可稳定先到图片的宽度；支持原图浏览，刷新保留已有内容",
+      "examples": [
+        "case-02"
+      ]
+    },
+    {
+      "name": "CodeBlock",
+      "group": "Content",
+      "signature": "CodeBlock(language: string, codeString: string)",
+      "description": "Syntax-highlighted code block",
+      "purpose": "代码阅读和复制",
+      "treatment": "等宽字体、语言标识、横向阅读长行、原生复制反馈；代码不当作 Agent 已执行结果",
+      "examples": [
+        "case-06"
+      ]
+    },
+    {
+      "name": "InlineHeader",
+      "group": "Content",
+      "signature": "InlineHeader(heading: string, description?: string)",
+      "description": "Compact section heading with an optional one-line description, for use inside cards.",
+      "purpose": "行程节点、小组标题",
+      "treatment": "与对象标题共用标题映射，description 使用辅助样式；不为名称另造字号",
+      "examples": [
+        "official-5",
+        "official-4",
+        "case-05",
+        "case-07"
+      ]
+    },
+    {
+      "name": "Table",
+      "group": "Tables",
+      "signature": "Table(columns: Col[])",
+      "description": "Data table — column-oriented. Each Col holds its own data array.",
+      "purpose": "多对象字段核对",
+      "treatment": "管列宽、表头、单元格及横向视口；宽表允许横向阅读，不靠缩小所有文字强塞",
+      "examples": [
+        "official-0",
+        "official-6",
+        "case-02",
+        "case-06"
+      ]
+    },
+    {
+      "name": "Col",
+      "group": "Tables",
+      "signature": "Col(label: string, data: any, type?: \"string\" | \"number\" | \"action\")",
+      "description": "Column definition — holds label + data array",
+      "purpose": "表格列定义",
+      "treatment": "定义列名称、数据及类型，由 Table 消费；不独立显示、不额外包容器",
+      "examples": [
+        "official-0",
+        "official-6",
+        "case-02",
+        "case-06"
+      ]
+    },
+    {
+      "name": "EditableTable",
+      "group": "Tables",
+      "signature": "EditableTable(name?: string, columns?: {type: \"text\" | \"number\" | \"date-single\" | \"select\" | \"url\", key?: string, header?: string, width?: number, options?: {value: string, label: string}[]}[], data?: {id: string, values: (string | number)[]}[])",
+      "description": "Spreadsheet-like table whose cells the user can edit inline (text, number, url, date, select columns); edits are saved back as a form field",
+      "purpose": "表格内编辑",
+      "treatment": "原生编辑和状态写回；表格边界消费外部 stretch，避免泄漏到单元格按钮",
+      "examples": [
+        "official-5"
+      ]
+    },
+    {
+      "name": "BarChart",
+      "group": "Charts (2D)",
+      "signature": "BarChart(labels: string[], series: Series[], variant?: \"grouped\" | \"stacked\", xLabel?: string, yLabel?: string, height?: number)",
+      "description": "Vertical bars; use for comparing values across categories with one or more series",
+      "purpose": "分类数量比较",
+      "treatment": "分类完整后，已确认数值形成柱；缺数据不补零，轴与图例为数据留阅读空间",
+      "examples": [
+        "official-1"
+      ]
+    },
+    {
+      "name": "LineChart",
+      "group": "Charts (2D)",
+      "signature": "LineChart(labels: string[], series: Series[], variant?: \"linear\" | \"natural\" | \"step\", xLabel?: string, yLabel?: string, height?: number)",
+      "description": "Lines over categories; use for trends and continuous data over time",
+      "purpose": "趋势",
+      "treatment": "分类完整后，完整数据点逐步形成线；不把未完成的尾数字当成真实点",
+      "examples": [
+        "specimen-chart-line"
+      ]
+    },
+    {
+      "name": "AreaChart",
+      "group": "Charts (2D)",
+      "signature": "AreaChart(labels: string[], series: Series[], variant?: \"linear\" | \"natural\" | \"step\", xLabel?: string, yLabel?: string, height?: number)",
+      "description": "Filled area under lines; use for cumulative totals or volume trends over time",
+      "purpose": "趋势与覆盖面积",
+      "treatment": "复用笛卡尔数据／坐标规则，面积只代表已确认的数据",
+      "examples": [
+        "specimen-chart-line"
+      ]
+    },
+    {
+      "name": "RadarChart",
+      "group": "Charts (2D)",
+      "signature": "RadarChart(labels: string[], series: Series[])",
+      "description": "Spider/web chart; use for comparing multiple variables across one or more entities",
+      "purpose": "多维轮廓",
+      "treatment": "分类与系列完整后呈现；分类标签有独立测量空间；类别轴与数值含义对应，不用缩字掩盖密集标签",
+      "examples": [
+        "specimen-chart-radar"
+      ]
+    },
+    {
+      "name": "HorizontalBarChart",
+      "group": "Charts (2D)",
+      "signature": "HorizontalBarChart(labels: string[], series: Series[], variant?: \"grouped\" | \"stacked\", xLabel?: string, yLabel?: string)",
+      "description": "Horizontal bars; prefer when category labels are long or for ranked lists",
+      "purpose": "长分类名称的数量比较",
+      "treatment": "使用横向柱形和对应分类轴；遵守相同数据与图例规则",
+      "examples": [
+        "specimen-chart-horizontal"
+      ]
+    },
+    {
+      "name": "Series",
+      "group": "Charts (2D)",
+      "signature": "Series(category: string, values: number[])",
+      "description": "One data series",
+      "purpose": "笛卡尔／雷达系列数据",
+      "treatment": "由图表消费名称、值和对应信息；不单独显示",
+      "examples": [
+        "specimen-chart-radar",
+        "specimen-chart-horizontal",
+        "specimen-chart-line",
+        "official-1"
+      ]
+    },
+    {
+      "name": "PieChart",
+      "group": "Charts (1D)",
+      "signature": "PieChart(labels: string[], values: number[], variant?: \"pie\" | \"donut\", appearance?: \"circular\" | \"semiCircular\")",
+      "description": "Circular slices; use plucked arrays: PieChart(data.categories, data.values)",
+      "purpose": "部分与整体",
+      "treatment": "依赖可确认的完整总量再表达占比，避免把暂时总量当最终比例",
+      "examples": [
+        "specimen-chart-share"
+      ]
+    },
+    {
+      "name": "RadialChart",
+      "group": "Charts (1D)",
+      "signature": "RadialChart(labels: string[], values: number[])",
+      "description": "Radial bars; use plucked arrays: RadialChart(data.categories, data.values)",
+      "purpose": "环形比例",
+      "treatment": "同样等待比例所需数据；首次等待不画假圆环充当结果",
+      "examples": [
+        "specimen-chart-share"
+      ]
+    },
+    {
+      "name": "SingleStackedBarChart",
+      "group": "Charts (1D)",
+      "signature": "SingleStackedBarChart(labels: string[], values: number[])",
+      "description": "Single horizontal stacked bar; use plucked arrays: SingleStackedBarChart(data.categories, data.values)",
+      "purpose": "单条组成关系",
+      "treatment": "使用较低的原生图形高度；图例可换行，数值与整体条件一致",
+      "examples": [
+        "specimen-chart-share"
+      ]
+    },
+    {
+      "name": "Slice",
+      "group": "Charts (1D)",
+      "signature": "Slice(category: string, value: number)",
+      "description": "One slice with label and numeric value",
+      "purpose": "目录中的数据定义",
+      "treatment": "不独立渲染；当前 PieChart 接口仍接收 labels／values 数组，不能因有 Slice 定义就替换输入类型",
+      "examples": []
+    },
+    {
+      "name": "ScatterChart",
+      "group": "Charts (Scatter)",
+      "signature": "ScatterChart(datasets: ScatterSeries[], xLabel?: string, yLabel?: string)",
+      "description": "X/Y scatter plot; use for correlations, distributions, and clustering",
+      "purpose": "二维点分布",
+      "treatment": "成对、可确认的坐标组成点；按散点投影与邻近点检查，不混用分类索引",
+      "examples": [
+        "specimen-chart-scatter"
+      ]
+    },
+    {
+      "name": "ScatterSeries",
+      "group": "Charts (Scatter)",
+      "signature": "ScatterSeries(name: string, points: Point[])",
+      "description": "Named dataset",
+      "purpose": "散点系列",
+      "treatment": "提供一组 Point，由 ScatterChart 解释",
+      "examples": [
+        "specimen-chart-scatter"
+      ]
+    },
+    {
+      "name": "Point",
+      "group": "Charts (Scatter)",
+      "signature": "Point(x: number, y: number, z?: number)",
+      "description": "Data point with numeric coordinates",
+      "purpose": "单个散点数据",
+      "treatment": "保留 x／y 成对含义；不独立生成图形视图",
+      "examples": [
+        "specimen-chart-scatter"
+      ]
+    },
+    {
+      "name": "Form",
+      "group": "Forms",
+      "signature": "Form(name: string, buttons: Buttons, fields?: FormControl[])",
+      "description": "Form container with fields and explicit action buttons",
+      "purpose": "收集信息后统一提交",
+      "treatment": "默认 Card 任务面板；维护精确表单作用域、校验及字段值；宿主可显式取消表面；不把纯展示或单个跳转包装成 Form",
+      "examples": [
+        "specimen-controls",
+        "official-2",
+        "official-5",
+        "case-04"
+      ]
+    },
+    {
+      "name": "FormControl",
+      "group": "Forms",
+      "signature": "FormControl(label: string, input: Input | TextArea | Select | DatePicker | Slider | CheckBoxGroup | RadioGroup | Chips | OptionCards, hint?: string)",
+      "description": "Field with label, input component, and optional hint text",
+      "purpose": "单个字段单元",
+      "treatment": "将 label、input、hint 关联；自身不再套任务卡；错误与字段就近显示",
+      "examples": [
+        "specimen-controls",
+        "official-2",
+        "official-5",
+        "case-04"
+      ]
+    },
+    {
+      "name": "Label",
+      "group": "Forms",
+      "signature": "Label(text: string)",
+      "description": "Text label",
+      "purpose": "字段或短说明标签",
+      "treatment": "使用既有正文尺度；它本身不建立输入绑定或校验关系",
+      "examples": [
+        "specimen-icons"
+      ]
+    },
+    {
+      "name": "Input",
+      "group": "Forms",
+      "signature": "Input(name: string, placeholder?: string, type?: \"text\" | \"email\" | \"password\" | \"number\" | \"url\", rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<string>)",
+      "description": "",
+      "purpose": "单行输入",
+      "treatment": "原生文本输入、相应类型与校验；按字段状态绑定，避免源码更新覆盖用户输入",
+      "examples": [
+        "official-2"
+      ]
+    },
+    {
+      "name": "TextArea",
+      "group": "Forms",
+      "signature": "TextArea(name: string, placeholder?: string, rows?: number, rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<string>)",
+      "description": "",
+      "purpose": "多行输入",
+      "treatment": "保留多行编辑、选择和光标；内容可自然增长，字段身份不随重排重建",
+      "examples": [
+        "official-2"
+      ]
+    },
+    {
+      "name": "Select",
+      "group": "Forms",
+      "signature": "Select(name: string, items: SelectItem[], placeholder?: string, rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<string>, size?: \"small\" | \"medium\" | \"large\")",
+      "description": "",
+      "purpose": "下拉选择",
+      "treatment": "菜单／原生选择呈现；值由对应 SelectItem 提供；显示值与实际 value 对应",
+      "examples": [
+        "official-2"
+      ]
+    },
+    {
+      "name": "SelectItem",
+      "group": "Forms",
+      "signature": "SelectItem(value: string, label: string)",
+      "description": "Option for Select",
+      "purpose": "下拉选项记录",
+      "treatment": "由 Select 消费标签、值、禁用状态；不独立创建第二个控件",
+      "examples": [
+        "official-2"
+      ]
+    },
+    {
+      "name": "DatePicker",
+      "group": "Forms",
+      "signature": "DatePicker(name: string, mode?: \"single\" | \"range\", rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<any>)",
+      "description": "",
+      "purpose": "日期或范围",
+      "treatment": "原生日期呈现，遵循已注册契约和最近 locale；不把未到达日期补成一个业务结果",
+      "examples": [
+        "specimen-controls"
+      ]
+    },
+    {
+      "name": "Slider",
+      "group": "Forms",
+      "signature": "Slider(name: string, variant: \"continuous\" | \"discrete\", min: number, max: number, step?: number, defaultValue?: number[], label?: string, rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<number[]>)",
+      "description": "Numeric slider input; supports continuous and discrete (stepped) variants",
+      "purpose": "数值范围调整",
+      "treatment": "遵守 min／max／step，离散索引稳定、精度独立处理；支持原生替代选择方式，错误样式共享",
+      "examples": [
+        "specimen-controls"
+      ]
+    },
+    {
+      "name": "CheckBoxGroup",
+      "group": "Forms",
+      "signature": "CheckBoxGroup(name: string, items: CheckBoxItem[], rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<Record<string, boolean>>)",
+      "description": "",
+      "purpose": "多选或本地勾选",
+      "treatment": "单值变化写入共享字段状态；是否统一提交由外部任务决定，不必总有 Form",
+      "examples": [
+        "case-07"
+      ]
+    },
+    {
+      "name": "CheckBoxItem",
+      "group": "Forms",
+      "signature": "CheckBoxItem(label: string, description: string, name: string, defaultChecked?: boolean)",
+      "description": "",
+      "purpose": "多选项记录",
+      "treatment": "由 Group 读取 value、标签、描述及禁用状态",
+      "examples": [
+        "case-07"
+      ]
+    },
+    {
+      "name": "RadioGroup",
+      "group": "Forms",
+      "signature": "RadioGroup(name: string, items: RadioItem[], defaultValue?: string, rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, value?: $binding<string>)",
+      "description": "",
+      "purpose": "单选",
+      "treatment": "统一选择存储和禁用行为；控制是否可提交由表单校验处理",
+      "examples": [
+        "specimen-controls"
+      ]
+    },
+    {
+      "name": "RadioItem",
+      "group": "Forms",
+      "signature": "RadioItem(label: string, description: string, value: string)",
+      "description": "",
+      "purpose": "单选项记录",
+      "treatment": "由 RadioGroup 消费，不自行维护另一份选择",
+      "examples": [
+        "specimen-controls"
+      ]
+    },
+    {
+      "name": "SwitchGroup",
+      "group": "Forms",
+      "signature": "SwitchGroup(name: string, items: SwitchItem[], variant?: \"clear\" | \"card\" | \"sunk\", value?: $binding<Record<string, boolean>>)",
+      "description": "Group of switch toggles",
+      "purpose": "多个开关值",
+      "treatment": "使用原生开关表达开启／关闭，状态写回同一字段体系",
+      "examples": [
+        "specimen-controls"
+      ]
+    },
+    {
+      "name": "SwitchItem",
+      "group": "Forms",
+      "signature": "SwitchItem(label: string, description: string, name: string, defaultChecked?: boolean)",
+      "description": "Individual switch toggle",
+      "purpose": "开关记录",
+      "treatment": "提供值、标签及说明，由 Group 维护状态",
+      "examples": [
+        "specimen-controls"
+      ]
+    },
+    {
+      "name": "ChipItem",
+      "group": "Forms",
+      "signature": "ChipItem(value: string, label: string, icon?: Icon, disabled?: boolean)",
+      "description": "A single selectable chip inside a Chips group, with a value, label and optional icon.",
+      "purpose": "紧凑选项记录",
+      "treatment": "提供键、标签、图标及禁用信息，由 Chips 消费",
+      "examples": [
+        "official-5"
+      ]
+    },
+    {
+      "name": "Chips",
+      "group": "Forms",
+      "signature": "Chips(name: string, type?: \"single\" | \"multiple\", items?: ChipItem[], rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, defaultValue?: string | string[])",
+      "description": "A form field of compact selectable chips for choosing one or many short options; the selection is stored under `name`.",
+      "purpose": "紧凑选择",
+      "treatment": "支持契约内的单选／多选，自动换行；它是可操作控件，与静态 Tag 区分",
+      "examples": [
+        "official-5"
+      ]
+    },
+    {
+      "name": "OptionCard",
+      "group": "Forms",
+      "signature": "OptionCard(value: string, title: string, subtitle?: string, topContent?: Icon | Image, disabled?: boolean)",
+      "description": "A single selectable card inside an OptionCards group, with a value, title, optional subtitle and an optional Icon or Image on top.",
+      "purpose": "选择卡记录",
+      "treatment": "真实控件只挂载一份；呈现图片／图标、标题、说明和选中状态，按 value 更新选择",
+      "examples": [
+        "official-5",
+        "case-04"
+      ]
+    },
+    {
+      "name": "OptionCards",
+      "group": "Forms",
+      "signature": "OptionCards(name: string, type?: \"single\" | \"multiple\", items?: OptionCard[], rules?: {required?: boolean, email?: boolean, url?: boolean, numeric?: boolean, min?: number, max?: number, minLength?: number, maxLength?: number, pattern?: string}, defaultValue?: string | string[])",
+      "description": "A form field of selectable cards (title, optional subtitle, optional icon or image) laid out in a responsive grid for choosing one or many options; the selection is stored under `name`.",
+      "purpose": "带图／说明的选择",
+      "treatment": "列数由可用宽度与既有最小列宽确定；长文案只增加行高；更窄空间和辅助功能大字号可单列",
+      "examples": [
+        "official-5",
+        "case-04"
+      ]
+    },
+    {
+      "name": "Button",
+      "group": "Buttons",
+      "signature": "Button(label: string, action?: ActionExpression, variant?: \"primary\" | \"secondary\" | \"tertiary\", type?: \"normal\" | \"destructive\", size?: \"extra-small\" | \"small\" | \"medium\" | \"large\")",
+      "description": "Clickable button",
+      "purpose": "一个明确动作",
+      "treatment": "根据 label 和已确认外观显示；pending、performing、disabled 分开；小按钮不被同行的触控高度撑大",
+      "examples": [
+        "specimen-modal",
+        "specimen-controls",
+        "official-2",
+        "official-5",
+        "official-4",
+        "case-04",
+        "case-05",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "Buttons",
+      "group": "Buttons",
+      "signature": "Buttons(buttons: Button[], direction?: \"row\" | \"column\")",
+      "description": "Group of Button components. direction: \"row\" (default) | \"column\".",
+      "purpose": "一组动作",
+      "treatment": "row 自然宽度并逐项换行；column 铺满宽度；保持同一批控件身份，外层目标可同行对齐",
+      "examples": [
+        "specimen-modal",
+        "specimen-controls",
+        "official-2",
+        "official-5",
+        "case-04",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "IconButton",
+      "group": "Buttons",
+      "signature": "IconButton(name: string, icon: Icon, action?: ActionExpression, variant?: \"primary\" | \"secondary\" | \"tertiary\", size?: \"extra-small\" | \"small\" | \"medium\" | \"large\", shape?: \"square\" | \"circle\")",
+      "description": "Icon-only button. name is the accessible label and the action label; icon is an Icon; action fires on click.",
+      "purpose": "图标动作",
+      "treatment": "明确可访问名称、原生目标范围；方形／圆形遵循参数，不用图标猜测业务行为",
+      "examples": [
+        "specimen-icons"
+      ]
+    },
+    {
+      "name": "Stack",
+      "group": "Layout",
+      "signature": "Stack(children: any[], direction?: \"row\" | \"column\", gap?: \"none\" | \"xs\" | \"s\" | \"m\" | \"l\" | \"xl\" | \"2xl\", align?: \"start\" | \"center\" | \"end\" | \"stretch\" | \"baseline\", justify?: \"start\" | \"center\" | \"end\" | \"between\" | \"around\" | \"evenly\", wrap?: boolean)",
+      "description": "Flex container. direction: \"row\"|\"column\" (default \"column\"). gap: \"none\"|\"xs\"|\"s\"|\"m\"|\"l\"|\"xl\"|\"2xl\" (default \"m\"). align: \"start\"|\"center\"|\"end\"|\"stretch\"|\"baseline\". justify: \"start\"|\"center\"|\"end\"|\"between\"|\"around\"|\"evenly\".",
+      "purpose": "连续阅读、行列分组",
+      "treatment": "管 direction、gap、align、justify、wrap；保留普通内容宽度，不隐式等宽；等待布局参数时保留安全前缀",
+      "examples": [
+        "specimen-callout",
+        "specimen-chart-line",
+        "specimen-modal",
+        "specimen-chart-share",
+        "specimen-icons",
+        "official-1",
+        "official-0",
+        "official-3",
+        "official-2",
+        "official-5",
+        "official-4",
+        "case-04",
+        "case-05",
+        "case-01",
+        "case-03",
+        "case-02",
+        "case-07",
+        "case-06"
+      ]
+    },
+    {
+      "name": "Tabs",
+      "group": "Layout",
+      "signature": "Tabs(items: TabItem[])",
+      "description": "Tabbed container",
+      "purpose": "同一区域切换内容",
+      "treatment": "用户未操作时可跟随最后增长的面板；用户选择后尊重选择；宽标签横向阅读并提示溢出",
+      "examples": [
+        "official-3"
+      ]
+    },
+    {
+      "name": "TabItem",
+      "group": "Layout",
+      "signature": "TabItem(value: string, trigger: string, content: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock | Map | SVG)[])",
+      "description": "value is unique id, trigger is tab label, content is array of components",
+      "purpose": "页签记录",
+      "treatment": "value 是稳定身份，trigger 是标签，content 是内容；不按显示文案重新识别",
+      "examples": [
+        "official-3"
+      ]
+    },
+    {
+      "name": "Accordion",
+      "group": "Layout",
+      "signature": "Accordion(items: AccordionItem[])",
+      "description": "Collapsible sections",
+      "purpose": "辅助内容折叠",
+      "treatment": "原生折叠，当前实现维护一个展开项；分隔记录边界，长标签可换行",
+      "examples": [
+        "case-02",
+        "case-06"
+      ]
+    },
+    {
+      "name": "AccordionItem",
+      "group": "Layout",
+      "signature": "AccordionItem(value: string, trigger: string, content: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock | Map | SVG)[])",
+      "description": "value is unique id, trigger is section title",
+      "purpose": "折叠项记录",
+      "treatment": "提供稳定 value、标题和内容，由 Accordion 呈现",
+      "examples": [
+        "case-02",
+        "case-06"
+      ]
+    },
+    {
+      "name": "Steps",
+      "group": "Layout",
+      "signature": "Steps(items: StepsItem[])",
+      "description": "Step-by-step guide",
+      "purpose": "有顺序的步骤",
+      "treatment": "序号、标题、详情和连线形成顺序；标记随文字尺度增长，不裁切数字",
+      "examples": [
+        "specimen-steps"
+      ]
+    },
+    {
+      "name": "StepsItem",
+      "group": "Layout",
+      "signature": "StepsItem(title: string, details: string)",
+      "description": "title and details text for one step",
+      "purpose": "步骤记录",
+      "treatment": "由 Steps 消费；不能用它假装已经执行了业务步骤",
+      "examples": [
+        "specimen-steps"
+      ]
+    },
+    {
+      "name": "Carousel",
+      "group": "Layout",
+      "signature": "Carousel(children: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock)[][], variant?: \"card\" | \"sunk\")",
+      "description": "Horizontal scrollable carousel",
+      "purpose": "按页浏览多组内容",
+      "treatment": "外层数组是一组页面，内层数组是单页内容；不把页面数组拍平；遵守合法 children 类型，不能塞任意 Card／Stack",
+      "examples": [
+        "specimen-carousel"
+      ]
+    },
+    {
+      "name": "Separator",
+      "group": "Layout",
+      "signature": "Separator(orientation?: \"horizontal\" | \"vertical\", decorative?: boolean)",
+      "description": "Visual divider between content sections",
+      "purpose": "结构分隔",
+      "treatment": "复用边界色；横线不作为每个标题的装饰；交通连接线与章节分隔按用途区分",
+      "examples": [
+        "case-07"
+      ]
+    },
+    {
+      "name": "TagBlock",
+      "group": "Data Display",
+      "signature": "TagBlock(tags: string[], size?: \"sm\" | \"md\" | \"lg\")",
+      "description": "tags is an array of strings; optional size sm | md | lg",
+      "purpose": "多个短属性",
+      "treatment": "自动横向排列与换行；不重复标题和价格已有信息；不将完整前提或长段解释塞进标签",
+      "examples": [
+        "specimen-card",
+        "case-05",
+        "case-06"
+      ]
+    },
+    {
+      "name": "Tag",
+      "group": "Data Display",
+      "signature": "Tag(text: string, icon?: Icon, size?: \"sm\" | \"md\" | \"lg\", variant?: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\")",
+      "description": "Styled tag/badge with optional Icon and variant",
+      "purpose": "一个短属性／状态",
+      "treatment": "普通属性中性胶囊；状态色需有依据；照片上使用稳定对比覆盖层，缺图时保持可读",
+      "examples": [
+        "case-01"
+      ]
+    },
+    {
+      "name": "Icon",
+      "group": "Data Display",
+      "signature": "Icon(name: string, category?: string)",
+      "description": "A lucide icon by kebab-case name (e.g. 'circle-check'). Optional category picks a topical fallback when the name doesn't resolve.",
+      "purpose": "图形识别",
+      "treatment": "使用固定 Lucide 目录及分类映射；图形名称不自动决定成功／警告等业务颜色",
+      "examples": [
+        "specimen-icons",
+        "official-5",
+        "official-4",
+        "case-03"
+      ]
+    },
+    {
+      "name": "EntityList",
+      "group": "Data Display",
+      "signature": "EntityList(rows?: {left: string, right: string, rightVariant?: \"text\" | \"number\"}[], size?: \"small\" | \"default\", header?: {left: string, right: string, rightVariant?: \"text\" | \"number\"}, footer?: {left: string, right: string, rightVariant?: \"text\" | \"number\"})",
+      "description": "Two-column key/value rows (left label, right value). size 'default' supports optional header and footer rows; rightVariant 'number' uses tabular numbers.",
+      "purpose": "名称—值、条件—结果",
+      "treatment": "稳定左右等宽列，各自换行；名称辅助色、文字值中等强调、数值右对齐；记录间轻线，末行无线；不因长值整行改排",
+      "examples": [
+        "case-05",
+        "case-03"
+      ]
+    },
+    {
+      "name": "ListBlock",
+      "group": "Data Display",
+      "signature": "ListBlock(items: ListItem[], variant?: \"number\" | \"image\", size?: \"default\" | \"small\")",
+      "description": "A list of items with number or image indicators. Each item can optionally have an action. size small renders a compact list.",
+      "purpose": "多条列表内容",
+      "treatment": "父级组织 ListItem，密度和文字层级共享；不额外制造每项一张大卡",
+      "examples": [
+        "case-03"
+      ]
+    },
+    {
+      "name": "ListItem",
+      "group": "Data Display",
+      "signature": "ListItem(title: string, subtitle?: string, image?: {src: string, alt: string}, actionLabel?: string, action?: ActionExpression)",
+      "description": "Item in a ListBlock — displays a title with an optional subtitle and image. When action is provided, the item becomes clickable.",
+      "purpose": "单条列表内容",
+      "treatment": "展示标题、说明及合法操作；操作与对应条目绑定，不扩大为整页点击",
+      "examples": [
+        "case-03"
+      ]
+    },
+    {
+      "name": "Text",
+      "group": "Cards",
+      "signature": "Text(variant: \"text\" | \"number\", value: string, subtext?: string, subtextVariant?: \"text\" | \"number\" | \"metric\", size?: \"xs\" | \"sm\" | \"md\" | \"lg\")",
+      "description": "Plain text line with optional subtext. variant 'number' uses tabular number styling; subtextVariant 'metric' colors a leading +/- subtext green/red.",
+      "purpose": "短文字或数字",
+      "treatment": "按 size／variant 解析；value 与 subtext 分工；普通数字不随正文统一放大",
+      "examples": [
+        "case-05",
+        "case-07"
+      ]
+    },
+    {
+      "name": "BoldText",
+      "group": "Cards",
+      "signature": "BoldText(variant: \"text\" | \"number\", value: string, subtext?: string, subtextVariant?: \"text\" | \"number\" | \"metric\", size?: \"xs\" | \"sm\" | \"md\" | \"lg\")",
+      "description": "Emphasized (bold) text line with optional subtext. variant 'number' uses tabular number styling; subtextVariant 'metric' colors a leading +/- subtext green/red.",
+      "purpose": "重要文字或数值",
+      "treatment": "复用 Text 路径并强调字重；subtext 仍是辅助角色；不靠把整段正文加粗制造重点",
+      "examples": [
+        "official-4",
+        "case-04",
+        "case-05",
+        "case-01",
+        "case-03",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "IconText",
+      "group": "Cards",
+      "signature": "IconText(icon: Icon, iconVariant: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\" | \"inverted\" | \"filled\" | \"soft\", iconSize: \"xs\" | \"s\" | \"m\" | \"l\" | \"xl\" | \"sm\" | \"md\" | \"lg\", title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\")",
+      "description": "An icon badge with a title and optional subtitle, laid out horizontally or vertically. iconVariant sets the badge color.",
+      "purpose": "图标与文字",
+      "treatment": "图标与整组标题／说明垂直居中；普通样式中性、无彩色圆底；显式状态样式保留语义色",
+      "examples": [
+        "specimen-icons",
+        "official-4",
+        "case-03"
+      ]
+    },
+    {
+      "name": "ImageText",
+      "group": "Cards",
+      "signature": "ImageText(src: string, alt: string, title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\", imageSize?: number)",
+      "description": "A small square image (thumbnail/avatar) with a title and optional subtitle. src must be a real image URL.",
+      "purpose": "缩略图＋名称／说明",
+      "treatment": "横排图片与整组文字居中；无指定尺寸时按可用阅读空间调整缩略图，显式 imageSize 保持原意",
+      "examples": [
+        "case-07"
+      ]
+    },
+    {
+      "name": "ImageTextLarge",
+      "group": "Cards",
+      "signature": "ImageTextLarge(src: string, alt: string, title: string, subtitle?: string, bold?: boolean)",
+      "description": "A full-width banner image above a bold title and optional subtitle. src must be a real image URL.",
+      "purpose": "大图对象头",
+      "treatment": "大图承担外观观察，名称与说明走统一角色；卡内可与外层边界协调出图，不给每个业务做特殊图片比例",
+      "examples": [
+        "case-05"
+      ]
+    },
+    {
+      "name": "MetricIndicatorInline",
+      "group": "Cards",
+      "signature": "MetricIndicatorInline(value: string, subtext?: string, trend?: {direction: \"up\" | \"down\", value: number})",
+      "description": "Headline metric value with an optional +/- percentage trend and subtext, all on one line.",
+      "purpose": "行内指标与比较",
+      "treatment": "能并排时按基线组织，空间不足可将说明下排；数值本体保持完整",
+      "examples": [
+        "official-4",
+        "case-03"
+      ]
+    },
+    {
+      "name": "MetricIndicatorWithStrikethrough",
+      "group": "Cards",
+      "signature": "MetricIndicatorWithStrikethrough(value: string, subtext?: string, previousValue?: string, trend?: {direction: \"up\" | \"down\", value: number})",
+      "description": "Headline metric value with an optional struck-through previousValue, a +/- percentage trend, and subtext below.",
+      "purpose": "当前值、旧值与趋势",
+      "treatment": "当前值突出，旧值删除线，趋势与说明次级；不把涨跌天然解释成业务好坏",
+      "examples": [
+        "specimen-metric"
+      ]
+    },
+    {
+      "name": "SnippetCardItem",
+      "group": "Cards",
+      "signature": "SnippetCardItem(id: string, lhs: IconText | ImageText, rhs?: Text | BoldText)",
+      "description": "One row-style snippet card: a label on the left (IconText or ImageText) and an optional value on the right (Text or BoldText).",
+      "purpose": "紧凑对象摘要",
+      "treatment": "名称、图标或缩略图、简短说明形成低密度摘要；内容与操作属于同一对象",
+      "examples": [
+        "official-4",
+        "case-03"
+      ]
+    },
+    {
+      "name": "SnippetCardBlock",
+      "group": "Cards",
+      "signature": "SnippetCardBlock(items: SnippetCardItem[], layout?: \"grid\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
+      "description": "A responsive grid of compact label/value cards (2 per row) for showing several short facts side by side; optionally clickable with a shared action.",
+      "purpose": "摘要集合",
+      "treatment": "组织网格或横滑；复用集合几何与逐项就绪策略",
+      "examples": [
+        "official-4",
+        "case-03"
+      ]
+    },
+    {
+      "name": "OverviewCardItem",
+      "group": "Cards",
+      "signature": "OverviewCardItem(id: string, top: IconText | ImageText | Text, bottom?: MetricIndicatorInline)",
+      "description": "One overview card: a heading slot at the top (IconText, ImageText or Text) and an optional MetricIndicatorInline at the bottom.",
+      "purpose": "对象概览和关键值",
+      "treatment": "主要信息与底部指标分层；同一网格行的指标起点对齐，说明长短不把数值挤到不同高度",
+      "examples": [
+        "case-03"
+      ]
+    },
+    {
+      "name": "OverviewCardBlock",
+      "group": "Cards",
+      "signature": "OverviewCardBlock(items: OverviewCardItem[], layout?: \"grid\" | \"carousel\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
+      "description": "A grid or horizontal carousel of compact overview cards, each with a heading (icon/image/text) on top and an inline metric below; optionally clickable with a shared action.",
+      "purpose": "概览集合",
+      "treatment": "组织可比较条目；维持行内对齐与可用宽度，不依赖选中页决定集合高度",
+      "examples": [
+        "case-03"
+      ]
+    },
+    {
+      "name": "ContextCardItem",
+      "group": "Cards",
+      "signature": "ContextCardItem(id: string, title: string | Tag, body?: string, bgColor?: \"gray\", bgImageSrc?: string, bgImageAlt?: string)",
+      "description": "A single card inside a ContextCardBlock: a title (plain string or Tag), an optional markdown body, and an optional gray tint or background image.",
+      "purpose": "背景或情境说明",
+      "treatment": "可有背景图；文字与图片覆盖层保持对比，缺图时转为中性可读内容",
+      "examples": [
+        "case-01"
+      ]
+    },
+    {
+      "name": "ContextCardBlock",
+      "group": "Cards",
+      "signature": "ContextCardBlock(items: ContextCardItem[], layout?: \"grid\" | \"carousel\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
+      "description": "A grid or carousel of compact tinted context cards (title or tag plus a short bold body); an optional action makes every card clickable.",
+      "purpose": "情境集合",
+      "treatment": "按布局参数呈现；不将整组图片下载完成作为文字展示门槛",
+      "examples": [
+        "case-01"
+      ]
+    },
+    {
+      "name": "CompositeCardItem",
+      "group": "Cards",
+      "signature": "CompositeCardItem(id?: string, header?: IconText | ImageText | ImageTextLarge | Text | Image, body?: (Text | BoldText | MetricIndicatorInline | IconText | Image | AreaChart | BarChart | LineChart | ListBlock | TagBlock | EntityList)[], footer?: {price?: BoldText | MetricIndicatorWithStrikethrough, button?: Button})",
+      "description": "A single card inside a CompositeCardBlock: an optional header (icon/image/text), a stack of body elements (text, metrics, charts, lists, tags), and an optional price/button footer.",
+      "purpose": "商品、酒店、票务等完整对象",
+      "treatment": "头部识别对象，body 放短介绍／属性，footer 价格和对应入口；底部空间变化保留同一操作实例",
+      "examples": [
+        "official-4",
+        "case-05",
+        "case-07"
+      ]
+    },
+    {
+      "name": "CompositeCardBlock",
+      "group": "Cards",
+      "signature": "CompositeCardBlock(items: CompositeCardItem[], layout?: \"grid\" | \"carousel\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
+      "description": "A two-per-row grid or carousel of rich cards, each with an optional header, stacked body content (text, metrics, charts, lists, tags) and a price/button footer; an optional action makes every card clickable.",
+      "purpose": "完整对象集合",
+      "treatment": "支持网格／横滑；已知集合数稳定先到条目的宽度，单卡可先于整组出现",
+      "examples": [
+        "official-4",
+        "case-05",
+        "case-07"
+      ]
+    },
+    {
+      "name": "VisualCardItem",
+      "group": "Cards",
+      "signature": "VisualCardItem(body: BoldText, id?: string, bgImageSrc?: string, tag?: Tag, bgImageAlt?: string)",
+      "description": "A single photo-first card inside a VisualCardBlock: a BoldText body panel, an optional Tag, and a background image (bgImageSrc must be a real URL; bgImageAlt is its alt text).",
+      "purpose": "图片主导的视觉入口",
+      "treatment": "标题、短描述和 Tag 叠图；渐变与深色半透明胶囊保证可读；缺图不变成黑色大块",
+      "examples": [
+        "case-04",
+        "case-01"
+      ]
+    },
+    {
+      "name": "VisualCardBlock",
+      "group": "Cards",
+      "signature": "VisualCardBlock(items: VisualCardItem[], layout?: \"grid\" | \"carousel\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
+      "description": "A grid or carousel of photo-first cards: a full-bleed background image with a tag on top and a bold text panel at the bottom; an optional action makes every card clickable.",
+      "purpose": "视觉入口集合",
+      "treatment": "图形结构与图片下载分开；先到内容可逐项呈现，横滑支持直接手势浏览",
+      "examples": [
+        "case-04",
+        "case-01"
+      ]
+    },
+    {
+      "name": "Modal",
+      "group": "Layout",
+      "signature": "Modal(title: string, open: $binding<boolean>, children: (TextContent | MarkDownRenderer | CardHeader | Callout | TextCallout | CodeBlock | Image | ImageBlock | ImageGallery | Separator | HorizontalBarChart | RadarChart | PieChart | RadialChart | SingleStackedBarChart | ScatterChart | AreaChart | BarChart | LineChart | Table | TagBlock | Form | Buttons | IconButton | Steps | InlineHeader | EntityList | EditableTable | SnippetCardBlock | OverviewCardBlock | ContextCardBlock | CompositeCardBlock | VisualCardBlock)[], size?: \"sm\" | \"md\" | \"lg\")",
+      "description": "Modal dialog. open is a reactive $boolean binding — set to true to open, X/Escape/backdrop auto-closes. Put Form with buttons inside children.",
+      "purpose": "独立临时面板",
+      "treatment": "原生 sheet，open 可绑定共享状态，关闭写回当前呈现；内容与尺寸按面板空间组织",
+      "examples": [
+        "specimen-modal"
+      ]
+    },
+    {
+      "name": "FollowUpBlock",
+      "group": "Content",
+      "signature": "FollowUpBlock(items: FollowUpItem[])",
+      "description": "List of clickable follow-up suggestions placed at the end of a response",
+      "purpose": "一组继续提问",
+      "treatment": "作为回复末尾的后续入口组织；保持可读与可点击范围，不当作正文标签",
+      "examples": [
+        "official-6",
+        "case-01",
+        "case-03",
+        "case-06"
+      ]
+    },
+    {
+      "name": "FollowUpItem",
+      "group": "Content",
+      "signature": "FollowUpItem(text: string)",
+      "description": "Clickable follow-up suggestion — when clicked, sends text as user message",
+      "purpose": "一条后续提问",
+      "treatment": "点击产生继续对话事件；宿主决定如何进入实际 Agent 链路",
+      "examples": [
+        "official-6",
+        "case-01",
+        "case-03",
+        "case-06"
+      ]
+    },
+    {
+      "name": "Map",
+      "group": "Map & SVG",
+      "signature": "Map(points: (MapPoint)[], crs?: \"wgs84\" | \"gcj02\")",
+      "description": "Use when spatial relationships help the user understand content, compare locations, or plan a route. Place data and coordinates must come from reliable sources.",
+      "purpose": "地点位置、标记和关联对象浏览",
+      "treatment": "SDK 使用 MapKit，支持标记、地点卡联动与全屏；地图要求 iOS 17／macOS 14，旧系统明确提示；地点图不等于已取得导航路线或实时交通",
+      "examples": [
+        "specimen-map",
+        "case-01",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "MapPoint",
+      "group": "Map & SVG",
+      "signature": "MapPoint(title: string, lat: number, lng: number, imageSrc?: string, url?: string, description?: string)",
+      "description": "A geographically locatable place. A name, latitude, and longitude are required.",
+      "purpose": "地点记录",
+      "treatment": "提供名称、坐标、图片及说明，由 Map 消费；坐标系必须匹配",
+      "examples": [
+        "specimen-map",
+        "case-01",
+        "case-02",
+        "case-07"
+      ]
+    },
+    {
+      "name": "SVG",
+      "group": "Map & SVG",
+      "signature": "SVG(content?: string, src?: string, alt?: string, height?: number)",
+      "description": "Use to explain shapes, structures, mechanisms, or relationships when a diagram makes them easier to understand. Keep the key idea clear and labels readable at the available width. Supply either inline SVG content or an HTTPS src, not both, with a valid viewBox. Size is derived automatically from viewBox; omit height.",
+      "purpose": "原理图、结构图",
+      "treatment": "SDK 在隔离 WKWebView 中渲染；inline content 与 HTTPS src 二选一，必须有正数 viewBox；禁用脚本、外部引用与交互导航，内容上限 1MB",
+      "examples": [
+        "specimen-svg",
+        "case-03",
+        "case-06"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "id": "specimen-card",
+      "name": "对象边界与短说明",
+      "source": "root=Card([CardHeader(\"住在步行方便的地方\",\"离主要目的地较近\"),TextContent(\"名称识别对象，短介绍提供判断依据。\",\"small\"),TagBlock([\"步行友好\",\"位置\"])])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-callout",
+      "name": "说明与状态",
+      "source": "root=Stack([Callout(\"neutral\",\"补充说明\",\"用于交代背景、口径与假设。\"),TextCallout(\"info\",\"相关信息\",\"静态说明不执行自动消退。\")])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-chart-line",
+      "name": "趋势与比较",
+      "source": "root=Stack([LineChart([\"一\",\"二\",\"三\"],[Series(\"数量\",[12,18,15])]),AreaChart([\"一\",\"二\",\"三\"],[Series(\"数量\",[12,18,15])])])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-chart-horizontal",
+      "name": "长分类与数量",
+      "source": "root=HorizontalBarChart([\"公共交通\",\"步行空间\",\"绿化环境\"],[Series(\"评分\",[7,9,8])])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-chart-radar",
+      "name": "多维轮廓",
+      "source": "root=RadarChart([\"交通\",\"步行\",\"环境\",\"服务\"],[Series(\"评价\",[7,9,8,6])])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-chart-share",
+      "name": "部分与整体",
+      "source": "root=Stack([PieChart([\"甲\",\"乙\",\"丙\"],[20,30,50],\"donut\"),RadialChart([\"甲\",\"乙\"],[40,60]),SingleStackedBarChart([\"甲\",\"乙\",\"丙\"],[20,30,50])])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-chart-scatter",
+      "name": "二维分布",
+      "source": "root=ScatterChart([ScatterSeries(\"观测\",[Point(1,2),Point(2,4),Point(3,3),Point(4,6)])],\"X\",\"Y\")",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-controls",
+      "name": "字段与原生选择",
+      "source": "root=Form(\"preferences\",Buttons([Button(\"提交选择\",@ToAssistant(\"根据当前选择继续\"))]),[FormControl(\"日期\",DatePicker(\"date\")),FormControl(\"阅读时长\",Slider(\"duration\",\"continuous\",0,60,5,[30],\"分钟\")),FormControl(\"内容形式\",RadioGroup(\"format\",[RadioItem(\"简洁\",\"只呈现核心信息\",\"short\"),RadioItem(\"详细\",\"保留完整解释\",\"full\")],\"short\")),FormControl(\"显示选项\",SwitchGroup(\"display\",[SwitchItem(\"显示图注\",\"补充来源信息\",\"captions\",true)]))])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-icons",
+      "name": "图标与图标操作",
+      "source": "root=Stack([Label(\"普通图标不自动带状态色\"),IconText(Icon(\"message-circle\"),\"neutral\",\"m\",\"空白聊天页\",\"输入入口是主角\",true),IconButton(\"继续\",Icon(\"arrow-right\"),@ToAssistant(\"继续\"),\"secondary\",\"small\",\"circle\")])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-steps",
+      "name": "有序的过程",
+      "source": "root=Steps([StepsItem(\"确定结构\",\"由容器分配空间。\"),StepsItem(\"接收内容\",\"保留已呈现的前缀。\"),StepsItem(\"开放交互\",\"就绪后处理用户动作。\")])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-carousel",
+      "name": "页面与横向浏览",
+      "source": "root=Carousel([[CardHeader(\"第一组\",\"页面数组保留分组\"),TextContent(\"这一页的内容。\")],[CardHeader(\"第二组\",\"滑动查看下一页\"),TextContent(\"另一页的内容。\")]],\"sunk\")",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-metric",
+      "name": "当前值与比较基准",
+      "source": "root=Card([MetricIndicatorWithStrikethrough(\"128\",\"当前值\",\"150\",{direction:\"down\",value:14.7})])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-modal",
+      "name": "独立的临时面板",
+      "source": "$open=false\nroot=Stack([Buttons([Button(\"打开说明\",@Set($open,true))]),Modal(\"说明\",$open,[TextContent(\"关闭面板会写回 open 状态。\")],\"sm\")])",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-image",
+      "name": "独立图片与媒体说明",
+      "source": "root=ImageBlock(\"https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg\",\"苏堤沿湖步道实景\")",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-map",
+      "name": "地点与地图",
+      "source": "root=Map([MapPoint(\"苏堤\",30.242637,120.134544,null,null,\"西湖西侧长堤\"),MapPoint(\"德寿宫\",30.2412,120.16862,null,null,\"宫苑遗址博物馆\")],\"wgs84\")",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "specimen-svg",
+      "name": "由 viewBox 确定图解比例",
+      "source": "root=SVG(\"<svg viewBox='0 0 320 100' xmlns='http://www.w3.org/2000/svg'><rect x='10' y='20' width='100' height='60' rx='10' fill='none' stroke='currentColor'/><path d='M125 50h70m-8-6 8 6-8 6' fill='none' stroke='currentColor'/><rect x='210' y='20' width='100' height='60' rx='10' fill='none' stroke='currentColor'/></svg>\",null,\"两个对象之间的关系\")",
+      "origin": "组件能力标本"
+    },
+    {
+      "id": "official-0",
+      "name": "Example 1 — Table (column-oriented)",
+      "source": "root = Stack([title, tbl])\ntitle = TextContent(\"Top Languages\", \"large-heavy\")\ntbl = Table([Col(\"Language\", langs), Col(\"Users (M)\", users), Col(\"Year\", years)])\nlangs = [\"Python\", \"JavaScript\", \"Java\", \"TypeScript\", \"Go\"]\nusers = [15.7, 14.2, 12.1, 8.5, 5.2]\nyears = [1991, 1995, 1995, 2012, 2009]",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "official-1",
+      "name": "Example 2 — Bar chart",
+      "source": "root = Stack([title, chart])\ntitle = TextContent(\"Q4 Revenue\", \"large-heavy\")\nchart = BarChart(labels, [s1, s2], \"grouped\")\nlabels = [\"Oct\", \"Nov\", \"Dec\"]\ns1 = Series(\"Product A\", [120, 150, 180])\ns2 = Series(\"Product B\", [90, 110, 140])",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "official-2",
+      "name": "Example 3 — Form with validation",
+      "source": "root = Stack([title, form])\ntitle = TextContent(\"Contact Us\", \"large-heavy\")\nform = Form(\"contact\", btns, [nameField, emailField, countryField, msgField])\nnameField = FormControl(\"Name\", Input(\"name\", \"Your name\", \"text\", { required: true, minLength: 2 }))\nemailField = FormControl(\"Email\", Input(\"email\", \"you@example.com\", \"email\", { required: true, email: true }))\ncountryField = FormControl(\"Country\", Select(\"country\", countryOpts, \"Select...\", { required: true }))\nmsgField = FormControl(\"Message\", TextArea(\"message\", \"Tell us more...\", 4, { required: true, minLength: 10 }))\ncountryOpts = [SelectItem(\"us\", \"United States\"), SelectItem(\"uk\", \"United Kingdom\"), SelectItem(\"de\", \"Germany\")]\nbtns = Buttons([Button(\"Submit\", @ToAssistant(\"Submit\"), \"primary\"), Button(\"Cancel\", @ToAssistant(\"Cancel\"), \"secondary\")])",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "official-3",
+      "name": "Example 4 — Tabs with mixed content",
+      "source": "root = Stack([title, tabs])\ntitle = TextContent(\"React vs Vue\", \"large-heavy\")\ntabs = Tabs([tabReact, tabVue])\ntabReact = TabItem(\"react\", \"React\", reactContent)\ntabVue = TabItem(\"vue\", \"Vue\", vueContent)\nreactContent = [TextContent(\"React is a library by Meta for building UIs.\"), Callout(\"info\", \"Note\", \"React uses JSX syntax.\")]\nvueContent = [TextContent(\"Vue is a progressive framework by Evan You.\"), Callout(\"success\", \"Tip\", \"Vue has a gentle learning curve.\")]",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "official-4",
+      "name": "Example 5 — KPI and product cards",
+      "source": "root = Stack([kpiHeader, kpiBlock, productsHeader, productCards])\nkpiHeader = InlineHeader(\"This Month\", \"Key account metrics\")\nkpiBlock = SnippetCardBlock([kpi1, kpi2, kpi3])\nkpi1 = SnippetCardItem(\"revenue\", kpi1lhs, kpi1rhs)\nkpi1lhs = IconText(kpi1icon, \"neutral\", \"m\", \"Revenue\", \"Month to date\", false, \"horizontal\")\nkpi1icon = Icon(\"circle-dollar-sign\", \"finance\")\nkpi1rhs = BoldText(\"number\", \"$48,200\", \"+8.1%\", \"metric\")\nkpi2 = SnippetCardItem(\"active-users\", kpi2lhs, kpi2rhs)\nkpi2lhs = IconText(kpi2icon, \"neutral\", \"m\", \"Active Users\", \"This month\", false, \"horizontal\")\nkpi2icon = Icon(\"users\", \"people\")\nkpi2rhs = BoldText(\"number\", \"1,204\", \"+3.4%\", \"metric\")\nkpi3 = SnippetCardItem(\"churn\", kpi3lhs, kpi3rhs)\nkpi3lhs = IconText(kpi3icon, \"neutral\", \"m\", \"Churn\", \"This month\", false, \"horizontal\")\nkpi3icon = Icon(\"user-minus\", \"people\")\nkpi3rhs = BoldText(\"number\", \"1.8%\", \"-0.3%\", \"metric\")\nproductsHeader = InlineHeader(\"Top Products\", \"By units sold\")\nproductCards = CompositeCardBlock([p1, p2])\np1 = CompositeCardItem(\"widget-pro\", p1header, [p1body], p1footer)\np1header = IconText(p1icon, \"neutral\", \"m\", \"Widget Pro\", \"Best seller\", true, \"horizontal\")\np1icon = Icon(\"package\", \"shopping\")\np1body = MetricIndicatorInline(\"2,410 units\", \"Sold this month\", { direction: \"up\", value: 12 })\np1footer = { price: BoldText(\"text\", \"$29.00\"), button: p1btn }\np1btn = Button(\"View Details\", @ToAssistant(\"Show details for Widget Pro\"), \"secondary\")\np2 = CompositeCardItem(\"widget-mini\", p2header, [p2body], p2footer)\np2header = IconText(p2icon, \"neutral\", \"m\", \"Widget Mini\", \"New arrival\", true, \"horizontal\")\np2icon = Icon(\"box\", \"shopping\")\np2body = MetricIndicatorInline(\"980 units\", \"Sold this month\", { direction: \"up\", value: 4 })\np2footer = { price: BoldText(\"text\", \"$14.00\"), button: p2btn }\np2btn = Button(\"View Details\", @ToAssistant(\"Show details for Widget Mini\"), \"secondary\")",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "official-5",
+      "name": "Example 6 — Editable table and a selection form",
+      "source": "root = Stack([tableHeader, editTable, formHeader, prefsForm])\ntableHeader = InlineHeader(\"Team Roster\", \"Click a cell to edit\")\neditTable = EditableTable(\"roster\", [colName, colRole, colStart], [row1, row2])\ncolName = { type: \"text\", key: \"name\", header: \"Name\" }\ncolRole = { type: \"select\", key: \"role\", header: \"Role\", options: [roleEng, roleDesign] }\nroleEng = { value: \"eng\", label: \"Engineering\" }\nroleDesign = { value: \"design\", label: \"Design\" }\ncolStart = { type: \"date-single\", key: \"start\", header: \"Start Date\" }\nrow1 = { id: \"1\", values: [\"Alex Kim\", \"eng\", \"2024-01-15\"] }\nrow2 = { id: \"2\", values: [\"Jamie Lee\", \"design\", \"2024-03-02\"] }\nformHeader = InlineHeader(\"Preferences\", \"Tell us how you like to work\")\nprefsForm = Form(\"prefs\", formButtons, [fc1, fc2])\nfc1 = FormControl(\"Working Style\", styleCards, \"Pick the one that fits best\")\nstyleCards = OptionCards(\"style\", \"single\", [style1, style2])\nstyle1 = OptionCard(\"focused\", \"Deep Focus\", \"Long uninterrupted blocks\", style1icon)\nstyle1icon = Icon(\"target\", \"tools\")\nstyle2 = OptionCard(\"collab\", \"Collaborative\", \"Frequent pairing and syncs\", style2icon)\nstyle2icon = Icon(\"users\", \"people\")\nfc2 = FormControl(\"Tools\", toolChips, \"Select all that apply\")\ntoolChips = Chips(\"tools\", \"multiple\", [tool1, tool2, tool3])\ntool1 = ChipItem(\"figma\", \"Figma\", tool1icon)\ntool1icon = Icon(\"figma\", \"design\")\ntool2 = ChipItem(\"slack\", \"Slack\", tool2icon)\ntool2icon = Icon(\"message-square\", \"communication\")\ntool3 = ChipItem(\"notion\", \"Notion\", tool3icon)\ntool3icon = Icon(\"notebook\", \"text\")\nformButtons = Buttons([Button(\"Save\", @ToAssistant(\"Save preferences\"), \"primary\")])",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "official-6",
+      "name": "Example 5 — Table with follow-ups",
+      "source": "root = Card([title, tbl, followUps])\ntitle = TextContent(\"Top Languages\", \"large-heavy\")\ntbl = Table([Col(\"Language\", langs), Col(\"Users (M)\", users), Col(\"Year\", years)])\nlangs = [\"Python\", \"JavaScript\", \"Java\"]\nusers = [15.7, 14.2, 12.1]\nyears = [1991, 1995, 1995]\nfollowUps = FollowUpBlock([fu1, fu2])\nfu1 = FollowUpItem(\"Tell me more about Python\")\nfu2 = FollowUpItem(\"Show me a JavaScript comparison\")",
+      "origin": "固定上游范例"
+    },
+    {
+      "id": "case-01",
+      "name": "Case 01 · explore-scene-discovery",
+      "source": "root = Stack([cover, moods, choosing, places, closing, followUps], \"column\", \"xl\")\ncover = Stack([edition, headline, heroImage, opening], \"column\", \"s\")\nedition = TextContent(\"HANGZHOU · WEEKEND NOTES\", \"small\")\nheadline = MarkDownRenderer(\"# 杭州周末，换一种心情\")\nheroImage = Image(\"杭州西湖远景实拍，湖面、岛屿与远处群山\", \"https://upload.wikimedia.org/wikipedia/commons/e/ee/Aerial_panorama_of_West_Lake_and_its_surrounding_mountains._December_2023.jpg\")\nopening = TextContent(\"想在杭州出去走走，不一定要排满景点。先从四种截然不同的氛围里挑一个：湖边的松弛、山涧的绿意、老街的烟火，或宋韵建筑的细节。\")\nmoods = Stack([moodsTitle, moodCards, moodCaption], \"column\", \"s\")\nmoodsTitle = MarkDownRenderer(\"## 四种周末，各有自己的节奏\")\nmoodCards = VisualCardBlock([moodCards_part1, moodCards_part2, moodCards_part3, moodCards_part4], \"carousel\", true)\nmoodCards_part1 = VisualCardItem(BoldText(\"text\", \"湖边漫步\", \"沿湖步道与柳树，走一段喜欢的风景。\"), \"lake\", \"https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg\", Tag(\"苏堤\", null, \"sm\", \"neutral\"), \"西湖苏堤沿湖步道与柳树实景\")\nmoodCards_part2 = VisualCardItem(BoldText(\"text\", \"山涧寻绿\", \"林荫、溪流与石阶，留出步行的时间。\"), \"creek\", \"https://www.pelago.com/img/products/CN-China/half-day-hangzhou-nine-creeks-hiking-tour-with-tea-plantation-experience/862ecdad-1461-41c7-9853-78bc7f397cb4_half-day-hangzhou-nine-creeks-hiking-tour-with-tea-plantation-experience-xlarge.webp\", Tag(\"九溪烟树\", null, \"sm\", \"neutral\"), \"杭州九溪烟树林荫溪流与石阶实景\")\nmoodCards_part3 = VisualCardItem(BoldText(\"text\", \"老城烟火\", \"石板路与沿街店铺，慢慢逛老街。\"), \"street\", \"https://photo.tuchong.com/1341903/f/268355055.jpg\", Tag(\"南宋御街\", null, \"sm\", \"neutral\"), \"杭州南宋御街石板路、沿街店铺与行人实景\")\nmoodCards_part4 = VisualCardItem(BoldText(\"text\", \"宋韵建筑\", \"从红墙与建筑，看见宫苑遗址的层次。\"), \"palace\", \"https://p9.itc.cn/q_70/images03/20221030/ec6c914e9d9e483bb46ef2e1359a2d8b.jpeg\", Tag(\"德寿宫\", null, \"sm\", \"neutral\"), \"杭州德寿宫红墙古树与游客实景\")\nmoodCaption = TextContent(\"上面的照片来自不同日期的公开实景，仅用于辨认环境与氛围；不代表当前天气、人流或开放状态。\", \"small\")\nchoosing = Stack([choosingTitle, choices], \"column\", \"s\")\nchoosingTitle = MarkDownRenderer(\"## 按自己的状态选，不用四处都去\")\nchoices = ContextCardBlock([choices_part1, choices_part2], \"grid\", true)\nchoices_part1 = ContextCardItem(\"easy\", \"轻松走走，不想安排太满\", \"苏堤可以只走喜欢的一段；南宋御街适合边逛边吃，时间安排更灵活。\", \"gray\")\nchoices_part2 = ContextCardItem(\"deep\", \"愿意留出半天，认真体验\", \"九溪需要为步行留出余量；德寿宫则值得分别看地上建筑与地下遗址。\", \"gray\")\nplaces = Stack([mapTitle, sceneMap, mapCaption], \"column\", \"s\")\nmapTitle = MarkDownRenderer(\"## 四个地点，大致在哪儿？\")\nsceneMap = Map([sudiPoint, jiuxiPoint, streetPoint, deshouPoint], \"wgs84\")\nsudiPoint = MapPoint(\"苏堤 · 湖边漫步\", 30.242637, 120.134544, \"https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg\", null, \"西湖西侧长堤，可任选一段步行\")\njiuxiPoint = MapPoint(\"九溪烟树 · 山涧寻绿\", 30.204675, 120.108564, \"https://www.pelago.com/img/products/CN-China/half-day-hangzhou-nine-creeks-hiking-tour-with-tea-plantation-experience/862ecdad-1461-41c7-9853-78bc7f397cb4_half-day-hangzhou-nine-creeks-hiking-tour-with-tea-plantation-experience-xlarge.webp\", null, \"西湖西南侧山谷，林荫与溪流步道\")\nstreetPoint = MapPoint(\"南宋御街 · 老城烟火\", 30.244830, 120.166119, \"https://photo.tuchong.com/1341903/f/268355055.jpg\", null, \"上城区历史风貌商业街，适合闲逛\")\ndeshouPoint = MapPoint(\"德寿宫 · 宋韵建筑\", 30.241200, 120.168620, \"https://p9.itc.cn/q_70/images03/20221030/ec6c914e9d9e483bb46ef2e1359a2d8b.jpeg\", null, \"上城区宫苑遗址博物馆，红墙与地下遗址\")\nmapCaption = TextContent(\"御街和德寿宫都在上城区一带；苏堤靠西湖，九溪更偏西南。地图是位置对照，不是建议一次走完四处的路线。\", \"small\")\nclosing = Stack([closeTitle, closeText], \"column\", \"s\")\ncloseTitle = MarkDownRenderer(\"## 先选一种喜欢的感觉\")\ncloseText = TextContent(\"第一次来，想随意走走，可以从苏堤或南宋御街开始；若更喜欢山间自然，选九溪；偏爱历史建筑，就把时间留给德寿宫。选定方向后，再细化到出入口、交通与半日节奏。\")\nfollowUps = FollowUpBlock([FollowUpItem(\"帮我把西湖散步安排成轻松的半日行程\"), FollowUpItem(\"我更喜欢宋韵建筑，帮我细化德寿宫周边的半日安排\")])\n",
+      "origin": "SDK 标准用例"
+    },
+    {
+      "id": "case-02",
+      "name": "Case 02 · explore-visual-preview-ticket-booking",
+      "source": "root = Stack([hero, intro, dayOne, dayTwo, mapSection, ticketSection, comparison, conclusion], \"column\", \"xl\")\nhero = Stack([hero_part1, hero_part2, heroImage, heroCaption], \"column\", \"s\")\nhero_part1 = TextContent(\"HANGZHOU · A VISUAL JOURNEY\", \"small\")\nhero_part2 = MarkDownRenderer(\"# 杭州两日 · 实景预览\")\nheroImage = Image(\"德寿宫宫墙，古树和游客沿红墙散步\", \"https://p9.itc.cn/q_70/images03/20221030/ec6c914e9d9e483bb46ef2e1359a2d8b.jpeg\")\nheroCaption = TextContent(\"德寿宫红墙实拍 · 古树、宫墙与行人，是杭州很有辨识度的宋韵画面。\", \"small\")\nintro = Stack([intro_part1, intro_part2, intro_part3], \"column\", \"s\")\nintro_part1 = TextContent(\"两天，两种杭州。\", \"large-heavy\")\nintro_part2 = TextContent(\"喜欢南宋历史与文人文化，可以先从这两组景点认识这座城：第一天看宫苑、官窑和老城，第二天沿西湖寻找文人遗迹。\")\nintro_part3 = TextContent(\"照片来自不同时期的公开实景，供了解外观和空间氛围；不代表实时天气、人流或开放状态。\", \"small\")\ndayOne = Stack([dayOneTitle, kiln, deshou, siteCard], \"column\", \"l\")\ndayOneTitle = Stack([dayOneTitle_part1, dayOneTitle_part2], \"column\", \"xs\")\ndayOneTitle_part1 = MarkDownRenderer(\"## Day 01｜南宋临安\")\ndayOneTitle_part2 = TextContent(\"官窑博物馆 → 德寿宫 → 南宋遗址陈列馆\", \"small\")\nkiln = Stack([kiln_part1, kiln_part2, kiln_part3, kiln_part4], \"column\", \"s\")\nkiln_part1 = Image(\"南宋官窑博物馆室内龙窑遗址全景\", \"https://www.hangchow.org/data/upload/ueditor/20230106/63b787c317c37.jpg\")\nkiln_part2 = CardHeader(\"01 · 杭州南宋官窑博物馆\", \"古窑址 · 青瓷 · 安静的庭院\")\nkiln_part3 = TextContent(\"这里主要看保护在室内的古窑址。长条形的土质结构，就是当年烧造瓷器的龙窑遗迹。\")\nkiln_part4 = MarkDownRenderer(\"**现场感受：** 安静、朴素，有很强的考古感，更像走进宋代工匠工作过的地方。\")\ndeshou = Stack([deshou_part1, deshou_part2, deshou_part3, deshouGallery, deshouFeeling], \"column\", \"s\")\ndeshou_part1 = Image(\"德寿宫重华宫仿宋建筑正面实拍\", \"https://imagecloud.thepaper.cn/thepaper/image/225/370/576.jpg\")\ndeshou_part2 = CardHeader(\"02 · 南宋德寿宫遗址博物馆\", \"皇家宫苑 · 红墙 · 地下遗址\")\ndeshou_part3 = TextContent(\"地面是依历史资料营造的宋韵建筑群，真正的南宋遗址保留在地下。\")\ndeshouGallery = ImageGallery([deshouGallery_image1, deshouGallery_image2])\ndeshouGallery_image1 = {\"src\":\"https://hznews.hangzhou.com.cn/chengshi/content/2022-11/18/8ef4e822-a19e-4ed4-bc72-1ea847fb06bf_zsize.png\",\"alt\":\"德寿宫室外红墙和院落实景\",\"details\":\"室外 · 红墙\"}\ndeshouGallery_image2 = {\"src\":\"https://dimg04.c-ctrip.com/images/1mh0t12000al0nz2w4226_W_640_10000.jpg?proc=autoorient\",\"alt\":\"德寿宫地下遗址展厅与保护展示空间\",\"details\":\"室内 · 遗址展区\"}\ndeshouFeeling = MarkDownRenderer(\"**现场感受：** 地上开阔、庄重；地下光线较暗，像走进一座沉浸式考古博物馆。\")\nsiteCard = Stack([siteCard_part1, siteCard_part2, siteCard_part3], \"column\", \"s\")\nsiteCard_part1 = Image(\"南宋遗址陈列馆入口建筑实拍\", \"https://z.hangzhou.com.cn/2022/syjy/images/2022-12/09/d809c897-a59f-46fb-8f43-1797ddec8e68.jpg\")\nsiteCard_part2 = CardHeader(\"03 · 南宋遗址陈列馆\", \"小型考古展馆\")\nsiteCard_part3 = TextContent(\"入口低调，主要看馆内的南宋街道遗迹。\")\ndayTwo = Stack([dayTwoTitle, sudi, dayTwoPair, dongpoExtra], \"column\", \"l\")\ndayTwoTitle = Stack([dayTwoTitle_part2, dayTwoTitle_part3], \"column\", \"xs\")\ndayTwoTitle_part2 = MarkDownRenderer(\"## Day 02｜西湖文脉\")\ndayTwoTitle_part3 = TextContent(\"苏堤 → 岳王庙 → 孤山与林逋遗迹\", \"small\")\nsudi = Stack([sudi_part1, sudi_part2, sudi_part3, sudi_part4], \"column\", \"s\")\nsudi_part1 = Image(\"西湖苏堤石桥、柳树和湖面实景\", \"https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg\")\nsudi_part2 = CardHeader(\"01 · 苏堤｜在湖心走一段路\")\nsudi_part3 = TextContent(\"柳树、湖面与沿堤的石桥。这里的美不在某一个建筑，而在连续的行走体验。\")\nsudi_part4 = TextContent(\"现场氛围｜开阔、松弛；苏堤全长接近 3 公里。\", \"small\")\ndayTwoPair = Stack([yueCard, gushanCard], \"row\", \"m\", \"start\", \"start\", true)\nyueCard = Card([yueCard_part1, yueCard_part2, yueCard_part3], \"clear\", \"column\", \"xs\")\nyueCard_part1 = Image(\"岳王庙建筑实景\", \"https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg\")\nyueCard_part2 = CardHeader(\"02 · 岳王庙\", \"传统祠庙 · 庄重肃穆\")\nyueCard_part3 = TextContent(\"红柱重檐，墓区与碑刻庄重肃穆。\")\ngushanCard = Card([gushanCard_part1, gushanCard_part2, gushanCard_part3], \"clear\", \"column\", \"xs\")\ngushanCard_part1 = Image(\"孤山放鹤亭实景\", \"https://youimg1.c-ctrip.com/target/fd/tg/g1/M0B/C3/49/CghzflT_pLqAB8CTABhI6i-AH8Q373.jpg\")\ngushanCard_part2 = CardHeader(\"03 · 孤山与放鹤亭\", \"林逋遗迹 · 清幽园林\")\ngushanCard_part3 = TextContent(\"树荫、石阶、古亭，慢慢走更有味道。\")\ndongpoExtra = Accordion([dongpoExtra_part1])\ndongpoExtra_part1 = AccordionItem(\"dongpo\", \"补充 · 苏东坡纪念馆\", [dongpoPhoto, TextContent(\"馆址位于苏堤南端附近。这里有绿荫中的传统风格纪念建筑，但距离岳王庙与孤山所在的北段较远。\", \"small\")])\ndongpoPhoto = Image(\"苏东坡纪念馆实拍，传统屋顶建筑立于绿荫之中\", \"https://edu.hangzhou.com.cn/2024rdzt/zdagzyjd/images/2024-08/07/482030a1-e1f3-4cf9-875e-4df9dd93dbee.jpg\")\nmapSection = Stack([mapSection_part2, mapSection_part3, allMap], \"column\", \"s\")\nmapSection_part2 = MarkDownRenderer(\"## 两天的地点，在地图上是什么关系？\")\nmapSection_part3 = TextContent(\"第一组主要在南宋临安城区域，第二组沿西湖和孤山展开。地图同时展示六个主要地点和一个补充地点；苏东坡纪念馆为补充选项。\", \"small\")\nallMap = Map([pKiln, pDeshou, pSite, pSudi, pYue, pGushan, pDongpo], \"wgs84\")\npKiln = MapPoint(\"南宋官窑博物馆\", 30.21183, 120.150447, \"https://www.hangchow.org/data/upload/ueditor/20230106/63b787c317c37.jpg\", null, \"第一天 · 南宋临安 · 古窑址\")\npDeshou = MapPoint(\"南宋德寿宫遗址博物馆\", 30.2412, 120.16862, \"https://imagecloud.thepaper.cn/thepaper/image/225/370/576.jpg\", null, \"第一天 · 南宋临安 · 宫苑遗址\")\npSite = MapPoint(\"南宋遗址陈列馆\", 30.23219, 120.1652, \"https://z.hangzhou.com.cn/2022/syjy/images/2022-12/09/d809c897-a59f-46fb-8f43-1797ddec8e68.jpg\", null, \"第一天 · 南宋临安 · 街道遗迹\")\npSudi = MapPoint(\"苏堤中段\", 30.242637, 120.134544, \"https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg\", null, \"第二天 · 西湖文脉 · 沿湖步道\")\npYue = MapPoint(\"岳王庙\", 30.25474, 120.12977, \"https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg\", null, \"第二天 · 西湖文脉 · 祠庙\")\npGushan = MapPoint(\"孤山放鹤亭附近\", 30.2542, 120.138013, \"https://youimg1.c-ctrip.com/target/fd/tg/g1/M0B/C3/49/CghzflT_pLqAB8CTABhI6i-AH8Q373.jpg\", null, \"第二天 · 西湖文脉 · 林逋遗迹\")\npDongpo = MapPoint(\"苏东坡纪念馆\", 30.231245, 120.13929, \"https://edu.hangzhou.com.cn/2024rdzt/zdagzyjd/images/2024-08/07/482030a1-e1f3-4cf9-875e-4df9dd93dbee.jpg\", null, \"补充地点 · 苏堤南端\")\nticketSection = Stack([ticketSection_part2, freeAdmission, ticketCards, ticketConditions], \"column\", \"s\")\nticketSection_part2 = MarkDownRenderer(\"## 门票与预约\")\nfreeAdmission = Stack([freeAdmission_part1, freeAdmission_part2], \"column\", \"xs\")\nfreeAdmission_part1 = TextContent(\"免费参观：德寿宫、南宋官窑博物馆、南宋遗址陈列馆；苏堤与孤山的公共游览区域也无需购买门票。\", \"small\")\nfreeAdmission_part2 = TextContent(\"德寿宫个人参观免预约；其他场馆的周末预约要求与临时展览以当期公告为准。\", \"small\")\nticketCards = Card([ticketCards_image, ticketCards_heading, ticketCards_detail1, ticketCards_footer], \"card\", \"column\", \"s\")\nticketCards_image = Image(\"岳王庙正殿建筑实拍\", \"https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg\")\nticketCards_heading = CardHeader(\"岳王庙\", \"杭州 · 西湖北岸\")\nticketCards_detail1 = TextContent(\"红柱重檐的祠庙建筑与墓区、碑刻共同构成纪念岳飞的游览空间。\", \"small\")\nticketCards_footer = Stack([ticketCards_price, ticketCards_buttons], \"row\", \"m\", \"center\", \"between\")\nticketCards_price = BoldText(\"number\", \"¥25 起\", \"成人票\", \"text\", \"lg\")\nticketCards_buttons = Buttons([Button(\"预订\", @OpenUrl(\"https://touch.piao.qunar.com/touch/detail.htm?id=3501705640\"), \"primary\", \"normal\", \"small\")], \"row\")\nticketConditions = TextContent(\"所选日期的价格、优惠与可订状态以票务页为准；此处保留原示例报价，未查询实时库存。\", \"small\")\ncomparison = Stack([comparison_part2, atmosphereTable], \"column\", \"s\")\ncomparison_part2 = MarkDownRenderer(\"## 现场氛围，一眼对比\")\natmosphereTable = Table([Col(\"地点\", comparisonPlaces, \"string\"), Col(\"实际氛围\", comparisonAtmospheres, \"string\"), Col(\"视觉看点\", comparisonHighlights, \"string\")])\nconclusion = Stack([conclusion_part2, conclusion_part3], \"column\", \"s\")\nconclusion_part2 = MarkDownRenderer(conclusionTitle)\nconclusion_part3 = TextContent(conclusionText)\ncomparisonPlaces = [\"德寿宫\", \"官窑博物馆\", \"南宋遗址陈列馆\", \"苏堤\", \"岳王庙\", \"孤山\"]\ncomparisonAtmospheres = [\"宫苑感、仪式感\", \"安静、朴素\", \"低调、考古感\", \"开阔、自然\", \"庄重、肃穆\", \"清幽、古朴\"]\ncomparisonHighlights = [\"红墙、复原建筑、遗址\", \"古窑址、青瓷、庭院\", \"地下街道遗迹\", \"湖水、长堤、树荫\", \"祠庙、墓碑、殿宇\", \"放鹤亭、石阶、林木\"]\nconclusionTitle = \"## 哪些地方最值得认真停留？\"\nconclusionText = \"想看建筑与遗址的层次，优先德寿宫；偏好文人书画和园林细节，把时间留给孤山；希望放慢节奏看湖，就在苏堤走一段。\"\n",
+      "origin": "SDK 标准用例"
+    },
+    {
+      "id": "case-03",
+      "name": "Case 03 · explore-heat-pump-explanation-editorial",
+      "source": "root = Stack([intro, overview, temperature, mechanism, modes, efficiency, conclusion, followUps], \"column\", \"l\")\nintro = Stack([intro_part1, intro_part2], \"column\", \"xs\")\nintro_part1 = TextContent(\"空调冬天能制热，其实是因为它有一种很巧妙的能力：**把室外的热量搬到室内，而不是直接制造热量。**\")\nintro_part2 = TextContent(\"它的原理叫作 **热泵（Heat Pump）**，你可以把它理解成一台能够反向工作的冰箱。\")\noverview = Stack([overviewTitle, overviewCards], \"column\", \"s\")\noverviewTitle = Stack([overviewTitle_part1, overviewTitle_part2], \"column\", \"xs\")\noverviewTitle_part1 = MarkDownRenderer(\"### 核心概览\")\noverviewTitle_part2 = TextContent(\"两件事就能理解空调制热\", \"small\")\noverviewCards = OverviewCardBlock([overviewSource, overviewDirection], \"grid\")\noverviewSource = OverviewCardItem(\"heat-source\", IconText(Icon(\"wind\"), \"info\", \"s\", \"热量从哪里来\"), MetricIndicatorInline(\"室外空气\", \"低温空气中仍然有热量\"))\noverviewDirection = OverviewCardItem(\"heat-direction\", IconText(Icon(\"arrow-right\"), \"warning\", \"s\", \"热量往哪里去\"), MetricIndicatorInline(\"室外 → 室内\", \"压缩机驱动热量搬运\"))\ntemperature = Stack([temperature_part1, temperature_part2, temperature_part3, temperatureCard, temperature_part5], \"column\", \"s\")\ntemperature_part1 = MarkDownRenderer(\"### 01 · 冬天室外那么冷，哪来的热量？\")\ntemperature_part2 = TextContent(\"这是最容易困惑的地方。**温度低不代表没有热量。** 即使室外只有 0℃，空气中的分子仍然在运动，仍然具有热能。\")\ntemperature_part3 = TextContent(\"只要空调内部的制冷剂温度比室外空气更低，就能从室外吸收热量。\")\ntemperatureCard = Card([temperatureCard_part1, temperatureCard_part2], \"sunk\", \"column\", \"xs\")\ntemperatureCard_part1 = EntityList([{\"left\":\"室外空气\",\"right\":\"0℃\"},{\"left\":\"制冷剂\",\"right\":\"-15℃\"}], \"small\")\ntemperatureCard_part2 = TextContent(\"热量就能从 0℃ 的空气流向 -15℃ 的制冷剂。上述温度仅为原理示例，不是空调运行时的固定值。\")\ntemperature_part5 = TextContent(\"然后，空调通过压缩机把制冷剂变成高温高压状态，再把热量释放到室内。\")\nmechanism = Stack([mechanism_part1, heatDiagram, mechanism_part3, mechanismSteps], \"column\", \"s\")\nmechanism_part1 = MarkDownRenderer(\"### 02 · 空调是怎么搬运热量的？\")\nheatDiagram = SVG(\"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 330 150'><rect width='330' height='150' rx='10' fill='#F5F7F9'/><rect x='10' y='12' width='110' height='115' rx='9' fill='#E0EDF7'/><rect x='210' y='12' width='110' height='115' rx='9' fill='#FAE8D7'/><text x='65' y='35' text-anchor='middle' font-size='13' fill='#356B91' font-weight='600'>室外 0℃</text><text x='265' y='35' text-anchor='middle' font-size='13' fill='#9E622E' font-weight='600'>室内 22℃</text><g stroke='#6A9BC0' stroke-width='2' fill='none'><path d='M42 52q-6 9 0 18t0 18'/><path d='M56 52q-6 9 0 18t0 18'/><path d='M70 52q-6 9 0 18t0 18'/></g><g stroke='#DE9256' stroke-width='2' fill='none'><path d='M242 52q-6 9 0 18t0 18'/><path d='M256 52q-6 9 0 18t0 18'/><path d='M270 52q-6 9 0 18t0 18'/></g><text x='65' y='107' text-anchor='middle' font-size='11' fill='#356B91'>吸热</text><text x='265' y='107' text-anchor='middle' font-size='11' fill='#9E622E'>放热</text><rect x='129' y='48' width='72' height='42' rx='8' fill='#E5AA6A'/><text x='165' y='65' text-anchor='middle' font-size='11' fill='#513722'>压缩机</text><text x='165' y='80' text-anchor='middle' font-size='10' fill='#513722'>升温加压</text><path d='M118 108H209' stroke='#D88943' stroke-width='5' stroke-linecap='round'/><path d='M199 102l10 6-10 6' stroke='#D88943' stroke-width='3' fill='none' stroke-linejoin='round'/><path d='M252 125v9H78v-9' stroke='#7E9FBA' fill='none' stroke-width='1.5' stroke-dasharray='4 3'/><text x='165' y='145' text-anchor='middle' font-size='10' fill='#65788A'>制冷剂循环 · 热量向室内转移</text></svg>\", null, \"热泵空调冬季制热原理示意\")\nmechanism_part3 = TextContent(\"图解｜室外机吸热，压缩机升温加压，室内机释放热量。图示为简化原理，并非实际管路。\", \"small\")\nmechanismSteps = ListBlock([mechanismSteps_part1, mechanismSteps_part2, mechanismSteps_part3, mechanismSteps_part4], \"number\", \"small\")\nmechanismSteps_part1 = ListItem(\"室外吸热\", \"低温制冷剂吸收室外空气中的热量，逐渐蒸发。\")\nmechanismSteps_part2 = ListItem(\"压缩升温\", \"压缩机对气态制冷剂做功，使其温度和压力升高。\")\nmechanismSteps_part3 = ListItem(\"室内放热\", \"高温制冷剂在室内机冷凝，释放热量，风扇吹出热风。\")\nmechanismSteps_part4 = ListItem(\"降压降温\", \"制冷剂经过节流装置降压降温，再次回到室外吸热。\")\nmodes = Stack([modes_part1, modes_part2, modeList, modes_part4], \"column\", \"s\")\nmodes_part1 = MarkDownRenderer(\"### 03 · 空调制冷和制热有什么区别？\")\nmodes_part2 = TextContent(\"本质上是同一套原理，只不过热量搬运方向相反。\")\nmodeList = SnippetCardBlock([summer, winter], \"grid\")\nsummer = SnippetCardItem(\"summer\", IconText(Icon(\"snowflake\"), \"info\", \"s\", \"夏天制冷\", \"室内热量搬到室外\"), BoldText(\"text\", \"室内 → 室外\", null, null, \"sm\"))\nwinter = SnippetCardItem(\"winter\", IconText(Icon(\"sun\"), \"warning\", \"s\", \"冬天制热\", \"室外热量搬到室内\"), BoldText(\"text\", \"室外 → 室内\", null, null, \"sm\"))\nmodes_part4 = TextContent(\"能够制冷制热的空调，通常通过 **四通换向阀** 切换制冷剂的流动路径，从而改变室内外换热器的作用。\")\nefficiency = Stack([efficiency_part1, efficiency_part2, efficiencyFigure, efficiency_part4, efficiency_part5], \"column\", \"s\")\nefficiency_part1 = MarkDownRenderer(\"### 04 · 为什么空调制热有时比电暖器省电？\")\nefficiency_part2 = TextContent(\"电暖器主要是把电能直接转化为热量，而热泵空调还从室外搬来了额外的热量。\")\nefficiencyFigure = Stack([efficiencyFigure_part1, efficiencyBars, efficiencyFigure_part3], \"column\", \"xs\")\nefficiencyFigure_part1 = TextContent(\"**假设两台设备各消耗 1 度电**\", \"small-heavy\")\nefficiencyBars = SVG(\"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 330 139'><rect width='330' height='139' rx='10' fill='#F5F7F9'/><text x='14' y='23' font-size='12' fill='#3C4A58'>普通电暖器</text><text x='316' y='23' text-anchor='end' font-size='11' fill='#5F6B78'>约 1 度热量</text><rect x='14' y='33' width='302' height='17' rx='4' fill='#E6E9ED'/><path d='M18 33H100V50H18Q14 50 14 46V37Q14 33 18 33Z' fill='#929CA8'/><text x='14' y='78' font-size='12' fill='#3C4A58'>热泵空调</text><text x='316' y='78' text-anchor='end' font-size='11' fill='#A56633'>约 3.5 度热量</text><rect x='14' y='88' width='302' height='17' rx='4' fill='#E6E9ED'/><path d='M18 88H100V105H18Q14 105 14 101V92Q14 88 18 88Z' fill='#929CA8'/><path d='M100 88H312Q316 88 316 92V101Q316 105 312 105H100Z' fill='#E5A25F'/><rect x='14' y='119' width='9' height='9' rx='2' fill='#929CA8'/><text x='29' y='127' font-size='10' fill='#64717F'>电能投入</text><rect x='117' y='119' width='9' height='9' rx='2' fill='#E5A25F'/><text x='132' y='127' font-size='10' fill='#64717F'>额外从室外搬来的热量</text></svg>\", null, \"电暖器与热泵空调消耗一度电时的供热量示意比较\")\nefficiencyFigure_part3 = TextContent(\"灰色表示电能投入，橙色表示从室外搬来的热量。图中热泵按 3.5 度热量示意；实际效率取决于设备性能和运行工况。\", \"small\")\nefficiency_part4 = TextContent(\"热泵空调的制热性能系数（COP）可以大于 1，并不违反能量守恒，因为多出来的热量来自室外环境。\")\nefficiency_part5 = TextContent(\"不过，室外温度较低时，热泵的制热效率和能力通常会下降。室外机还可能结霜，需要定期除霜，所以空调有时会短暂停止吹热风。\")\nconclusion = Stack([conclusion_part1, conclusion_part2], \"column\", \"xs\")\nconclusion_part1 = MarkDownRenderer(\"### 一句话总结\")\nconclusion_part2 = TextContent(\"空调制热的本领，不是用电直接烧出热量，而是用电驱动压缩机，把室外本来就存在的热量搬进屋里。\")\nfollowUps = FollowUpBlock([FollowUpItem(\"制热时温度和风速怎么设置更舒服？\"), FollowUpItem(\"一直开空调和频繁开关，哪种更省电？\")])\n",
+      "origin": "SDK 标准用例"
+    },
+    {
+      "id": "case-04",
+      "name": "Case 04 · explore-bedroom-style",
+      "source": "root = Stack([intro, section1, chooser, section2, tips, advice, closing], \"column\", \"xl\")\nintro = Stack([intro1, intro2], \"column\", \"s\")\nintro1 = MarkDownRenderer(\"我建议先别急着给卧室定一个「日式」「北欧」之类的风格标签。**先找到一种你愿意每天回家后待在里面的感觉**，再考虑家具、颜色和装饰。\")\nintro2 = TextContent(\"先看看三种配色、灯光和材质不同的卧室，凭直觉选择吸引你的部分，再逐步确认自己的偏好。\")\nsection1 = MarkDownRenderer(\"## 01｜找到你喜欢的卧室氛围\")\nchooser = Form(\"bedroom-style-exploration\", chooserActions, [chooser_part1])\nchooser_part1 = FormControl(\"选择喜欢的卧室氛围\", OptionCards(\"卧室氛围\", \"multiple\", [styleA, styleB, styleC], {required: true}), \"可多选；选好后一起生成布置建议。\")\nstyleA = OptionCard(\"自然松弛\", \"A · 自然松弛\", \"奶油白、浅木、棉麻；像阳光晒过的房间。\", imgA)\nimgA = Image(\"自然松弛、浅木色和暖白床品的卧室\", \"https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=900&q=85\")\nstyleB = OptionCard(\"安静克制\", \"B · 安静克制\", \"深木、亚麻、间接暖光；安静而有秩序。\", imgB)\nimgB = Image(\"安静克制、柔和照明的卧室\", \"https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900&q=85\")\nstyleC = OptionCard(\"温暖复古\", \"C · 温暖复古\", \"胡桃木、藤编、焦糖色；温润、有生活感。\", imgC)\nimgC = Image(\"胡桃木与复古氛围的温暖卧室\", \"https://images.unsplash.com/photo-1615874694520-474822394e73?w=900&q=85\")\nchooserActions = Buttons([continueChoice], \"column\")\ncontinueChoice = Button(\"生成布置建议\", @ToAssistant(\"根据我选择的卧室氛围，提炼共同偏好，给出适合出租房的配色、灯光和软装建议。优先不破坏房屋、可搬走的改变，暂不推荐具体商品。\"), \"primary\", \"normal\", \"medium\")\nsection2 = MarkDownRenderer(\"## 02｜舒服，不一定需要重新装修\")\ntips = VisualCardBlock([tipA, tipB, tipC], \"carousel\", true)\ntipA = VisualCardItem(tipTextA, \"light\", \"https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=85\")\ntipTextA = BoldText(\"text\", \"灯光\", \"用低位暖光代替刺眼的顶灯。\")\ntipB = VisualCardItem(tipTextB, \"fabric\", \"https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=85\")\ntipTextB = BoldText(\"text\", \"织物\", \"用床品和窗帘增加柔软质感。\")\ntipC = VisualCardItem(tipTextC, \"space\", \"https://images.unsplash.com/photo-1778145792155-708f364bd772?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=60&w=3000\")\ntipTextC = BoldText(\"text\", \"留白\", \"少放零碎装饰，让空间能呼吸。\")\nadvice = TextContent(\"如果是租来的卧室，建议先调整灯光、床品和窗帘，再考虑家具。优先选择可以撤回、也方便搬走的改变。\")\nclosing = Stack([question, closingDesc], \"column\", \"s\")\nquestion = MarkDownRenderer(\"**不必追求纯粹的一种风格。** 喜欢 A 的配色、B 的灯光，完全可以组合成你自己的卧室。\")\nclosingDesc = TextContent(\"等确认喜欢的氛围，我们再结合房间尺寸和现有家具，把它落实成具体布置。\")\n",
+      "origin": "SDK 标准用例"
+    },
+    {
+      "id": "case-05",
+      "name": "Case 05 · decide-reading-desk-lamp-refined",
+      "source": "root = Stack([lead, products, fit, closing], \"column\", \"l\")\nlead = Stack([headline, leadText, preferences], \"column\", \"s\")\nheadline = MarkDownRenderer(\"# 小书桌，选一盏真正好用的读书灯\")\nleadText = MarkDownRenderer(\"**小桌面先比较摆放方式，再看功能。** 折叠式方便收纳，夹式可以少占桌面；具体是否放得下，还要核对底座、夹口和灯臂尺寸。\")\npreferences = TextContent(\"小桌面 · 阅读用途 · 先比较折叠与夹式\", \"small\")\nproducts = Stack([productsHeader, productsCarousel, priceNote], \"column\", \"s\")\nproductsHeader = InlineHeader(\"三款台灯候选\", \"比较摆放方式，并核对具体规格\")\nproductsCarousel = CompositeCardBlock([folding, rechargeable, clipLamp], \"carousel\", true)\nfolding = CompositeCardItem(\"taobao-971628097659\", ImageTextLarge(\"https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg\", \"惠普折叠阅读台灯商品图\", \"惠普折叠阅读台灯\", \"惠普照明旗舰店\", true), [TagBlock([\"折叠\"], \"sm\"), Text(\"text\", \"面向桌面阅读场景的折叠式台灯。\", null, null, \"xs\")], {\"price\":BoldText(\"number\", \"¥84.00\", null, \"text\", \"lg\"), \"button\":Button(\"购买\", @OpenUrl(\"https://detail.tmall.com/item.htm?id=971628097659\"), \"primary\", \"normal\", \"small\")})\nrechargeable = CompositeCardItem(\"taobao-1014479690931\", ImageTextLarge(\"https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg\", \"欧普充电折叠台灯商品图\", \"欧普充电折叠台灯\", \"欧普照明官方旗舰店\", true), [TagBlock([\"充电\", \"折叠\"], \"sm\"), Text(\"text\", \"充电式阅读台灯，灯体采用折叠结构。\", null, null, \"xs\")], {\"price\":BoldText(\"number\", \"¥116.20\", null, \"text\", \"lg\"), \"button\":Button(\"购买\", @OpenUrl(\"https://detail.tmall.com/item.htm?id=1014479690931\"), \"primary\", \"normal\", \"small\")})\nclipLamp = CompositeCardItem(\"taobao-1087331917809\", ImageTextLarge(\"https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg\", \"充电夹式阅读台灯商品图\", \"充电夹式阅读台灯\", \"国货严选旗舰\", true), [TagBlock([\"夹式\", \"充电\"], \"sm\"), Text(\"text\", \"采用夹式固定方式的充电阅读台灯。\", null, null, \"xs\")], {\"price\":BoldText(\"number\", \"¥49.90\", null, \"text\", \"lg\"), \"button\":Button(\"购买\", @OpenUrl(\"https://detail.tmall.com/item.htm?id=1087331917809\"), \"primary\", \"normal\", \"small\")})\npriceNote = TextContent(\"价格记录于 2026-11-10；具体规格、优惠和结算金额以商品页为准。\", \"small\")\nfit = Stack([fitTitle, fitList], \"column\", \"xs\")\nfitTitle = MarkDownRenderer(\"## 用法不同，选择也不同\")\nfitList = EntityList([{\"left\":\"读完需要收起来\",\"right\":\"先比较折叠款的尺寸\"},{\"left\":\"桌面几乎放不下灯座\",\"right\":\"核对夹式灯与桌沿是否匹配\"},{\"left\":\"希望移动使用\",\"right\":\"比较充电方式和续航条件\"}], \"small\")\nclosing = Stack([closingTitle, closingText], \"column\", \"xs\")\nclosingTitle = TextContent(\"买前别漏了这件事\", \"small-heavy\")\nclosingText = TextContent(\"量一下灯座能放多宽、灯头会不会挡显示器，再确认照射范围和插座位置。\", \"small\")\n",
+      "origin": "SDK 标准用例"
+    },
+    {
+      "id": "case-06",
+      "name": "Case 06 · decide-code-execution-isolation",
+      "source": "root = Stack([intro, principle, schemes, architecture, kubernetes, recommendation, references, followUps], \"column\", \"xl\")\nintro = Stack([pageTitle, lead, leadSupplement], \"column\", \"s\")\npageTitle = MarkDownRenderer(\"# 服务端执行用户代码：容器还是虚拟机？\")\nlead = TextContent(\"如果你要在服务端执行用户提交的任意代码，我更推荐虚拟机隔离，尤其是 MicroVM（微型虚拟机），而不是直接使用普通 Docker 容器。\")\nleadSupplement = TextContent(\"但不一定需要自己管理传统虚拟机。现在有一条更实用的路线：保留容器的使用体验，底层采用虚拟机隔离。\")\nprinciple = Stack([principleHeading, isolationDiagram, isolationCaption, containerExplanation, vmExplanation], \"column\", \"s\")\nprincipleHeading = MarkDownRenderer(\"## 01 · 容器与虚拟机，核心区别是什么？\")\nisolationDiagram = SVG(\"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 192'><rect x='1' y='1' width='164' height='189' rx='9' fill='#EDF7F3' stroke='#BCDCD0'/><rect x='175' y='1' width='164' height='189' rx='9' fill='#EFF4FB' stroke='#BFD0E8'/><text x='83' y='22' text-anchor='middle' font-size='12' font-weight='600' fill='#276B57'>Container</text><text x='257' y='22' text-anchor='middle' font-size='12' font-weight='600' fill='#315F95'>Virtual Machine</text><rect x='10' y='36' width='70' height='42' rx='5' fill='#D1E9DD'/><rect x='85' y='36' width='70' height='42' rx='5' fill='#D1E9DD'/><text x='45' y='53' text-anchor='middle' font-size='10' fill='#28634F'>用户代码</text><text x='45' y='67' text-anchor='middle' font-size='9' fill='#477A69'>Container</text><text x='120' y='53' text-anchor='middle' font-size='10' fill='#28634F'>用户代码</text><text x='120' y='67' text-anchor='middle' font-size='9' fill='#477A69'>Container</text><rect x='10' y='85' width='145' height='43' rx='5' fill='#BCDDCE'/><text x='82' y='103' text-anchor='middle' font-size='11' font-weight='600' fill='#28634F'>共享 Host Kernel</text><text x='82' y='117' text-anchor='middle' font-size='9' fill='#477A69'>同一个宿主机内核</text><rect x='182' y='33' width='70' height='96' rx='6' fill='#DCE8F7' stroke='#A2BDDC'/><rect x='262' y='33' width='70' height='96' rx='6' fill='#DCE8F7' stroke='#A2BDDC'/><rect x='187' y='39' width='60' height='36' rx='4' fill='#BFD3EC'/><rect x='267' y='39' width='60' height='36' rx='4' fill='#BFD3EC'/><text x='217' y='54' text-anchor='middle' font-size='10' fill='#315F95'>用户代码</text><text x='217' y='67' text-anchor='middle' font-size='9' fill='#315F95'>Container</text><text x='297' y='54' text-anchor='middle' font-size='10' fill='#315F95'>用户代码</text><text x='297' y='67' text-anchor='middle' font-size='9' fill='#315F95'>Container</text><rect x='187' y='81' width='60' height='41' rx='4' fill='#ABC8E8'/><rect x='267' y='81' width='60' height='41' rx='4' fill='#ABC8E8'/><text x='217' y='98' text-anchor='middle' font-size='9' fill='#315F95'>Guest</text><text x='217' y='111' text-anchor='middle' font-size='9' fill='#315F95'>Kernel</text><text x='297' y='98' text-anchor='middle' font-size='9' fill='#315F95'>Guest</text><text x='297' y='111' text-anchor='middle' font-size='9' fill='#315F95'>Kernel</text><rect x='182' y='135' width='150' height='22' rx='4' fill='#BFD3EC'/><text x='257' y='150' text-anchor='middle' font-size='10' fill='#315F95'>Hypervisor / KVM</text><rect x='10' y='160' width='145' height='23' rx='4' fill='#BCDDCE'/><rect x='182' y='164' width='150' height='19' rx='4' fill='#BFD3EC'/><text x='82' y='176' text-anchor='middle' font-size='10' fill='#28634F'>Host 硬件</text><text x='257' y='177' text-anchor='middle' font-size='10' fill='#315F95'>Host 硬件</text></svg>\", null, \"容器与虚拟机隔离边界对比：容器共享宿主机内核，虚拟机使用独立客户机内核\")\nisolationCaption = TextContent(\"普通容器共享宿主机内核；虚拟机拥有独立的 Guest Kernel，通过 Hypervisor 提供硬件虚拟化隔离边界。\", \"small\")\ncontainerExplanation = TextContent(\"普通容器依靠 Namespace、cgroups、seccomp 等机制隔离进程与资源。它适合运行受信任的应用，但如果用户代码利用内核漏洞，就可能影响整个宿主机。\")\nvmExplanation = TextContent(\"虚拟机增加了独立内核和硬件虚拟化边界，通常更适合执行潜在恶意代码。\")\nschemes = Stack([schemesHeading, comparisonTable, relationshipNote, comparisonNote, detailAccordion], \"column\", \"s\")\nschemesHeading = MarkDownRenderer(\"## 02 · 四种常见隔离技术怎么选？\")\ncomparisonTable = Table([Col(\"方案\", [\"Docker / runc\", \"gVisor\", \"Kata Containers\", \"Firecracker\"]), Col(\"隔离机制\", [\"共享 Host Kernel\", \"用户态应用内核\", \"Pod 级 VM 隔离\", \"KVM MicroVM\"]), Col(\"典型场景\", [\"内部可信代码\", \"不可信脚本\", \"K8s 多租户\", \"高密度执行\"])])\nrelationshipNote = TextContent(\"注意：这四项不处于同一抽象层。Kata Containers 是容器运行时方案，可选用 QEMU、Cloud Hypervisor、Firecracker 等 VMM；因此 Kata 和 Firecracker 并非互斥。\", \"small\")\ncomparisonNote = TextContent(\"资源开销上，普通容器通常最轻；gVisor 引入系统调用处理开销；Kata 需要 VM 运行资源；Firecracker 针对轻量虚拟化优化，但完整冷启动仍取决于镜像、运行时和调度。\")\ndetailAccordion = Accordion([dockerDetail, gvisorDetail, kataDetail, firecrackerDetail])\ndockerDetail = AccordionItem(\"docker\", \"Docker / runc · 普通容器\", [TextContent(\"依靠 Linux Namespace、cgroups、seccomp 等内核隔离能力，多个容器共享宿主机内核。启动和资源开销通常较低，但不建议仅依赖普通容器隔离执行完全不可信的任意代码。\")])\ngvisorDetail = AccordionItem(\"gvisor\", \"gVisor · 用户态内核隔离\", [TextContent(\"在用户代码与宿主机内核之间加入用户态应用内核，拦截并实现大量 Linux 系统调用。可以集成 Docker、Kubernetes，适合常见的不可信脚本。\"), TextContent(\"需要特别验证系统调用兼容性、I/O 性能以及目标语言运行时的行为。\")])\nkataDetail = AccordionItem(\"kata\", \"Kata Containers · 容器接口 + VM 隔离\", [TextContent(\"Kata 使用轻量虚拟机承载容器。通常一个 Kata Pod 对应一个独立 VM 沙箱，容器在 VM 内运行。\"), TextContent(\"通过 Kubernetes RuntimeClass，可以在保留现有 Pod 编排体验的同时，获得更强的隔离边界。代价是虚拟机启动、内存及基础设施开销。\")])\nfirecrackerDetail = AccordionItem(\"firecracker\", \"Firecracker · 轻量 MicroVM\", [TextContent(\"Firecracker 基于 KVM，通过精简虚拟设备和功能降低虚拟化开销，适合大规模、短生命周期的代码执行任务。\"), TextContent(\"官方最小配置基准中，从启动指令到 Guest 用户态 init 可在 125ms 以内，但这个指标不包含业务镜像准备、运行时初始化和调度等完整冷启动过程。\")])\narchitecture = Stack([architectureHeading, architectureIntro, runtimeDiagram, architectureCaption, securityHeading, securityPoints], \"column\", \"s\")\narchitectureHeading = MarkDownRenderer(\"## 03 · 服务端执行架构怎么设计？\")\narchitectureIntro = TextContent(\"假设用户提交 Python、JavaScript、Shell，甚至编译型语言代码，执行环境应当默认视为不可信。\")\nruntimeDiagram = SVG(\"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 280'><rect x='43' y='2' width='254' height='41' rx='7' fill='#EEF0F4' stroke='#CDD3DB'/><text x='170' y='20' text-anchor='middle' font-size='12' font-weight='600' fill='#384456'>API / Agent 服务</text><text x='170' y='34' text-anchor='middle' font-size='9' fill='#667484'>提交代码 · 鉴权 · 租户配额</text><path d='M170 43V58' stroke='#9AA5B3' stroke-width='1.5'/><path d='M166 54L170 60L174 54' fill='none' stroke='#9AA5B3' stroke-width='1.5'/><rect x='43' y='62' width='254' height='42' rx='7' fill='#E5ECF6' stroke='#BDCEE3'/><text x='170' y='80' text-anchor='middle' font-size='12' font-weight='600' fill='#355F92'>Execution Scheduler</text><text x='170' y='95' text-anchor='middle' font-size='9' fill='#587598'>排队 · 分配 · 超时 · 回收</text><path d='M170 104V117M88 117H252M88 117V132M252 117V132' fill='none' stroke='#9AA5B3' stroke-width='1.5'/><rect x='6' y='132' width='157' height='101' rx='7' fill='#EFF5FC' stroke='#A9C2E0'/><rect x='177' y='132' width='157' height='101' rx='7' fill='#EFF5FC' stroke='#A9C2E0'/><text x='84' y='149' text-anchor='middle' font-size='11' font-weight='600' fill='#355F92'>Sandbox A</text><text x='255' y='149' text-anchor='middle' font-size='11' font-weight='600' fill='#355F92'>Sandbox B</text><rect x='15' y='157' width='139' height='23' rx='4' fill='#D5E5F7'/><rect x='186' y='157' width='139' height='23' rx='4' fill='#D5E5F7'/><text x='84' y='173' text-anchor='middle' font-size='10' fill='#355F92'>用户代码 · Python / JS</text><text x='255' y='173' text-anchor='middle' font-size='10' fill='#355F92'>用户代码 · Shell</text><rect x='15' y='186' width='139' height='18' rx='4' fill='#D5E5F7'/><rect x='186' y='186' width='139' height='18' rx='4' fill='#D5E5F7'/><text x='84' y='199' text-anchor='middle' font-size='9' fill='#355F92'>隔离文件系统</text><text x='255' y='199' text-anchor='middle' font-size='9' fill='#355F92'>隔离文件系统</text><rect x='15' y='210' width='139' height='16' rx='4' fill='#B9D3F0'/><rect x='186' y='210' width='139' height='16' rx='4' fill='#B9D3F0'/><text x='84' y='222' text-anchor='middle' font-size='9' fill='#355F92'>Guest Kernel · VM</text><text x='255' y='222' text-anchor='middle' font-size='9' fill='#355F92'>Guest Kernel · VM</text><path d='M170 233V247' stroke='#9AA5B3' stroke-width='1.5'/><path d='M166 243L170 249L174 243' fill='none' stroke='#9AA5B3' stroke-width='1.5'/><rect x='18' y='252' width='304' height='26' rx='6' fill='#EEF0F4' stroke='#CDD3DB'/><text x='170' y='269' text-anchor='middle' font-size='10' fill='#384456'>宿主机节点池 · 资源计量 · 网络出口控制</text></svg>\", null, \"API 服务通过调度器管理两个独立虚拟机沙箱，宿主机节点池统一提供资源控制\")\narchitectureCaption = TextContent(\"每个沙箱具有独立的执行环境与文件系统。调度器负责生命周期，宿主机侧负责资源和网络控制。\", \"small\")\nsecurityHeading = MarkDownRenderer(\"### 三个关键设计点\")\nsecurityPoints = Stack([isolationPoint, warmPoolPoint, securityPoint], \"column\", \"m\")\nisolationPoint = Stack([isolationPoint_part1, isolationPoint_part2], \"column\", \"xs\")\nisolationPoint_part1 = TextContent(\"**隔离粒度**\")\nisolationPoint_part2 = TextContent(\"短任务可以每次执行创建一个沙箱；有状态 Agent 可按会话分配沙箱。不同不可信租户默认使用不同的 VM 安全边界。\")\nwarmPoolPoint = Stack([warmPoolPoint_part1, warmPoolPoint_part2], \"column\", \"xs\")\nwarmPoolPoint_part1 = TextContent(\"**预热机制**\")\nwarmPoolPoint_part2 = TextContent(\"高频代码执行可建立 Warm Pool，提前准备沙箱或基础镜像，减少重复初始化的等待时间。\")\nsecurityPoint = Stack([securityPoint_part1, securityPoint_part2], \"column\", \"xs\")\nsecurityPoint_part1 = TextContent(\"**安全约束**\")\nsecurityPoint_part2 = TextContent(\"默认关闭外网；按需开放出口白名单。限制 CPU、内存、PID、磁盘、执行时长与日志大小。不要暴露宿主机 Docker Socket、云凭证和 K8s ServiceAccount Token。\")\nkubernetes = Stack([kubernetesHeading, kubernetesIntro, kubernetesDescription, kubeCode, kubernetesNote], \"column\", \"s\")\nkubernetesHeading = MarkDownRenderer(\"## 04 · 如果已经使用 Kubernetes\")\nkubernetesIntro = TextContent(\"我更倾向于先落地 K8s + Kata Containers，而不是直接自己管理 Firecracker。\")\nkubernetesDescription = TextContent(\"一个 Pod 可以通过 `runtimeClassName` 指定虚拟机隔离的运行时：\")\nkubeCode = CodeBlock(\"yaml\", \"apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: user-code-runner\\nspec:\\n  runtimeClassName: kata-qemu-runtime-rs\\n  automountServiceAccountToken: false\\n  restartPolicy: Never\\n  containers:\\n    - name: runner\\n      image: your-runner-image:tag\\n      resources:\\n        limits:\\n          cpu: '1'\\n          memory: 512Mi\")\nkubernetesNote = TextContent(\"示例中的 RuntimeClass 名称取决于实际安装配置，镜像名称也是占位符。这只是运行时选型示例，不是完整生产安全配置。Kata 需要支持 KVM 的宿主节点，普通云主机不一定支持嵌套虚拟化。\", \"small\")\nrecommendation = Stack([recommendationHeading, primaryRecommendation, firecrackerChoice, gvisorChoice, finalNote], \"column\", \"l\")\nrecommendationHeading = MarkDownRenderer(\"## 05 · 按现有条件选型\")\nprimaryRecommendation = Stack([primaryRecommendation_title, primaryRecommendation_tags, primaryRecommendation_body], \"column\", \"s\")\nprimaryRecommendation_title = CardHeader(\"优先评估 Kata Containers\")\nprimaryRecommendation_tags = TagBlock([\"已有 K8s\", \"需 KVM\"], \"sm\")\nprimaryRecommendation_body = TextContent(\"运行时兼容性验证通过后，可保留 Pod 编排方式，以独立 VM 提供隔离边界。仍需配合网络、凭证、存储及资源约束。\")\nfirecrackerChoice = Stack([firecrackerChoice_title, firecrackerChoice_tags, firecrackerChoice_body], \"column\", \"s\")\nfirecrackerChoice_title = CardHeader(\"Firecracker\")\nfirecrackerChoice_tags = TagBlock([\"高频短任务\", \"自建调度\"], \"sm\")\nfirecrackerChoice_body = TextContent(\"适合追求低冷启动和高密度执行，并愿意投入宿主机、镜像、快照、网络及调度工程的平台；需要配套执行调度。\")\ngvisorChoice = Stack([gvisorChoice_title, gvisorChoice_tags, gvisorChoice_body], \"column\", \"s\")\ngvisorChoice_title = CardHeader(\"gVisor\")\ngvisorChoice_tags = TagBlock([\"轻量脚本\"], \"sm\")\ngvisorChoice_body = TextContent(\"保留容器使用方式，适合目标语言和系统调用兼容性满足要求的场景；上线前仍需验证兼容性与实际性能。\")\nfinalNote = TextContent(\"选型还需要明确沙箱按任务还是按会话创建、何时复用、何时销毁。\", \"small\")\nreferences = Stack([referenceHeading, referenceLinks], \"column\", \"xs\")\nreferenceHeading = TextContent(\"参考资料\", \"small-heavy\")\nreferenceLinks = TextContent(\"[Kubernetes RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) · [Kata Containers](https://github.com/kata-containers/kata-containers/blob/main/docs/design/virtualization.md) · [gVisor](https://gvisor.dev/docs/architecture_guide/intro/) · [Firecracker](https://github.com/firecracker-microvm/firecracker/blob/main/SPECIFICATION.md)\", \"small\")\nfollowUps = FollowUpBlock([FollowUpItem(\"如何设计沙箱的创建、复用和销毁策略？\"), FollowUpItem(\"已有 Kubernetes 时，怎样验证 Kata 的运行时兼容性？\")])\n",
+      "origin": "SDK 标准用例"
+    },
+    {
+      "id": "case-07",
+      "name": "Case 07 · plan-suzhou-family-trip-ticket-design",
+      "source": "root = Stack([hero, introduction, transport, stay, dayOne, dayTwo, locationMap, tickets, finish], \"column\", \"xl\")\nhero = Stack([hero_part1, hero_part2, tripConditions, coverImage, hero_part4], \"column\", \"s\")\nhero_part1 = TextContent(\"SHANGHAI → SUZHOU · 2 DAYS\", \"small\")\nhero_part2 = MarkDownRenderer(\"# 苏州两天｜陪父母慢慢逛\")\ntripConditions = TextContent(\"2026/11/21–22 · 3 位成人 · 两天一晚\", \"small\")\ncoverImage = Image(\"苏州平江路真实河道与游船，游客沿岸步行\", \"https://www.suzhou.gov.cn/szsrmzf/tpxw/202507/8d91434b0f83493aa6cf9ad9e7f9033e/images/d106b03438da47c4b48176a3b817421c.jpg\")\nhero_part4 = TextContent(\"不追求多打卡。把时间留给两座园林、两段老街，以及足够从容的吃饭和休息。\")\nintroduction = Stack([introduction_part1, introduction_part2, introduction_part3], \"column\", \"xs\")\nintroduction_part1 = TextContent(\"两天一晚 · 每天一座园林\", \"large-heavy\")\nintroduction_part2 = TextContent(\"建议第一天看拙政园和平江路，第二天看留园和山塘街；跨片区优先打车，古街只走父母觉得舒服的一小段。\")\nintroduction_part3 = TextContent(\"住宿按 2 间客房、1 晚安排；父母同住一间，同行子女单独一间。\", \"small\")\ntransport = Stack([transportTitle, transportIntro, outbound, inbound, transferNote], \"column\", \"m\")\ntransportTitle = MarkDownRenderer(\"## 往返交通\")\ntransportIntro = TextContent(\"去程上午抵达，返程放在第二天下午。两程都以苏州站接驳古城，车站与酒店之间安排打车。以下按直达高铁预留出行时段。\")\noutbound = Card([outboundHeading, outboundSpec, outboundJourney, outboundDetail, outboundFare], \"card\", \"column\", \"s\")\noutboundHeading = CardHeader(\"上海 → 苏州\")\noutboundSpec = TextContent(\"11/21 · 高铁二等座 · 3 位成人 · 计划时段\", \"small\")\noutboundJourney = Stack([outboundDeparture, outboundMiddle, outboundArrival], \"row\", \"s\", \"start\", \"between\")\noutboundDeparture = BoldText(\"number\", \"09:30\", \"上海站\", \"text\", \"lg\")\noutboundMiddle = Card([outboundMiddleContent], \"clear\", \"column\", \"none\")\noutboundMiddleContent = Stack([outboundDurationRow, outboundLine, outboundModeRow], \"column\", \"xs\", \"stretch\")\noutboundDurationRow = Stack([outboundDuration], \"row\", \"none\", \"center\", \"center\")\noutboundDuration = Text(\"text\", \"35 分钟\", null, null, \"xs\")\noutboundLine = Separator(\"horizontal\")\noutboundModeRow = Stack([outboundMode], \"row\", \"none\", \"center\", \"center\")\noutboundMode = Text(\"text\", \"直达\", null, null, \"xs\")\noutboundArrival = BoldText(\"number\", \"10:05\", \"苏州站\", \"text\", \"lg\")\noutboundDetail = TextContent(\"3 人单程预算 ¥180，具体车次和发车时间以购票查询为准。\", \"small\")\noutboundFare = Stack([outboundPrice, outboundActions], \"row\", \"m\", \"center\", \"between\")\noutboundPrice = BoldText(\"number\", \"¥60\", \"每人 / 单程预算\", \"text\", \"lg\")\noutboundActions = Buttons([Button(\"查询车次\", @OpenUrl(\"https://www.12306.cn/index/\"), \"primary\", \"normal\", \"small\")], \"row\")\ninbound = Card([inboundHeading, inboundSpec, inboundJourney, inboundDetail, inboundFare], \"card\", \"column\", \"s\")\ninboundHeading = CardHeader(\"苏州 → 上海\")\ninboundSpec = TextContent(\"11/22 · 高铁二等座 · 3 位成人 · 计划时段\", \"small\")\ninboundJourney = Stack([inboundDeparture, inboundMiddle, inboundArrival], \"row\", \"s\", \"start\", \"between\")\ninboundDeparture = BoldText(\"number\", \"16:30\", \"苏州站\", \"text\", \"lg\")\ninboundMiddle = Card([inboundMiddleContent], \"clear\", \"column\", \"none\")\ninboundMiddleContent = Stack([inboundDurationRow, inboundLine, inboundModeRow], \"column\", \"xs\", \"stretch\")\ninboundDurationRow = Stack([inboundDuration], \"row\", \"none\", \"center\", \"center\")\ninboundDuration = Text(\"text\", \"35 分钟\", null, null, \"xs\")\ninboundLine = Separator(\"horizontal\")\ninboundModeRow = Stack([inboundMode], \"row\", \"none\", \"center\", \"center\")\ninboundMode = Text(\"text\", \"直达\", null, null, \"xs\")\ninboundArrival = BoldText(\"number\", \"17:05\", \"上海站\", \"text\", \"lg\")\ninboundDetail = TextContent(\"3 人单程预算 ¥180；15:00 前结束游览，先取行李再前往车站。\", \"small\")\ninboundFare = Stack([inboundPrice, inboundActions], \"row\", \"m\", \"center\", \"between\")\ninboundPrice = BoldText(\"number\", \"¥60\", \"每人 / 单程预算\", \"text\", \"lg\")\ninboundActions = Buttons([Button(\"查询车次\", @OpenUrl(\"https://www.12306.cn/index/\"), \"primary\", \"normal\", \"small\")], \"row\")\ntransferNote = TextContent(\"往返交通预算 ¥360，未含市内接驳。时刻为行程预留安排，车次、票价及余票以 12306 查询结果为准。\", \"small\")\nstay = Stack([stayTitle, stayIntro, hotelCard, hotelCaution], \"column\", \"m\")\nstayTitle = MarkDownRenderer(\"## 住一晚｜古城里的落脚点\")\nstayIntro = TextContent(\"以同一间酒店作为两天的起终点，减少带行李换住处的折腾。选择古城内的落脚点，方便衔接两天行程。\")\nhotelCard = Card([hotelHeading, hotelIntro, hotelSpec, hotelFare], \"card\", \"column\", \"s\")\nhotelHeading = ImageText(\"https://cache.marriott.com/is/image/marriotts7prod/ar-wuxsa-entrance-25469:Wide-Hor?wid=1336&fit=constrain\", \"AC Hotel Suzhou China 酒店入口\", \"AC Hotel Suzhou China\", \"姑苏区 · 人民路 1585 号\", true, \"horizontal\")\nhotelIntro = TextContent(\"酒店以现代玻璃、石材结合江南白墙黑瓦的建筑元素；客房配有书桌和可调节阅读灯。\", \"small\")\nhotelSpec = TextContent(\"11/21 入住 · 11/22 退房 · 3 位成人\n用房需求：双床房 1 间 + 大床房 1 间，预订时确认可售房型。\", \"small\")\nhotelFare = Stack([hotelPrice, hotelActions], \"row\", \"m\", \"center\", \"between\")\nhotelPrice = BoldText(\"number\", \"¥1,180\", \"2 间 × 1 晚 · 住宿预算\", \"text\", \"lg\")\nhotelActions = Buttons([Button(\"查看酒店\", @OpenUrl(\"https://www.marriott.com/en-us/hotels/wuxsa-ac-hotel-suzhou-china/overview/\"), \"primary\", \"normal\", \"small\")], \"row\")\nhotelCaution = TextContent(\"住宿按每间每晚 ¥590 预留预算，具体房型、早餐与退改条件以酒店查询为准。官网另提示周边施工，预订前需确认噪声影响与父母的出入需求。\", \"small\")\ndayOne = Stack([dayOneTitle, arrivalOne, gardenVisitOne, canalVisitOne], \"column\", \"l\")\ndayOneTitle = Stack([dayOneTitle_part1, dayOneTitle_part2], \"column\", \"xs\")\ndayOneTitle_part1 = MarkDownRenderer(\"## Day 01｜园林与平江水巷\")\ndayOneTitle_part2 = TextContent(\"11 月 21 日 · 上午抵达，午后赏园，傍晚临河休息。\", \"small\")\narrivalOne = Stack([arrivalOne_part1, arrivalOne_part2], \"column\", \"xs\")\narrivalOne_part1 = InlineHeader(\"上午 · 抵达苏州\", \"车站 → 酒店寄存行李 → 午饭休息\")\narrivalOne_part2 = TextContent(\"到站后优先打车前往酒店，安排午饭和休息，再开始逛园林。\")\ngardenVisitOne = Stack([gardenVisitOne_part1, gardenOne, gardenVisitOne_part3], \"column\", \"s\")\ngardenVisitOne_part1 = InlineHeader(\"午后 · 拙政园\", \"约 60–90 分钟 · 以中部水院与亭廊为主\")\ngardenOne = Image(\"拙政园中花园池水与亭台实景，来源苏州市园林局\", \"https://ylj.suzhou.gov.cn/szdoc/szsylj/uploadfile/bg5naimiu1e.jpg\")\ngardenVisitOne_part3 = TextContent(\"不必走遍全园。建议提前按游玩日期核对实名预约时段，遇到台阶和拥挤处放慢节奏。\")\ncanalVisitOne = Stack([canalVisitOne_part1, canalOne, canalVisitOne_part3], \"column\", \"s\")\ncanalVisitOne_part1 = InlineHeader(\"傍晚 · 平江路\", \"沿河走一小段，找间茶馆坐坐\")\ncanalOne = Image(\"苏州平江路傍晚河道、石桥、木船与临河街景\", \"https://news.2500sz.com/uploadfiles/202602/21/2026022109200146823428.jpg\")\ncanalVisitOne_part3 = TextContent(\"平江路公共街区免费。照片展示的是临河街景；人多时不必走完全程，休息比打卡重要。\")\ndayTwo = Stack([dayTwoTitle, gardenVisitTwo, streetVisitTwo, returnTwo], \"column\", \"l\")\ndayTwoTitle = Stack([dayTwoTitle_part1, dayTwoTitle_part2], \"column\", \"xs\")\ndayTwoTitle_part1 = MarkDownRenderer(\"## Day 02｜留园与山塘旧街\")\ndayTwoTitle_part2 = TextContent(\"11 月 22 日 · 上午游园，午后短逛，15:00 前结束游览取行李。\", \"small\")\ngardenVisitTwo = Stack([gardenVisitTwo_part1, gardenTwo, gardenVisitTwo_part3], \"column\", \"s\")\ngardenVisitTwo_part1 = InlineHeader(\"上午 · 留园\", \"约 60–90 分钟 · 冠云峰、窗景和回廊\")\ngardenTwo = Image(\"苏州留园冠云峰与园林庭院实景\", \"https://p1.itc.cn/q_70/images03/20211230/6d7f3cb169064fdf9c92c85896302271.jpeg\")\ngardenVisitTwo_part3 = TextContent(\"从酒店打车前往。把时间留给园林细节，累了就坐下休息。\")\nstreetVisitTwo = Stack([streetVisitTwo_part1, oldStreet, streetVisitTwo_part3], \"column\", \"s\")\nstreetVisitTwo_part1 = InlineHeader(\"午后 · 山塘街\", \"临河短走 · 苏式点心\")\noldStreet = Image(\"苏州山塘街白天游船、石拱桥和沿河街景实拍\", \"https://cdn-ak.f.st-hatena.com/images/fotolife/s/suzhoushenghuo/20240603/20240603112852.jpg\")\nstreetVisitTwo_part3 = TextContent(\"公共街区免费，照片展示石桥和沿河风貌。走累了可以取消这一站，直接回酒店取行李。\")\nreturnTwo = Stack([returnTwo_part1, returnTwo_part2], \"column\", \"xs\")\nreturnTwo_part1 = InlineHeader(\"傍晚前 · 返回上海\", \"取行李 → 前往车站 → 返程\")\nreturnTwo_part2 = TextContent(\"返程按 16:30 左右发车安排；先到酒店取行李，再打车到苏州站，留足进站时间。\")\nlocationMap = Stack([locationMap_part1, locationMap_part2, cityMap], \"column\", \"s\")\nlocationMap_part1 = MarkDownRenderer(\"## 一张地图｜看清两天为什么顺路\")\nlocationMap_part2 = TextContent(\"第一天在古城东北片区，第二天转向古城西侧。景点之间建议打车或短距离步行；地图用于对照景点位置，出行时按当日导航衔接。\", \"small\")\ncityMap = Map([pGardenOne, pPingjiang, pGardenTwo, pShantang], \"wgs84\")\npGardenOne = MapPoint(\"拙政园\", 31.32647, 120.62473, \"https://ylj.suzhou.gov.cn/szdoc/szsylj/uploadfile/bg5naimiu1e.jpg\", null, \"Day 01 · 园林主站\")\npPingjiang = MapPoint(\"平江路\", 31.31493, 120.62969, \"https://news.2500sz.com/uploadfiles/202602/21/2026022109200146823428.jpg\", null, \"Day 01 · 古城水巷\")\npGardenTwo = MapPoint(\"留园\", 31.31762, 120.58827, \"https://p1.itc.cn/q_70/images03/20211230/6d7f3cb169064fdf9c92c85896302271.jpeg\", null, \"Day 02 · 园林主站\")\npShantang = MapPoint(\"山塘街\", 31.32010, 120.59745, \"https://cdn-ak.f.st-hatena.com/images/fotolife/s/suzhoushenghuo/20240603/20240603112852.jpg\", null, \"Day 02 · 短段步行\")\ntickets = Stack([tickets_part1, tickets_part2, ticketCards, ticketNote], \"column\", \"s\")\ntickets_part1 = MarkDownRenderer(\"## 门票与预约\")\ntickets_part2 = TextContent(\"平江路、山塘街公共街区免费；两座园林需单独核对门票和入园时段。\")\nticketCards = CompositeCardBlock([ticketGardenOne, ticketGardenTwo], \"carousel\", true)\nticketGardenOne = CompositeCardItem(\"zhuozhengyuan\", ticketGardenOne_heading, [ticketGardenOne_detail], {price:ticketGardenOne_price, button:ticketGardenOne_action})\nticketGardenOne_heading = ImageText(\"https://ylj.suzhou.gov.cn/szdoc/szsylj/uploadfile/bg5naimiu1e.jpg\", \"拙政园中花园池水与亭台实景\", \"拙政园\", \"11/21 · 下午计划入园\", true, \"horizontal\")\nticketGardenOne_detail = Text(\"text\", \"池水构成中部园景的核心，亭榭与树木沿水展开，呈现疏朗自然的江南园林格局。\", null, null, \"xs\")\nticketGardenOne_price = BoldText(\"number\", \"¥70\", \"成人票\", \"text\", \"lg\")\nticketGardenOne_action = Button(\"查看票价\", @OpenUrl(\"https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml\"), \"primary\", \"normal\", \"small\")\nticketGardenTwo = CompositeCardItem(\"liuyuan\", ticketGardenTwo_heading, [ticketGardenTwo_detail], {price:ticketGardenTwo_price, button:ticketGardenTwo_action})\nticketGardenTwo_heading = ImageText(\"https://p1.itc.cn/q_70/images03/20211230/6d7f3cb169064fdf9c92c85896302271.jpeg\", \"留园冠云峰和园林庭院\", \"留园\", \"11/22 · 上午计划入园\", true, \"horizontal\")\nticketGardenTwo_detail = Text(\"text\", \"以厅堂庭院、曲廊和湖石见长；冠云峰与漏窗相互借景，庭院空间层层变化。\", null, null, \"xs\")\nticketGardenTwo_price = BoldText(\"number\", \"¥45\", \"成人票\", \"text\", \"lg\")\nticketGardenTwo_action = Button(\"查看票价\", @OpenUrl(\"https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml\"), \"primary\", \"normal\", \"small\")\nticketNote = TextContent(\"11 月按淡季公示价展示；旺季（4、5、7—10 月）分别为 ¥80、¥55。父母适用的年龄优惠与可约时段，请在官方渠道确认。\", \"small\")\nfinish = Card([finish_part1, finish_part2, finish_part3], \"card\", \"column\", \"m\")\nfinish_part1 = CardHeader(\"出发前，确认这三件事\")\nfinish_part2 = Stack([departureChecklist], \"column\", \"s\")\ndepartureChecklist = CheckBoxGroup(\"出行准备\", [departureChecklist_part1, departureChecklist_part2, departureChecklist_part3])\ndepartureChecklist_part1 = CheckBoxItem(\"确认实际出行日期与车次\", \"按 11/21–22 安排，购票前确认实际车次与发车时间。\", \"日期\", false)\ndepartureChecklist_part2 = CheckBoxItem(\"同行人的房间安排\", \"确认人数、房间数、床型及退改条件。\", \"房间\", false)\ndepartureChecklist_part3 = CheckBoxItem(\"两座园林的预约时段\", \"按实际游玩日期核对拙政园和留园的可约场次。\", \"园林预约\", false)\nfinish_part3 = TextContent(\"如果父母当天体力一般，宁可去掉一段老街，也不要把整趟旅行变成赶路。\", \"small\")\n",
+      "origin": "SDK 标准用例"
+    }
+  ],
+  "leading": {
+    "display": 1.25,
+    "control": 1.25,
+    "metric": 1.25,
+    "section": 1.3,
+    "title": 1.35,
+    "label": 1.35,
+    "detail": 1.45,
+    "caption": 1.4,
+    "body": 1.5,
+    "code": 1.5
+  },
+  "sourceFingerprint": "35310c3f5fd69e1a7bdb2ff31b5644061fe7e931e493bffbe6c008b893d422b1",
+  "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
+}

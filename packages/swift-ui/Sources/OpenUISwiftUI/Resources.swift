@@ -25,6 +25,9 @@ public final class OpenUIURLSessionResourceLoader: OpenUIResourceLoading {
 
     public func data(for request: URLRequest) async throws -> Data {
         let (data, response) = try await session.data(for: request)
+        if request.url?.scheme?.lowercased() == "https", response.url?.scheme?.lowercased() != "https" {
+            throw URLError(.appTransportSecurityRequiresSecureConnection)
+        }
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw URLError(.badServerResponse)
         }
