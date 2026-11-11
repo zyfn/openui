@@ -7,9 +7,9 @@ enum NativeIconTextMetrics {
     switch size {
     case "xs": return 12
     case "s", "sm": return 14
-    case "l", "lg": return 20
-    case "xl": return 24
-    default: return 16
+    case "l", "lg": return 24
+    case "xl": return 28
+    default: return 20
     }
   }
 }

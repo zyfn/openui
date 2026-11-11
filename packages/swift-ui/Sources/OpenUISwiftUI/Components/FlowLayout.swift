@@ -436,7 +436,10 @@ struct NativeLabelValueLayout: Layout {
             }
         }
         let valueWidth = min(width, ideals[1].width)
-        let labelMinimum = min(minimumLabelWidth, ideals[0].width)
+        // A side-by-side row must share constrained space. The label's
+        // preferred minimum cannot squeeze a long value down to a sliver.
+        let labelLimit = allowsStacking ? CGFloat.greatestFiniteMagnitude : max(1, (width - gap) / 2)
+        let labelMinimum = min(minimumLabelWidth, ideals[0].width, labelLimit)
         if labelMinimum + gap + valueWidth <= width || !allowsStacking {
             let rightWidth = min(valueWidth, max(1, width - labelMinimum - gap))
             let leftWidth = max(1, width - gap - rightWidth)

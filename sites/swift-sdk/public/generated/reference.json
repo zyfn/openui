@@ -829,7 +829,7 @@
       "signature": "IconText(icon: Icon, iconVariant: \"neutral\" | \"info\" | \"success\" | \"warning\" | \"danger\" | \"inverted\" | \"filled\" | \"soft\", iconSize: \"xs\" | \"s\" | \"m\" | \"l\" | \"xl\" | \"sm\" | \"md\" | \"lg\", title: string, subtitle?: string, bold?: boolean, layout?: \"horizontal\" | \"vertical\")",
       "description": "An icon badge with a title and optional subtitle, laid out horizontally or vertically. iconVariant sets the badge color.",
       "purpose": "图标与文字",
-      "treatment": "图标与整组标题／说明垂直居中；普通样式中性、无彩色圆底；显式状态样式保留语义色",
+      "treatment": "图标与整组标题／说明垂直居中；默认 m 为 20pt，l 为 24pt、xl 为 28pt，xs／s 保持紧凑；普通样式中性、无彩色圆底，显式状态保留语义色",
       "examples": [
         "specimen-icons",
         "official-4",
@@ -887,7 +887,7 @@
       "signature": "SnippetCardItem(id: string, lhs: IconText | ImageText, rhs?: Text | BoldText)",
       "description": "One row-style snippet card: a label on the left (IconText or ImageText) and an optional value on the right (Text or BoldText).",
       "purpose": "紧凑对象摘要",
-      "treatment": "名称、图标或缩略图、简短说明形成低密度摘要；内容与操作属于同一对象",
+      "treatment": "名称、图标或缩略图、简短说明形成摘要；lhs／rhs 的文字值保持左右关系，长地址在右列内部换行；数字／指标保留完整数值所需宽度，空间不足时允许下排；内容与操作属于同一对象",
       "examples": [
         "official-4",
         "case-03"
@@ -1274,6 +1274,6 @@
     "body": 1.5,
     "code": 1.5
   },
-  "sourceFingerprint": "b603a42dfeba080eee6d593af16f16c9ea36f7eda14223c5d5473303e3508a87",
+  "sourceFingerprint": "75221afd82ff00f958081359056b3ef50868e928c6f91f4e7fbb8f43bdb8882d",
   "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
 }

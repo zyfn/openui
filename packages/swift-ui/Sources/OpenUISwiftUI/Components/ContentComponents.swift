@@ -671,6 +671,11 @@ struct NativeCardItem: View {
   @State private var copyBelowArtwork = false
   @Namespace private var artworkLayoutScope
   private var groupAction: NativeCardGroupAction? { pendingGroupAction }
+  private var snippetValueNeedsUnbrokenWidth: Bool {
+    guard case .element(let rhs) = context.value("rhs") else { return false }
+    if ["Text", "BoldText"].contains(rhs.typeName) { return PropValue.string(rhs, "variant") == "number" }
+    return true
+  }
   private var bannerHeaderInset: CGFloat {
     guard case .element(let header) = context.value("header"), header.typeName == "ImageTextLarge" else { return 0 }
     return context.theme.spaceM
@@ -797,7 +802,7 @@ struct NativeCardItem: View {
         HStack(alignment: .center, spacing: context.theme.spacing("s")) {
           NativeLabelValueLayout(
             gap: context.theme.spaceM, minimumLabelWidth: context.presentation.minimumCompactCardWidth,
-            centerVertically: true
+            allowsStacking: snippetValueNeedsUnbrokenWidth, centerVertically: true
           ) {
             context.slot("lhs")
             context.slot("rhs")
