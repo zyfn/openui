@@ -37,7 +37,7 @@ final class AdaptivePresentationTests: XCTestCase {
     }
   }
 
-  @MainActor func testLongOptionCopyGetsAReadingColumnWithoutDuplicatingItsMedia() throws {
+  @MainActor func testLongOptionCopyKeepsWidthOwnedColumnsWithoutDuplicatingItsMedia() throws {
     _ = NSApplication.shared
     let standard = try OpenUIStandardComponents.library()
     let icon = try XCTUnwrap(standard.library.components.first { $0.name == "Icon" })
@@ -55,14 +55,17 @@ final class AdaptivePresentationTests: XCTestCase {
     })
     try inWindow(hosting) {
       let original = controls(hosting)
-      XCTAssertEqual(original.count, 3, "Density probes must never load topContent again")
+      XCTAssertEqual(original.count, 3, "Each option must mount its media only once")
       let points = original.map { $0.convert(CGPoint.zero, to: hosting) }
-      XCTAssertEqual(Set(points.map { Int($0.x.rounded()) }).count, 1,
-        "A long explanation needs a full reading column instead of two narrow cards with a stretched empty peer")
-      XCTAssertEqual(Set(points.map { Int($0.y.rounded()) }).count, 3)
-      for value in [800, 280, 600, 320] as [CGFloat] {
+      XCTAssertEqual(Set(points.map { Int($0.x.rounded()) }).count, 2,
+        "Copy height must not collapse columns that fit the configured minimum width")
+      XCTAssertEqual(Set(points.map { Int($0.y.rounded()) }).count, 2)
+      for (value, columns) in [(CGFloat(800), 3), (280, 1), (600, 3), (320, 2)] {
         width.value = value; settle(hosting)
-        XCTAssertEqual(Set(controls(hosting).map(ObjectIdentifier.init)), Set(original.map(ObjectIdentifier.init)))
+        let current = controls(hosting)
+        XCTAssertEqual(Set(current.map(ObjectIdentifier.init)), Set(original.map(ObjectIdentifier.init)))
+        let positions = current.map { $0.convert(CGPoint.zero, to: hosting) }
+        XCTAssertEqual(Set(positions.map { Int($0.x.rounded()) }).count, columns)
       }
     }
   }
