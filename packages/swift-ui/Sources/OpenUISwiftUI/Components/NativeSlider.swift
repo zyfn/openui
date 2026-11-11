@@ -357,17 +357,24 @@ private struct NativeSliderTrack: View {
             }
         }
       }.frame(maxHeight: .infinity).contentShape(Rectangle())
-        .gesture(DragGesture(minimumDistance: 0).onChanged { gesture in
-          guard enabled, !values.isEmpty else { return }
-          let index = dragging ?? values.indices.min { abs(14 + width * fraction(values[$0]) - gesture.startLocation.x) < abs(14 + width * fraction(values[$1]) - gesture.startLocation.x) } ?? 0
-          let proposed = configuration.minimum + Double((gesture.location.x - 14) / width) * (configuration.maximum - configuration.minimum)
-          let value = configuration.snapped(proposed)
-          var next = values; next[index] = value; next.sort()
-          dragging = next.firstIndex(of: value) ?? index
-          select(value, index)
-        }.onEnded { _ in dragging = nil })
+        .modifier(NativeSliderPan(enabled: enabled,
+          fallback: DragGesture(minimumDistance: 0).onChanged { gesture in
+            update(location: gesture.location, start: gesture.startLocation, width: width)
+          }.onEnded { _ in dragging = nil },
+          changed: { location, start in update(location: location, start: start, width: width) },
+          ended: { dragging = nil }))
     }.frame(height: 44).opacity(enabled ? 1 : 0.5)
   }
+  private func update(location: CGPoint, start: CGPoint, width: CGFloat) {
+    guard enabled, !values.isEmpty else { return }
+    let index = dragging ?? values.indices.min { abs(14 + width * fraction(values[$0]) - start.x) < abs(14 + width * fraction(values[$1]) - start.x) } ?? 0
+    let proposed = configuration.minimum + Double((location.x - 14) / width) * (configuration.maximum - configuration.minimum)
+    let value = configuration.snapped(proposed)
+    var next = values; next[index] = value; next.sort()
+    dragging = next.firstIndex(of: value) ?? index
+    select(value, index)
+  }
+
 }
 
 private extension View {

@@ -65,6 +65,7 @@ struct NativeChoiceField: View {
               key, value: field.value, single: NativeChoiceSelection.isSingle(context)))
         } label: {
           choice(item, selected: selected).openUIControlTarget(alignment: .leading)
+            .environment(\.openUICardIsAction, true)
         }.buttonStyle(.plain).disabled(
           !context.canInteract || PropValue.value(item, "disabled") == .boolean(true)
         )

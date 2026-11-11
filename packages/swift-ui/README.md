@@ -335,3 +335,7 @@ adaptive grid gives a row enough room instead of changing it into a vertical
 product card. Overview metrics use the inline metric typography role. Grid items
 align at the top; EntityList allocates short values their intrinsic width. These
 presentation rules do not branch on business labels or values.
+
+Images support SDK-owned preview and in-place tap-to-retry. Normal images open on tap; images inside primary-action or choice cards use a native context menu so their existing tap keeps its meaning. Preview geometry is independent of the 16:9 card crop. Gallery failures no longer add a separate Retry button.
+
+Repeated final `setSource` snapshots and empty `push` chunks do not replace the presentation. Use `reset()` explicitly to replay a program. On iOS 18+, the pager recognizer accepts horizontal intent before beginning; single pages and grids do not activate it.

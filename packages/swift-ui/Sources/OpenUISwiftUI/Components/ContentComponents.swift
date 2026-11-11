@@ -666,6 +666,8 @@ struct NativeCardItem: View {
   @Environment(\.openUIResourceContext) private var artworkResources
   @Environment(\.openUIMediaCache) private var artworkCache
   @State private var artworkImageState: NativeArtworkImageState?
+  @State private var artworkPicture: Image?
+  @State private var artworkAttempt = 0
   @State private var copyBelowArtwork = false
   @Namespace private var artworkLayoutScope
   private var groupAction: NativeCardGroupAction? { pendingGroupAction }
@@ -680,8 +682,10 @@ struct NativeCardItem: View {
   }
   private var artworkRequest: NativeResourceRequestID? {
     guard let source = artworkSource else { return nil }
-    return .init(request: artworkResources.request(for: source),
-      loader: ObjectIdentifier(artworkResources.loader), attempt: 0)
+    var request = artworkResources.request(for: source)
+    if artworkAttempt > 0 { request?.cachePolicy = .reloadIgnoringLocalCacheData }
+    return .init(request: request,
+      loader: ObjectIdentifier(artworkResources.loader), attempt: artworkAttempt)
   }
   private var hasLoadedArtwork: Bool {
     guard context.element.sourceReadiness["bgImageSrc"].complete, let request = artworkRequest else { return false }
@@ -714,6 +718,11 @@ struct NativeCardItem: View {
       if summary { content }
       else { content.clipShape(RoundedRectangle(cornerRadius: itemTheme.radius3xl, style: .continuous)) }
     }
+    .modifier(NativeImageInteraction(source: artworkSource,
+      image: hasLoadedArtwork ? (artworkPicture ?? artworkRequest.flatMap { artworkCache?[$0]?.image }) : nil,
+      alt: context.string("bgImageAlt") ?? "", enabled: artworkSource != nil && context.canInteract,
+      failed: artworkImageState?.request == artworkRequest && artworkImageState?.status == .unavailable,
+      previewTheme: context.theme, retry: { artworkAttempt += 1 }))
     .environment(\.openUITheme, contentTheme)
     .foregroundStyle(contentTheme.textNeutralPrimary)
     .modifier(NativeCardSurface(
@@ -739,12 +748,13 @@ struct NativeCardItem: View {
           fallbackWidth: context.presentation.minimumCardWidth, accessibility: typeSize.isAccessibilitySize) {
           ZStack {
             context.theme.sunk
-            NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .cover,
-              onStatus: { status, _ in
+            NativeRemoteImage(src: source, alt: context.string("bgImageAlt") ?? "", layout: .cover, attempt: artworkAttempt,
+              onStatus: { status, image in
                 guard context.isCurrentPresentation else { return }
+                if let image { artworkPicture = image }
                 let next = NativeArtworkImageState(request: request, status: status)
                 if artworkImageState != next { artworkImageState = next }
-              })
+              }, interactionEnabled: false)
               .environment(\.openUITheme, context.theme)
               .environment(\.colorScheme, colorScheme)
               .environment(\.openUIMediaSourceReady, context.element.sourceReadiness["bgImageSrc"].complete)

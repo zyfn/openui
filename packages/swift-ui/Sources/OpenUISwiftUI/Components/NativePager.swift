@@ -55,6 +55,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
   @State private var width: CGFloat = 0
   @GestureState private var translation: CGFloat = 0
   @GestureState private var trackingDrag = false
+  @State private var nativeTranslation: CGFloat = 0
   @State private var activationIntent = NativeActivationIntent()
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.layoutDirection) private var direction
@@ -62,6 +63,13 @@ struct NativePager<ID: Hashable, Content: View>: View {
   #if os(macOS)
   @FocusState private var keyboardFocused: Bool
   #endif
+  private var canSwipe: Bool { enabled && grid == nil && ids.count > 1 }
+  private var activeTranslation: CGFloat {
+    #if os(iOS)
+    if #available(iOS 18, *) { return nativeTranslation }
+    #endif
+    return translation
+  }
   private var index: Int { ids.firstIndex(of: selection) ?? 0 }
   private var isCarousel: Bool { maximumPageWidth != nil }
   private var fallbackWidth: CGFloat { maximumPageWidth ?? nativePresentation.minimumCardWidth }
@@ -126,7 +134,7 @@ struct NativePager<ID: Hashable, Content: View>: View {
     NativePagerLayout(
       selected: index, maximumPageWidth: maximumPageWidth,
       minimumPageWidth: nativePresentation.minimumCardWidth, peek: trailingPeek, spacing: pageSpacing,
-      fallbackWidth: fallbackWidth, translation: translation, rightToLeft: direction == .rightToLeft,
+      fallbackWidth: fallbackWidth, translation: activeTranslation, rightToLeft: direction == .rightToLeft,
       grid: grid, layoutCount: layoutCount
     ) {
       ForEach(ids, id: \.self) { id in
@@ -146,10 +154,10 @@ struct NativePager<ID: Hashable, Content: View>: View {
     }
     // A grid must not install the pager recognizer: ignoring its callbacks
     // still lets it compete with the document's vertical reading gesture.
-    .simultaneousGesture(
+    .modifier(NativePagerPan(enabled: canSwipe, fallback:
       DragGesture(minimumDistance: 16)
-        .updating($trackingDrag) { _, tracking, _ in tracking = enabled && grid == nil }
-        .onChanged { _ in if enabled && grid == nil { activationIntent.moved() } }
+        .updating($trackingDrag) { _, tracking, _ in tracking = canSwipe }
+        .onChanged { _ in if canSwipe { activationIntent.moved() } }
         .updating($translation) { value, current, _ in
           guard enabled, grid == nil, ids.count > 1, abs(value.translation.width) > abs(value.translation.height) else { return }
           let movement = value.translation.width * (direction == .rightToLeft ? -1 : 1)
@@ -163,7 +171,19 @@ struct NativePager<ID: Hashable, Content: View>: View {
           else { return }
           let movement = value.predictedEndTranslation.width * (direction == .rightToLeft ? -1 : 1)
           select(index + (movement < 0 ? 1 : -1))
-        }, including: enabled && grid == nil ? .all : .subviews)
+        }, changed: { movement in
+          guard canSwipe else { return }
+          activationIntent.moved()
+          let logical = movement * (direction == .rightToLeft ? -1 : 1)
+          let edge = (index == 0 && logical > 0) || (index == ids.count - 1 && logical < 0)
+          nativeTranslation = logical * (edge ? 0.2 : 1)
+        }, ended: { projected in
+          nativeTranslation = 0
+          activationIntent.ended()
+          guard canSwipe, let projected, abs(projected) > max(24, geometry.stride * 0.2) else { return }
+          let logical = projected * (direction == .rightToLeft ? -1 : 1)
+          select(index + (logical < 0 ? 1 : -1))
+        }))
   }
 
   private func select(_ next: Int) {

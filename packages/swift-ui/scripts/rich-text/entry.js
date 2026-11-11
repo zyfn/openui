@@ -19,7 +19,7 @@ function processor(mode) {
 export function prepare(text, mode, sources = [], appearance = {}) {
   const parser = processor(mode);
   const tree = parser.runSync(parser.parse(text));
-  function transform(node) {
+  function transform(node, parent = null, inLink = false) {
     if (node.type === "math" || node.type === "inlineMath" || (mode === "textContent" && node.type === "code" && node.lang === "math")) {
       const display = node.type !== "inlineMath";
       const image = { type: "image", alt: node.value, url: "openui-math://equation?value=" + encodeURIComponent(JSON.stringify({ tex: node.value, display })) + "&appearance=" + encodeURIComponent(JSON.stringify(appearance)) };
@@ -33,7 +33,10 @@ export function prepare(text, mode, sources = [], appearance = {}) {
         children: [{ type: "text", value: "[" + indices.join(", ") + "]" }],
       } : { type: "text", value: "" };
     }
-    if (node.children) node.children = node.children.map(transform);
+    if (node.type === "image" && !inLink && !node.url.startsWith("openui-math:") && !(parent?.type === "paragraph" && parent.children.length === 1)) {
+      return { type: "link", url: "openui-image://preview?src=" + encodeURIComponent(node.url) + "&alt=" + encodeURIComponent(node.alt ?? ""), children: [node] };
+    }
+    if (node.children) node.children = node.children.map(child => transform(child, node, inLink || node.type === "link"));
     return node;
   }
   transform(tree);

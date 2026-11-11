@@ -6,6 +6,28 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class NativeProgramScopeTests: XCTestCase {
+    @MainActor func testTerminalRedeliveryKeepsTheMountedNativeView() throws {
+        _ = NSApplication.shared
+        let standard = try OpenUIStandardComponents.library()
+        let definition = try XCTUnwrap(standard.library.components.first { $0.name == "TextContent" })
+        let library = try standard.extending(overriding: [OpenUIComponent(definition) { context in
+            ProgramScopeMarker(text: context.string("text") ?? "")
+        }])
+        let state = OpenUIState(schema: library.library.toSchema())
+        let source = "root=TextContent(\"Retained\")"
+        state.push(source)
+        let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry).frame(width: 300, height: 80))
+        func marker(_ view: NSView) -> NSTextField? {
+            if let field = view as? NSTextField, field.identifier?.rawValue == "program-scope-marker" { return field }
+            return view.subviews.lazy.compactMap(marker).first
+        }
+        host.layoutSubtreeIfNeeded()
+        let original = try XCTUnwrap(marker(host))
+        state.complete(); state.setSource(source); state.push("")
+        host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertTrue(try XCTUnwrap(marker(host)) === original)
+    }
+
     @MainActor func testReplacingTheStateOwnerDoesNotReuseItsNativeLocalState() throws {
         _ = NSApplication.shared
         let standard = try OpenUIStandardComponents.library()

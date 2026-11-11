@@ -212,6 +212,7 @@ public final class OpenUIState: ObservableObject {
     }
 
     public func push(_ chunk: String) {
+        guard !chunk.isEmpty else { return }
         if isComplete { reset() }
         source += chunk
         acceptSource(parser.push(chunk, complete: false))
@@ -253,6 +254,12 @@ public final class OpenUIState: ObservableObject {
 
     /// Host-owned full-response and editing surfaces can retain user state.
     public func setSource(_ text: String, streaming: Bool = false) {
+        // Completion snapshots are often delivered more than once. Replaying
+        // identical final bytes is not a new program or a request to reset UI.
+        if !streaming, !isInterrupted, source.utf16.elementsEqual(text.utf16) {
+            complete()
+            return
+        }
         // Full-buffer streaming is also supported: a growing UTF-16 prefix is
         // the same presentation, including its final completion snapshot.
         let extendsStream = !isComplete && !source.isEmpty && text.utf16.starts(with: source.utf16)

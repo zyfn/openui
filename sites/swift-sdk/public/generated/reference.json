@@ -102,7 +102,7 @@
       "signature": "Image(alt: string, src?: string)",
       "description": "Image with alt text and optional URL",
       "purpose": "单图",
-      "treatment": "媒体比例依据角色；等待已确定的父级宽度，中性缺图占位；图片下载不决定正文宽度",
+      "treatment": "媒体比例依据角色；父级分配宽度，中性缺图占位；点击预览，失败后点击原位重新加载，恢复局部动画，不显示 Retry 按钮",
       "examples": [
         "case-04",
         "case-01",
@@ -116,7 +116,7 @@
       "signature": "ImageBlock(src: string, alt?: string)",
       "description": "Image block with loading state",
       "purpose": "独立图片块",
-      "treatment": "按媒体比例与圆角显示一张图片；SDK 渲染库支持；当前客户端生成库明确排除，模型应以客户端实际 spec 为准",
+      "treatment": "按媒体比例与圆角显示一张图片，支持预览及原位点击重试；SDK 渲染库支持；当前客户端生成库明确排除，模型应以客户端实际 spec 为准",
       "examples": [
         "specimen-image"
       ]
@@ -127,7 +127,7 @@
       "signature": "ImageGallery(images: {src: string, alt?: string, details?: string}[])",
       "description": "Gallery grid of images with modal preview",
       "purpose": "一组相关图片",
-      "treatment": "图项、列结构与下载分开；已知集合形状可稳定先到图片的宽度；支持原图浏览，刷新保留已有内容",
+      "treatment": "图项、列结构与下载分开；已知集合形状可稳定先到图片的宽度；支持原图浏览与预览内缩放，失败图在原位点击重试；刷新保留已有内容",
       "examples": [
         "case-02"
       ]
@@ -993,7 +993,7 @@
       "signature": "VisualCardBlock(items: VisualCardItem[], layout?: \"grid\" | \"carousel\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
       "description": "A grid or carousel of photo-first cards: a full-bleed background image with a tag on top and a bold text panel at the bottom; an optional action makes every card clickable.",
       "purpose": "视觉入口集合",
-      "treatment": "图形结构与图片下载分开；先到内容可逐项呈现，横滑支持直接手势浏览",
+      "treatment": "图形结构与下载分开；照片可预览，已有整卡动作时通过长按菜单预览，单击仍执行卡片动作；横滑只处理水平意图",
       "examples": [
         "case-04",
         "case-01"
@@ -1274,6 +1274,6 @@
     "body": 1.5,
     "code": 1.5
   },
-  "sourceFingerprint": "038819818a64ba76c32d9fd0c22df0bb2cd61fe91be4aba6ea048ad2a1ced41c",
+  "sourceFingerprint": "59148ac0f6e320ff95bb685b1fb3f04a8aef0bd6eb6c4c9b70eb4d8e6592a924",
   "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
 }

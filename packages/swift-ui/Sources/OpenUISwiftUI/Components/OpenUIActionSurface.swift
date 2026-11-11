@@ -50,6 +50,7 @@ public struct OpenUIActionSurface<Content: View>: View {
                 if useNativeStyle { content }
                 else { content.openUIControlTarget(alignment: .leading) }
             }.contentShape(Rectangle())
+                .environment(\.openUICardIsAction, true)
                 .modifier(NativeActionProgress(active: showsProgress && performing))
         }
         .accessibilityValue(showsProgress && performing ? Text("In progress", bundle: NativeControlResources.bundle) : Text(""))

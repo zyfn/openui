@@ -89,3 +89,13 @@
 "Selected" = "已选择";
 "Not selected" = "未选择";
 "Details for %@" = "查看%@详情";
+
+"Tap image to retry" = "点击图片重新加载";
+
+"Tap to preview" = "点击查看大图";
+
+"Touch and hold to preview" = "长按查看大图";
+
+"Close image preview" = "关闭图片预览";
+
+"Image" = "图片";
