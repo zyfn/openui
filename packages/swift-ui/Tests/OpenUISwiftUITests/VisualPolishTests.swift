@@ -63,14 +63,15 @@ final class VisualPolishTests: XCTestCase {
     }
   }
 
-  @MainActor private func raster(_ source: String, theme: OpenUITheme = .init()) throws -> Raster {
+  @MainActor private func raster(_ source: String, theme: OpenUITheme = .init(),
+                                 presentation: OpenUIPresentation = .init(), width: CGFloat = 320) throws -> Raster {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
     state.setSource(source)
     XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
     let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: library.registry)
-      .openUITheme(theme).dynamicTypeSize(.large).frame(width: 320).padding(12).background(Color.white)
+      .openUITheme(theme).openUIPresentation(presentation).dynamicTypeSize(.large).frame(width: width).padding(12).background(Color.white)
       .environment(\.colorScheme, .light))
     let window = NSWindow(contentRect: NSRect(origin: .zero, size: host.fittingSize),
       styleMask: [.borderless], backing: .buffered, defer: false)
@@ -137,6 +138,52 @@ final class VisualPolishTests: XCTestCase {
     }
     let inverted = NativeIconTextStyle(variant: "inverted", theme: .init())
     XCTAssertNotEqual(inverted.background, .clear, "Inverted glyphs keep their contrasting surface")
+  }
+
+  /// Measure the painted surface independently of the invisible hit target.
+  /// A 44pt target reproduces iOS's sizing feedback in the mounted macOS renderer.
+  @MainActor func testButtonPaintDoesNotGrowWhenWrappedInRowOrColumn() throws {
+    var presentation = OpenUIPresentation()
+    presentation.minimumControlTargetSize = 44
+    var theme = OpenUITheme()
+    theme.interactiveAccentDefault = Color(red: 0, green: 0, blue: 1)
+    theme.interactiveAccentDisabled = Color(red: 0, green: 0, blue: 1)
+    func bounds(_ source: String, width: CGFloat = 320) throws -> CGRect {
+      let image = try raster(source, theme: theme, presentation: presentation, width: width)
+      var minX = image.width, minY = image.height, maxX = -1, maxY = -1
+      for y in 0..<image.height {
+        for x in 0..<image.width {
+          let i = (y * image.width + x) * 4
+          if image.pixels[i] < 50 && image.pixels[i + 1] < 80 && image.pixels[i + 2] > 180 {
+            minX = min(minX, x); minY = min(minY, y)
+            maxX = max(maxX, x); maxY = max(maxY, y)
+          }
+        }
+      }
+      XCTAssertGreaterThan(maxX, minX)
+      return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+    }
+    for size in ["extra-small", "small", "medium", "large"] {
+      let button = "Button(\"Details\",@OpenUrl(\"https://example.com\"),\"primary\",\"normal\",\"\(size)\")"
+      let direct = try bounds("root=" + button)
+      let row = try bounds("root=Buttons([\(button)],\"row\")")
+      let column = try bounds("root=Buttons([\(button)],\"column\")")
+      XCTAssertEqual(row.height, direct.height, accuracy: 1, "\(size): row must not paint its hit-target height")
+      XCTAssertEqual(column.height, direct.height, accuracy: 1, "\(size): width fill must not change height")
+      XCTAssertGreaterThan(column.width, direct.width + 40, "Column buttons still fill available width")
+      XCTAssertGreaterThanOrEqual(try height("root=" + button, width: 320, presentation: presentation), 44)
+    }
+    let short = "Button(\"Details\",@OpenUrl(\"https://example.com\"),\"primary\",\"normal\",\"small\")"
+    let long = "Button(\"Read the full details before continuing to the next step\",@OpenUrl(\"https://example.com\"),\"primary\",\"normal\",\"small\")"
+    // Only the first surface is blue; the taller peer uses the destructive palette.
+    let tallerPeer = "Button(\"Continue\\nnext step\",@OpenUrl(\"https://example.com\"),\"primary\",\"destructive\",\"large\")"
+    XCTAssertEqual(try bounds("root=Buttons([\(short),\(tallerPeer)],\"row\")").height,
+      try bounds("root=" + short).height, accuracy: 1,
+      "A mixed-size, multiline peer must not enlarge the short button's painted surface")
+    let directLong = try bounds("root=" + long, width: 140)
+    XCTAssertGreaterThan(directLong.height, try bounds("root=" + short, width: 140).height)
+    XCTAssertEqual(try bounds("root=Buttons([\(long)],\"row\")", width: 140).height,
+      directLong.height, accuracy: 1, "Long text grows naturally rather than being clipped to a fixed height")
   }
 
   @MainActor func testMetadataTagsStayLighterThanActionsAndLongLabelsRemainUnbounded() throws {

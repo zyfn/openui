@@ -112,6 +112,7 @@ struct NativeActionButtonStyle: ButtonStyle {
     var destructive = false
     var iconOnly = false
     var circular = false
+    var stretchesTarget = false
     @Environment(\.isEnabled) private var enabled
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -213,7 +214,9 @@ struct NativeActionButtonStyle: ButtonStyle {
                     .strokeBorder(theme.interactiveAccentDefault, lineWidth: 2).padding(-3).opacity(focused && enabled ? 1 : 0)
             )
             // Keep a native touch target without inflating the visible capsule.
-            .frame(minWidth: minimumControlTargetSize, minHeight: minimumControlTargetSize)
+            // Row alignment expands this outer target, not the painted label.
+            .frame(minWidth: minimumControlTargetSize, minHeight: minimumControlTargetSize,
+                   maxHeight: stretchesTarget ? .infinity : nil)
             .contentShape(Rectangle())
             .onHover { hovered = $0 }
             .animation(reduceMotion ? nil : .easeOut(duration: nativePresentation.motion.pressDuration), value: configuration.isPressed)

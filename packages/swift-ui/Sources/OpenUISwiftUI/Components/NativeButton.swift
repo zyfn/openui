@@ -14,7 +14,8 @@ struct OpenUINativeButton: View {
         button.buttonStyle(
             NativeActionButtonStyle(
                 theme: context.theme, variant: variant,
-                size: context.string("size"), destructive: role == .destructive)
+                size: context.string("size"), destructive: role == .destructive,
+                stretchesTarget: context.stretchesVertically)
         )
         .accessibilityLabel(context.string("label") ?? "")
         .opacity(presentationReady ? 1 : 0)
@@ -27,8 +28,11 @@ struct OpenUINativeButton: View {
             role: role, useNativeStyle: true, validateForm: variant == "primary", showsProgress: true
         ) {
             Text(context.string("label") ?? "").fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: context.fillsControlWidth ? .infinity : nil,
-                       maxHeight: context.stretchesVertically ? .infinity : nil)
+                // The parent lays out the outer touch target. Expanding the label
+                // to that height would paint the invisible target as button fill.
+                // Keep natural text height (including wrapped lines), while column
+                // actions may still fill their proposed width.
+                .frame(maxWidth: context.fillsControlWidth ? .infinity : nil)
         }
     }
 }
