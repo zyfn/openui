@@ -42,13 +42,8 @@ struct NativeMarkdownText: View {
     .init(source: OpenUIString(text), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
   }
 
-  private var displayedText: String {
-    if preparedRequest == request { return prepared ?? text }
-    if let prepared, let previous = preparedRequest, request.extends(previous) { return prepared }
-    return text
-  }
   var body: some View {
-    MarkdownUI.Markdown(displayedText,
+    MarkdownUI.Markdown(preparedRequest == request ? prepared ?? text : text,
       baseURL: resources.baseURL, imageBaseURL: resources.baseURL)
       .markdownTextStyle {
         ForegroundColor(foreground)
@@ -239,7 +234,6 @@ private struct NativeMarkdownImage: View {
   @State private var status: NativeMediaStatus = .loading
   var body: some View {
     NativeRemoteImage(src: url?.absoluteString, layout: .intrinsic, onStatus: { phase, _ in status = phase })
-      .environment(\.openUIMediaSourceReady, url != nil)
       .clipShape(RoundedRectangle(cornerRadius: theme.radiusM, style: .continuous))
       .accessibilityElement(children: .ignore).accessibilityAddTraits(.isImage)
       .accessibilityIdentifier(identifier)

@@ -81,7 +81,7 @@
       "reason": "The npm tarball omits the repository license."
     }
   },
-  "scriptSHA256": "75b341df243db8e164b59d4178e3e91aa9027ffd2c0cdf066425ac287c975471",
+  "scriptSHA256": "68e97d52e63dc2a2297cfa695f76396deb076b10e901c6f92ba0b86d1ca08a09",
   "cssSHA256": "0efdf5e34969f4a7792335fa5e6b84a30f4d55270fa5f773877bd3c3ec4a010a",
   "offlineFonts": true,
   "embeddedFontCount": 20
