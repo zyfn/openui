@@ -62,7 +62,7 @@
       "purpose": "路线、住宿选址、真实公开票价与出发前确认",
       "file": "case-07-plan-suzhou-family-trip-ticket-design.openui",
       "request": "想从上海去苏州玩两天，带父母，不想太累。交通、住宿和景点能一起安排吗？",
-      "sha256": "21218fb1d458cc126ad99afaf47411a1ffde5707be815e97f7e94cd12f8687cd",
+      "sha256": "0f24dc75da9e8be5383952d644c2baf4452d94211dbce76a0bdc2c268e633a6c",
       "sourceSHA256": "4c1f6a6e744e981e8385511ae28629cdf2c03334e82f9237ebd23553d3604c7f"
     },
     {
@@ -71,7 +71,7 @@
       "title": "北京—曼谷 · 交通报价",
       "purpose": "统一交通卡布局、首段航司、中转信息与日期比较",
       "file": "case-08-transport-comparison.openui",
-      "sha256": "53c9998228e7ec3eaf3b98007f3772fb79515c39d3acded371cf858c5649cf7e",
+      "sha256": "b256e9ae688e82306412b1df749046044eb38baad527b95017eb23c9ea8e47c7",
       "sourceSHA256": "4c8b21b585cadb6dbf86ae2f2880aebfa8ce60ba2d8815e2f987b5a11b376edb"
     }
   ],
