@@ -144,10 +144,10 @@ Approved pixel baselines, when present, are separate from structural assertions.
 
 
 Grid peer cards accept their measured row extent, with object actions at the
-bottom. Carousel cards keep their natural extent. EntityList text values use the
-ordinary body role; explicit number values and totals keep their emphasized
-roles. Short values remain at the row's trailing edge; a stacked text value
-reads from the leading edge. Read-only body rows use spaceS above and below,
+bottom. Carousel cards keep their natural extent. EntityList labels use secondary ink and text values use medium emphasis;
+explicit number values and totals keep their numeric/emphasized roles. Stable
+equal-width cells wrap independently: text reads from the leading edge of its
+right column, while numeric values remain trailing-aligned. Read-only body rows use spaceS above and below,
 while headers/totals retain their group spacing. Table retains its column grid. Callout
 copy uses the body text role. These defaults preserve the supplied structure
 and data rather than classifying business content or reordering a response.
