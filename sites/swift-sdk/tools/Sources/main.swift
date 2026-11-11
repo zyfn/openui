@@ -46,7 +46,8 @@ import CryptoKit
       }
       if let value = child.value as? CGFloat { metrics[key] = Double(value) }
     }
-    let tokens: [String: Any] = ["colors": colors, "fonts": fonts, "metrics": metrics]
+    let chartPalette = theme.chartColors(forSeriesCount: 8).map { ["light": color($0, dark: false), "dark": color($0, dark: true)] }
+    let tokens: [String: Any] = ["colors": colors, "fonts": fonts, "metrics": metrics, "chartPalette": chartPalette, "chartPalettePlatform": "macOS"]
     try JSONSerialization.data(withJSONObject: tokens, options: [.prettyPrinted, .sortedKeys]).write(to: directory.appendingPathComponent("tokens.json"))
     let library = try OpenUIStandardComponents.library()
     try Data(library.toSpec().jsonString().utf8).write(to: directory.appendingPathComponent("library.json"))

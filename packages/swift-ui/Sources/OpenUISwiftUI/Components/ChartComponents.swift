@@ -143,7 +143,7 @@ struct NativeChart: View {
   @State private var presentationCache = NativeChartPresentationCache()
   @State private var axisMeasurements = NativeChartAxisMeasurements()
   @ScaledMetric(relativeTo: .body) private var axisScale: CGFloat = 1
-  @ScaledMetric(relativeTo: .body) private var legendMarkerSize: CGFloat = 10
+  @ScaledMetric(relativeTo: .body) private var legendMarkerSize: CGFloat = 8
   @Namespace private var measurementScope
   private var name: String { context.element.typeName }
   private var currentData: NativeChartData { presentationCache.values(context).current }
@@ -177,7 +177,7 @@ struct NativeChart: View {
       semi: context.presentationString("appearance") == "semiCircular", palette: palette,
       secondary: context.theme.textNeutralSecondary, border: context.theme.borderDefault,
       gridColor: context.presentation.chartGrid, axisColor: context.presentation.chartAxis,
-      canvasColor: context.theme.background, labelFont: context.theme.textStyle(.supporting).font.nativeFont(scale: axisScale),
+      canvasColor: context.theme.background, labelFont: context.theme.textStyle(.caption).font.nativeFont(scale: axisScale),
       inspected: inspected, axisScale: axisScale,
       singleStackedBarThickness: context.presentation.singleStackedBarThickness * axisScale,
       axisMeasurements: axisMeasurements,
@@ -185,7 +185,7 @@ struct NativeChart: View {
   }
   private var measuredAxisLabels: some View {
     let labels = drawing.axisLabels
-    let style = context.theme.textStyle(.supporting)
+    let style = context.theme.textStyle(.caption)
     return HStack(spacing: 0) {
       ForEach(Array((labels.left + labels.bottom).enumerated()), id: \.offset) { index, label in
         Text(label).nativeTextStyle(style).monospacedDigit()
@@ -326,7 +326,7 @@ struct NativeChart: View {
   }
   private func legendLabel(index: Int, title: String) -> some View {
     HStack(spacing: context.theme.spacing("xs")) {
-      RoundedRectangle(cornerRadius: 2, style: .continuous)
+      Circle()
         .fill(palette[allData.colorIndex(at: index) % palette.count])
         .frame(width: legendMarkerSize, height: legendMarkerSize).accessibilityHidden(true)
       Text(title).openUIFont(context.theme.textLabelSm, role: .control).foregroundStyle(context.theme.textNeutralSecondary)
@@ -786,8 +786,8 @@ struct NativeChartDrawing {
       }
       let isZero = abs(value) < 0.000_001
       canvas.stroke(
-        line, with: .color(isZero ? axisColorValue.opacity(0.35) : gridColorValue),
-        lineWidth: isZero ? 0.75 : 0.5)
+        line, with: .color(isZero ? axisColorValue.opacity(0.28) : gridColorValue.opacity(0.65)),
+        lineWidth: 0.5)
     }
   }
   private func cartesian(_ canvas: inout GraphicsContext, _ size: CGSize) {

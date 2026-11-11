@@ -505,6 +505,25 @@ function App() {
               </button>
             ))}
           </div>
+          <div className="chart-color-reference">
+            <span>图表 · 系统色</span>
+            <div>
+              {tokens.chartPalette.map((c, i) => (
+                <button
+                  key={i}
+                  style={{ background: c[dark ? "dark" : "light"] }}
+                  title={c[dark ? "dark" : "light"]}
+                  aria-label={`复制图表颜色 ${i + 1}`}
+                  onClick={() =>
+                    navigator.clipboard.writeText(c[dark ? "dark" : "light"])
+                  }
+                />
+              ))}
+            </div>
+            <small>
+              由 Swift SDK 实际导出；此处为 macOS 系统色，原生呈现跟随所在平台。
+            </small>
+          </div>
         </section>
         <section className="section">
           <div className="chapter-heading">
@@ -861,6 +880,7 @@ function App() {
                         <Playground
                           key={activeExample.id}
                           initialSource={activeExample.source}
+                          dark={dark}
                         />
                       </Suspense>
                     </PreviewBoundary>

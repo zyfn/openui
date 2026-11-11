@@ -1672,3 +1672,26 @@ footer > a:last-child {
   border: 1px solid var(--line);
   border-radius: 14px;
 }
+
+.chart-color-reference {
+  border-top: 1px solid var(--line);
+  margin-top: 26px;
+  padding-top: 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.chart-color-reference > div {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.chart-color-reference button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+.chart-color-reference small {
+  font-size: 11px;
+  line-height: 1.7;
+}

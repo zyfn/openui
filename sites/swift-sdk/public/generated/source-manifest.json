@@ -1,7 +1,7 @@
 {
   "files" : {
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/CardSourceProvider.swift" : "a16407071d60e3db9d2579fa7992ab4cdf64ddf5bb5595b3479f5f93940c6d30",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/ChartComponents.swift" : "f9b37ca11d1d8b434d4a4ad87ad40dbe5476748b7a0708ac0931f1f5c7f7c3a4",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/ChartComponents.swift" : "6a5c79b2013655456fd1a83ca2be6dce3e2436858045b38334484d3b9350b829",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/ContentComponents.swift" : "9604ab5d75da71d5b74122e8c55b1ed68ab0b3dcca8afd1bba47277ca4bdae6c",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/DisplayComponents.swift" : "2fe89d5eba760ccb14b43a6d8df6696b325f3acc06115ae6e5e105092c0eb9ee",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/FlowLayout.swift" : "0a6945c490851d95868ae2937ef016711060181549610d2cb54c0f01878ca190",
@@ -61,7 +61,7 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/en.lproj\/Localizable.strings" : "75eb4f518e68476ac4a52b9c93de911c5f0a0a43eaa94957496a6ec3e77e4e36",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/upstream-catalog.json" : "24d428b6fd5bc3c50939840a3649c68351106b6c82be9a0b1ee72b88a4e2f55e",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/zh-Hans.lproj\/Localizable.strings" : "fa8abf90c3fe61e24d1baeb99a0fadd41e38085f2320479eff694bcd5b40d9c8",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ChartPalette.swift" : "5deb88cde386012f6f46e6585d97bbeaf98ba9cad23c9996084d9fa620aba9f1",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ChartPalette.swift" : "0f148ae25d8df69a11aee3a9c9a62bd313fbe1b2dc702b2e8940d7584be8b0ca",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/NativeComponentStyle.swift" : "f3ee494408075ee2f303e6e55bbea2bacb400ab14a81fc806b5e2424185b4a6d",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/NativeControlPalette.swift" : "b74d6a5d74c7b837e8d77b3cdfaff5482ce1fdda2e69647ed48ca9a9b6dc7b6f",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/OpenUIMotion.swift" : "ff3c4306c8bae4f80f09c17ae18777619c1e24ad78ced850ab93a790023679a4",
@@ -71,5 +71,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "1348a2897edbb9ab7c24b2e82588aca085af803677199a5be48e7739c7eb0c9b"
+  "fingerprint" : "038819818a64ba76c32d9fd0c22df0bb2cd61fe91be4aba6ea048ad2a1ced41c"
 }

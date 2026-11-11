@@ -1,4 +1,6 @@
 import React, { useState, useCallback } from "react";
+import { ThemeProvider } from "@openuidev/react-ui/ThemeProvider";
+import tokens from "../public/generated/tokens.json";
 import { Renderer } from "@openuidev/react-lang";
 import { previewLibrary } from "./preview-library";
 import "@openuidev/react-ui/index.css";
@@ -6,8 +8,10 @@ import "@openuidev/react-ui/defaults.css";
 
 export default function Playground({
   initialSource,
+  dark = false,
 }: {
   initialSource: string;
+  dark?: boolean;
 }) {
   const [draft, setDraft] = useState(initialSource);
   const [source, setSource] = useState(initialSource);
@@ -56,12 +60,23 @@ export default function Playground({
         </button>
       </div>
       <div className="react-preview" key={revision}>
-        <Renderer
-          response={source}
-          library={previewLibrary}
-          onError={onErrors}
-          onAction={setEvent}
-        />
+        <ThemeProvider
+          mode={dark ? "dark" : "light"}
+          cssSelector=".react-preview"
+          lightTheme={{
+            defaultChartPalette: tokens.chartPalette.map((c) => c.light),
+          }}
+          darkTheme={{
+            defaultChartPalette: tokens.chartPalette.map((c) => c.dark),
+          }}
+        >
+          <Renderer
+            response={source}
+            library={previewLibrary}
+            onError={onErrors}
+            onAction={setEvent}
+          />
+        </ThemeProvider>
       </div>
       {errors.length > 0 && (
         <details>
