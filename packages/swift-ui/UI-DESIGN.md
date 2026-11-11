@@ -196,9 +196,7 @@ slots and very large text retain the glyph and accessible unavailable status.
 
 OptionCards choose their column count from the current container and measured title/subtitle height. A narrower cell may add at most about one body line over the full-width copy; otherwise the group reduces its column count. Accessibility text sizes use a single column. These are density preferences, not truncation limits: complete copy remains visible. Copy-only probes never render topContent, load images, or create actions.
 
-Buttons use one layout subtree across row/column reflow, preserving native control identity. The explicit column direction remains authoritative. Form and FormControl now use the reference's open vertical composition, without
-a grouped outer card or a second inline/stacked field subtree. This removes the
-previous adaptive branch; active editing continuity still requires native interaction proof.
+Buttons use one layout subtree across row/column reflow, preserving native control identity. The explicit column direction remains authoritative. Form retains one vertical field/action subtree and now defaults to the same task-panel surface as Card. FormControl remains the field label/control/hint unit. Hosts may explicitly set formShowsCardSurface=false when a surrounding panel already owns the boundary. This native visual policy differs from the reference open Form and adds no Lang field; it does not infer business intent or automatically inspect ancestor surfaces.
 
 Chart legends balance equally sized reading columns (four comparable entries become two plus two when three plus one would otherwise fit). Their complete labels wrap, while existing minimum control targets remain intact. Bar/Line/Area charts with up to four categories reserve a second label line before omitting ticks; dense axes and numeric axes retain sparse ticks. Explicit chart height remains authoritative, and crowded previews omit ticks rather than overlap axis titles. Inspection placement is unchanged and still requires visual review.
 

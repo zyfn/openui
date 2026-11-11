@@ -5,6 +5,12 @@ import XCTest
 @testable import OpenUISwiftUI
 
 final class NativeDesignTests: XCTestCase {
+    func testRequiredFeedbackUsesLocaleWithoutRewritingUnknownMessages() {
+        XCTAssertEqual(NativeControlText.localized("This field is required", locale: Locale(identifier: "zh-Hans")), "请填写或选择此项")
+        XCTAssertEqual(NativeControlText.localized("This field is required", locale: Locale(identifier: "en_US")), "This field is required")
+        XCTAssertEqual(NativeControlText.localized("Custom validation detail", locale: Locale(identifier: "zh-Hans")), "Custom validation detail")
+    }
+
     func testCustomTypographyReachesEveryTextSizeWithoutSeparateNumericConstants() {
         var theme = OpenUIThemeValues()
         theme.textBodyDefault.size = 21

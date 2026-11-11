@@ -114,6 +114,7 @@ private struct NativeSliderTarget: Equatable {
 }
 
 struct NativeSliderField: View {
+    @Environment(\.locale) private var locale
   let context: OpenUIComponentContext
   @Environment(\.openUIFieldLabel) private var fieldLabel
   @Environment(\.dynamicTypeSize) private var typeSize
@@ -142,7 +143,7 @@ struct NativeSliderField: View {
           select: { value, index in draft.select(value, at: index) })
         ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
           if let error = configuration.error(for: draft.values, index: index) {
-            Text(error).nativeTextStyle(context.theme.textStyle(.fieldError))
+            Text(NativeControlText.localized(error, locale: locale)).nativeTextStyle(context.theme.textStyle(.fieldError))
               .fixedSize(horizontal: false, vertical: true)
               .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
           }

@@ -307,3 +307,5 @@ renderer. Export the actual resulting LibrarySpec.
 Native PromptOptions and Table cell policies are explicit caller choices; base
 prompt generation and unrestricted Table rendering retain the upstream default
 capabilities.
+
+Form defaults to the same native surface as Card (border, corners and inset). Do not add an outer Card merely to frame a Form. An enclosing host panel may explicitly opt out through OpenUIPresentation.formShowsCardSurface=false. This is native presentation policy; Lang fields, form scope, validation and ActionEvent payloads are unchanged.

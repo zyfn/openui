@@ -12,7 +12,7 @@ imgB = Image("安静克制、柔和照明的卧室", "https://images.unsplash.co
 styleC = OptionCard("温暖复古", "C · 温暖复古", "胡桃木、藤编、焦糖色；温润、有生活感。", imgC)
 imgC = Image("胡桃木与复古氛围的温暖卧室", "https://images.unsplash.com/photo-1615874694520-474822394e73?w=900&q=85")
 chooserActions = Buttons([continueChoice], "column")
-continueChoice = Button("生成布置建议", @ToAssistant("根据随附表单中“卧室氛围”的当前选择，提炼共同偏好，给出适合出租房的配色、灯光和软装建议。优先不破坏房屋、可搬走的改变，暂不推荐具体商品。"), "primary", "normal", "medium")
+continueChoice = Button("生成布置建议", @ToAssistant("根据我选择的卧室氛围，提炼共同偏好，给出适合出租房的配色、灯光和软装建议。优先不破坏房屋、可搬走的改变，暂不推荐具体商品。"), "primary", "normal", "medium")
 section2 = MarkDownRenderer("## 02｜舒服，不一定需要重新装修")
 tips = VisualCardBlock([tipA, tipB, tipC], "carousel", true)
 tipA = VisualCardItem(tipTextA, "light", "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=85")

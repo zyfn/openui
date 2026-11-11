@@ -6,8 +6,8 @@ struct OpenUINativeForm: View {
     let context: OpenUIComponentContext
     @StateObject private var validation = NativeFormValidation()
     var body: some View {
-        // The reference Form is an open vertical flow, not a second card around
-        // already surfaced fields. Each input has one mounted presentation.
+        // Keep one field/action subtree. The native task-panel appearance reuses
+        // Card's surface; it does not add a second form or change its submission.
         VStack(alignment: .leading, spacing: context.theme.spacing("ml")) {
             ForEach(context.children("fields")) { context.render($0.value) }
             context.slot("buttons").environment(\.openUIFormActions, true)
@@ -15,6 +15,9 @@ struct OpenUINativeForm: View {
         .environment(\.openUIFieldPresentation, .standalone)
         .environment(\.openUIExactFormName, context.codeUnitString("name"))
         .environment(\.openUIFormValidation, validation)
+        .modifier(OpenUICardSurface(theme: context.theme,
+            variant: context.presentation.formShowsCardSurface ? "card" : "clear",
+            active: context.layoutConfigurationReady))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(context.string("name") ?? "Form")
     }

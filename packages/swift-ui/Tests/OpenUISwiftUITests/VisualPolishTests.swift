@@ -115,9 +115,29 @@ final class VisualPolishTests: XCTestCase {
       XCTAssertGreaterThan(card.count(red), 100, "The normal card is the visible-border positive control")
     }
     let form = "Form(\"f\",Buttons([]),[FormControl(\"Field\",Input(\"x\",\"Value\"))])"
-    let nested = try raster("root=Card([\(form)],\"sunk\")", theme: theme)
+    var presentation = OpenUIPresentation()
+    presentation.formShowsCardSurface = false
+    let nested = try raster("root=Card([\(form)],\"sunk\")", theme: theme, presentation: presentation)
     XCTAssertEqual(nested.count(red), 0)
     XCTAssertGreaterThan(nested.count(blue), 50, "Removing the content border must not erase editable field boundaries")
+  }
+
+  @MainActor func testFormSharesCardSurfaceAndSupportsExplicitHostOptOut() throws {
+    var theme = OpenUITheme()
+    theme.borderDefault = Color(red: 1, green: 0, blue: 0)
+    theme.borderInteractive = Color(red: 0, green: 0, blue: 1)
+    let form = "Form(\"f\",Buttons([]),[FormControl(\"Field\",Input(\"x\",\"Value\"))])"
+    var plain = OpenUIPresentation(); plain.formShowsCardSurface = false
+    let automatic = try raster("root=" + form, theme: theme)
+    let composed = try raster("root=Card([\(form)],\"card\")", theme: theme, presentation: plain)
+    XCTAssertEqual(automatic.width, composed.width)
+    XCTAssertEqual(automatic.height, composed.height)
+    XCTAssertEqual(automatic.pixels, composed.pixels, "Form must reuse Card geometry and paint rather than invent a second surface")
+    let unframed = try raster("root=" + form, theme: theme, presentation: plain)
+    let red: (UInt8, UInt8, UInt8) -> Bool = { $0 > 180 && $1 < 100 && $2 < 100 }
+    XCTAssertGreaterThan(automatic.count(red), 100)
+    XCTAssertEqual(unframed.count(red), 0)
+    XCTAssertGreaterThan(automatic.height, unframed.height)
   }
 
   @MainActor func testNeutralIconAliasesRenderIdenticallyAndStatusVariantsKeepTheSameGeometry() throws {

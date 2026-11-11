@@ -74,7 +74,7 @@ semantic color must not silently become the chart series palette.
 | Overview, Snippet, Context, Visual cards | family-specific radius/inset from the same scale | photo cards use width-derived extent, neutral loading/failure and translucent charcoal tag capsules with soft white ink; native collection measurement retained; compact facts stack before splitting values |
 | Tabs | open labels with a selected capsule and shared selection color | native horizontal scrolling and focus; long accessibility labels wrap within the viewport |
 | Accordion | continuous clear disclosure list, no separate card per item | native DisclosureGroup affordance; streaming open-selection behavior retained |
-| Form, FormControl | open vertical flow, 16pt form gap, 8pt control gap | one input subtree; native field/picker interaction retained |
+| Form, FormControl | Card task-panel surface, 16pt form gap, 8pt control gap | one input subtree; explicit host opt-out; native field/picker interaction retained |
 | Input, TextArea, Select, DatePicker | shared reading role, subtle surface, interactive/error border | native keyboard, date sheet, text editor and minimum targets |
 | CheckBoxGroup, RadioGroup, SwitchGroup | shared labels, descriptions, spacing and semantic colors | iOS radio choices use a wrapping row without descriptions and a vertical list with descriptions; selection targets and feedback retained |
 | Chips, OptionCards | reference selection border/tint, density and corners | native targets; card columns adapt to complete copy without duplicate controls |

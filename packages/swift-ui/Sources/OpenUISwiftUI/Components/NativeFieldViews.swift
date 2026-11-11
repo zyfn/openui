@@ -61,7 +61,7 @@ struct OpenUINativeField: View {
         VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
             control.accessibilityIdentifier("openui.field.\(field.name.displayString)")
             if let error {
-                Label(error, systemImage: "exclamationmark.circle.fill")
+                Label(NativeControlText.localized(error, locale: locale), systemImage: "exclamationmark.circle.fill")
                     .nativeTextStyle(context.theme.textStyle(.fieldError))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("openui.error.\(field.name.displayString)")

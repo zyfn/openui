@@ -73,3 +73,5 @@
 "Content unavailable" = "内容暂不可用";
 "Loading" = "加载中";
 "Content is incomplete" = "内容尚未完整";
+
+"This field is required" = "请填写或选择此项";

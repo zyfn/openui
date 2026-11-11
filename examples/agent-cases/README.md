@@ -80,3 +80,9 @@ Agent消费方同步本目录的生成文档与源码；SDK默认提示词保持
 ## 选择后继续对话
 
 Case04 使用现有 Form + OptionCards(multiple) + Buttons(column)；主要提交按钮紧随选择区，保持一个通栏入口，不逐张触发Agent。主按钮走现有required校验。@ToAssistant的文案说明任务，实际选择由事件formState携带；消费宿主必须把formName/formState和消息一起交给Agent，不能只取humanFriendlyMessage。CaseLab仅记录和预览本地事件，不伪称已发送模型。取消选中后再次提交应携带最新值，不能沿用上次快照。
+
+## Form 的使用边界
+
+Form 用于收集同一任务的一组选择/输入并统一提交。Swift SDK默认复用Card的边框、圆角和内边距，无需为同一个Form再套Card；这是原生视觉策略，不是Lang新字段。宿主已有独立面板时可显式设置OpenUIPresentation.formShowsCardSurface=false，不按业务内容自动猜测边框。
+
+不要为了加框或排版使用Form：商品/景点展示卡、单个查看或预订跳转、即时本地筛选、无需提交的勾选清单、纯说明或整段回答都不应包装成Form。多个独立任务也不要共用一个Form提交。当前8例只有Case04使用Form，选择和按钮属于同一次提交；Case07准备清单仅本地勾选，不使用Form。
