@@ -28,7 +28,8 @@ struct NativeImageInteraction: ViewModifier {
   }
   func body(content: Content) -> some View {
     content
-      .highPriorityGesture(TapGesture().onEnded { activate() }, including: canTap ? .all : .subviews)
+      .gesture(TapGesture().onEnded { activate() }, including: canTap && !failed ? .all : .subviews)
+      .highPriorityGesture(TapGesture().onEnded { activate() }, including: canTap && failed ? .all : .subviews)
       .contextMenu {
         if canPreview {
           Button { guard intent?.permitsActivation != false else { return }; preview = true } label: {

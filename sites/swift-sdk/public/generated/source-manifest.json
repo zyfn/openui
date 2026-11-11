@@ -22,7 +22,7 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeFieldState.swift" : "32606efb527188918471a00bd277d1c3883ac0245d5bc2e9313898e647660edb",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeFieldViews.swift" : "d361b4f9eb316c45aa3f454fe649ab9b708bf4ceec4a8233be3f52189e939d48",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeIcon.swift" : "ee38b0baedc62d23e59bac04f9db5e2b151fe4e530b2af5b28eba64294ce68e0",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeImageInteraction.swift" : "68a9e5218d5fdfdd6f6c4158e8308e2d8e35ce4130cfcfc036205bd269d1f951",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeImageInteraction.swift" : "51a615d786391f7e3e0016611b39489294329b835459b534dc7ce2d0e181a153",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeLayoutContract.swift" : "6762998082207e416e70c511d4ddc2d7c5d3060ab13e580b624d0ee87f2c9f61",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeLoadingViews.swift" : "244695e7b0db0640e7caaa5120b92596ca5add9490c607e854b4cc3fdc06ab5c",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMap.swift" : "39533c25fa7e49e6444f9b0acc4804ac1ed064aaab472faef5b1f061251f00b0",
@@ -73,5 +73,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "59148ac0f6e320ff95bb685b1fb3f04a8aef0bd6eb6c4c9b70eb4d8e6592a924"
+  "fingerprint" : "5b068c51ee619474dfbc4cca143bce5df1891ba443add7626e91515d59d365b0"
 }
