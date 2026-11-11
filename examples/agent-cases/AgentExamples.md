@@ -32,8 +32,9 @@ Agent 的选择建议放在商品卡外，并明确为建议。价格展示可�
 
 ## 文字角色与对象表达
 
-复用 SDK 系统字体与既有角色，不写客户端样式覆盖或硬编码字号。当前默认对照为：页面标题 26pt、章节 20pt、对象标题 18pt、正文 16pt、规格/来源 14pt、紧凑图注 12pt；正文 regular，标题 semibold，价格与时间使用数字角色。行距继承 SDK 的角色设置（正文 1.5、章节 1.3、对象标题 1.35、详情 1.45），不是在示例中另设参数。
+以下为SDK内部映射，不是模型需要选择的字号参数；DSL保持不变。复用 SDK 系统字体与既有角色，不写客户端样式覆盖或硬编码字号。当前默认对照为：页面标题 26pt、章节 20pt、对象标题 18pt、正文 17pt、规格/来源 15pt、紧凑图注 13pt；正文 regular，标题 semibold，价格与时间使用数字角色。行距继承 SDK 的角色设置（正文 1.5、章节 1.3、对象标题 1.35、详情 1.45），不是在示例中另设参数。
 
+- 章节通过标题和留白组织，避免标题前重复手动分隔线；交通连接线、表格自身的结构线保留。
 - 页面/章节用 Markdown 标题；对象名称用 CardHeader 或组件自己的 title。正文介绍使用 TextContent 默认角色；small 留给日期、规格、来源与短补充，不把完整解释普遍压成小字。
 - 主标题标识真实对象：景点名、酒店名、可核对商品名/型号。票种、房型、日期与入园时段放在规格区域。正文介绍对象本身；预约、退改提示和 Agent 推荐理由分开，不能替代介绍。
 - 商品卡底部使用 `BoldText(number, 金额, 价格口径, text, lg)`，卡内详情入口使用 `Button(primary, normal, small)`；金额不在介绍中重复。币种、每人/每张/每间每晚、合计、含税或起价条件必须准确。
@@ -41,6 +42,8 @@ Agent 的选择建议放在商品卡外，并明确为建议。价格展示可�
 - 演示数据允许表达完整能力，但需统一标明。Case07 固定 2026/11/21–22、3 位成人、铁路二等座往返、2 间客房 1 晚。交通卡展示自洽时刻与每人价格；酒店展示真实身份与公开介绍，演示用房需求和预算独立标注，不宣称真实房型库存或酒店报价。
 - Case08 的同日同条件 mock 比较与原历史灵活日期报价分组；不把跨日期价差归因于直飞/中转。当地时区、跨日日期、中转机场与衔接时间必须算得通。
 - 缺失原始商品属性时不补卖点；mock 不是给真实商品编属性的授权。资料出处与 mock 字段边界见 [内容依据](CONTENT-SOURCES.md)。
+
+按钮字号仍为14/16pt，数字值保持14/16/18pt阅读档位；不随正文统一放大。small仍是小号主文字，不自动代表低优先级。
 
 ## 流式编写
 
@@ -106,8 +109,7 @@ jiuxiPoint = MapPoint("九溪烟树 · 山涧寻绿", 30.204675, 120.108564, "ht
 streetPoint = MapPoint("南宋御街 · 老城烟火", 30.244830, 120.166119, "https://photo.tuchong.com/1341903/f/268355055.jpg", null, "上城区历史风貌商业街，适合闲逛")
 deshouPoint = MapPoint("德寿宫 · 宋韵建筑", 30.241200, 120.168620, "https://p9.itc.cn/q_70/images03/20221030/ec6c914e9d9e483bb46ef2e1359a2d8b.jpeg", null, "上城区宫苑遗址博物馆，红墙与地下遗址")
 mapCaption = TextContent("御街和德寿宫都在上城区一带；苏堤靠西湖，九溪更偏西南。地图是位置对照，不是建议一次走完四处的路线。", "small")
-closing = Stack([closing_part1, closeTitle, closeText], "column", "s")
-closing_part1 = Separator("horizontal")
+closing = Stack([closeTitle, closeText], "column", "s")
 closeTitle = MarkDownRenderer("## 先选一种喜欢的感觉")
 closeText = TextContent("第一次来，想随意走走，可以从苏堤或南宋御街开始；若更喜欢山间自然，选九溪；偏爱历史建筑，就把时间留给德寿宫。选定方向后，再细化到出入口、交通与半日节奏。")
 followUps = FollowUpBlock([FollowUpItem("帮我把西湖散步安排成轻松的半日行程"), FollowUpItem("我更喜欢宋韵建筑，帮我细化德寿宫周边的半日安排")])
@@ -148,13 +150,12 @@ siteCard_part1 = Image("南宋遗址陈列馆入口建筑实拍", "https://z.han
 siteCard_part2 = CardHeader("03 · 南宋遗址陈列馆", "小型考古展馆")
 siteCard_part3 = TextContent("入口低调，主要看馆内的南宋街道遗迹。")
 dayTwo = Stack([dayTwoTitle, sudi, dayTwoPair, dongpoExtra], "column", "l")
-dayTwoTitle = Stack([dayTwoTitle_part1, dayTwoTitle_part2, dayTwoTitle_part3], "column", "xs")
-dayTwoTitle_part1 = Separator("horizontal")
+dayTwoTitle = Stack([dayTwoTitle_part2, dayTwoTitle_part3], "column", "xs")
 dayTwoTitle_part2 = MarkDownRenderer("## Day 02｜西湖文脉")
 dayTwoTitle_part3 = TextContent("苏堤 → 岳王庙 → 孤山与林逋遗迹", "small")
 sudi = Stack([sudi_part1, sudi_part2, sudi_part3, sudi_part4], "column", "s")
 sudi_part1 = Image("西湖苏堤石桥、柳树和湖面实景", "https://img1.qunarzz.com/travel/d0/1508/b5/86a1839a0346a8.jpg_r_720x480x95_04ad6f0a.jpg")
-sudi_part2 = TextContent("01 · 苏堤｜在湖心走一段路", "large-heavy")
+sudi_part2 = CardHeader("01 · 苏堤｜在湖心走一段路")
 sudi_part3 = TextContent("柳树、湖面与沿堤的石桥。这里的美不在某一个建筑，而在连续的行走体验。")
 sudi_part4 = TextContent("现场氛围｜开阔、松弛；苏堤全长接近 3 公里。", "small")
 dayTwoPair = Stack([yueCard, gushanCard], "row", "m", "start", "start", true)
@@ -169,8 +170,7 @@ gushanCard_part3 = TextContent("树荫、石阶、古亭，慢慢走更有味道
 dongpoExtra = Accordion([dongpoExtra_part1])
 dongpoExtra_part1 = AccordionItem("dongpo", "补充 · 苏东坡纪念馆", [dongpoPhoto, TextContent("馆址位于苏堤南端附近。这里有绿荫中的传统风格纪念建筑，但距离岳王庙与孤山所在的北段较远。", "small")])
 dongpoPhoto = Image("苏东坡纪念馆实拍，传统屋顶建筑立于绿荫之中", "https://edu.hangzhou.com.cn/2024rdzt/zdagzyjd/images/2024-08/07/482030a1-e1f3-4cf9-875e-4df9dd93dbee.jpg")
-mapSection = Stack([mapSection_part1, mapSection_part2, mapSection_part3, allMap], "column", "s")
-mapSection_part1 = Separator("horizontal")
+mapSection = Stack([mapSection_part2, mapSection_part3, allMap], "column", "s")
 mapSection_part2 = MarkDownRenderer("## 两天的地点，在地图上是什么关系？")
 mapSection_part3 = TextContent("第一组主要在南宋临安城区域，第二组沿西湖和孤山展开。地图同时展示六个主要地点和一个补充地点；苏东坡纪念馆为补充选项。", "small")
 allMap = Map([pKiln, pDeshou, pSite, pSudi, pYue, pGushan, pDongpo], "wgs84")
@@ -181,8 +181,7 @@ pSudi = MapPoint("苏堤中段", 30.242637, 120.134544, "https://img1.qunarzz.co
 pYue = MapPoint("岳王庙", 30.25474, 120.12977, "https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg", null, "第二天 · 西湖文脉 · 祠庙")
 pGushan = MapPoint("孤山放鹤亭附近", 30.2542, 120.138013, "https://youimg1.c-ctrip.com/target/fd/tg/g1/M0B/C3/49/CghzflT_pLqAB8CTABhI6i-AH8Q373.jpg", null, "第二天 · 西湖文脉 · 林逋遗迹")
 pDongpo = MapPoint("苏东坡纪念馆", 30.231245, 120.13929, "https://edu.hangzhou.com.cn/2024rdzt/zdagzyjd/images/2024-08/07/482030a1-e1f3-4cf9-875e-4df9dd93dbee.jpg", null, "补充地点 · 苏堤南端")
-ticketSection = Stack([ticketSection_part1, ticketSection_part2, freeAdmission, ticketCards, ticketConditions], "column", "s")
-ticketSection_part1 = Separator("horizontal")
+ticketSection = Stack([ticketSection_part2, freeAdmission, ticketCards, ticketConditions], "column", "s")
 ticketSection_part2 = MarkDownRenderer("## 门票与预约")
 freeAdmission = Stack([freeAdmission_part1, freeAdmission_part2], "column", "xs")
 freeAdmission_part1 = TextContent("免费参观：德寿宫、南宋官窑博物馆、南宋遗址陈列馆；苏堤与孤山的公共游览区域也无需购买门票。", "small")
@@ -195,12 +194,10 @@ ticketCards_footer = Stack([ticketCards_price, ticketCards_buttons], "row", "m",
 ticketCards_price = BoldText("number", "¥25 起", "成人票", "text", "lg")
 ticketCards_buttons = Buttons([Button("预订", @OpenUrl("https://touch.piao.qunar.com/touch/detail.htm?id=3501705640"), "primary", "normal", "small")], "row")
 ticketConditions = TextContent("所选日期的价格、优惠与可订状态以票务页为准；此处保留原示例报价，未查询实时库存。", "small")
-comparison = Stack([comparison_part1, comparison_part2, atmosphereTable], "column", "s")
-comparison_part1 = Separator("horizontal")
+comparison = Stack([comparison_part2, atmosphereTable], "column", "s")
 comparison_part2 = MarkDownRenderer("## 现场氛围，一眼对比")
 atmosphereTable = Table([Col("地点", comparisonPlaces, "string"), Col("实际氛围", comparisonAtmospheres, "string"), Col("视觉看点", comparisonHighlights, "string")])
-conclusion = Stack([conclusion_part1, conclusion_part2, conclusion_part3], "column", "s")
-conclusion_part1 = Separator("horizontal")
+conclusion = Stack([conclusion_part2, conclusion_part3], "column", "s")
 conclusion_part2 = MarkDownRenderer(conclusionTitle)
 conclusion_part3 = TextContent(conclusionText)
 comparisonPlaces = ["德寿宫", "官窑博物馆", "南宋遗址陈列馆", "苏堤", "岳王庙", "孤山"]

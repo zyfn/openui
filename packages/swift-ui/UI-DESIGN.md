@@ -254,11 +254,11 @@ tracking, digit setting and explicit leading. Native Text and Markdown receive
 the same resolved font. Measured native line height replaces fixed 1.2 estimates
 for constrained metric, text-editor and chart-label content. Links are underlined by default.
 
-Known supporting slots share a complete native recipe: 14pt regular, secondary
+Known supporting slots share a complete native recipe: 15pt regular, secondary
 ink and detail leading. This includes subtext at every parent size, list subtitles,
 image-gallery details, hints and choice descriptions. Field errors use the same
 reading scale with error ink, including Slider errors. Short source/position
-metadata keeps the 12pt caption role. Field/disclosure labels use the existing
+metadata keeps the 13pt caption role. Field/disclosure labels use the existing
 16pt medium label token; actions use their existing 14/16pt medium tokens.
 Native Text, rich text and measurement consume the same resolved font, and
 complete host font overrides still win. TextContent small/small-heavy remain
@@ -297,8 +297,8 @@ use the full border token, without an additional 0.45 multiplier.
 
 ### Density and shape
 
-Object/fact/choice insets are 12pt. Generic Card variants share 16pt insets; clear
-retains zero vertical padding. Fact-card groups add no outer padding: parent Stack
+Object/fact/choice insets are 12pt. Generic Card card/sunk retain 16pt insets; clear
+has zero inset on both axes. Fact-card groups add no outer padding: parent Stack
 gap controls their relationship to neighbors. Object footer gap is 8pt. Markdown
 block margins are collapsed by MarkdownUI; they are not extra component insets.
 
@@ -317,7 +317,7 @@ colored plate. Inverted keeps its contrasting surface. The SDK does not infer
 status from icon names or text and does not rewrite authored variants.
 
 Informational Tag vertical insets use 2/4/4pt (space3xs/space2xs/space2xs) for
-sm/md/lg. Reading sizes remain 12/14/16pt and horizontal insets are unchanged.
+sm/md/lg. Reading sizes are 13/14/17pt and horizontal insets are unchanged.
 Long wrapped labels limit their corner radius to stay within the painted area;
 radiusFull remains an upper bound for host customization. Follow-up actions use
 the compact medium label role and keep an independent minimum control target.
@@ -336,3 +336,12 @@ The commonTheme overload resolves defaults, common overrides, then light/dark
 overrides. Existing calls and nested reset behavior retain their contract. See
 COMPONENTS.md for migration details. SVG/Map implementations supplied by a host
 consume the public theme explicitly; arbitrary SVG attributes are not rewritten.
+
+Reading role update: body17pt, supporting15pt, caption13pt; headings26/20/18pt. CardHeader and InlineHeader share textHeadingXs/title leading, including placeholders. Buttons retain14/16pt labels and numeric Text/BoldText retain14/16/18pt sizes. Explicit host font overrides remain authoritative; no Lang parameter changes.
+
+Host theme migration for this reading update: object titles in CardHeader,
+InlineHeader, ImageText, ImageTextLarge and IconText resolve textHeadingXs.
+Hosts that previously styled these titles through textBodyLgHeavy or
+textBodyDefaultHeavy should move that object-title override to textHeadingXs.
+Default-size emphasized numeric Text/BoldText and numeric EntityList values
+resolve textNumbersDefaultHeavy; body emphasis overrides no longer resize them.

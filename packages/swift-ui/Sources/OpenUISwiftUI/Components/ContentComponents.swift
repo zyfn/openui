@@ -4,7 +4,7 @@ import SwiftUI
 
 enum NativeHeadingStyle {
   static func titleFont(compact: Bool, theme: OpenUIThemeValues) -> OpenUIFont {
-    compact ? theme.textHeadingXs : theme.textBodyLgHeavy
+    theme.textHeadingXs
   }
 }
 struct NativeHeading: View {
@@ -177,10 +177,10 @@ struct NativeInlineText: View {
   let bold: Bool
   private var style: NativeRichTextStyle {
     let size = context.string("size") ?? "sm"
-    let font = context.theme.inlineFont(size, emphasized: bold)
+    let font = context.theme.inlineFont(size, emphasized: bold, numeric: context.string("variant") == "number")
     return .init(font: font,
       numeric: context.string("variant") == "number", role: size == "xs" ? .detail : .body,
-      emphasisWeight: context.theme.inlineFont(size, emphasized: true).weight)
+      emphasisWeight: context.theme.inlineFont(size, emphasized: true, numeric: context.string("variant") == "number").weight)
   }
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -276,9 +276,9 @@ struct NativeMediaText: View {
   private var words: some View {
     VStack(alignment: centered ? .center : .leading, spacing: context.theme.componentStyle.titleDetailGap) {
       NativeMarkdownText(text: context.string("title") ?? "", mode: .inline,
-        style: .init(font: media == .banner ? context.theme.textBodyLgHeavy
-          : context.theme.inlineFont("sm", emphasized: context.flag("bold") == true), role: .title,
-          emphasisWeight: media == .banner ? context.theme.textBodyLgHeavy.weight : context.theme.textBodyDefaultHeavy.weight))
+        style: .init(font: context.theme.textHeadingXs.weight(
+          media == .banner || context.flag("bold") == true ? context.theme.textHeadingXs.weight : context.theme.textBodyDefault.weight),
+          role: .title, emphasisWeight: context.theme.textHeadingXs.weight))
 
       if let sub = context.string("subtitle") {
         NativeMarkdownText(text: sub, mode: .inline, style: context.theme.textStyle(.supporting).richText())
@@ -363,7 +363,7 @@ struct NativeEntityList: View {
         style: .init(font: font, color: color, role: small ? .detail : .body))
       NativeMarkdownText(text: NativeValue.string(value, "right") ?? "", mode: .inline,
         style: .init(font: kind == .footer ? context.theme.textBodyLgHeavy
-          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true) : font), numeric: numeric, color: color, role: kind == .footer ? .title : small ? .detail : .body))
+          : (numeric || kind == .header ? context.theme.inlineFont(small ? "xs" : "sm", emphasized: true, numeric: numeric) : font), numeric: numeric, color: color, role: kind == .footer ? .title : small ? .detail : .body))
       // Horizontal layout still anchors a short value at the row's right edge.
       // A full-width text value must read from the left when the row stacks.
       .multilineTextAlignment(numeric ? .trailing : .leading)

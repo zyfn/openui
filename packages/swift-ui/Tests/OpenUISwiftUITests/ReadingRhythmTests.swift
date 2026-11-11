@@ -208,7 +208,7 @@ final class ReadingRhythmTests: XCTestCase {
     let plain = "root=EntityList([{left:\"Scope\",right:\"A readable sentence\",rightVariant:\"text\"}])"
     let numeric = "root=EntityList([{left:\"Total\",right:\"1234.50\",rightVariant:\"number\"}])"
     var theme = OpenUIThemeValues()
-    theme.textBodyDefaultHeavy = OpenUIFont(size: 40, weight: .bold)
+    theme.textNumbersDefaultHeavy = OpenUIFont(size: 40, weight: .bold)
     XCTAssertEqual(try height(plain, theme: theme), try height(plain), accuracy: 1,
       "A theme's numeric emphasis must not turn ordinary explanations into display text")
     XCTAssertGreaterThan(try height(numeric, theme: theme), try height(numeric) + 15)

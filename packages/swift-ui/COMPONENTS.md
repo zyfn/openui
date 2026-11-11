@@ -102,8 +102,8 @@ title/field-label 1.35, section 1.30 and display/control/metric 1.25.
 These native font values replace CSS font strings, not the Lang contract.
 
 Known descriptions, subtext, list subtitles, gallery details and hints share the
-14pt secondary reading role; field errors share its font and leading with error
-ink. Source/position metadata uses the 12pt caption role. Native text, Markdown
+15pt secondary reading role; field errors share its font and leading with error
+ink. Source/position metadata uses the 13pt caption role. Native text, Markdown
 and geometry consume the same resolved font, including explicit host leading.
 TextContent small/small-heavy keep primary ink. No content-priority inference or
 new text role parameter is added to the language.

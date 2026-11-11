@@ -89,7 +89,7 @@ final class ThemeOverrideTests: XCTestCase {
   func testTextRolesAreCompleteIndependentOverrides() {
     var overrides = OpenUITheme()
     overrides.textBodyDefault = OpenUIFont(size: 19)
-    XCTAssertEqual(overrides.resolved().textBodyDefaultHeavy.size, 16)
+    XCTAssertEqual(overrides.resolved().textBodyDefaultHeavy.size, 17)
     overrides.textBodyDefaultHeavy = OpenUIFont(size: 22, weight: .bold, lineSpacing: 0.3)
     overrides.textBodyDefault = OpenUIFont(size: 17)
     let theme = overrides.resolved()
@@ -99,7 +99,7 @@ final class ThemeOverrideTests: XCTestCase {
     XCTAssertEqual(theme.textBodyDefaultHeavy.lineSpacing, 0.3)
   }
 
-  @MainActor func testImageTextEmphasisUsesTheCompleteConfiguredFont() throws {
+  @MainActor func testImageTextUsesTheCompleteObjectTitleFontForBothWeights() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     func height(bold: Bool, theme: OpenUIThemeValues) -> CGFloat {
@@ -110,12 +110,12 @@ final class ThemeOverrideTests: XCTestCase {
     }
     let base = OpenUIThemeValues()
     var custom = base
-    custom.textBodyDefaultHeavy = OpenUIFont(size: 34, weight: .light, lineSpacing: 0.4)
+    custom.textHeadingXs = OpenUIFont(size: 34, weight: .light, lineSpacing: 0.4)
     XCTAssertGreaterThan(height(bold: true, theme: custom), height(bold: true, theme: base) + 10)
-    XCTAssertEqual(height(bold: false, theme: custom), height(bold: false, theme: base), accuracy: 0.5)
+    XCTAssertGreaterThan(height(bold: false, theme: custom), height(bold: false, theme: base) + 10)
   }
 
-  @MainActor func testBannerTitleUsesHeavyBodyWithoutChangingSubtitleRole() throws {
+  @MainActor func testBannerTitleUsesObjectTitleWithoutChangingSubtitleRole() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
@@ -126,7 +126,7 @@ final class ThemeOverrideTests: XCTestCase {
         .openUITheme(theme).frame(width: 360)).fittingSize.height
     }
     let base = OpenUIThemeValues(); var custom = base
-    custom.textBodyLgHeavy = OpenUIFont(size: 30, weight: .bold)
+    custom.textHeadingXs = OpenUIFont(size: 30, weight: .bold)
     XCTAssertGreaterThan(height(custom), height(base) + 10)
     XCTAssertEqual(custom.textBodySm, base.textBodySm)
   }

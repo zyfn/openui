@@ -7,7 +7,7 @@
       "title": "杭州周末 · 场景发现",
       "purpose": "四种出游氛围、地点与地图",
       "file": "case-01-explore-scene-discovery.openui",
-      "sha256": "076508e9b2a8bcc3b9a383368a0503a4472e91f3aac674ec5206b1b7a8ffc1f5",
+      "sha256": "4b90d3c12398adf2611be83a87126ad71ffb1158b95d401cd688b63ab0aa559f",
       "sourceSHA256": "38d9ca11cece339d42a49b2255516b818d5e46f83e07b2472ace951a62b0b932"
     },
     {
@@ -16,7 +16,7 @@
       "title": "杭州两日 · 实景与票务预览",
       "purpose": "两日图文、景点地图与票务商品卡",
       "file": "case-02-explore-visual-preview-ticket-booking.openui",
-      "sha256": "abcc39346ed221ef813763d9fe9000e80ade72a5715beba9e05aaac7b4307a77",
+      "sha256": "60ab5b1ca78e1e0cf03275268b9e1b82647a94fe073b7fa77ca19b8607e42435",
       "sourceSHA256": "576738be1afa6bce0ee44ccd67be8dbb7129230218fb7e0e808266e06f278726"
     },
     {

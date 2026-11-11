@@ -71,10 +71,10 @@ struct NativeTextPlaceholder: View {
     switch context.element.typeName {
     case "TextContent": return .textContent(context.presentationString("size"), theme: context.theme)
     case "CardHeader": return .init(font: context.theme.textHeadingXs, role: .title)
-    case "InlineHeader": return .init(font: context.theme.textBodyLgHeavy, role: .title)
+    case "InlineHeader": return .init(font: context.theme.textHeadingXs, role: .title)
     case "CodeBlock": return .init(font: context.theme.textCodeDefault, role: .code)
     default: return .init(font: context.theme.inlineFont(context.presentationString("size"),
-      emphasized: context.element.typeName == "BoldText"), role: .body)
+      emphasized: context.element.typeName == "BoldText", numeric: context.string("variant") == "number"), role: .body)
     }
   }
   var body: some View {

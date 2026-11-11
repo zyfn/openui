@@ -66,7 +66,7 @@ semantic color must not silently become the chart series palette.
 | Image, ImageBlock, ImageGallery, ImageTextLarge | shared media radius and stable slots | user-approved 16:9 photo covers instead of fixed 180px banner |
 | ImageText, IconText, Icon | authored size/direction, shared text roles, neutral/semantic ink, pinned Lucide artwork | horizontal IconText centers its glyph against the complete text block using shared tokens; unspecified thumbnails prefer80/reduce toward64 locally; status glyphs are unplated except inverted |
 | Callout, TextCallout | existing variant, content, binding and dismissal contracts | neutral/info use a quiet rule; success/warning/error use small semantic icons with ordinary text, no colored panels |
-| Tag, TagBlock | informational tint, primary neutral ink, 12/14/16pt reading sizes | vertical insets2/4/4; complete long labels wrap with readable corner limits |
+| Tag, TagBlock | informational tint, primary neutral ink, 13/14/17pt reading sizes | vertical insets2/4/4; complete long labels wrap with readable corner limits |
 | Button, IconButton, Buttons | primary/secondary/tertiary hierarchy; transparent bordered secondary, capsule text actions and shared density | native hit target, focus, press/Reduce Motion; flat neutral assistant treatment |
 | EntityList | shared body roles, header/total priority and tabular numeric values | native text values stay regular and lead when stacked; number values remain emphasized; read-only body rows use spaceS |
 | ListBlock, ListItem, Steps | common reading roles, media/text gap, number and action hierarchy | width-derived photo previews, complete text and scalable step marker |
@@ -114,7 +114,7 @@ their consuming component. A blank standalone screenshot is not visual approval.
 6. Tags use a capsule at ordinary heights with a corner limit for long wrapped
    labels. Informational density uses 2/4/4pt vertical insets; declared text sizes
    and variants remain unchanged. This is native presentation, not a Lang rule.
-7. Explicit supporting slots use14pt secondary reading even when their parent
+7. Explicit supporting slots use15pt secondary reading even when their parent
    value is larger. Generic TextContent size variants retain primary ink.
    Field/disclosure and compact action labels use the existing medium label
    tokens. Resource failure is a neutral photo placeholder with accessible status.
@@ -182,3 +182,5 @@ The complete-value API still replaces its scope. TextContent, Text, BoldText and
 Markdown emphasis now select body typography rather than borrowing heading
 weights/sizes; defaults are retained. The reference Stack/Card gap map uses a
 literal zero for `none`, which is kept independent of `space000`.
+
+Reading role update: body17pt, supporting15pt, caption13pt; headings26/20/18pt. CardHeader and InlineHeader share textHeadingXs/title leading, including placeholders. Buttons retain14/16pt labels and numeric Text/BoldText retain14/16/18pt sizes. Explicit host font overrides remain authoritative; no Lang parameter changes.

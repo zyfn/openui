@@ -278,14 +278,14 @@ public struct OpenUIThemeValues {
     public var textHeadingMd: OpenUIFont = OpenUIFont(size: 26, weight: .semibold)
     public var textHeadingSm: OpenUIFont = OpenUIFont(size: 20, weight: .semibold)
     public var textHeadingXs: OpenUIFont = OpenUIFont(size: 18, weight: .semibold)
-    public var textBodyDefault: OpenUIFont = OpenUIFont(size: 16, weight: .regular)
-    public var textBodyDefaultHeavy: OpenUIFont = OpenUIFont(size: 16, weight: .semibold)
-    public var textBodySm: OpenUIFont = OpenUIFont(size: 14, weight: .regular)
-    public var textBodySmHeavy: OpenUIFont = OpenUIFont(size: 14, weight: .semibold)
+    public var textBodyDefault: OpenUIFont = OpenUIFont(size: 17, weight: .regular)
+    public var textBodyDefaultHeavy: OpenUIFont = OpenUIFont(size: 17, weight: .semibold)
+    public var textBodySm: OpenUIFont = OpenUIFont(size: 15, weight: .regular)
+    public var textBodySmHeavy: OpenUIFont = OpenUIFont(size: 15, weight: .semibold)
     public var textBodyLg: OpenUIFont = OpenUIFont(size: 18, weight: .regular)
     public var textBodyLgHeavy: OpenUIFont = OpenUIFont(size: 18, weight: .semibold)
     public var textLabelSm: OpenUIFont = OpenUIFont(size: 14, weight: .regular)
-    public var textBodyXs: OpenUIFont = OpenUIFont(size: 12, weight: .regular)
+    public var textBodyXs: OpenUIFont = OpenUIFont(size: 13, weight: .regular)
     public var textNumbersDefaultHeavy: OpenUIFont = OpenUIFont(size: 16, weight: .medium).monospacedDigit()
     public var textLabelSmHeavy: OpenUIFont = OpenUIFont(size: 14, weight: .medium)
     public var textLabelDefaultHeavy: OpenUIFont = OpenUIFont(size: 16, weight: .medium)
@@ -323,7 +323,15 @@ public struct OpenUIThemeValues {
     func cardRadius(for kind: String) -> CGFloat {
         kind == "Context" ? radiusXl : ["Overview", "Snippet"].contains(kind) ? radius2xl : radius3xl
     }
-    func inlineFont(_ size: String?, emphasized: Bool = false) -> OpenUIFont {
+    func inlineFont(_ size: String?, emphasized: Bool = false, numeric: Bool = false) -> OpenUIFont {
+        // Numeric values and controls keep their own scale when reading text grows.
+        if numeric {
+            switch size {
+            case "xs": return textLabelSm.weight(emphasized ? textBodySmHeavy.weight : textBodySm.weight)
+            case "lg": return emphasized ? textBodyLgHeavy : textBodyLg
+            default: return emphasized ? textNumbersDefaultHeavy : textNumbersDefaultHeavy.weight(textBodyDefault.weight)
+            }
+        }
         switch size {
         case "xs": return emphasized ? textBodySmHeavy : textBodySm
         case "lg": return emphasized ? textBodyLgHeavy : textBodyLg
