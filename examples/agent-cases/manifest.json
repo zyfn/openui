@@ -16,7 +16,7 @@
       "title": "杭州两日 · 实景与票务预览",
       "purpose": "两日图文、景点地图与票务商品卡",
       "file": "case-02-explore-visual-preview-ticket-booking.openui",
-      "sha256": "fb2a83d35196e84c7d8cdaf36f7e25555566b63e883ac37417dd4bceb7ed1902",
+      "sha256": "2a47f75352149e73f7832bb073f4e088c7b1e59c5e5563cca725438a5d999385",
       "sourceSHA256": "576738be1afa6bce0ee44ccd67be8dbb7129230218fb7e0e808266e06f278726"
     },
     {
@@ -25,7 +25,7 @@
       "title": "空调制热 · 热泵原理",
       "purpose": "概念讲解、SVG 示意与原理对照",
       "file": "case-03-explore-heat-pump-explanation-editorial.openui",
-      "sha256": "144376579012ecd44e5036a0d699f14c69ecc294737b71dca3edc0c102baf632",
+      "sha256": "a36e71523ec8619dfe3a52f1e6b3788e0456dc717e489d5a44ce5f45e6ed5987",
       "sourceSHA256": "421c7e6cc485c8c7ffb5ce96c1bbe6f6daf9df4202279b8b8f8f53fe3ef1a176"
     },
     {
@@ -43,7 +43,7 @@
       "title": "小书桌 · 阅读台灯决策",
       "purpose": "商品卡比较、使用条件与价格口径",
       "file": "case-05-decide-reading-desk-lamp-refined.openui",
-      "sha256": "1559664d50753c231554060491d885fa8f9e8635b8ba5ab6adaef6555bd5bac2",
+      "sha256": "ed5fa0fb6d3272deb7d43830b2cbc9631b4c224c26311c406a8972137f6582d8",
       "sourceSHA256": "73aeca82b47b432955e211867c8329ca59ba42ab6d7f44864b5f6751b2562348"
     },
     {
@@ -52,7 +52,7 @@
       "title": "执行用户代码 · 隔离方案决策",
       "purpose": "容器、虚拟机与沙箱架构比较",
       "file": "case-06-decide-code-execution-isolation.openui",
-      "sha256": "7ba708f75bf41d5ae0afa8c888c06ec140642ae12a76c8b4d8da5e92690e22af",
+      "sha256": "680b5f19936cc336071a1153da93d3130720a876a5951acd64bd3330fbcfae10",
       "sourceSHA256": "1b229af79855a4f69eebcfb02aa018e35d53bae845a8c9bba2e2317e5d02f8e9"
     },
     {
@@ -62,7 +62,7 @@
       "purpose": "路线、住宿选址、真实公开票价与出发前确认",
       "file": "case-07-plan-suzhou-family-trip-ticket-design.openui",
       "request": "想从上海去苏州玩两天，带父母，不想太累。交通、住宿和景点能一起安排吗？",
-      "sha256": "06556fdfde9a4f008ca0771989dc6dab559d6b0d7a47cb9274cc0b60a5704a40",
+      "sha256": "8f0a55c7d7467d833a07ba00d7a9dba66178acd5ac8b5f53a5bb8ed15c8c17d7",
       "sourceSHA256": "4c1f6a6e744e981e8385511ae28629cdf2c03334e82f9237ebd23553d3604c7f"
     },
     {
@@ -71,7 +71,7 @@
       "title": "北京—曼谷 · 交通报价",
       "purpose": "统一交通卡布局、首段航司、中转信息与日期比较",
       "file": "case-08-transport-comparison.openui",
-      "sha256": "d64eccf80df67fa3c41ccbafba1b39b31a4970efa96b0adbefa4051ecf0c0f98",
+      "sha256": "53c9998228e7ec3eaf3b98007f3772fb79515c39d3acded371cf858c5649cf7e",
       "sourceSHA256": "4c8b21b585cadb6dbf86ae2f2880aebfa8ce60ba2d8815e2f987b5a11b376edb"
     }
   ],
