@@ -2,6 +2,8 @@
 
 The native SwiftUI adapter for OpenUI Lang. It depends on the sibling `OpenUILang` SwiftPM product; applications supply component views and tool transports. The dependency direction is `swift-ui → swift-lang → lang-core`. The SwiftPM product and module are `OpenUISwiftUI`.
 
+For a concise Chinese explanation of the RC18 design, all 84 standard components, host extensions and streaming decisions, see [SDK 设计与组件说明](SDK-REFERENCE.zh-CN.md).
+
 See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONENTS.md) and the [design and validation boundaries](UI-DESIGN.md) for the public API. SDK regressions are in `Tests/OpenUISwiftUITests`.
 
 For matched schema/native registrations, host-authored named slots, semantic themes, message-scoped resources and the optional standard component collection, see [component authoring](COMPONENTS.md). `OpenUIStandardComponents.library()` supplies an opt-in reference catalog; extend this library when adding product definitions, preserving imported field order; applications can extend or override it while existing dictionary registrations remain supported.
