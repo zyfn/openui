@@ -323,22 +323,6 @@ public struct OpenUIThemeValues {
     func cardRadius(for kind: String) -> CGFloat {
         kind == "Context" ? radiusXl : ["Overview", "Snippet"].contains(kind) ? radius2xl : radius3xl
     }
-    func inlineFont(_ size: String?, emphasized: Bool = false, numeric: Bool = false) -> OpenUIFont {
-        // Numeric values and controls keep their own scale when reading text grows.
-        if numeric {
-            switch size {
-            case "xs": return textLabelSm.weight(emphasized ? textBodySmHeavy.weight : textBodySm.weight)
-            case "lg": return emphasized ? textBodyLgHeavy : textBodyLg
-            default: return emphasized ? textNumbersDefaultHeavy : textNumbersDefaultHeavy.weight(textBodyDefault.weight)
-            }
-        }
-        switch size {
-        case "xs": return emphasized ? textBodySmHeavy : textBodySm
-        case "lg": return emphasized ? textBodyLgHeavy : textBodyLg
-        default: return emphasized ? textBodyDefaultHeavy : textBodyDefault
-        }
-    }
-    func fieldFont(_ size: String?) -> OpenUIFont { size == "small" ? textBodySm : textBodyDefault }
     public func chartColors(forSeriesCount count: Int, chartType: String? = nil) -> [Color] {
         let palette: [Color]?
         switch chartType {

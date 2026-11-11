@@ -36,12 +36,59 @@ struct NativeTextStyle {
     self.font = font.resolved(for: role)
   }
 
+  init(font: OpenUIFont, color: Color, role: NativeTextRole, emphasisWeight: Font.Weight) {
+    self.font = font.resolved(for: role)
+    self.color = color; self.role = role; self.emphasisWeight = emphasisWeight
+  }
+
   func richText(numeric: Bool = false, color override: Color? = nil) -> NativeRichTextStyle {
     .init(font: font, numeric: numeric, color: override ?? color, role: role, emphasisWeight: emphasisWeight)
   }
 }
 
 extension OpenUIThemeValues {
+  func objectTitleStyle(emphasized: Bool = true) -> NativeTextStyle {
+    .init(font: emphasized ? textHeadingXs : textHeadingXs.weight(textBodyDefault.weight),
+      color: textNeutralPrimary, role: .title, emphasisWeight: textHeadingXs.weight)
+  }
+
+  func inlineTextStyle(_ size: String?, emphasized: Bool = false, numeric: Bool = false) -> NativeRichTextStyle {
+    let base = textStyle(size == "xs" ? .compactBody : .body)
+    return .init(font: inlineFont(size, emphasized: emphasized, numeric: numeric),
+      numeric: numeric, color: base.color, role: base.role,
+      emphasisWeight: inlineFont(size, emphasized: true, numeric: numeric).weight)
+  }
+
+    func inlineFont(_ size: String?, emphasized: Bool = false, numeric: Bool = false) -> OpenUIFont {
+        // Numeric values and controls keep their own scale when reading text grows.
+        if numeric {
+            switch size {
+            case "xs": return textLabelSm.weight(emphasized ? textBodySmHeavy.weight : textBodySm.weight)
+            case "lg": return emphasized ? textBodyLgHeavy : textBodyLg
+            default: return emphasized ? textNumbersDefaultHeavy : textNumbersDefaultHeavy.weight(textBodyDefault.weight)
+            }
+        }
+        switch size {
+        case "xs": return emphasized ? textBodySmHeavy : textBodySm
+        case "lg": return emphasized ? textBodyLgHeavy : textBodyLg
+        default: return emphasized ? textBodyDefaultHeavy : textBodyDefault
+        }
+    }
+    func fieldFont(_ size: String?) -> OpenUIFont { size == "small" ? textBodySm : textBodyDefault }
+  func entityLabelStyle(compact: Bool) -> NativeRichTextStyle {
+    .init(font: compact ? textBodySm : textBodyDefault, color: textNeutralSecondary,
+      role: compact ? .detail : .body)
+  }
+
+  func entityValueStyle(compact: Bool, numeric: Bool, header: Bool, footer: Bool) -> NativeRichTextStyle {
+    let font = compact ? textBodySm : textBodyDefault
+    return .init(font: footer ? textBodyLgHeavy
+      : (numeric || header ? inlineFont(compact ? "xs" : "sm", emphasized: true, numeric: numeric)
+         : font.weight(textLabelDefaultHeavy.weight)), numeric: numeric,
+      color: header ? textNeutralSecondary : textNeutralPrimary,
+      role: footer ? .title : compact ? .detail : .body)
+  }
+
   func textStyle(_ purpose: NativeTextStyle.Purpose) -> NativeTextStyle { .init(purpose, theme: self) }
 }
 
@@ -71,7 +118,8 @@ struct NativeRichTextStyle {
     // Size variants select a reading scale, not an information-priority color.
     let small = size == "small" || size == "small-heavy"
     let large = size == "large" || size == "large-heavy"
-    return .init(font: font, color: theme.textNeutralPrimary, role: small ? .detail : .body,
+    let base = theme.textStyle(small ? .compactBody : .body)
+    return .init(font: font, color: base.color, role: base.role,
       emphasisWeight: small ? theme.textBodySmHeavy.weight : large ? theme.textBodyLgHeavy.weight : theme.textBodyDefaultHeavy.weight)
   }
 }
