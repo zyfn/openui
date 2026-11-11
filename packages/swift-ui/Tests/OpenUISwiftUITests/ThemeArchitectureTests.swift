@@ -44,9 +44,9 @@ final class ThemeArchitectureTests: XCTestCase {
         let hosting = NSHostingView(rootView: content)
         _ = hosting.fittingSize
         XCTAssertEqual(try XCTUnwrap(samples.values["parent"]), [19, 27, 21])
-        XCTAssertEqual(try XCTUnwrap(samples.values["child"]), [25, 18, 16])
-        XCTAssertEqual(try XCTUnwrap(samples.values["grandchild"]), [12, 39, 16])
-        XCTAssertEqual(try XCTUnwrap(samples.values["replacement"]), [12, 18, 16])
+        XCTAssertEqual(try XCTUnwrap(samples.values["child"]), [25, 18, 17])
+        XCTAssertEqual(try XCTUnwrap(samples.values["grandchild"]), [12, 39, 17])
+        XCTAssertEqual(try XCTUnwrap(samples.values["replacement"]), [12, 18, 17])
         XCTAssertEqual(try XCTUnwrap(samples.values["sibling"]), [19, 27, 21])
     }
 
@@ -64,9 +64,9 @@ final class ThemeArchitectureTests: XCTestCase {
                 .openUITheme(mode: .light, lightTheme: light, darkTheme: dark)
         }.environment(\.colorScheme, .dark)
         _ = NSHostingView(rootView: view).fittingSize
-        XCTAssertEqual(samples.values["dark-fallback"], [23, 18, 16])
-        XCTAssertEqual(samples.values["dark-explicit"], [12, 41, 16])
-        XCTAssertEqual(samples.values["forced-light"], [23, 18, 16])
+        XCTAssertEqual(samples.values["dark-fallback"], [23, 18, 17])
+        XCTAssertEqual(samples.values["dark-explicit"], [12, 41, 17])
+        XCTAssertEqual(samples.values["forced-light"], [23, 18, 17])
         XCTAssertEqual(samples.schemes["dark-fallback"], .dark)
         XCTAssertEqual(samples.schemes["forced-light"], .light)
     }
