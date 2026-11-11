@@ -203,8 +203,11 @@ struct NativeSliderField: View {
               if context.canInteract && draft.values.indices.contains(index) {
                 valueControl(index)
               } else {
-                Text(jsNumberString(external[index])).monospacedDigit()
-                  .padding(.horizontal, context.theme.spaceSM).openUIControlTarget()
+                HStack(spacing: context.theme.spaceXs) {
+                  Text(jsNumberString(external[index])).monospacedDigit()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                  valueAccessorySpace
+                }.padding(.horizontal, context.theme.spaceXs).openUIControlTarget()
               }
             }.frame(width: valueWidth)
           }
@@ -216,26 +219,33 @@ struct NativeSliderField: View {
     VStack(alignment: .leading, spacing: context.theme.spacing("2xs")) {
       if configuration.discrete {
         Button { picker = .init(index: index) } label: {
-          HStack {
+          HStack(spacing: context.theme.spaceXs) {
             Text(jsNumberString(draft.values[index])).monospacedDigit()
-            Spacer(minLength: context.theme.spacing("s"))
+              .frame(maxWidth: .infinity, alignment: .trailing)
             Image(systemName: "chevron.up.chevron.down").openUIFont(context.theme.textBodyXs, role: .caption)
               .foregroundStyle(context.theme.textNeutralSecondary)
-          }.openUIControlTarget()
+              .frame(width: context.theme.textBodyXs.size)
+          }.padding(.horizontal, context.theme.spaceXs).openUIControlTarget()
         }.buttonStyle(.plain).accessibilityIdentifier("openui.slider.choice.\(field.name.displayString).\(index)")
       } else {
-        TextField("", text: Binding(get: { draft.text.indices.contains(index) ? draft.text[index] : "" },
-          set: { draft.edit($0, at: index) }))
-          .textFieldStyle(.plain).monospacedDigit().nativeSliderKeyboard()
-          .focused($focusedValue, equals: index).submitLabel(.done)
-          .onSubmit { draft.flush(); focusedValue = nil }
-          .multilineTextAlignment(.trailing).accessibilityLabel(label)
-          .padding(.horizontal, context.theme.spaceXs).openUIControlTarget()
+        HStack(spacing: context.theme.spaceXs) {
+          TextField("", text: Binding(get: { draft.text.indices.contains(index) ? draft.text[index] : "" },
+            set: { draft.edit($0, at: index) }))
+            .textFieldStyle(.plain).monospacedDigit().nativeSliderKeyboard()
+            .focused($focusedValue, equals: index).submitLabel(.done)
+            .onSubmit { draft.flush(); focusedValue = nil }
+            .multilineTextAlignment(.trailing).accessibilityLabel(label)
+            .accessibilityIdentifier("openui.slider.input.\(field.name.displayString).\(index)")
+          valueAccessorySpace
+        }.padding(.horizontal, context.theme.spaceXs).openUIControlTarget()
           .background(focusedValue == index ? context.theme.sunk : .clear,
             in: RoundedRectangle(cornerRadius: context.theme.radiusS))
-          .accessibilityIdentifier("openui.slider.input.\(field.name.displayString).\(index)")
       }
     }.frame(maxWidth: .infinity)
+  }
+  private var valueAccessorySpace: some View {
+    Color.clear.frame(width: context.theme.textBodyXs.size)
+      .accessibilityHidden(true).allowsHitTesting(false)
   }
 }
 

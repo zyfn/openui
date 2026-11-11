@@ -32,7 +32,7 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePageControls.swift" : "d5680c814d940c024d98385d6bc2e48aa61c4011bbdbb1b0ba5adcb28b96fba3",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePager.swift" : "b10a5a8bdf248e28fcfd2cef0c4a50fe1fe8abaac75e494c43300eb5a2972b38",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePresentationProxy.swift" : "05ffc073e3abfba8df85c804a0cde5b2e4a24bf245ed790dcacd95f3086b2b6e",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeSlider.swift" : "f94bcb37b52946dc21eb6c7844afcc9598e47afe00072ca949f2354ab3a9d2c7",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeSlider.swift" : "5c78c16ea7d30cd78bcb2164f953a095475a1251f258afb5f519ee2fa7d9a74e",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeStreamingPresentation.swift" : "090a27aaf7e403335231d294a1965745365ef007e21777a9bb0b211d8221cf89",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeSVG.swift" : "ce5a3a62ac29af83dc9787e429ca28bbe8d27c56feb374d332de3062f9cec884",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeSVGDocument.swift" : "1b1943223acd72404e9074c13c3811e49f793076732950c2746c5d26623b89d1",
@@ -71,5 +71,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "446d7fb0888c4ab1dc9c25a9247b933f9c2a0a13a5faf38c0617535bf9f2a95f"
+  "fingerprint" : "a82bdc74b21b507f52980c43a3cae53799d9d203681d4507d4f393c20d5bca91"
 }
