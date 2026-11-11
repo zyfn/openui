@@ -16,7 +16,7 @@
       "title": "杭州两日 · 实景与票务预览",
       "purpose": "两日图文、景点地图与票务商品卡",
       "file": "case-02-explore-visual-preview-ticket-booking.openui",
-      "sha256": "e0ed4ea531851d2bc2d112307111f6fd34f24f955e70f4079804177ef869894d",
+      "sha256": "fb2a83d35196e84c7d8cdaf36f7e25555566b63e883ac37417dd4bceb7ed1902",
       "sourceSHA256": "576738be1afa6bce0ee44ccd67be8dbb7129230218fb7e0e808266e06f278726"
     },
     {
@@ -43,7 +43,7 @@
       "title": "小书桌 · 阅读台灯决策",
       "purpose": "商品卡比较、使用条件与价格口径",
       "file": "case-05-decide-reading-desk-lamp-refined.openui",
-      "sha256": "50c77559e3897922b8d33cc7946b750015bcdae224e6b1fb3142547786753ee2",
+      "sha256": "1559664d50753c231554060491d885fa8f9e8635b8ba5ab6adaef6555bd5bac2",
       "sourceSHA256": "73aeca82b47b432955e211867c8329ca59ba42ab6d7f44864b5f6751b2562348"
     },
     {
@@ -62,7 +62,7 @@
       "purpose": "路线、住宿选址、真实公开票价与出发前确认",
       "file": "case-07-plan-suzhou-family-trip-ticket-design.openui",
       "request": "想从上海去苏州玩两天，带父母，不想太累。交通、住宿和景点能一起安排吗？",
-      "sha256": "5e2261077b9f02f593c1328efc77c3ac1c35e1f96574d2b09cb06e6f22059668",
+      "sha256": "06556fdfde9a4f008ca0771989dc6dab559d6b0d7a47cb9274cc0b60a5704a40",
       "sourceSHA256": "4c1f6a6e744e981e8385511ae28629cdf2c03334e82f9237ebd23553d3604c7f"
     },
     {

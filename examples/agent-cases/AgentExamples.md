@@ -22,6 +22,20 @@ Map、MapPoint、SVG使用CaseLab已有的宿主扩展；它们不是SDK默认�
 `Card`被额外的普通`Stack`包住后，外层看到的是Stack，伸展关系不能穿透包装。
 `Carousel`的合法children由导出的组件契约决定，不把任意Card/Stack塞入它。
 
+## 商品数据边界
+
+标题、店铺、规格、价格、库存、优惠和跳转地址必须来自对应工具返回或可核对的原始资料；不为了凑卡片层级改写商品身份、补卖点或推定属性。原始描述缺失时允许省略，不用推荐理由填充商品描述。
+Agent 的选择建议放在商品卡外，并明确为建议。价格展示可以调整位置和字号，但不能改变币种、单位、适用条件或起价/区间的含义。链接文案必须符合目标页面实际用途。
+本目录沿用已保存的示例材料。Case05 本地只有整理后的示例记录，尚无原始商品工具响应可逐字段复核，因此保留其名称、店铺、图片、金额和地址，不将它们宣称为已复核的原始商品标题；已移除卡内“商品标题标注……”等推断性说明。消费方必须绑定自己的实际工具结果，不能复制示例中的商品事实作为新查询结果。
+
+## 商品、门票与交通的表达
+
+- 商品卡底部统一使用 `BoldText(number, 金额, 价格口径, text, lg)`，卡内详情入口使用 `Button(primary, normal, small)`。这是示例组合约定，不是 SDK 对业务类别的特殊规则。
+- 金额与口径分层：商品保留查询返回价及规格条件；门票保留票种、适用单位和淡旺季对应关系；交通保留每人、单程与舱位。金额不在正文重复，公共来源和共同限制只说明一次。
+- 按钮统一视觉层级，不强制同名：商品详情用“查看商品”，票务商品页用“查看门票”，航班页用“查看航班”，价格公示页用“查看官方票价”。查询入口不能冒充预订或支付。
+- 门票卡的标题标识票种，副标题关联行程，正文只保留预约要求，价格在底部。免费区域与公共优惠说明放在组外；不能把公开票价当实时库存。
+- 行程请求包含交通时，必须交代去程、当地接驳和返程。未查得车次或报价就提供路线与查询入口，不虚构可售交通商品。住宿未查得房型和报价时同理。
+
 ## 流式编写
 
 1. 根声明先写完整，用具名引用连接主要区域，让容器参数尽早到达。
@@ -178,7 +192,7 @@ pXiling = MapPoint("西泠印社", 30.252578, 120.135202, "https://pic.hangzhou.
 pDongpo = MapPoint("苏东坡纪念馆", 30.231245, 120.13929, "https://edu.hangzhou.com.cn/2024rdzt/zdagzyjd/images/2024-08/07/482030a1-e1f3-4cf9-875e-4df9dd93dbee.jpg", null, "补充地点 · 苏堤南端")
 ticketSection = Stack([ticketSection_part1, ticketSection_part2, freeAdmission, ticketCards], "column", "s")
 ticketSection_part1 = Separator("horizontal")
-ticketSection_part2 = MarkDownRenderer("## 票务预订")
+ticketSection_part2 = MarkDownRenderer("## 门票与预约")
 freeAdmission = Stack([freeAdmission_part1, freeAdmission_part2], "column", "xs")
 freeAdmission_part1 = TextContent("免费参观：德寿宫、南宋官窑博物馆、南宋遗址陈列馆；苏堤、南宋御街、孤山和西泠印社的公共游览区域也无需购买门票。", "small")
 freeAdmission_part2 = TextContent("德寿宫个人参观免预约；其他场馆的周末预约要求与临时展览以当期公告为准。", "small")
@@ -187,8 +201,8 @@ ticketCards_image = Image("岳王庙正殿建筑实拍", "https://www.pelago.com
 ticketCards_heading = CardHeader("岳王庙成人门票", "Day 02 · 西湖北岸")
 ticketCards_detail1 = TextContent("单独入园门票，实际票价及优惠以所选日期为准。", "small")
 ticketCards_footer = Stack([ticketCards_price, ticketCards_buttons], "row", "m", "center", "between")
-ticketCards_price = BoldText("text", "¥25 起")
-ticketCards_buttons = Buttons([Button("查看票务", @OpenUrl("https://touch.piao.qunar.com/touch/detail.htm?id=3501705640"), "secondary", "normal", "small")], "row")
+ticketCards_price = BoldText("number", "¥25 起", "成人票 · 单次入园", "text", "lg")
+ticketCards_buttons = Buttons([Button("查看门票", @OpenUrl("https://touch.piao.qunar.com/touch/detail.htm?id=3501705640"), "primary", "normal", "small")], "row")
 comparison = Stack([comparison_part1, comparison_part2, atmosphereTable], "column", "s")
 comparison_part1 = Separator("horizontal")
 comparison_part2 = MarkDownRenderer("## 现场氛围，一眼对比")
@@ -296,12 +310,12 @@ headline = MarkDownRenderer("# 小书桌，选一盏真正好用的读书灯")
 leadText = MarkDownRenderer("**小桌面先比较摆放方式，再看功能。** 折叠式方便收纳，夹式可以少占桌面；具体是否放得下，还要核对底座、夹口和灯臂尺寸。")
 preferences = TextContent("小桌面 · 阅读用途 · 先比较折叠与夹式", "small")
 products = Stack([productsHeader, productsCarousel, priceNote], "column", "s")
-productsHeader = InlineHeader("同批查询中的三款候选", "比较摆放方式，并核对具体规格")
+productsHeader = InlineHeader("三款台灯候选", "比较摆放方式，并核对具体规格")
 productsCarousel = CompositeCardBlock([folding, rechargeable, clipLamp], "carousel", true)
-folding = CompositeCardItem("taobao-971628097659", ImageTextLarge("https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg", "惠普折叠阅读台灯商品图", "惠普折叠阅读台灯", "惠普照明旗舰店", true), [Text("text", "商品标题标注折叠、便携；先核对展开尺寸和底座占地。", null, null, "sm")], {"price":BoldText("text", "¥84.00"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=971628097659"), "secondary", "normal", "small")})
-rechargeable = CompositeCardItem("taobao-1014479690931", ImageTextLarge("https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg", "欧普充电折叠台灯商品图", "欧普充电折叠台灯", "欧普照明官方旗舰店", true), [Text("text", "商品标题标注可充电、折叠；需要移动使用时，核对续航条件与充电方式。", null, null, "sm")], {"price":BoldText("text", "¥116.20"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=1014479690931"), "secondary", "normal", "small")})
-clipLamp = CompositeCardItem("taobao-1087331917809", ImageTextLarge("https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg", "充电夹式阅读台灯商品图", "充电夹式阅读台灯", "国货严选旗舰", true), [Text("text", "商品标题标注夹式、充电；先确认桌沿厚度、夹持位置和灯头覆盖范围。", null, null, "sm")], {"price":BoldText("text", "¥49.90"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=1087331917809"), "secondary", "normal", "small")})
-priceNote = TextContent("来源：淘宝商品查询，2026-11-10。以上金额为同批结果返回价，具体规格与结算条件以商品页为准；阅读舒适度仍需核对照度、眩光和频闪等参数。", "small")
+folding = CompositeCardItem("taobao-971628097659", ImageTextLarge("https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg", "惠普折叠阅读台灯商品图", "惠普折叠阅读台灯", "惠普照明旗舰店", true), [], {"price":BoldText("number", "¥84.00", "示例记录价", "text", "lg"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=971628097659"), "primary", "normal", "small")})
+rechargeable = CompositeCardItem("taobao-1014479690931", ImageTextLarge("https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg", "欧普充电折叠台灯商品图", "欧普充电折叠台灯", "欧普照明官方旗舰店", true), [], {"price":BoldText("number", "¥116.20", "示例记录价", "text", "lg"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=1014479690931"), "primary", "normal", "small")})
+clipLamp = CompositeCardItem("taobao-1087331917809", ImageTextLarge("https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg", "充电夹式阅读台灯商品图", "充电夹式阅读台灯", "国货严选旗舰", true), [], {"price":BoldText("number", "¥49.90", "示例记录价", "text", "lg"), "button":Button("查看商品", @OpenUrl("https://detail.tmall.com/item.htm?id=1087331917809"), "primary", "normal", "small")})
+priceNote = TextContent("以下商品名称、店铺、图片与价格沿用 2026-11-10 的示例记录，不代表本次实时查询结果；具体规格与结算条件以商品页为准。", "small")
 fit = Stack([fitTitle, fitList], "column", "xs")
 fitTitle = MarkDownRenderer("## 用法不同，选择也不同")
 fitList = EntityList([{"left":"读完需要收起来","right":"先比较折叠款的尺寸"},{"left":"桌面几乎放不下灯座","right":"核对夹式灯与桌沿是否匹配"},{"left":"希望移动使用","right":"比较充电方式和续航条件"}], "small")
@@ -391,9 +405,19 @@ introduction = Stack([introduction_part1, introduction_part2, introduction_part3
 introduction_part1 = TextContent("两天一晚 · 每天一座园林 · 老城附近住一晚", "large-heavy")
 introduction_part2 = TextContent("建议第一天看拙政园和平江路，第二天看留园和山塘街；跨片区优先打车，古街只走父母觉得舒服的一小段。")
 introduction_part3 = TextContent("路线以两天一晚为框架，车次、房型与预约场次结合实际出行条件选择。", "small")
-transport = Stack([transport_part1, transport_part2, stationChoices, transport_part4, transportLookup], "column", "s")
+transport = Stack([transport_part1, transport_part2, transportRoutes, stationChoices, transport_part4, transportLookup], "column", "s")
 transport_part1 = MarkDownRenderer("## 往返交通")
 transport_part2 = TextContent("带父母坐高铁，我倾向优先到苏州站，少一次长距离接驳比抢最早一班车更重要。")
+transportRoutes = Stack([outboundRoute, localRoute, inboundRoute], "column", "m")
+outboundRoute = Stack([outboundRoute_title, outboundRoute_detail], "column", "xs")
+outboundRoute_title = InlineHeader("去程 · 上海 → 苏州", "Day 01 · 铁路抵达，接驳酒店")
+outboundRoute_detail = TextContent("出发站和车次按实际日期选择，优先比较抵达苏州站的方案；到站后打车到酒店寄存行李，午饭休息后再去拙政园。", "small")
+localRoute = Stack([localRoute_title, localRoute_detail], "column", "xs")
+localRoute_title = InlineHeader("当地 · 园林与老街之间", "跨片区打车，古街短距离步行")
+localRoute_detail = TextContent("第一天：酒店 → 拙政园 → 平江路 → 酒店。第二天：酒店 → 留园 → 山塘街 → 酒店取行李。各段按父母体力选择打车或短走，不把步行串联当作必须完成的路线。", "small")
+inboundRoute = Stack([inboundRoute_title, inboundRoute_detail], "column", "xs")
+inboundRoute_title = InlineHeader("返程 · 苏州 → 上海", "Day 02 · 取行李后前往车站")
+inboundRoute_detail = TextContent("按已订返程站安排接驳；先留出取行李、打车和进站时间，再决定山塘街停留多久。", "small")
 stationChoices = EntityList([{"left":"苏州站","right":"接驳古城与本次景点较方便"},{"left":"苏州北站","right":"到古城更远，需比较总接驳时间"}], "small")
 transport_part4 = TextContent("往返车次、余票与票价结合出行日期查询；安排回程时，也要留足从酒店取行李和进站的时间。", "small")
 transportLookup = Buttons([transportLookup_part1], "row")
@@ -442,24 +466,24 @@ pPingjiang = MapPoint("平江路", 31.31493, 120.62969, "https://news.2500sz.com
 pGardenTwo = MapPoint("留园", 31.31762, 120.58827, "https://p1.itc.cn/q_70/images03/20211230/6d7f3cb169064fdf9c92c85896302271.jpeg", null, "Day 02 · 园林主站")
 pShantang = MapPoint("山塘街", 31.32010, 120.59745, "https://cdn-ak.f.st-hatena.com/images/fotolife/s/suzhoushenghuo/20240603/20240603112852.jpg", null, "Day 02 · 短段步行")
 tickets = Stack([tickets_part1, tickets_part2, ticketCards, ticketNote], "column", "s")
-tickets_part1 = MarkDownRenderer("## 票务预订")
-tickets_part2 = TextContent("平江路、山塘街公共街区免费；需要关注日期和预约的是两座园林。下方为按公开票价组织的商品卡，票量及具体场次需以实际游玩日期核实。")
+tickets_part1 = MarkDownRenderer("## 门票与预约")
+tickets_part2 = TextContent("平江路、山塘街公共街区免费；两座园林需单独核对门票和入园时段。")
 ticketCards = Stack([ticketGardenOne, ticketGardenTwo], "column", "s")
 ticketGardenOne = Card([ticketGardenOne_image, ticketGardenOne_heading, ticketGardenOne_detail1, ticketGardenOne_footer], "card", "column", "s")
 ticketGardenOne_image = Image("拙政园中花园池水与亭台实景，来源苏州市园林局", "https://ylj.suzhou.gov.cn/szdoc/szsylj/uploadfile/bg5naimiu1e.jpg")
-ticketGardenOne_heading = CardHeader("拙政园成人票", "Day 01 · 实名分时预约")
-ticketGardenOne_detail1 = TextContent("淡季 ¥70 / 旺季 ¥80。建议先确认下午可预约的入园时段。", "small")
+ticketGardenOne_heading = CardHeader("拙政园成人票", "Day 01 · 午后入园")
+ticketGardenOne_detail1 = TextContent("按游玩日期核对实名预约及下午入园时段。", "small")
 ticketGardenOne_footer = Stack([ticketGardenOne_price, ticketGardenOne_buttons], "row", "m", "center", "between")
-ticketGardenOne_price = BoldText("text", "¥70–80", "成人票 · 淡旺季公开票价", "text", "md")
-ticketGardenOne_buttons = Buttons([Button("查看官方票价", @OpenUrl("https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml"), "secondary", "normal", "small")], "row")
+ticketGardenOne_price = BoldText("number", "¥70 / ¥80", "成人票 · 淡季 / 旺季", "text", "lg")
+ticketGardenOne_buttons = Buttons([Button("查看官方票价", @OpenUrl("https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml"), "primary", "normal", "small")], "row")
 ticketGardenTwo = Card([ticketGardenTwo_image, ticketGardenTwo_heading, ticketGardenTwo_detail1, ticketGardenTwo_footer], "card", "column", "s")
 ticketGardenTwo_image = Image("留园冠云峰和园林庭院", "https://p1.itc.cn/q_70/images03/20211230/6d7f3cb169064fdf9c92c85896302271.jpeg")
-ticketGardenTwo_heading = CardHeader("留园成人票", "Day 02 · 按日期查询场次")
-ticketGardenTwo_detail1 = TextContent("淡季 ¥45 / 旺季 ¥55。留出上午慢逛的时间。", "small")
+ticketGardenTwo_heading = CardHeader("留园成人票", "Day 02 · 上午入园")
+ticketGardenTwo_detail1 = TextContent("按游玩日期核对预约及上午入园时段。", "small")
 ticketGardenTwo_footer = Stack([ticketGardenTwo_price, ticketGardenTwo_buttons], "row", "m", "center", "between")
-ticketGardenTwo_price = BoldText("text", "¥45–55", "成人票 · 淡旺季公开票价", "text", "md")
-ticketGardenTwo_buttons = Buttons([Button("查看官方票价", @OpenUrl("https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml"), "secondary", "normal", "small")], "row")
-ticketNote = TextContent("旺季为 4、5、7—10 月，其余为淡季；以上为官方公开的成人票口径，优惠、实名预约及当日可订状态以园林官方渠道为准。", "small")
+ticketGardenTwo_price = BoldText("number", "¥45 / ¥55", "成人票 · 淡季 / 旺季", "text", "lg")
+ticketGardenTwo_buttons = Buttons([Button("查看官方票价", @OpenUrl("https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml"), "primary", "normal", "small")], "row")
+ticketNote = TextContent("公开票价口径：4、5、7—10 月为旺季，其余为淡季。父母适用的年龄优惠、实名预约和可订场次须另行核对；“查看官方票价”打开价格公示页，不代表已选日期或可直接下单。", "small")
 finish = Card([finish_part1, finish_part2, finish_part3], "card", "column", "m")
 finish_part1 = CardHeader("出发前，确认这三件事")
 finish_part2 = Stack([departureChecklist], "column", "s")
