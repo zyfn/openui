@@ -40,3 +40,5 @@ Web 预览使用固定的 `@openuidev/react-ui@0.18.1`。该发布包遗漏 Foll
 - 没有覆盖所有 87 项的原生逐项视觉验收，也不把浏览器检查等同于 SwiftUI 验收。
 
 SDK 图片沿用已有用例的外部地址；底图由 OpenStreetMap 提供并显示归属说明。外部资源故障与 Lang 诊断分别呈现。
+
+图表预览使用 SDK 导出的平台系统色表。固定版本 npm 包的 GenUI 预编译入口内嵌了独立 ThemeContext，站点通过 Vite 引用同包已发布的源码入口，并启用 automatic JSX，使主题与图表共用上下文；缺失的生成图标映射使用同版本 Lucide 官方映射。没有复制或分叉组件实现。React 的系列选色分布顺序仍与 Swift 不同，网页预览不等同于原生验收。

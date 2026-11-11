@@ -521,7 +521,8 @@ function App() {
               ))}
             </div>
             <small>
-              由 Swift SDK 实际导出；此处为 macOS 系统色，原生呈现跟随所在平台。
+              由 Swift SDK 实际导出；此处为 macOS 系统色。React
+              预览选色顺序可能不同，原生呈现跟随所在平台。
             </small>
           </div>
         </section>
