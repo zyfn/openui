@@ -8,7 +8,7 @@ See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONEN
 
 For matched schema/native registrations, host-authored named slots, semantic themes, message-scoped resources and the optional standard component collection, see [component authoring](COMPONENTS.md). `OpenUIStandardComponents.library()` supplies an opt-in reference catalog; extend this library when adding product definitions, preserving imported field order; applications can extend or override it while existing dictionary registrations remain supported.
 
-The standard collection defaults to role-based native typography, open forms, capsule actions and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
+The standard collection defaults to role-based native typography, card-framed forms, capsule actions and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
 
 Composition programs, preview applications and Simulator acceptance captures are maintained separately from this SDK-only distribution. They consume the installed registry and unchanged language runtime; they are not library dependencies or part of the SDK unit-test suite.
 
