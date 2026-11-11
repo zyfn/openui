@@ -10,13 +10,13 @@ final class NativeAffordanceTests: XCTestCase {
         XCTAssertEqual(title, NativeHeadingStyle.titleFont(compact: true, theme: theme))
         XCTAssertEqual(title.size, 18)
         XCTAssertLessThan(title.size, theme.textHeadingMd.size)
-        XCTAssertEqual(theme.textBodyDefaultHeavy.size, 17)
+        XCTAssertEqual(theme.textBodyDefaultHeavy.size, 16)
     }
 
     func testReadingScaleKeepsNumericAndControlSizesIndependent() {
         var theme = OpenUIThemeValues.defaults
-        XCTAssertEqual(theme.textStyle(.body).font.size, 17)
-        XCTAssertEqual(theme.textStyle(.supporting).font.size, 15)
+        XCTAssertEqual(theme.textStyle(.body).font.size, 16)
+        XCTAssertEqual(theme.textStyle(.supporting).font.size, 14)
         XCTAssertEqual(theme.textStyle(.caption).font.size, 13)
         XCTAssertEqual(theme.textStyle(.compactAction).font.size, 14)
         XCTAssertEqual(theme.textStyle(.action).font.size, 16)

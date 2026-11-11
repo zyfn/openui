@@ -208,7 +208,7 @@ public struct OpenUITheme {
 public struct OpenUIThemeValues {
     // Dynamic Color providers are reused across scope resolution and stream updates.
     static let defaults = OpenUIThemeValues()
-    public var textNeutralPrimary: Color = NativeControlPalette.adaptive(light: 0x202024, dark: 0xF4F4F5, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
+    public var textNeutralPrimary: Color = NativeControlPalette.adaptive(light: 0x303036, dark: 0xE4E4E7, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
     public var textNeutralSecondary: Color = NativeControlPalette.adaptive(light: 0x64646E, dark: 0xA1A1AA, highContrastLight: 0x50505A, highContrastDark: 0xC4C4CE)
     public var textNeutralTertiary: Color = NativeControlPalette.adaptive(light: 0xAAAAB4, dark: 0x686874)
     public var textNeutralLink: Color = NativeControlPalette.adaptive(light: 0x202024, dark: 0xF4F4F5, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
@@ -278,10 +278,10 @@ public struct OpenUIThemeValues {
     public var textHeadingMd: OpenUIFont = OpenUIFont(size: 26, weight: .semibold)
     public var textHeadingSm: OpenUIFont = OpenUIFont(size: 20, weight: .semibold)
     public var textHeadingXs: OpenUIFont = OpenUIFont(size: 18, weight: .semibold)
-    public var textBodyDefault: OpenUIFont = OpenUIFont(size: 17, weight: .regular)
-    public var textBodyDefaultHeavy: OpenUIFont = OpenUIFont(size: 17, weight: .semibold)
-    public var textBodySm: OpenUIFont = OpenUIFont(size: 15, weight: .regular)
-    public var textBodySmHeavy: OpenUIFont = OpenUIFont(size: 15, weight: .semibold)
+    public var textBodyDefault: OpenUIFont = OpenUIFont(size: 16, weight: .regular)
+    public var textBodyDefaultHeavy: OpenUIFont = OpenUIFont(size: 16, weight: .semibold)
+    public var textBodySm: OpenUIFont = OpenUIFont(size: 14, weight: .regular)
+    public var textBodySmHeavy: OpenUIFont = OpenUIFont(size: 14, weight: .semibold)
     public var textBodyLg: OpenUIFont = OpenUIFont(size: 18, weight: .regular)
     public var textBodyLgHeavy: OpenUIFont = OpenUIFont(size: 18, weight: .semibold)
     public var textLabelSm: OpenUIFont = OpenUIFont(size: 14, weight: .regular)

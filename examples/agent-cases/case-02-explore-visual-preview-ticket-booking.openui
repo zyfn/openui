@@ -69,7 +69,7 @@ freeAdmission_part2 = TextContent("德寿宫个人参观免预约；其他场馆
 ticketCards = Card([ticketCards_image, ticketCards_heading, ticketCards_detail1, ticketCards_footer], "card", "column", "s")
 ticketCards_image = Image("岳王庙正殿建筑实拍", "https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg")
 ticketCards_heading = CardHeader("岳王庙", "杭州 · 西湖北岸")
-ticketCards_detail1 = TextContent("红柱重檐的祠庙建筑与墓区、碑刻共同构成纪念岳飞的游览空间。")
+ticketCards_detail1 = TextContent("红柱重檐的祠庙建筑与墓区、碑刻共同构成纪念岳飞的游览空间。", "small")
 ticketCards_footer = Stack([ticketCards_price, ticketCards_buttons], "row", "m", "center", "between")
 ticketCards_price = BoldText("number", "¥25 起", "成人票", "text", "lg")
 ticketCards_buttons = Buttons([Button("预订", @OpenUrl("https://touch.piao.qunar.com/touch/detail.htm?id=3501705640"), "primary", "normal", "small")], "row")

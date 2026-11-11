@@ -32,7 +32,7 @@ Agent 的选择建议放在商品卡外，并明确为建议。价格展示可�
 
 ## 文字角色与对象表达
 
-以下为SDK内部映射，不是模型需要选择的字号参数；DSL保持不变。复用 SDK 系统字体与既有角色，不写客户端样式覆盖或硬编码字号。当前默认对照为：页面标题 26pt、章节 20pt、对象标题 18pt、正文 17pt、规格/来源 15pt、紧凑图注 13pt；正文 regular，标题 semibold，价格与时间使用数字角色。行距继承 SDK 的角色设置（正文 1.5、章节 1.3、对象标题 1.35、详情 1.45），不是在示例中另设参数。
+以下为SDK内部映射，不是模型需要选择的字号参数；DSL保持不变。复用 SDK 系统字体与既有角色，不写客户端样式覆盖或硬编码字号。当前默认对照为：页面标题 26pt、章节 20pt、对象标题 18pt、正文 16pt、规格/来源 14pt、紧凑图注 13pt；正文 regular，标题 semibold，价格与时间使用数字角色。行距继承 SDK 的角色设置（正文 1.5、章节 1.3、对象标题 1.35、详情 1.45），不是在示例中另设参数。
 
 - 章节通过标题和留白组织，避免标题前重复手动分隔线；交通连接线、表格自身的结构线保留。
 - 页面/章节用 Markdown 标题；对象名称用 CardHeader 或组件自己的 title。正文介绍使用 TextContent 默认角色；small 留给日期、规格、来源与短补充，不把完整解释普遍压成小字。
@@ -92,6 +92,8 @@ Form 用于收集同一任务的一组选择/输入并统一提交。Swift SDK�
 短属性、适用条件可使用中性Tag/TagBlock帮助扫读与比较，长解释仍在正文；不重复已在标题或价格口径里明确的信息。仅在有真实状态语义时使用状态色，不按对象类别随机配色。
 
 Case07核心行程和往返交通展开，补充票务使用横滑卡组；单个住宿对象使用紧凑横向图文头，不为凑卡组编造候选。交通时长和直达/中转属于辅助文字，用现有紧凑档位；时刻与金额若为计划和预算，须明确标注，不将其写成已查询报价。界面不用测试/演示话术。
+
+卡片内简短商品介绍、推荐理由使用现有紧凑文字档位；连续讲解正文使用默认档位。名称、价格、正文、属性各有位置，短且有依据的差异属性用中性Tag，不新增未返回的性能或优惠。
 
 <!-- Generated from the .openui sources; do not edit this copy. -->
 
@@ -205,7 +207,7 @@ freeAdmission_part2 = TextContent("德寿宫个人参观免预约；其他场馆
 ticketCards = Card([ticketCards_image, ticketCards_heading, ticketCards_detail1, ticketCards_footer], "card", "column", "s")
 ticketCards_image = Image("岳王庙正殿建筑实拍", "https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg")
 ticketCards_heading = CardHeader("岳王庙", "杭州 · 西湖北岸")
-ticketCards_detail1 = TextContent("红柱重檐的祠庙建筑与墓区、碑刻共同构成纪念岳飞的游览空间。")
+ticketCards_detail1 = TextContent("红柱重檐的祠庙建筑与墓区、碑刻共同构成纪念岳飞的游览空间。", "small")
 ticketCards_footer = Stack([ticketCards_price, ticketCards_buttons], "row", "m", "center", "between")
 ticketCards_price = BoldText("number", "¥25 起", "成人票", "text", "lg")
 ticketCards_buttons = Buttons([Button("预订", @OpenUrl("https://touch.piao.qunar.com/touch/detail.htm?id=3501705640"), "primary", "normal", "small")], "row")
@@ -319,9 +321,9 @@ preferences = TextContent("小桌面 · 阅读用途 · 先比较折叠与夹式
 products = Stack([productsHeader, productsCarousel, priceNote], "column", "s")
 productsHeader = InlineHeader("三款台灯候选", "比较摆放方式，并核对具体规格")
 productsCarousel = CompositeCardBlock([folding, rechargeable, clipLamp], "carousel", true)
-folding = CompositeCardItem("taobao-971628097659", ImageTextLarge("https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg", "惠普折叠阅读台灯商品图", "惠普折叠阅读台灯", "惠普照明旗舰店", true), [Text("text", "面向桌面阅读场景的折叠式台灯。", null, null, "md")], {"price":BoldText("number", "¥84.00", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=971628097659"), "primary", "normal", "small")})
-rechargeable = CompositeCardItem("taobao-1014479690931", ImageTextLarge("https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg", "欧普充电折叠台灯商品图", "欧普充电折叠台灯", "欧普照明官方旗舰店", true), [Text("text", "充电式阅读台灯，灯体采用折叠结构。", null, null, "md")], {"price":BoldText("number", "¥116.20", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=1014479690931"), "primary", "normal", "small")})
-clipLamp = CompositeCardItem("taobao-1087331917809", ImageTextLarge("https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg", "充电夹式阅读台灯商品图", "充电夹式阅读台灯", "国货严选旗舰", true), [Text("text", "采用夹式固定方式的充电阅读台灯。", null, null, "md")], {"price":BoldText("number", "¥49.90", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=1087331917809"), "primary", "normal", "small")})
+folding = CompositeCardItem("taobao-971628097659", ImageTextLarge("https://img.alicdn.com/imgextra/i1/2216436773929/O1CN010S8AcDt6spH1chua_!!4611686018427384873-0-item_pic.jpg", "惠普折叠阅读台灯商品图", "惠普折叠阅读台灯", "惠普照明旗舰店", true), [TagBlock(["折叠"], "sm"), Text("text", "面向桌面阅读场景的折叠式台灯。", null, null, "xs")], {"price":BoldText("number", "¥84.00", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=971628097659"), "primary", "normal", "small")})
+rechargeable = CompositeCardItem("taobao-1014479690931", ImageTextLarge("https://img.alicdn.com/imgextra/i3/138006397/O1CN01GESzBaCMA9E1chua-138006397.jpg", "欧普充电折叠台灯商品图", "欧普充电折叠台灯", "欧普照明官方旗舰店", true), [TagBlock(["充电", "折叠"], "sm"), Text("text", "充电式阅读台灯，灯体采用折叠结构。", null, null, "xs")], {"price":BoldText("number", "¥116.20", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=1014479690931"), "primary", "normal", "small")})
+clipLamp = CompositeCardItem("taobao-1087331917809", ImageTextLarge("https://img.alicdn.com/imgextra/i3/2217254400585/O1CN01wHFlHoptgGH1chua_!!2217254400585-0-C2M.jpg", "充电夹式阅读台灯商品图", "充电夹式阅读台灯", "国货严选旗舰", true), [TagBlock(["夹式", "充电"], "sm"), Text("text", "采用夹式固定方式的充电阅读台灯。", null, null, "xs")], {"price":BoldText("number", "¥49.90", null, "text", "lg"), "button":Button("购买", @OpenUrl("https://detail.tmall.com/item.htm?id=1087331917809"), "primary", "normal", "small")})
 priceNote = TextContent("价格记录于 2026-11-10；具体规格、优惠和结算金额以商品页为准。", "small")
 fit = Stack([fitTitle, fitList], "column", "xs")
 fitTitle = MarkDownRenderer("## 用法不同，选择也不同")
@@ -455,7 +457,7 @@ stayTitle = MarkDownRenderer("## 住一晚｜古城里的落脚点")
 stayIntro = TextContent("以同一间酒店作为两天的起终点，减少带行李换住处的折腾。选择古城内的落脚点，方便衔接两天行程。")
 hotelCard = Card([hotelHeading, hotelIntro, hotelSpec, hotelFare], "card", "column", "s")
 hotelHeading = ImageText("https://cache.marriott.com/is/image/marriotts7prod/ar-wuxsa-entrance-25469:Wide-Hor?wid=1336&fit=constrain", "AC Hotel Suzhou China 酒店入口", "AC Hotel Suzhou China", "姑苏区 · 人民路 1585 号", true, "horizontal")
-hotelIntro = TextContent("酒店以现代玻璃、石材结合江南白墙黑瓦的建筑元素；客房配有书桌和可调节阅读灯。")
+hotelIntro = TextContent("酒店以现代玻璃、石材结合江南白墙黑瓦的建筑元素；客房配有书桌和可调节阅读灯。", "small")
 hotelSpec = TextContent("11/21 入住 · 11/22 退房 · 3 位成人
 用房需求：双床房 1 间 + 大床房 1 间，预订时确认可售房型。", "small")
 hotelFare = Stack([hotelPrice, hotelActions], "row", "m", "center", "between")
@@ -506,12 +508,12 @@ tickets_part2 = TextContent("平江路、山塘街公共街区免费；两座园
 ticketCards = CompositeCardBlock([ticketGardenOne, ticketGardenTwo], "carousel", true)
 ticketGardenOne = CompositeCardItem("zhuozhengyuan", ticketGardenOne_heading, [ticketGardenOne_detail], {price:ticketGardenOne_price, button:ticketGardenOne_action})
 ticketGardenOne_heading = ImageText("https://ylj.suzhou.gov.cn/szdoc/szsylj/uploadfile/bg5naimiu1e.jpg", "拙政园中花园池水与亭台实景", "拙政园", "11/21 · 下午计划入园", true, "horizontal")
-ticketGardenOne_detail = Text("text", "池水构成中部园景的核心，亭榭与树木沿水展开，呈现疏朗自然的江南园林格局。", null, null, "md")
+ticketGardenOne_detail = Text("text", "池水构成中部园景的核心，亭榭与树木沿水展开，呈现疏朗自然的江南园林格局。", null, null, "xs")
 ticketGardenOne_price = BoldText("number", "¥70", "成人票", "text", "lg")
 ticketGardenOne_action = Button("查看票价", @OpenUrl("https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml"), "primary", "normal", "small")
 ticketGardenTwo = CompositeCardItem("liuyuan", ticketGardenTwo_heading, [ticketGardenTwo_detail], {price:ticketGardenTwo_price, button:ticketGardenTwo_action})
 ticketGardenTwo_heading = ImageText("https://p1.itc.cn/q_70/images03/20211230/6d7f3cb169064fdf9c92c85896302271.jpeg", "留园冠云峰和园林庭院", "留园", "11/22 · 上午计划入园", true, "horizontal")
-ticketGardenTwo_detail = Text("text", "以厅堂庭院、曲廊和湖石见长；冠云峰与漏窗相互借景，庭院空间层层变化。", null, null, "md")
+ticketGardenTwo_detail = Text("text", "以厅堂庭院、曲廊和湖石见长；冠云峰与漏窗相互借景，庭院空间层层变化。", null, null, "xs")
 ticketGardenTwo_price = BoldText("number", "¥45", "成人票", "text", "lg")
 ticketGardenTwo_action = Button("查看票价", @OpenUrl("https://ylj.suzhou.gov.cn/szsylj/mpjg/wztt.shtml"), "primary", "normal", "small")
 ticketNote = TextContent("11 月按淡季公示价展示；旺季（4、5、7—10 月）分别为 ¥80、¥55。父母适用的年龄优惠与可约时段，请在官方渠道确认。", "small")

@@ -89,7 +89,7 @@ final class ThemeOverrideTests: XCTestCase {
   func testTextRolesAreCompleteIndependentOverrides() {
     var overrides = OpenUITheme()
     overrides.textBodyDefault = OpenUIFont(size: 19)
-    XCTAssertEqual(overrides.resolved().textBodyDefaultHeavy.size, 17)
+    XCTAssertEqual(overrides.resolved().textBodyDefaultHeavy.size, 16)
     overrides.textBodyDefaultHeavy = OpenUIFont(size: 22, weight: .bold, lineSpacing: 0.3)
     overrides.textBodyDefault = OpenUIFont(size: 17)
     let theme = overrides.resolved()
@@ -174,7 +174,7 @@ final class ThemeOverrideTests: XCTestCase {
       let base = OpenUIThemeValues()
       let original = NativeBadgeColors(variant: "inverted", theme: base)
       XCTAssertEqual(try rgba(original.foreground, scheme), try rgba(base.background, scheme))
-      XCTAssertEqual(try rgba(original.background, scheme), try rgba(base.textNeutralPrimary, scheme))
+      XCTAssertEqual(try rgba(original.background, scheme), try rgba(base.invertedBackground, scheme))
       var changed = base; changed.background = .pink
       XCTAssertEqual(try rgba(NativeBadgeColors(variant: "inverted", theme: changed).foreground, scheme), try rgba(original.foreground, scheme))
       changed.textAccentPrimary = .yellow; changed.invertedBackground = .blue; changed.textNeutralLink = .green
