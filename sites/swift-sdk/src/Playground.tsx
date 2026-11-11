@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { ThemeProvider } from "@openuidev/react-ui/ThemeProvider";
+import React, { useState, useCallback, useMemo } from "react";
+import { ThemeContext, useTheme } from "@openuidev/react-ui/ThemeProvider";
 import tokens from "../public/generated/tokens.json";
 import { Renderer } from "@openuidev/react-lang";
 import { previewLibrary } from "./preview-library";
@@ -13,6 +13,20 @@ export default function Playground({
   initialSource: string;
   dark?: boolean;
 }) {
+  const inheritedTheme = useTheme();
+  const chartTheme = useMemo(
+    () => ({
+      ...inheritedTheme,
+      mode: dark ? ("dark" as const) : ("light" as const),
+      theme: {
+        ...inheritedTheme.theme,
+        defaultChartPalette: tokens.chartPalette.map(
+          (c) => c[dark ? "dark" : "light"],
+        ),
+      },
+    }),
+    [inheritedTheme, dark],
+  );
   const [draft, setDraft] = useState(initialSource);
   const [source, setSource] = useState(initialSource);
   const [errors, setErrors] = useState<string[]>([]);
@@ -60,23 +74,14 @@ export default function Playground({
         </button>
       </div>
       <div className="react-preview" key={revision}>
-        <ThemeProvider
-          mode={dark ? "dark" : "light"}
-          cssSelector=".react-preview"
-          lightTheme={{
-            defaultChartPalette: tokens.chartPalette.map((c) => c.light),
-          }}
-          darkTheme={{
-            defaultChartPalette: tokens.chartPalette.map((c) => c.dark),
-          }}
-        >
+        <ThemeContext.Provider value={chartTheme}>
           <Renderer
             response={source}
             library={previewLibrary}
             onError={onErrors}
             onAction={setEvent}
           />
-        </ThemeProvider>
+        </ThemeContext.Provider>
       </div>
       {errors.length > 0 && (
         <details>
