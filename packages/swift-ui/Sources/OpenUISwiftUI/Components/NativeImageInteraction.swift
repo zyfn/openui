@@ -105,6 +105,17 @@ struct NativeImageZoom: ViewModifier {
             offset = bounded(CGSize(width: offset.width + value.translation.width, height: offset.height + value.translation.height), scale: scale, size: geometry.size)
           } }, including: scale > 1 ? .all : .subviews)
         .onTapGesture(count: 2) { scale = scale > 1 ? 1 : 2; offset = .zero }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(Text("\(Int(scale * 100))%"))
+        .accessibilityAdjustableAction { direction in
+          switch direction {
+          case .increment: scale = min(5, scale + 1)
+          case .decrement: scale = max(1, scale - 1)
+          @unknown default: break
+          }
+          offset = bounded(offset, scale: scale, size: geometry.size)
+        }
+        .accessibilityIdentifier("openui.image.preview.zoom")
     }
   }
 }

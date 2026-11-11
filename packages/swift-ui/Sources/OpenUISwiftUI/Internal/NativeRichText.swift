@@ -65,4 +65,8 @@ struct NativeRichTextRequest: Hashable, Sendable {
   let sources: [CardSource]
   let fontSize: Double
   let color: String
+  func extends(_ previous: Self) -> Bool {
+    mode == previous.mode && sources == previous.sources && fontSize == previous.fontSize && color == previous.color
+      && source.displayString.utf16.starts(with: previous.source.displayString.utf16)
+  }
 }

@@ -27,7 +27,6 @@ struct NativeMarkdownText: View {
   @State private var prepared: String?
   @State private var preparedRequest: NativeRichTextRequest?
   @State private var citation: NativeCitationSelection?
-  @State private var imagePreview: NativeMarkdownImageLink?
   private var foreground: Color { style.color ?? theme.textNeutralPrimary }
   private var frameAlignment: Alignment {
     switch textAlignment {
@@ -43,8 +42,13 @@ struct NativeMarkdownText: View {
     .init(source: OpenUIString(text), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
   }
 
+  private var displayedText: String {
+    if preparedRequest == request { return prepared ?? text }
+    if let prepared, let previous = preparedRequest, request.extends(previous) { return prepared }
+    return text
+  }
   var body: some View {
-    MarkdownUI.Markdown(preparedRequest == request ? prepared ?? text : text,
+    MarkdownUI.Markdown(displayedText,
       baseURL: resources.baseURL, imageBaseURL: resources.baseURL)
       .markdownTextStyle {
         ForegroundColor(foreground)
@@ -85,18 +89,12 @@ struct NativeMarkdownText: View {
       }
       .environment(\.openURL, OpenURLAction { url in
         guard linksReady, activationIntent?.permitsActivation != false else { return .discarded }
-        if let link = NativeMarkdownImageLink(url), resources.request(for: link.source) != nil {
-          imagePreview = link; return .handled
-        }
         if let selection = NativeCitationSelection(url: url, sources: sources) {
           citation = selection; return .handled
         }
         guard let safe = NativeRichTextEngine.shared.sourceURL(url.absoluteString), let target = URL(string: safe) else { return .discarded }
         openURL(target); return .handled
       })
-      .sheet(item: $imagePreview) { selected in
-        NativeSingleImagePreview(source: selected.source, alt: selected.alt)
-      }
       .popover(item: $citation) { selected in
         NativeCitationSources(indices: selected.indices, sources: sources)
           .environment(\.openUITheme, theme).environment(\.openUIResourceContext, resources)
@@ -252,18 +250,5 @@ private struct NativeMarkdownImage: View {
     case .loaded: return "openui.markdown.image.loaded"
     case .unavailable: return "openui.markdown.image.unavailable"
     }
-  }
-}
-
-struct NativeMarkdownImageLink: Identifiable {
-  let source: String
-  let alt: String
-  var id: String { source }
-  init?(_ url: URL) {
-    guard url.scheme == "openui-image", url.host == "preview",
-      let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
-      let source = items.first(where: { $0.name == "src" })?.value, !source.isEmpty else { return nil }
-    self.source = source
-    self.alt = items.first(where: { $0.name == "alt" })?.value ?? ""
   }
 }
