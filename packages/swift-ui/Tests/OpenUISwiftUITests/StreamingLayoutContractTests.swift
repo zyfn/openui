@@ -36,6 +36,49 @@ final class StreamingLayoutContractTests: XCTestCase {
   }
 
   #if os(macOS)
+  @MainActor func testClearCardsShareColumnsWithoutAddingContentInsets() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    var registry = library.registry
+    let original = try XCTUnwrap(registry["Image"])
+    var frames: [String: CGRect] = [:]
+    registry["Image"] = { element, registry in
+      let key = PropValue.string(element, "alt") ?? "?"
+      return AnyView(original(element, registry).background(GeometryReader { geometry in
+        Color.clear.onAppear { frames[key] = geometry.frame(in: .global) }
+          .onChange(of: geometry.frame(in: .global)) { frames[key] = $0 }
+      }))
+    }
+    let host = NSHostingView(rootView: OpenUIRenderer(state: state, registry: registry).frame(width: 320))
+    let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 320, height: 600),
+      styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false; window.contentView = host
+    window.setFrameOrigin(.init(x: -10000, y: -10000)); window.orderFront(nil)
+    defer { window.close() }
+    func settle(_ source: String) {
+      frames.removeAll(); state.setSource(source)
+      host.layoutSubtreeIfNeeded(); RunLoop.main.run(until: Date().addingTimeInterval(0.10))
+      host.layoutSubtreeIfNeeded()
+    }
+    for variant in ["clear", "card", "sunk"] {
+      for count in [2, 3] {
+        let children = (0..<count).map { "Card([Image(\"\($0)\",\"\")],\"\(variant)\")" }.joined(separator: ",")
+        settle("root=Stack([\(children)],\"row\",\"m\",\"start\",\"start\",true)")
+        let inset: CGFloat = variant == "clear" ? 0 : OpenUIThemeValues().componentStyle.panelInset
+        let cell = (320 - CGFloat(count - 1) * 12) / CGFloat(count)
+        for index in 0..<count {
+          let rect = try XCTUnwrap(frames[String(index)])
+          XCTAssertEqual(rect.width, cell - 2 * inset, accuracy: 1, "\(variant) \(count) columns")
+          XCTAssertEqual(rect.minX, CGFloat(index) * (cell + 12) + inset, accuracy: 1)
+        }
+      }
+    }
+    settle("root=Card([Card([Image(\"nested\",\"\")],\"clear\")],\"clear\")")
+    XCTAssertEqual(try XCTUnwrap(frames["nested"]).width, 320, accuracy: 1,
+      "Nested transparent layout units must not accumulate gutters")
+  }
+
   @MainActor func testLaterUnresolvedSiblingDoesNotRemoveOrRemountAnAlreadyVisibleText() throws {
     _ = NSApplication.shared
     let library = try OpenUIStandardComponents.library()

@@ -15,9 +15,11 @@ Map、MapPoint、SVG使用CaseLab已有的宿主扩展；它们不是SDK默认�
 | --- | --- |
 | 连续阅读、章节、图文顺序 | `Stack(column)`；内容按已分配宽度换行、向下增长 |
 | 按内容定宽的小字段、操作 | `Stack(row)`；`wrap`只表示能否换行，不表示等宽 |
-| 需要共享宽度的内容单元 | 将 `Card` 直接放在横向容器中；`clear`保留其容器语义和内边距，并非零边距网格 |
+| 需要共享宽度的内容单元 | 将 `Card` 直接放在横向容器中；Swift SDK 的 `clear`保留等宽分配能力，不附加内边距；列间距由父 Stack 的 gap 管理 |
 | 图片集合、横向浏览 | 使用 `ImageGallery`、卡片组或 `Carousel` 自己的布局能力；不要重复包容器 |
 | 单个完整对象 | 可用 `Card` 组合合法内容；不要为满足卡片组至少两项而虚构另一个对象 |
+
+Swift 的 clear 零内边距是明确的视觉策略，与固定参考 React 版本的横向 padding 不同；不新增 Lang 字段。card/sunk 仍保留内边距。
 
 `Card`被额外的普通`Stack`包住后，外层看到的是Stack，伸展关系不能穿透包装。
 `Carousel`的合法children由导出的组件契约决定，不把任意Card/Stack塞入它。

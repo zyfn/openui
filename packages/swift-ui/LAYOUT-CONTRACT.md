@@ -9,7 +9,7 @@ does not change the exported Lang definitions or add a column-count argument.
 | Family | Final layout contract | Native boundary |
 | --- | --- | --- |
 | Stack | Direction, gap, cross-axis alignment, main-axis distribution, wrapping | Native measurement is not a complete browser CSS engine; no implicit equal-column rule |
-| Card | Participates in parent row space allocation; manages its own content/surface | Clear still has its documented inset; do not treat a transparent card as a zero-inset grid cell |
+| Card | Participates in parent row space allocation; manages its own content/surface | Clear has no content inset; card/sunk retain surface insets. This is an explicit Swift visual adaptation from the pinned React clear padding |
 | Buttons | Owns action-group direction and wrapping | Buttons keep natural widths unless an existing stretch relationship supplies width; row touch-target alignment does not stretch painted button heights |
 | Image | Uses its media role within the space assigned by its parent | The existing cover role/ratio is a native visual adaptation, not a Lang parameter |
 | ImageText / IconText | Owns media and copy composition | Explicit image size stays fixed; common typography remains shared |

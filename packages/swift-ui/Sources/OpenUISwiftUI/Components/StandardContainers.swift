@@ -9,9 +9,11 @@ struct OpenUICardSurface: ViewModifier {
     func body(content: Content) -> some View {
         let surface = NativeContentSurface(variant, fallback: .card)
         let ready = active && parentLayoutReady
+        let inset = ready && surface != .clear ? theme.componentStyle.panelInset : 0
         content.environment(\.openUIActionDensity, .compact)
-            .padding(.horizontal, ready ? theme.componentStyle.panelInset : 0)
-            .padding(.vertical, !ready || variant == "clear" ? 0 : theme.componentStyle.panelInset)
+            // Transparent layout units own allocation, not gutters. The parent
+            // supplies the gap; nested clear cards must not accumulate insets.
+            .padding(inset)
             .frame(maxWidth: .infinity, alignment: .leading)
             // Background and media own their corners; the open container must
             // not mask glyphs at the edge of its unpadded content.

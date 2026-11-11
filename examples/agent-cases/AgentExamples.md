@@ -15,9 +15,11 @@ Map、MapPoint、SVG使用CaseLab已有的宿主扩展；它们不是SDK默认�
 | --- | --- |
 | 连续阅读、章节、图文顺序 | `Stack(column)`；内容按已分配宽度换行、向下增长 |
 | 按内容定宽的小字段、操作 | `Stack(row)`；`wrap`只表示能否换行，不表示等宽 |
-| 需要共享宽度的内容单元 | 将 `Card` 直接放在横向容器中；`clear`保留其容器语义和内边距，并非零边距网格 |
+| 需要共享宽度的内容单元 | 将 `Card` 直接放在横向容器中；Swift SDK 的 `clear`保留等宽分配能力，不附加内边距；列间距由父 Stack 的 gap 管理 |
 | 图片集合、横向浏览 | 使用 `ImageGallery`、卡片组或 `Carousel` 自己的布局能力；不要重复包容器 |
 | 单个完整对象 | 可用 `Card` 组合合法内容；不要为满足卡片组至少两项而虚构另一个对象 |
+
+Swift 的 clear 零内边距是明确的视觉策略，与固定参考 React 版本的横向 padding 不同；不新增 Lang 字段。card/sunk 仍保留内边距。
 
 `Card`被额外的普通`Stack`包住后，外层看到的是Stack，伸展关系不能穿透包装。
 `Carousel`的合法children由导出的组件契约决定，不把任意Card/Stack塞入它。
@@ -145,7 +147,7 @@ siteCard = Stack([siteCard_part1, siteCard_part2, siteCard_part3], "column", "s"
 siteCard_part1 = Image("南宋遗址陈列馆入口建筑实拍", "https://z.hangzhou.com.cn/2022/syjy/images/2022-12/09/d809c897-a59f-46fb-8f43-1797ddec8e68.jpg")
 siteCard_part2 = CardHeader("03 · 南宋遗址陈列馆", "小型考古展馆")
 siteCard_part3 = TextContent("入口低调，主要看馆内的南宋街道遗迹。")
-dayTwo = Stack([dayTwoTitle, sudi, yueCard, gushanCard, dongpoExtra], "column", "l")
+dayTwo = Stack([dayTwoTitle, sudi, dayTwoPair, dongpoExtra], "column", "l")
 dayTwoTitle = Stack([dayTwoTitle_part1, dayTwoTitle_part2, dayTwoTitle_part3], "column", "xs")
 dayTwoTitle_part1 = Separator("horizontal")
 dayTwoTitle_part2 = MarkDownRenderer("## Day 02｜西湖文脉")
@@ -155,11 +157,12 @@ sudi_part1 = Image("西湖苏堤石桥、柳树和湖面实景", "https://img1.q
 sudi_part2 = TextContent("01 · 苏堤｜在湖心走一段路", "large-heavy")
 sudi_part3 = TextContent("柳树、湖面与沿堤的石桥。这里的美不在某一个建筑，而在连续的行走体验。")
 sudi_part4 = TextContent("现场氛围｜开阔、松弛；苏堤全长接近 3 公里。", "small")
-yueCard = Stack([yueCard_part1, yueCard_part2, yueCard_part3], "column", "s")
+dayTwoPair = Stack([yueCard, gushanCard], "row", "m", "start", "start", true)
+yueCard = Card([yueCard_part1, yueCard_part2, yueCard_part3], "clear", "column", "xs")
 yueCard_part1 = Image("岳王庙建筑实景", "https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg")
 yueCard_part2 = CardHeader("02 · 岳王庙", "传统祠庙 · 庄重肃穆")
 yueCard_part3 = TextContent("红柱重檐，墓区与碑刻庄重肃穆。")
-gushanCard = Stack([gushanCard_part1, gushanCard_part2, gushanCard_part3], "column", "s")
+gushanCard = Card([gushanCard_part1, gushanCard_part2, gushanCard_part3], "clear", "column", "xs")
 gushanCard_part1 = Image("孤山放鹤亭实景", "https://youimg1.c-ctrip.com/target/fd/tg/g1/M0B/C3/49/CghzflT_pLqAB8CTABhI6i-AH8Q373.jpg")
 gushanCard_part2 = CardHeader("03 · 孤山与放鹤亭", "林逋遗迹 · 清幽园林")
 gushanCard_part3 = TextContent("树荫、石阶、古亭，慢慢走更有味道。")

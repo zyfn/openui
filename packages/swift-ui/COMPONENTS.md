@@ -119,7 +119,7 @@ copy vertically. IconText also centers the glyph against its complete title/deta
 block, using the existing font roles and spaceM; this is an approved native
 presentation choice rather than the reference's top-aligned IconText skin.
 Card families consume their own tokens directly: object and fact-card padding
-uses `spaceM`; generic Card uses `spaceML` (clear has zero vertical inset).
+uses `spaceM`; generic Card uses `spaceML` for card/sunk; clear has zero inset on both axes.
 Fact-card groups add no outer margin. The corresponding
 radii are `radius3xl`, `radius2xl` or `radiusXl`. There are no competing
 `cardPadding`, `contentSpacing` or `cornerRadius` overrides.
