@@ -1,0 +1,16 @@
+{
+  "sdkRevision": "b93023f6a00060813926ab4339b4593e3cb57961",
+  "hostRevision": "f3940d92d9ca0bc5aa46c8181e92407204065fb2",
+  "platform": "iPhone 17 Pro Simulator / iOS 26.5",
+  "images": {
+    "map.png": {
+      "sha256": "03c7ad640561e22e2c7dcafb7bec623760d0bc58d9a236e25ac435cef967105b",
+      "case": "01"
+    },
+    "svg.png": {
+      "sha256": "2c229b1b602d220daaf3509a23bba094163feebe326d7b00831c157fa935920b",
+      "case": "03"
+    }
+  },
+  "edited": false
+}

@@ -1028,6 +1028,18 @@ function App() {
               >
                 <MapSpecimen />
               </Suspense>
+              <details className="native-proof">
+                <summary>查看 Swift 原生呈现</summary>
+                <img
+                  src="./native/map.png"
+                  alt="Case 01 在 iOS 模拟器中的 MapKit 地图与地点卡"
+                  loading="lazy"
+                />
+                <p className="micro">
+                  iOS 模拟器实拍，SDK
+                  b93023f6。保留真实案例标题与上下文；原生地图使用 MapKit。
+                </p>
+              </details>
               <p>
                 标记与地点卡联动，展开地图后保留选择。SDK 的原生实现使用
                 MapKit；此处通过 OpenStreetMap 呈现同一组坐标，供观察选择关系。
@@ -1044,6 +1056,18 @@ function App() {
                 <span className="subtle-label">SVG</span>
               </div>
               <SVGSpecimen />
+              <details className="native-proof">
+                <summary>查看 Swift 原生呈现</summary>
+                <img
+                  src="./native/svg.png"
+                  alt="Case 03 在 iOS 模拟器中通过 WKWebView 呈现的热泵原理图"
+                  loading="lazy"
+                />
+                <p className="micro">
+                  iOS 模拟器实拍，SDK b93023f6。图解来自 Case 03 的实际
+                  SVG；完整截图未经过改图。
+                </p>
+              </details>
               <p>
                 viewBox
                 决定图形比例。内容需要完整、可解析，才能成为图解；远程资源、脚本与界面导航不属于图形内容。

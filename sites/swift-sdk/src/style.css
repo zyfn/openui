@@ -1662,3 +1662,13 @@ footer > a:last-child {
     font-size: 10px;
   }
 }
+
+.native-proof img {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin: 16px auto 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
