@@ -72,6 +72,7 @@ struct NativeSingleImagePreview: View {
     }
     .padding(theme.spaceML).frame(idealWidth: 720, idealHeight: 640)
     .foregroundStyle(theme.textNeutralPrimary)
+    .accessibilityElement(children: .contain)
     .accessibilityIdentifier("openui.image.preview")
   }
 }
