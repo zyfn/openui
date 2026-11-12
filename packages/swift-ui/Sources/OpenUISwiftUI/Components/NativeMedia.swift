@@ -484,55 +484,58 @@ private struct NativeGalleryPreview: View {
   let retry: (NativeGalleryImage) -> Void
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openUITheme) private var theme
-  @Environment(\.openUIResourceContext) private var resources
-  @Environment(\.openURL) private var openURL
+  @State private var zoomed = false
   private var image: NativeGalleryImage? { images.first { $0.key == selected } }
   var body: some View {
     VStack(alignment: .leading, spacing: theme.spacing("m")) {
-      HStack {
-        Text("All photos", bundle: NativeControlResources.bundle).openUIFont(theme.textHeadingXs, role: .title)
-        Spacer()
-        if let image { Text("\(image.index + 1) / \(images.count)").nativeTextStyle(theme.textStyle(.caption)).monospacedDigit() }
-        if let image, let destination = resources.request(for: image.src)?.url {
-          Button { openURL(destination) } label: {
-            Image(systemName: "arrow.up.right.square").openUIFont(theme.textLabelDefaultHeavy, role: .control).openUIControlTarget()
-          }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Open original image", bundle: NativeControlResources.bundle))
-            .accessibilityIdentifier("openui.gallery.open-original")
-        }
-        Button { dismiss() } label: { Image(systemName: "xmark") }
-          .buttonStyle(.plain).openUIControlTarget().disabled(false)
-          .keyboardShortcut(.cancelAction).accessibilityLabel(Text("Close gallery", bundle: NativeControlResources.bundle))
-          .accessibilityIdentifier("openui.gallery.close")
-      }
+      NativeImagePreviewHeader(position: image?.index, count: images.count,
+        closeIdentifier: "openui.gallery.close", close: { dismiss() })
       if let image {
-        GeometryReader { _ in
-          NativeRemoteImage(src: image.src, alt: image.alt, layout: .fit,
-            cachedImage: pictures[image.key], attempt: image.requestID.attempt, onStatus: { record($0, $1, image.key) }, previewEnabled: false)
-            .modifier(NativeImageZoom())
-        }.accessibilityIdentifier("openui.gallery.preview.image")
-        if !image.alt.isEmpty { Text(image.alt).nativeTextStyle(theme.textStyle(.compactBody)) }
-        if let details = image.details { Text(details).nativeTextStyle(theme.textStyle(.supporting)) }
-      }
-      ScrollView(.horizontal) {
-        HStack(spacing: theme.spaceM) {
-          ForEach(images) { image in
-            Button { if phases[image.key] == .unavailable { retry(image) } else { selected = image.key } } label: {
-              NativeRemoteImage(src: image.src, alt: image.alt,
-                layout: .thumbnail(CGSize(width: nativePresentation.compactThumbnailSize,
-                  height: nativePresentation.compactThumbnailSize / nativePresentation.coverAspectRatio)),
-                cachedImage: pictures[image.key], attempt: image.requestID.attempt, onStatus: { record($0, $1, image.key) }, interactionEnabled: false)
-                .clipShape(RoundedRectangle(cornerRadius: theme.radiusM, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: theme.radiusM, style: .continuous).strokeBorder(selected == image.key ? theme.interactiveAccentDefault : .clear, lineWidth: 2))
-            }.buttonStyle(.plain)
-              .accessibilityLabel(image.alt.isEmpty ? Text("View image", bundle: NativeControlResources.bundle) : Text(image.alt))
-              .accessibilityIdentifier("openui.gallery.thumbnail.\(image.index)")
+        GeometryReader { geometry in
+          NativePager(ids: images.map(\.key), selection: Binding(
+            get: { selected ?? image.key }, set: { selected = $0; zoomed = false }),
+            enabled: !zoomed, identifier: "openui.gallery.preview", supportsAdjustment: false) { key in
+            if let item = images.first(where: { $0.key == key }) {
+              NativeRemoteImage(src: item.src, alt: item.alt, layout: .fit,
+                cachedImage: pictures[item.key], attempt: item.requestID.attempt,
+                onStatus: { record($0, $1, item.key) }, previewEnabled: false)
+                .modifier(NativeImageZoom(resetID: selected, zoomChanged: { value in
+                  if selected == item.key { zoomed = value }
+                }))
+                .frame(width: geometry.size.width, height: geometry.size.height)
+            }
           }
+        }.accessibilityIdentifier("openui.gallery.preview.image")
+          .accessibilityHint(Text(zoomed ? "Drag to move image" : "Swipe to change image", bundle: NativeControlResources.bundle))
+        if !image.alt.isEmpty { Text(image.alt).nativeTextStyle(theme.textStyle(.compactBody)) }
+        if let details = image.details, details != image.alt { Text(details).nativeTextStyle(theme.textStyle(.supporting)) }
+      }
+      ScrollViewReader { reader in
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: theme.spaceM) {
+            ForEach(images) { image in
+              Button { if phases[image.key] == .unavailable { retry(image) } else { selected = image.key; zoomed = false } } label: {
+                NativeRemoteImage(src: image.src, alt: image.alt,
+                  layout: .thumbnail(CGSize(width: nativePresentation.compactThumbnailSize,
+                    height: nativePresentation.compactThumbnailSize / nativePresentation.coverAspectRatio)),
+                  cachedImage: pictures[image.key], attempt: image.requestID.attempt, onStatus: { record($0, $1, image.key) }, interactionEnabled: false)
+                  .clipShape(RoundedRectangle(cornerRadius: theme.radiusM, style: .continuous))
+                  .overlay(RoundedRectangle(cornerRadius: theme.radiusM, style: .continuous).strokeBorder(selected == image.key ? theme.interactiveAccentDefault : .clear, lineWidth: 2))
+              }.buttonStyle(.plain)
+                .accessibilityLabel(image.alt.isEmpty ? Text("View image", bundle: NativeControlResources.bundle) : Text(image.alt))
+                .accessibilityIdentifier("openui.gallery.thumbnail.\(image.index)")
+                .id(image.key)
+            }
+          }
+        }
+        .onAppear { if let selected { reader.scrollTo(selected, anchor: .center) } }
+        .onChange(of: selected) { key in
+          zoomed = false
+          if let key { reader.scrollTo(key, anchor: .center) }
         }
       }
     }
-    .padding(20).frame(idealWidth: 720, idealHeight: 640)
+    .padding(theme.spaceML).frame(idealWidth: 720, idealHeight: 640)
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery.preview")
   }
 }

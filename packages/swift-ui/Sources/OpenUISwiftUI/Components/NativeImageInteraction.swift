@@ -60,18 +60,14 @@ struct NativeSingleImagePreview: View {
   @Environment(\.openUITheme) private var theme
   var body: some View {
     VStack(spacing: theme.spaceM) {
-      HStack {
-        Group {
-          if alt.isEmpty { Text("Image", bundle: NativeControlResources.bundle) } else { Text(alt) }
-        }.nativeTextStyle(theme.textStyle(.supporting)).lineLimit(2)
-        Spacer(minLength: theme.spaceM)
-        Button { dismiss() } label: { Image(systemName: "xmark").openUIControlTarget() }
-          .buttonStyle(.plain).accessibilityLabel(Text("Close image preview", bundle: NativeControlResources.bundle))
-          .keyboardShortcut(.cancelAction).accessibilityIdentifier("openui.image.preview.close")
-      }
+      NativeImagePreviewHeader(closeIdentifier: "openui.image.preview.close", close: { dismiss() })
       GeometryReader { _ in
         NativeRemoteImage(src: source, alt: alt, layout: .fit, cachedImage: image, previewEnabled: false)
           .modifier(NativeImageZoom())
+      }
+      if !alt.isEmpty {
+        Text(alt).nativeTextStyle(theme.textStyle(.compactBody)).lineLimit(2)
+          .frame(maxWidth: .infinity, alignment: .leading)
       }
     }
     .padding(theme.spaceML).frame(idealWidth: 720, idealHeight: 640)
@@ -80,40 +76,73 @@ struct NativeSingleImagePreview: View {
   }
 }
 
-struct NativeImageZoom: ViewModifier {
-  @State private var scale: CGFloat = 1
-  @GestureState private var magnification: CGFloat = 1
-  @State private var offset = CGSize.zero
-  @GestureState private var translation = CGSize.zero
-  private func bounded(_ value: CGSize, scale: CGFloat, size: CGSize) -> CGSize {
+struct NativeImagePreviewHeader: View {
+  var position: Int? = nil
+  var count: Int = 1
+  let closeIdentifier: String
+  let close: () -> Void
+  @Environment(\.openUITheme) private var theme
+  var body: some View {
+    HStack(spacing: theme.spaceM) {
+      Text("Image preview", bundle: NativeControlResources.bundle).nativeTextStyle(theme.textStyle(.supporting))
+      Spacer(minLength: theme.spaceM)
+      if let position, count > 1 {
+        Text("\(position + 1) / \(count)").nativeTextStyle(theme.textStyle(.caption)).monospacedDigit()
+          .accessibilityIdentifier("openui.image.preview.position")
+      }
+      Button(action: close) { Image(systemName: "xmark").openUIControlTarget() }
+        .buttonStyle(.plain).accessibilityLabel(Text("Close image preview", bundle: NativeControlResources.bundle))
+        .keyboardShortcut(.cancelAction).accessibilityIdentifier(closeIdentifier)
+    }
+  }
+}
+
+struct NativeImageZoomState {
+  var scale: CGFloat = 1
+  var offset = CGSize.zero
+  var isZoomed: Bool { scale > 1 }
+  mutating func reset() { scale = 1; offset = .zero }
+  mutating func setScale(_ proposed: CGFloat, size: CGSize) {
+    scale = min(5, max(1, proposed))
+    offset = bounded(offset, scale: scale, size: size)
+  }
+  func bounded(_ value: CGSize, scale: CGFloat, size: CGSize) -> CGSize {
     let x = max(0, size.width * (scale - 1) / 2), y = max(0, size.height * (scale - 1) / 2)
     return CGSize(width: min(x, max(-x, value.width)), height: min(y, max(-y, value.height)))
   }
+}
+
+struct NativeImageZoom: ViewModifier {
+  var resetID: AnyHashable? = nil
+  var zoomChanged: (Bool) -> Void = { _ in }
+  @State private var state = NativeImageZoomState()
+  @GestureState private var magnification: CGFloat = 1
+  @GestureState private var translation = CGSize.zero
   func body(content: Content) -> some View {
     GeometryReader { geometry in
-      let zoom = min(5, max(1, scale * magnification))
-      let position = bounded(CGSize(width: offset.width + translation.width, height: offset.height + translation.height), scale: zoom, size: geometry.size)
+      let zoom = min(5, max(1, state.scale * magnification))
+      let position = state.bounded(CGSize(width: state.offset.width + translation.width, height: state.offset.height + translation.height), scale: zoom, size: geometry.size)
       content.scaleEffect(zoom).offset(position)
         .frame(width: geometry.size.width, height: geometry.size.height).clipped().contentShape(Rectangle())
         .gesture(MagnificationGesture().updating($magnification) { value, state, _ in state = value }
           .onEnded { value in
-            scale = min(5, max(1, scale * value))
-            offset = bounded(offset, scale: scale, size: geometry.size)
+            state.setScale(state.scale * value, size: geometry.size)
           })
-        .simultaneousGesture(DragGesture().updating($translation) { value, state, _ in if scale > 1 { state = value.translation } }
-          .onEnded { value in if scale > 1 {
-            offset = bounded(CGSize(width: offset.width + value.translation.width, height: offset.height + value.translation.height), scale: scale, size: geometry.size)
-          } }, including: scale > 1 ? .all : .subviews)
-        .onTapGesture(count: 2) { scale = scale > 1 ? 1 : 2; offset = .zero }
+        .simultaneousGesture(DragGesture().updating($translation) { value, translation, _ in if state.isZoomed { translation = value.translation } }
+          .onEnded { value in if state.isZoomed {
+            state.offset = state.bounded(CGSize(width: state.offset.width + value.translation.width, height: state.offset.height + value.translation.height), scale: state.scale, size: geometry.size)
+          } }, including: state.isZoomed ? .all : .subviews)
+        .onTapGesture(count: 2) { if state.isZoomed { state.reset() } else { state.setScale(2, size: geometry.size) } }
+        .onChange(of: state.isZoomed) { zoomChanged($0) }
+        .onChange(of: resetID) { _ in state.reset(); zoomChanged(false) }
         .accessibilityElement(children: .combine)
-        .accessibilityValue(Text("\(Int(scale * 100))%"))
+        .accessibilityValue(Text("\(Int(state.scale * 100))%"))
         .accessibilityAdjustableAction { direction in
           switch direction {
-          case .increment: scale = min(5, scale + 1)
-          case .decrement: scale = max(1, scale - 1)
+          case .increment: state.setScale(state.scale + 1, size: geometry.size)
+          case .decrement: state.setScale(state.scale - 1, size: geometry.size)
           @unknown default: break
           }
-          offset = bounded(offset, scale: scale, size: geometry.size)
         }
         .accessibilityIdentifier("openui.image.preview.zoom")
     }

@@ -22,13 +22,13 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeFieldState.swift" : "32606efb527188918471a00bd277d1c3883ac0245d5bc2e9313898e647660edb",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeFieldViews.swift" : "d361b4f9eb316c45aa3f454fe649ab9b708bf4ceec4a8233be3f52189e939d48",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeIcon.swift" : "7f46adc03408a59845c45afea499c2646660a677a887e98eaebdb9366b3abfc6",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeImageInteraction.swift" : "5676fd33f912bf2ee0cb8ad2e1a3885549544579d793e971ac09c861d3364f51",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeImageInteraction.swift" : "6f53a887a5b752dfd650d79022aa37bded6a3e8d393fd7d0d6b21d01607cb51c",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeLayoutContract.swift" : "5e14432c21557c680e5a0f061a5f21825fa1af8eb53e4abd059575eaa0ea11e1",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeLoadingViews.swift" : "244695e7b0db0640e7caaa5120b92596ca5add9490c607e854b4cc3fdc06ab5c",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMap.swift" : "39533c25fa7e49e6444f9b0acc4804ac1ed064aaab472faef5b1f061251f00b0",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMarkdownText.swift" : "9c91fd628eb8368cff5543f0cb6c965b7ef6f6e5bf08ae5b38e4f0b91d54af00",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMath.swift" : "e97d16ded5ce93f6ca02f5dfb2bca6132f828e8e0df86551e5bce6c45afa84f5",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMedia.swift" : "cee5832a7b6d475a84c2cf2a169ba0456effb3ddd55a6ce919567dcddd82f48b",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMedia.swift" : "74823faa7da4dac0f8ef5703f05453b9394fc64f7fdd87e8c3688e0de10c8e81",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMediaPreview.swift" : "cdcc1c4e889032cb0e632ca70c7890d023c427010e6e350a15d15583cd14238a",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePageControls.swift" : "d5680c814d940c024d98385d6bc2e48aa61c4011bbdbb1b0ba5adcb28b96fba3",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePager.swift" : "e16bab6793567c4cf38b046b48a76ede26c1d7421c95cbb7aacd833ee87f92f9",
@@ -60,9 +60,9 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/RenderNode.swift" : "275e4348ea962bc4f8bb5240e360d3d6c4d878433a2fa9189d13f6bf3389d467",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/RenderValue.swift" : "45eeae7793d56a0cf5eb99f610560be7d04fd12953ee054f19664ee5ff05ff27",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources.swift" : "d3b5efa5fc3e029097f48a7bfbac7287310e7dbb51458550abbf190866190b30",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/en.lproj\/Localizable.strings" : "271b98d98547820e137ed0fbe51ce3b4490961161bf299a3279b2a2139a07ee0",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/en.lproj\/Localizable.strings" : "963b20090c30bdb3f7fe780ba1f83ec8e8c6df12ab8ff38cb47837436a23f9cc",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/upstream-catalog.json" : "24d428b6fd5bc3c50939840a3649c68351106b6c82be9a0b1ee72b88a4e2f55e",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/zh-Hans.lproj\/Localizable.strings" : "d21d79206cf88c39141513b2225572c18990969945215daf957a1dbdeeda90a4",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Resources\/zh-Hans.lproj\/Localizable.strings" : "cf93f1d2b79cac21c7318e639f8b5d0bf735674f0d55b36bde1c815d5987a42a",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ChartPalette.swift" : "0f148ae25d8df69a11aee3a9c9a62bd313fbe1b2dc702b2e8940d7584be8b0ca",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/NativeComponentStyle.swift" : "f3ee494408075ee2f303e6e55bbea2bacb400ab14a81fc806b5e2424185b4a6d",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/NativeControlPalette.swift" : "b74d6a5d74c7b837e8d77b3cdfaff5482ce1fdda2e69647ed48ca9a9b6dc7b6f",
@@ -73,5 +73,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "6d93461004103c28fe1aafefc895990824951d36674e8582e31d367c9af3424c"
+  "fingerprint" : "7020be14660205f55ed5416cee4b86c94a1d30635468388c5997dcc9cb95f745"
 }
