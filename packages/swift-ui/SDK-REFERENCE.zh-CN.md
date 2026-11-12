@@ -2,7 +2,7 @@
 
 本文说明 **当前 main 的 SDK 设计**：为什么这样组织界面、每个组件怎样处理，以及流式生成带来的限制。整体设计入口见 [README](README.md#整体设计)，验证和兼容边界见 [UI-DESIGN.md](UI-DESIGN.md)。本文记录 RC20 的设计基线，不表示旧版本或客户端已经接入。
 
-视觉基准：[`0.1.1-rc.18`](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.18)，提交 `fa23218f`。当前 main 的标准 SDK 有 **87 个组件**，包括已迁入的 Map、MapPoint、SVG；生成库是否排除 ImageBlock，由客户端决定。Map/SVG 迁入尚不代表已发布新的 RC。
+发布基线：[`0.1.1-rc.20`](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.20)，提交 `b8ea2839`。标准 SDK 默认注册 **87 个组件**，包括 Map、MapPoint、SVG；生成库是否排除 ImageBlock，由客户端决定。以下设计说明以 RC20 为界，客户端是否接入需要核对实际依赖与导出。既有文字角色与默认阅读尺度沿用已经收敛的设计，不因版本号更新另起一套 token。
 
 ## 1. 先看这七条
 
@@ -322,10 +322,10 @@ Swift SDK 已公开这两个 API，RC19 客户端接入记录也包含标准封�
 
 ### 实现入口
 
-- [组件注册与绑定](Sources/OpenUISwiftUI/GenUILib/ComponentBindings.swift)：84 项实际原生实现及父消费的数据项。
+- [默认组件注册库](Sources/OpenUISwiftUI/GenUILib/StandardComponents.swift)：84 项固定上游定义与 Map／MapPoint／SVG，共 87 项；[组件绑定](Sources/OpenUISwiftUI/GenUILib/ComponentBindings.swift)与父消费的数据项分别维护职责。
 - [主题默认值](Sources/OpenUISwiftUI/Theme/OpenUITheme.swift)、[完整文字角色映射](Sources/OpenUISwiftUI/Theme/TextStyles.swift)、[行高与表面策略](Sources/OpenUISwiftUI/Theme/NativeComponentStyle.swift)。
 - [消息封装 API](../swift-lang/Sources/OpenUILang/Message.swift)、[React Chat 参考消息构建](https://github.com/thesysdev/openui/blob/f08a660535e55b5b2a24a0eb68568edaf9e4fe4b/packages/react-ui/src/components/OpenUIChat/utils/actionMessage.ts)。
 - [布局依赖与阅读前缀](Sources/OpenUISwiftUI/Components/NativeLayoutContract.swift)、[状态与动作](Sources/OpenUISwiftUI/OpenUIState.swift)、[渲染上下文](Sources/OpenUISwiftUI/Context/ComponentContext.swift)。
 - [按钮绘制与触控](Sources/OpenUISwiftUI/Components/NativeControlStyle.swift)、[双列与流式布局](Sources/OpenUISwiftUI/Components/FlowLayout.swift)、[选择卡排布](Sources/OpenUISwiftUI/Components/NativeAdaptiveControls.swift)。
 - [图表呈现](Sources/OpenUISwiftUI/Components/ChartComponents.swift)、[字段与错误反馈](Sources/OpenUISwiftUI/Components/NativeFieldViews.swift)。
-- [核心示例唯一源](../../examples/agent-cases/README.md)、[RC18 发布说明](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.18)、[远端 Swift CI](https://github.com/zyfn/openui/actions/runs/43011650930)。
+- [核心示例唯一源](../../examples/agent-cases/README.md)、[RC20 发布说明与验收范围](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.20)。历史 RC18 的发布和 CI 只证明对应版本，不作为 RC20 的验收结果。

@@ -25,6 +25,14 @@ import tokens from "../public/generated/tokens.json";
 import reference from "../public/generated/reference.json";
 import "./style.css";
 import PreviewBoundary from "./PreviewBoundary";
+import {
+  WorkingPrinciple,
+  SystemDesign,
+  ReadinessMatrix,
+  HostIntegration,
+} from "./SystemArticle";
+import DesignFrontiers from "./DesignFrontiers";
+import { sdkBaseline } from "./baseline";
 const Playground = lazy(() => import("./Playground"));
 const MapSpecimen = lazy(() => import("./MapSpecimen"));
 const github = "https://github.com/zyfn/openui";
@@ -103,7 +111,6 @@ function App() {
   const [chosen, setChosen] = useState(["自然松弛"]);
   const [submitted, setSubmitted] = useState(false);
   const [status, setStatus] = useState("neutral");
-  const [article, setArticle] = useState(false);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
   }, [dark]);
@@ -178,10 +185,10 @@ function App() {
           OpenUI<span>Swift SDK</span>
         </a>
         <nav aria-label="文章导航">
-          <a href="#language">语言与界面</a>
-          <a href="#scale">视觉尺度</a>
-          <a href="#components">组件</a>
-          <a href="#streaming">生成的过程</a>
+          <a href="#principle">工作原理</a>
+          <a href="#system">系统设计</a>
+          <a href="#components">组件参考</a>
+          <a href="#frontiers">仍需攻克</a>
         </nav>
         <div className="nav-end">
           <button
@@ -205,9 +212,16 @@ function App() {
             秩序先成立。
           </h1>
           <p className="lede">
-            文字、图片、选择与数据，拥有各自的表达方式。
+            模型声明内容、结构与动作，SDK 将它们呈现为可读、可操作的原生界面。
             <br className="desktop-break" />
-            一套共享的语言，让不断到来的内容，成为清晰、稳定的原生界面。
+            契约、视觉、布局、状态与时间，共同决定生成过程中的秩序。
+          </p>
+          <p className="release-note">
+            <a href={sdkBaseline.url} target="_blank" rel="noreferrer">
+              当前发布：{sdkBaseline.label}
+              <ArrowUpRight size={13} />
+            </a>
+            <span>整体设计与能力边界，以这个版本为准。</span>
           </p>
           <div className="hero-stage">
             <div className="garden-grid" aria-label="生成过程交互标本">
@@ -336,10 +350,12 @@ function App() {
             </aside>
           </div>
         </section>
+        <WorkingPrinciple />
+        <SystemDesign />
         <section className="section" id="scale">
           <div className="split">
             <div className="article-copy">
-              <p className="eyebrow">01 / A SHARED MEASURE</p>
+              <p className="eyebrow">03 / DESIGN TOKENS AND SEMANTIC STYLES</p>
               <h2>看见尺度。</h2>
               <p>
                 界面的层次，始于信息的职责。标题让人找到方向，正文承载回答，辅助文字交代条件。字号、字重、颜色与行距共同建立节奏，任何一项都不应独自承担全部区分。
@@ -349,7 +365,7 @@ function App() {
               </p>
               <a
                 className="text-link"
-                href={`${github}/blob/main/packages/swift-ui/Sources/OpenUISwiftUI/Theme/TextStyles.swift`}
+                href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/Sources/OpenUISwiftUI/Theme/TextStyles.swift`}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -526,9 +542,9 @@ function App() {
             </small>
           </div>
         </section>
-        <section className="section">
+        <section className="section" id="composition">
           <div className="chapter-heading">
-            <p className="eyebrow">02 / BOUNDARIES AND RELATIONSHIPS</p>
+            <p className="eyebrow">04 / COMPONENTS AND COMPOSITION</p>
             <h2>组件有边界，组合才自由。</h2>
             <p>
               容器管理空间，卡片的表面表达边界，表单收集并提交选择。透明 Card
@@ -780,131 +796,10 @@ function App() {
             </div>
           </div>
         </section>
-        <section className="section" id="components">
-          <div className="catalog-heading">
-            <div>
-              <p className="eyebrow">03 / THE COMPONENT REFERENCE</p>
-              <h2>每一种表达，都有来处。</h2>
-              <p>
-                87 个已注册组件。定义从当前 Swift SDK
-                导出，说明对应实际处理；数据记录随父级呈现，不为它们虚构独立界面。
-              </p>
-            </div>
-            <label className="search">
-              <Search size={18} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="搜索组件或用途"
-                aria-label="搜索组件"
-              />
-            </label>
-          </div>
-          <div className="category-strip" role="group" aria-label="组件类别">
-            {["全部", ...new Set(reference.components.map((c) => c.group))].map(
-              (g) => (
-                <button
-                  aria-pressed={group === g}
-                  onClick={() => setGroup(g)}
-                  key={g}
-                >
-                  {componentGroups[g] || g}
-                </button>
-              ),
-            )}
-          </div>
-          <div className="catalog">
-            <div className="component-list" aria-label="组件目录">
-              {filtered.length ? (
-                filtered.map((c) => (
-                  <button
-                    aria-pressed={selected === c.name}
-                    onClick={() => choose(c)}
-                    key={c.name}
-                  >
-                    <span>{c.name}</span>
-                    <small>{c.purpose}</small>
-                    <ArrowRight size={14} />
-                  </button>
-                ))
-              ) : (
-                <p className="empty-state">
-                  没有匹配的组件。试试“图表”“选择”或组件名称。
-                </p>
-              )}
-              <span className="micro">{filtered.length} 个组件</span>
-            </div>
-            <article className="component-detail" id={`component-${selected}`}>
-              <div className="detail-title">
-                <h3>{current.name}</h3>
-                <span className="subtle-label">{current.purpose}</span>
-              </div>
-              <p>{current.treatment}</p>
-              <details>
-                <summary>参数与位置顺序</summary>
-                <pre className="signature">{current.signature}</pre>
-                <p className="micro">{current.description}</p>
-                <CopyButton text={current.signature} />
-              </details>
-              {activeExample ? (
-                <>
-                  <div className="preview-toolbar">
-                    <label>
-                      关联示例
-                      <select
-                        aria-label="关联示例"
-                        value={activeExample.id}
-                        onChange={(e) => {
-                          setExample(e.target.value);
-                          setPreview(false);
-                        }}
-                      >
-                        {currentExamples.map((e) => (
-                          <option key={e.id} value={e.id}>
-                            {e.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      className="pill primary"
-                      onClick={() => setPreview(!preview)}
-                    >
-                      <Code2 size={14} />
-                      {preview ? "收起预览" : "打开可编辑预览"}
-                    </button>
-                  </div>
-                  {preview ? (
-                    <PreviewBoundary key={activeExample.id}>
-                      <Suspense
-                        fallback={<p className="micro">加载交互预览…</p>}
-                      >
-                        <Playground
-                          key={activeExample.id}
-                          initialSource={activeExample.source}
-                          dark={dark}
-                        />
-                      </Suspense>
-                    </PreviewBoundary>
-                  ) : (
-                    <p className="micro">
-                      {activeExample.origin}。预览使用固定版本 React 组件与相同
-                      Lang；Swift 的表面、触控与流式就绪策略以本页说明为准。
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="note">
-                  这是由父级消费的记录或原生专属能力。请结合上方用途与参数使用；地图和图解可在下文交互查看。
-                </p>
-              )}
-            </article>
-          </div>
-        </section>
         <section className="section" id="streaming">
           <div className="split streaming-heading">
             <div className="article-copy">
-              <p className="eyebrow">04 / CONTINUITY UNDER CHANGE</p>
+              <p className="eyebrow">05 / CONTINUITY UNDER CHANGE</p>
               <h2>
                 后来的内容，
                 <br />
@@ -1029,10 +924,11 @@ function App() {
               </div>
             ))}
           </div>
+          <ReadinessMatrix />
         </section>
         <section className="section" id="map-svg">
           <div className="chapter-heading">
-            <p className="eyebrow">05 / SPACE AND EXPLANATION</p>
+            <p className="eyebrow">06 / SPACE AND EXPLANATION</p>
             <h2>让位置可辨，让关系可见。</h2>
             <p>
               Map 与 SVG 已进入 SDK
@@ -1058,8 +954,9 @@ function App() {
                   loading="lazy"
                 />
                 <p className="micro">
-                  iOS 模拟器实拍，SDK
-                  b93023f6。保留真实案例标题与上下文；原生地图使用 MapKit。
+                  迁入阶段的 iOS 模拟器实拍，SDK
+                  b93023f6。保留真实案例标题与上下文，用于对照 MapKit；不代替
+                  RC20 的完整验收。
                 </p>
               </details>
               <p>
@@ -1086,8 +983,8 @@ function App() {
                   loading="lazy"
                 />
                 <p className="micro">
-                  iOS 模拟器实拍，SDK b93023f6。图解来自 Case 03 的实际
-                  SVG；完整截图未经过改图。
+                  迁入阶段的 iOS 模拟器实拍，SDK b93023f6。图解来自 Case 03
+                  的实际 SVG；不作为 RC20 渲染就绪反馈的证据。
                 </p>
               </details>
               <p>
@@ -1102,69 +999,196 @@ function App() {
             </div>
           </div>
         </section>
-        <section className="section closing">
-          <p className="eyebrow">
-            06 / THE CONTRACT BETWEEN PEOPLE AND SYSTEMS
-          </p>
-          <h2>好的界面，也需要准确的内容。</h2>
-          <div className="split">
-            <div className="article-copy">
+        <HostIntegration />
+        <section className="section" id="components">
+          <div className="catalog-heading">
+            <div>
+              <p className="eyebrow">08 / THE COMPONENT REFERENCE</p>
+              <h2>每一种表达，都有来处。</h2>
               <p>
-                商品名称负责识别，短介绍解释价值，Tag
-                提供短属性，价格说明交代票种与计价口径，按钮指向真实行为。信息不重复，推荐理由不挤占事实，界面才有可信的秩序。
-              </p>
-              <p>
-                SDK 提供表单值、动作及上下文；宿主决定如何发给 Agent
-                或执行业务。模型使用的规范来自实际注册库，示例通过标准
-                PromptOptions.examples
-                加入。界面语言不承诺库存，示例价格也不代表一次新的查询。
+                87 个已注册组件。定义从当前 Swift SDK
+                导出，说明对应实际处理；数据记录随父级呈现，不为它们虚构独立界面。
               </p>
             </div>
-            <div className="reading">
-              <h3>继续阅读</h3>
-              <a
-                href={`${github}/blob/main/packages/swift-ui/SDK-REFERENCE.zh-CN.md`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                完整设计与组件说明 <ArrowUpRight size={18} />
-              </a>
-              <a
-                href={`${github}/tree/main/examples/agent-cases`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                七个核心用例与标准源码 <ArrowUpRight size={18} />
-              </a>
-              <a href="./generated/library.json" download>
-                下载当前组件契约 <ArrowUpRight size={18} />
-              </a>
-              <a href="./generated/tokens.json" download>
-                下载实际主题导出 <ArrowUpRight size={18} />
-              </a>
+            <label className="search">
+              <Search size={18} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="搜索组件或用途"
+                aria-label="搜索组件"
+              />
+            </label>
+          </div>
+          <div className="category-strip" role="group" aria-label="组件类别">
+            {["全部", ...new Set(reference.components.map((c) => c.group))].map(
+              (g) => (
+                <button
+                  aria-pressed={group === g}
+                  onClick={() => setGroup(g)}
+                  key={g}
+                >
+                  {componentGroups[g] || g}
+                </button>
+              ),
+            )}
+          </div>
+          <div className="catalog">
+            <div className="component-list" aria-label="组件目录">
+              {filtered.length ? (
+                filtered.map((c) => (
+                  <button
+                    aria-pressed={selected === c.name}
+                    onClick={() => choose(c)}
+                    key={c.name}
+                  >
+                    <span>{c.name}</span>
+                    <small>{c.purpose}</small>
+                    <ArrowRight size={14} />
+                  </button>
+                ))
+              ) : (
+                <p className="empty-state">
+                  没有匹配的组件。试试“图表”“选择”或组件名称。
+                </p>
+              )}
+              <span className="micro">{filtered.length} 个组件</span>
             </div>
+            <article className="component-detail" id={`component-${selected}`}>
+              <div className="detail-title">
+                <h3>{current.name}</h3>
+                <span className="subtle-label">{current.purpose}</span>
+              </div>
+              <p>{current.treatment}</p>
+              <details>
+                <summary>参数与位置顺序</summary>
+                <pre className="signature">{current.signature}</pre>
+                <p className="micro">{current.description}</p>
+                <CopyButton text={current.signature} />
+              </details>
+              {activeExample ? (
+                <>
+                  <div className="preview-toolbar">
+                    <label>
+                      关联示例
+                      <select
+                        aria-label="关联示例"
+                        value={activeExample.id}
+                        onChange={(e) => {
+                          setExample(e.target.value);
+                          setPreview(false);
+                        }}
+                      >
+                        {currentExamples.map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      className="pill primary"
+                      onClick={() => setPreview(!preview)}
+                    >
+                      <Code2 size={14} />
+                      {preview ? "收起预览" : "打开可编辑预览"}
+                    </button>
+                  </div>
+                  {preview ? (
+                    <PreviewBoundary key={activeExample.id}>
+                      <Suspense
+                        fallback={<p className="micro">加载交互预览…</p>}
+                      >
+                        <Playground
+                          key={activeExample.id}
+                          initialSource={activeExample.source}
+                          dark={dark}
+                        />
+                      </Suspense>
+                    </PreviewBoundary>
+                  ) : (
+                    <p className="micro">
+                      {activeExample.origin}。预览使用固定版本 React 组件与相同
+                      Lang；Swift 的表面、触控与流式就绪策略以本页说明为准。
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="note">
+                  这是由父级消费的记录或原生专属能力。请结合上方用途与参数使用；地图和图解可在下文交互查看。
+                </p>
+              )}
+            </article>
+          </div>
+        </section>
+        <div className="article-reference">
+          <div className="reading">
+            <h3>设计的依据与版本</h3>
+            <a
+              href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/README.md#整体设计`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              RC20 整体设计与实现规则 <ArrowUpRight size={16} />
+            </a>
+            <a
+              href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/UI-DESIGN.md`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              原生呈现与验证契约 <ArrowUpRight size={16} />
+            </a>
+            <a
+              href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/SDK-REFERENCE.zh-CN.md`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              逐组件处理说明 <ArrowUpRight size={16} />
+            </a>
+            <a
+              href={`${github}/tree/${sdkBaseline.revision}/examples/agent-cases`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              核心用例的标准源码 <ArrowUpRight size={16} />
+            </a>
+            <a href="./generated/library.json" download>
+              下载实际组件契约 <ArrowUpRight size={16} />
+            </a>
+            <a href="./generated/tokens.json" download>
+              下载实际主题导出 <ArrowUpRight size={16} />
+            </a>
           </div>
           <details className="traceability">
-            <summary>版本、来源与验证边界</summary>
+            <summary>发布基线、历史截图与验证范围</summary>
             <p>
-              视觉基准 RC18。Map、MapPoint、SVG 集成位于当前 main；页面不把 main
-              改动称为已发布 RC。87 个组件定义和主题值由本仓库 Swift
-              导出器产生，源代码状态见交付记录。
+              当前发布基线为{" "}
+              <a href={sdkBaseline.url} target="_blank" rel="noreferrer">
+                {sdkBaseline.tag}
+              </a>
+              ，发布于 {sdkBaseline.publishedOn}，对应提交{" "}
+              <code>{sdkBaseline.revision.slice(0, 8)}</code>
+              。Map、MapPoint、SVG 已在默认注册库内，共 87
+              项；客户端的生成库与接入状态，以它自己的依赖和实际导出为准。
             </p>
             <p>
-              固定上游目录：
+              主题与组件定义来自本仓库 Swift 导出器，SDK 源内容指纹为{" "}
+              <code>{reference.sourceFingerprint}</code>。固定上游目录为{" "}
               <code>{String(reference.upstreamRevision).slice(0, 12)}</code>
-              。网页使用 React 0.18.1 组件预览与 Web
-              原理标本；原生字体度量、MapKit、系统控件、动画与触控行为需要在
-              Swift 宿主中验证。
+              。本页的架构图与流式时间轴属于教学标本，React 0.18.1 预览与
+              SwiftUI 的原生度量、手势和平台行为分别验证。
             </p>
             <p>
-              01—07 为核心用例；08
-              保留原稿，未纳入这轮视觉验收。站点不会自动调用 Agent
-              或执行示例中的交易动作。
+              展开区保留的 iOS
+              截图来自标明版本的历史迁入验证。当前记录覆盖代表性卡片、部分
+              Case02
+              区域、中英文预览和特定翻页／缩放动作；不扩展为全部设备、真机捏合或所有流式片段已经通过。01—07
+              为核心用例，08 保留原稿，未纳入这轮视觉验收。站点不会调用 Agent
+              或执行交易动作。
             </p>
           </details>
-        </section>
+        </div>
+        <DesignFrontiers />
       </main>
       <footer>
         <a className="wordmark" href="#">
