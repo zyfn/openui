@@ -355,6 +355,7 @@ struct NativeImageGallery: View {
   let context: OpenUIComponentContext
   @Environment(\.openUIResourceContext) private var resources
   @Environment(\.dynamicTypeSize) private var typeSize
+  @ScaledMetric(relativeTo: .body) private var readingScale: CGFloat = 1
   @State private var phases: [NativeGalleryResourceID: NativeMediaStatus] = [:]
   @State private var pictures: [NativeGalleryResourceID: Image] = [:]
   @State private var selected: NativeGalleryResourceID?
@@ -394,7 +395,7 @@ struct NativeImageGallery: View {
   }
   private var layoutCount: Int? {
     let source = context.element.sourceReadiness["images"]
-    return !source.complete && source.closed ? source.expectedCount : nil
+    return !source.complete && source.closed ? source.expectedCount.map { min(previewLimit, $0) } : nil
   }
   private func rememberImages() {
     if gridReady && !context.hasPendingData && !context.hasDataFailure { stableImages = currentImages }
@@ -404,7 +405,8 @@ struct NativeImageGallery: View {
       if !gridReady || (visible.isEmpty && (context.hasPendingData || (context.isStreaming && !context.element.isSourceComplete))) {
         NativePendingContent(loading: !context.hasDataFailure && (context.isStreaming || context.hasPendingData), message: "Loading image")
       } else if !visible.isEmpty {
-        NativeGalleryGridLayout(minimumWidth: context.presentation.thumbnailSize,
+        NativeGalleryGridLayout(minimumWidth: max(context.presentation.thumbnailSize,
+            context.presentation.minimumCompactCardWidth * readingScale),
           gap: context.theme.spaceM, maximumColumns: typeSize.isAccessibilitySize ? 1 : nil, layoutCount: layoutCount) {
           ForEach(visible) { image in
             VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {

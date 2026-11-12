@@ -127,7 +127,7 @@
       "signature": "ImageGallery(images: {src: string, alt?: string, details?: string}[])",
       "description": "Gallery grid of images with modal preview",
       "purpose": "一组相关图片",
-      "treatment": "图项、列结构与下载分开；已知集合形状可稳定先到图片的宽度；支持原图浏览与预览内缩放，失败图在原位点击重试；刷新保留已有内容",
+      "treatment": "根据实际可用宽度、间距和现有紧凑阅读宽度分列，不在窄容器硬塞三列；已知集合形状先分配宽度，内联预览最多按五个可见槽分列，下载只替换画面；支持原图预览与缩放、原位重试和刷新保留内容",
       "examples": [
         "case-02"
       ]
@@ -1274,6 +1274,6 @@
     "body": 1.5,
     "code": 1.5
   },
-  "sourceFingerprint": "e2ffcc01062e30b84145e3dfc43cd6b6ff50b1f74b73e3a9aa97816e013bb7ac",
+  "sourceFingerprint": "90fb2721831a0891e580bd3c2d55bf66e4a81aaa701af0ce51a13a8d4e22c4cc",
   "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
 }
