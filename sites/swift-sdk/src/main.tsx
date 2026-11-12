@@ -531,7 +531,8 @@ function App() {
             <p className="eyebrow">02 / BOUNDARIES AND RELATIONSHIPS</p>
             <h2>组件有边界，组合才自由。</h2>
             <p>
-              容器管理空间，卡片建立对象，表单收集选择。边界分工清楚，内容才不需要靠一层层包裹，或为每个场景另写样式。
+              容器管理空间，卡片的表面表达边界，表单收集并提交选择。透明 Card
+              也可分配横排宽度，组件名不等于一定出现一个边框。
             </p>
           </div>
           <div className="principle-grid">
@@ -545,9 +546,9 @@ function App() {
             <div>
               <h3>外观不替代语义</h3>
               <p>
-                Card 表达一个对象；Form
-                表达一项需要填写并提交的任务。两者可以使用相同的边框，选择值、校验与提交作用域却只属于
-                Form。
+                Card 的 card、sunk、clear 决定表面；clear 保留宽度分配能力。
+                Form 表达填写与提交，原生默认已有任务面板，无需为同一层边界再套
+                Card。
               </p>
             </div>
             <div>
@@ -587,7 +588,7 @@ function App() {
               </div>
               <p className="micro">
                 {variant === "clear"
-                  ? "clear：零内边距，沿用父级网格；不是失去宽度分配能力。"
+                  ? "clear：无边框、零内边距，仍可共享横排宽度；列间距由父容器管理。"
                   : variant === "sunk"
                     ? "sunk：下沉背景与内边距，无分组边框。"
                     : "card：背景、16pt 内边距与边框共同建立对象边界。"}

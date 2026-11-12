@@ -899,7 +899,7 @@
       "signature": "SnippetCardBlock(items: SnippetCardItem[], layout?: \"grid\", responsive?: boolean, action?: ActionExpression, gap?: number | string)",
       "description": "A responsive grid of compact label/value cards (2 per row) for showing several short facts side by side; optionally clickable with a shared action.",
       "purpose": "摘要集合",
-      "treatment": "组织网格或横滑；复用集合几何与逐项就绪策略",
+      "treatment": "仅支持 grid；responsive 默认启用，不承诺所有宽度固定双列；复用集合几何与逐项就绪策略",
       "examples": [
         "official-4",
         "case-03"
