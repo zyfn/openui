@@ -1,7 +1,7 @@
 {
   "files" : {
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/CardSourceProvider.swift" : "a16407071d60e3db9d2579fa7992ab4cdf64ddf5bb5595b3479f5f93940c6d30",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/ChartComponents.swift" : "6a5c79b2013655456fd1a83ca2be6dce3e2436858045b38334484d3b9350b829",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/ChartComponents.swift" : "4440e3741002e9ad15f4b0e5b1dfb999d40993e5c7e07e50900425efea00f2a3",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/ContentComponents.swift" : "070a3537220adf835928260dd678702dfc88025620d9ba7330cb3c74a0da871f",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/DisplayComponents.swift" : "2fe89d5eba760ccb14b43a6d8df6696b325f3acc06115ae6e5e105092c0eb9ee",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/FlowLayout.swift" : "287b23b32a590b0bc98de8d12a531d9cd1aa06c93e836a6d88bf5733f5ed2a06",
@@ -73,5 +73,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "727b96743d3db21bc22f9ce429f281490b4ae4047d542d783efccd093c811b47"
+  "fingerprint" : "0a98381c965368a7e0d15a02e51fff8455b77a1cef62921159957ccd302829a6"
 }

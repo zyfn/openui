@@ -81,12 +81,25 @@ final class ResourcePresentationTests: XCTestCase {
     }
     #endif
 
-    func testChartTooltipsRemainInsideThePlotViewportAtEveryEdge() {
+    func testChartTooltipsRemainInsideTheAvailableChartRegionWhenTheyFit() {
         let bounds = CGSize(width: 240, height: 130)
         for point in [CGPoint.zero, CGPoint(x: 239, y: 0), CGPoint(x: 0, y: 129), CGPoint(x: 239, y: 129)] {
             let frame = NativeChartTooltipPlacement.frame(size: CGSize(width: 180, height: 52), anchor: point, bounds: bounds)
             XCTAssertTrue(CGRect(origin: .zero, size: bounds).contains(frame))
         }
+    }
+
+    func testShortChartStripsDoNotCompressInspectionContent() {
+        let content = CGSize(width: 180, height: 84)
+        let anchor = CGPoint(x: 45, y: 22)
+        let strip = NativeChartTooltipPlacement.frame(size: content, anchor: anchor,
+            bounds: CGSize(width: 240, height: 44))
+        XCTAssertEqual(strip.height, content.height, "The tooltip keeps its full reading height")
+        let chart = NativeChartTooltipPlacement.frame(size: content, anchor: anchor,
+            bounds: CGSize(width: 240, height: 140))
+        XCTAssertEqual(chart.height, content.height)
+        XCTAssertTrue(CGRect(x: 0, y: 0, width: 240, height: 140).contains(chart),
+            "Placement uses the complete chart, including legend space")
     }
 }
 

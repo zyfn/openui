@@ -256,12 +256,6 @@ struct NativeChart: View {
               .allowsHitTesting(false).accessibilityHidden(true)
           }
         }
-        .overlay(alignment: .topLeading) {
-          if let inspected, let details = data.inspection(at: inspected, locale: locale) {
-            NativeChartTooltip(details: details, palette: palette,
-              anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
-          }
-        }
         .overlay(alignment: .topTrailing) {
           NativeDelayedPresentation(active: waiting && allData.hasContent(for: name)) { visible in
             if visible { NativeLoadingIndicator().padding(context.theme.space2xs) }
@@ -310,6 +304,17 @@ struct NativeChart: View {
       }
     }.frame(maxWidth: .infinity, alignment: .leading)
       .background(alignment: .topLeading) { measuredAxisLabels }
+      // Inspection belongs above the complete chart, including its legend.
+      // The plot can be a short strip; it cannot own the tooltip's height.
+      .overlay(alignment: .topLeading) {
+        GeometryReader { geometry in
+          if let inspected, let details = data.inspection(at: inspected, locale: locale) {
+            NativeChartTooltip(details: details, palette: palette,
+              anchor: inspectionLocation, bounds: geometry.size, theme: context.theme)
+          }
+        }.allowsHitTesting(false)
+      }
+      .zIndex(inspected == nil ? 0 : 1)
       .onPreferenceChange(NativeChartAxisMeasurementKey.self) { measurements in
         let next = measurements[measurementScope] ?? NativeChartAxisMeasurements()
         if next != axisMeasurements { axisMeasurements = next }
@@ -498,10 +503,14 @@ enum NativeChartTooltipPlacement {
   static func frame(size: CGSize, anchor: CGPoint, bounds: CGSize) -> CGRect {
     let margin: CGFloat = 8
     let width = min(size.width, max(1, bounds.width - 2 * margin))
-    let height = min(size.height, max(1, bounds.height - 2 * margin))
+    // Fixed-size reading content must not be proposed the strip's tiny height:
+    // it would paint outside that proposal and collide with later siblings.
+    let height = max(1, size.height)
+    let verticalMargin = min(margin, max(0, (bounds.height - height) / 2))
     let x = max(margin, min(anchor.x - width / 2, bounds.width - width - margin))
-    let above = anchor.y - height - margin
-    let y = max(margin, min(above >= margin ? above : anchor.y + margin, bounds.height - height - margin))
+    let above = anchor.y - height - verticalMargin
+    let y = max(verticalMargin, min(above >= verticalMargin ? above : anchor.y + verticalMargin,
+      bounds.height - height - verticalMargin))
     return CGRect(x: x, y: y, width: width, height: height)
   }
 }

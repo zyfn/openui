@@ -76,6 +76,10 @@ Thumbnail selection and accessibility actions remain available. The close action
 page position and image description stay distinct. Built-in chrome localizes;
 source captions and business content are not automatically translated.
 
+Chart inspection belongs to the complete chart overlay, above axes and legends.
+Tooltip content retains its natural reading height even when the plot is a short
+strip. Its placement does not reserve new space or move following prose.
+
 Form owns a submission scope and its default panel. A surrounding host panel may
 opt out through the existing presentation setting; the renderer does not infer
 business intent or add another form. Form/ActionEvent values must reach the host;
