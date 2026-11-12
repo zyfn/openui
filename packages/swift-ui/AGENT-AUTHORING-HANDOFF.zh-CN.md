@@ -28,7 +28,7 @@
 
 | 实际问题 | 应收口的原则 |
 | --- | --- |
-| 普通知识也被拆成一堆独立卡片，消息像后台 | 以信息关系组织；Card 表示独立对象或操作单元，不代替普通段落、章节和列表。不要再给专用卡片组套一层通用 Card。 |
+| 普通知识也被拆成一堆独立卡片，消息像后台 | 以信息关系组织；有框表面用于必要的对象或操作边界，不代替所有段落、章节和列表。Card(clear) 也可作为无框的宽度分配单元，不能连同有框面板一起禁用。专用卡片组已有边界时，不重复套同层级 Card。 |
 | 为了边框把商品卡套进 Form | Form 的依据是收集用户值并统一提交；纯展示、直接打开详情／预订链接不需要 Form。即时筛选可以只使用本地状态。 |
 | 单商品写成 CompositeCardBlock([one]) | 服从 items 至少两项的实际契约；单对象使用合法的 Card 组合，不为凑数虚构第二个商品。数据 Item 不当成任意容器自由嵌套。 |
 | 任意内容都再包一层 Stack，列宽失去预期 | 容器有明确职责；不要机械包装。需要共享宽度的 Card 应直接成为横排子项。wrap 仅表示允许换行，不等于所有子项自动等宽、自动撑满。 |
@@ -88,3 +88,28 @@
 5. 用已有原始程序与当前实际契约做离线回归，并设计少量覆盖表达选择的真实生成验证：纯知识列表、单对象商品、带条件价格、多列图文、表单取消后提交、图表缺值与流式输出。
 
 语法通过不能代替内容和视觉判断。最终应同时检查：模型输出是否满足用户目标、数据是否有依据、页面是否自然、事件是否按当前值与正确对象进入下一步。
+
+## 7. RC19 布局与 Cards：描述和呈现的逐项核对
+
+依据为 SDK `0.1.1-rc.19`（`544005bd`）源实现、客户端 `bce3f0d0` 的干净 App Target 导出、01—07 标准源码及既有布局测试。本节核对契约与呈现规则，不表示新增了一轮全设备视觉验收。实际导出的 `openui-lang.md` SHA256 为 `2f4a0443ba0ba86b2569725580f9bf9e1bd7de455b8180e18f64dcd59e7a4df2`；本节不改写该制品。
+
+| 容易产生偏差的描述 | 已核对的规则与应采用的说明 |
+| --- | --- |
+| Card 就是带边框的卡片；少用卡片等于少用全部 Card | Card 同时承担布局和表面职责。card 有背景、边框、内边距；sunk 有浅底和内边距、无分组边框；clear 无边框、两轴内边距为零，仍可共享横排宽度。普通阅读流不必加框，但多列图文可以直接使用 clear Card。 |
+| Card “Always full width” 意味着永远独占整屏 | 填满父布局分给它的宽度。纵排可占满一行，横排可与其他直接 Card 子项共享空间。不是每张卡都占整屏。 |
+| row + wrap 或 align=stretch 自动得到等宽网格 | wrap 允许换行；row 的 align 管交叉轴。可伸展的直接 Card 子项参与行内空间分配；普通文字、控件和 Stack 仍按自身测量协商。存在最小宽度或混合内容时，不承诺任意子项一律等宽。 |
+| 再包一层 Stack 只是整理源码，不影响布局 | 父容器看到的是直接子项。普通 Stack 包装不自动透传内部 Card 的 flex 标记；需要共享宽度的 Card 直接成为横排子项。Case02 的两列 clear Card 是对应标准例。 |
+| grid / “two-per-row” 承诺手机固定双列 | responsive 默认 true。Snippet/Composite 普通网格在可用宽度 ≤480 时一列，超过后最多两列；Context/Visual 更宽时可到三列。Overview 依据 top 的内容角色，以原生最小列宽分配，不能套用固定两列规则。responsive=false 取消该响应式收缩，但不新增 columns 参数；不要仅为追求列数压窄长文。 |
+| 所有卡片组都支持横滑 | SnippetCardBlock 的 layout 仅有 grid。Overview/Context/Composite/Visual 支持 grid 或 carousel，具体以实际 schema 为准。 |
+| 卡片组可以表示单对象；Item 可以直接当通用内容使用 | 五种 CardBlock 的 items 均至少两项，实际 schema 已保留，但人读签名未展开数量限制。单对象用合法 Card 组合；Item 由相应父组件消费，不凑对象、不放宽校验。 |
+| Card 支持 Stack 的布局参数，所以 children 也任意 | Card.children 是受限 union，Stack.children 才是 any[]。例如 Card 不能直接接收 CompositeCardItem、ImageText 或 BoldText；单对象商品参考 Case02 的 Image、CardHeader、TextContent 与 Stack 内的价格／按钮组合。不要照搬 CompositeCardItem 的槽位到 Card 直接子项。 |
+| Carousel 是给任何现成 Card 加横滑的外壳 | 通用 Carousel.children 是二维数组：外层页面、内层页面内容；页面自身已有 card/sunk 表面，children union 不接受任意 Card/Stack。卡片集合横滑优先使用该集合自己的合法 layout。 |
+| Form 需要外面再套 Card 才有任务面板 | 原生 Form 默认已经复用 Card 的边框、圆角、内边距。字段和统一提交组成一个 Form 即可；宿主 opt-out 是 SDK 配置，不是模型的 Lang 参数。 |
+| 所有卡片都按商品的标题、描述、规格、价格顺序拼 | 这是商品对象的信息职责；Visual 的叠图内容、Snippet 的左右摘要、Overview 的指标分别有自己的槽位。不让普通店铺知识强制拥有价格／按钮，也不把商品完整性要求推广为所有卡片的字段要求。 |
+| root 先写就保证完整骨架立即出现、任何顺序都不跳动 | root／布局字段／集合形状先闭合，有利于 SDK 分配空间；未完成的复杂引用仍会等待，横排媒体需要宽度安全后显示。不是强制显示灰色骨架，也不保证未知文本高度或任意声明顺序零位移。 |
+
+卡片集合的 carousel 与通用 Carousel 也有不同原生策略：前者默认卡宽上限 320pt、留出下一项预览（空间许可时），不显示下方切换按钮；后者按整页分配。这些是宿主可调整的原生呈现默认值，不写成 Agent 的像素参数。
+
+职责分为三层：schema 决定合法组件、槽位和基数；SDK 决定空间、表面和流式呈现；Skill 根据阅读关系决定选哪一种合法组合。服务端应在按需组合参考中说明后两层的关系，保留实际导出契约原文。对“2 per row”等概括补充适配条件，对“单商品必须卡片组”等冲突规则予以纠正；不能用另造参数或修改数据来满足旧文案。
+
+核对入口：[容器与表面](Sources/OpenUISwiftUI/Components/StandardContainers.swift)、[行内空间分配](Sources/OpenUISwiftUI/Components/FlowLayout.swift)、[集合网格和横滑](Sources/OpenUISwiftUI/Components/NativePager.swift)、[专用卡片](Sources/OpenUISwiftUI/Components/ContentComponents.swift)、[Form](Sources/OpenUISwiftUI/Components/FormComponents.swift)、[流式布局依赖](Sources/OpenUISwiftUI/Components/NativeLayoutContract.swift)、[标准用例](../../examples/agent-cases/README.md)。
