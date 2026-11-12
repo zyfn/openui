@@ -192,6 +192,7 @@ struct NativeInlineText: View {
   }
 }
 struct NativeMediaText: View {
+  @Environment(\.openUICardMediaInset) private var cardMediaInset
   @Environment(\.multilineTextAlignment) private var textAlignment
   @ScaledMetric(relativeTo: .body) private var iconScale: CGFloat = 1
   enum Media { case icon, thumbnail, banner }
@@ -212,7 +213,10 @@ struct NativeMediaText: View {
           NativeRemoteImage(
             src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
             layout: .aspect(context.presentation.coverAspectRatio))
-            .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
+            .clipShape(NativeCardTopMediaShape(radius: cardMediaInset > 0 ? context.theme.radius3xl : context.theme.radiusM,
+              topOnly: cardMediaInset > 0))
+            .padding(.horizontal, -cardMediaInset)
+            .padding(.top, -cardMediaInset)
           words
         }.frame(maxWidth: .infinity, alignment: .leading)
       } else {
@@ -830,7 +834,7 @@ struct NativeCardItem: View {
           }
         }
       default:
-        context.slot("header")
+        context.slot("header").environment(\.openUICardMediaInset, contentInset)
         context.slot("body")
         if let footer = context.value("footer"), footer != .null {
           NativeCompositeFooter(context: context, footer: footer)
@@ -840,6 +844,7 @@ struct NativeCardItem: View {
       groupEntry
     }
       .environment(\.openUICardGroupAction, nil)
+      .environment(\.openUICardMediaInset, 0)
       .padding(contentInset)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: centeredOverview ? .top : .topLeading)
   }

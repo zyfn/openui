@@ -90,6 +90,37 @@ final class ObjectCardCompositionTests: XCTestCase {
     }
   }
 
+  @MainActor func testLeadingImagesFillCardEdgesWhileBodyImagesRetainTheirInset() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    var theme = OpenUIThemeValues()
+    theme.sunk = .red; theme.foreground = .white
+    func bitmap(_ source: String, width: CGFloat = 320) throws -> NSBitmapImageRep {
+      let state = OpenUIState(schema: library.library.toSchema()); state.setSource(source)
+      XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+      let renderer = ImageRenderer(content: OpenUIRenderer(state: state, registry: library.registry)
+        .openUITheme(theme).frame(width: width).background(.white).environment(\.colorScheme, .light))
+      renderer.scale = 1
+      return NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
+    }
+    func isRed(_ image: NSBitmapImageRep, x: Int, y: Int) throws -> Bool {
+      let color = try XCTUnwrap(image.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+      return color.redComponent > 0.8 && color.greenComponent < 0.5 && color.blueComponent < 0.5
+    }
+    for source in [
+      "root=Card([Image(\"photo\"),CardHeader(\"Title\")],\"card\")",
+      "root=Card([Stack([ImageTextLarge(\"\",\"photo\",\"Title\")])],\"card\")",
+      "root=CompositeCardBlock([CompositeCardItem(\"a\",ImageTextLarge(\"\",\"photo\",\"Title\"),[]),CompositeCardItem(\"b\",ImageTextLarge(\"\",\"photo\",\"Title\"),[])],\"grid\",false)"
+    ] {
+      let image = try bitmap(source, width: source.contains("CompositeCardBlock") ? 652 : 320)
+      XCTAssertTrue(try isRed(image, x: 5, y: 60), "Leading image must reach the card's left edge")
+      XCTAssertTrue(try isRed(image, x: 60, y: 5), "Leading image must reach the card's top edge")
+    }
+    let body = try bitmap("root=Card([CardHeader(\"Title\"),Image(\"body\")],\"card\")")
+    XCTAssertFalse(try isRed(body, x: 5, y: 100), "Body image must not extend through its surrounding content inset")
+    XCTAssertTrue(try isRed(body, x: 40, y: 100))
+  }
+
   @MainActor func testWrappingCardsKeepReadingSpaceAndFillAnIncompleteRow() throws {
     let cases: [(CGFloat, [CGFloat])] = [(320, [320, 320, 320]),
       (350, [169, 169, 350]), (530, [506 / 3, 506 / 3, 506 / 3])]

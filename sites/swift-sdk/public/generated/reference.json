@@ -955,7 +955,7 @@
       "signature": "CompositeCardItem(id?: string, header?: IconText | ImageText | ImageTextLarge | Text | Image, body?: (Text | BoldText | MetricIndicatorInline | IconText | Image | AreaChart | BarChart | LineChart | ListBlock | TagBlock | EntityList)[], footer?: {price?: BoldText | MetricIndicatorWithStrikethrough, button?: Button})",
       "description": "A single card inside a CompositeCardBlock: an optional header (icon/image/text), a stack of body elements (text, metrics, charts, lists, tags), and an optional price/button footer.",
       "purpose": "商品、酒店、票务等完整对象",
-      "treatment": "与通用内容 Card 共用面板留白；图片头内收，body 放短介绍／属性；footer 与通用 row／between／wrap 共用布局，空间不足时价格与操作下排，保留同一操作实例",
+      "treatment": "大图铺满卡片顶部并沿用卡片上方圆角；标题、body、footer 保留面板留白，body 放短介绍／属性；footer 与通用 row／between／wrap 共用布局，空间不足时价格与操作下排，保留同一操作实例",
       "examples": [
         "official-4",
         "case-05",
@@ -1274,6 +1274,6 @@
     "body": 1.5,
     "code": 1.5
   },
-  "sourceFingerprint": "90fb2721831a0891e580bd3c2d55bf66e4a81aaa701af0ce51a13a8d4e22c4cc",
+  "sourceFingerprint": "6d93461004103c28fe1aafefc895990824951d36674e8582e31d367c9af3424c",
   "upstreamRevision": "9823ec05d4b29bc78d101676dc16b44fe17f1830"
 }

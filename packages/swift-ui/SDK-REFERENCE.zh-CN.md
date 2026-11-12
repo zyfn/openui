@@ -229,7 +229,7 @@ Item 定义单个对象，Block 定义一组对象及其 grid／carousel 等排�
 | OverviewCardBlock | 概览集合 | 组织可比较条目；维持行内对齐与可用宽度，不依赖选中页决定集合高度 |
 | ContextCardItem | 背景或情境说明 | 可有背景图；文字与图片覆盖层保持对比，缺图时转为中性可读内容 |
 | ContextCardBlock | 情境集合 | 按布局参数呈现；不将整组图片下载完成作为文字展示门槛 |
-| CompositeCardItem | 商品、酒店、票务等完整对象 | 与通用内容 Card 共用面板留白；图片头内收，body 放短介绍／属性；footer 与通用 row／between／wrap 共用布局，空间不足时价格与操作下排，保留同一操作实例 |
+| CompositeCardItem | 商品、酒店、票务等完整对象 | 大图铺满卡片顶部并沿用卡片上方圆角；标题、body、footer 保留面板留白，body 放短介绍／属性；footer 与通用 row／between／wrap 共用布局，空间不足时价格与操作下排，保留同一操作实例 |
 | CompositeCardBlock | 完整对象集合 | 支持网格／横滑；已知集合数稳定先到条目的宽度，单卡可先于整组出现 |
 | VisualCardItem | 图片主导的视觉入口 | 标题、短描述和 Tag 叠图；渐变与深色半透明胶囊保证可读；缺图不变成黑色大块 |
 | VisualCardBlock | 视觉入口集合 | 图形结构与下载分开；照片可预览，已有整卡动作时通过长按菜单预览，单击仍执行卡片动作；横滑只处理水平意图 |

@@ -1,6 +1,26 @@
 import SwiftUI
 import OpenUILang
 
+private struct OpenUICardMediaInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
+extension EnvironmentValues {
+    var openUICardMediaInset: CGFloat {
+        get { self[OpenUICardMediaInsetKey.self] }
+        set { self[OpenUICardMediaInsetKey.self] = newValue }
+    }
+}
+
+/// Only the leading image owns the card's top corners. Body media retains its
+/// ordinary image corners and does not extend through surrounding text.
+struct NativeCardTopMediaShape: Shape {
+    let radius: CGFloat
+    var topOnly = false
+    func path(in rect: CGRect) -> Path {
+        var path = RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect)
+        if topOnly { path.addRect(CGRect(x: rect.minX, y: rect.midY, width: rect.width, height: rect.height / 2)) }
+        return path
+    }
+}
+
 struct OpenUIStyledCard: View {
     let context: OpenUIComponentContext
     @ScaledMetric(relativeTo: .body) private var readingScale: CGFloat = 1
@@ -14,6 +34,9 @@ struct OpenUIStyledCard: View {
 
     var body: some View {
         OpenUIStack(context: context)
+            .environment(\.openUICardMediaInset,
+                context.string("variant") == "clear" || context.string("variant") == "sunk"
+                    ? 0 : context.theme.componentStyle.panelInset)
             .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant"),
                 active: context.layoutConfigurationReady))
             .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
@@ -60,6 +83,7 @@ extension EnvironmentValues {
 struct OpenUIStack: View {
     @Environment(\.openUIMediaWidthReady) private var parentMediaWidthReady
     @Environment(\.openUIAncestorLayoutReady) private var parentLayoutReady
+    @Environment(\.openUICardMediaInset) private var cardMediaInset
     let context: OpenUIComponentContext
     // Upstream Stack normalizes wrapped space-between; upstream Card does not.
     var wrapJustifyBetweenAsStart = false
@@ -74,6 +98,8 @@ struct OpenUIStack: View {
 
     var body: some View {
         let mediaWidthReady = parentMediaWidthReady && layoutReady && (direction != "row" || context.rowWidthReady)
+        let content = children
+        let first = content.first?.id
         OpenUIFlexLayout(
             direction: direction, gap: gap,
             align: layoutReady ? context.string("align") ?? "stretch" : "stretch",
@@ -81,8 +107,10 @@ struct OpenUIStack: View {
             wrap: layoutReady && context.flag("wrap") == true, fillsHeight: layoutReady && context.stretchesVertically,
             wrapJustifyBetweenAsStart: wrapJustifyBetweenAsStart
         ) {
-            ForEach(children) { child in
+            ForEach(content) { child in
                 context.render(child.value)
+                    .environment(\.openUICardMediaInset,
+                        layoutReady && direction == "column" && child.id == first ? cardMediaInset : 0)
                     .environment(\.openUIAncestorLayoutReady, layoutReady)
                     // Unknown siblings can still change the whole row's width
                     // allocation. Once all native Card roles are known, copy
@@ -104,6 +132,7 @@ struct OpenUIStack: View {
 
 struct NativeContentImage: View {
     let context: OpenUIComponentContext
+    @Environment(\.openUICardMediaInset) private var cardMediaInset
     var body: some View {
         NativeRemoteImage(src: context.string("src"), alt: context.string("alt") ?? "",
             layout: .cover)
@@ -111,6 +140,9 @@ struct NativeContentImage: View {
             // widths are unrelated; the parent still controls the final width.
             // Standard Image uses the shared native cover role.
             .frame(idealWidth: context.presentation.thumbnailSize)
-            .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
+            .clipShape(NativeCardTopMediaShape(radius: cardMediaInset > 0 ? context.theme.radius3xl : context.theme.radiusM,
+                topOnly: cardMediaInset > 0))
+            .padding(.horizontal, -cardMediaInset)
+            .padding(.top, -cardMediaInset)
     }
 }
