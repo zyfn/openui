@@ -507,7 +507,7 @@ private struct NativeGalleryPreview: View {
           }
         }.accessibilityIdentifier("openui.gallery.preview.image")
           .accessibilityHint(Text(zoomed ? "Drag to move image" : "Swipe to change image", bundle: NativeControlResources.bundle))
-        if !image.alt.isEmpty { Text(image.alt).nativeTextStyle(theme.textStyle(.compactBody)) }
+        if !image.alt.isEmpty { Text(image.alt).nativeTextStyle(theme.textStyle(.body)) }
         if let details = image.details, details != image.alt { Text(details).nativeTextStyle(theme.textStyle(.supporting)) }
       }
       ScrollViewReader { reader in

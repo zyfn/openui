@@ -66,7 +66,7 @@ struct NativeSingleImagePreview: View {
           .modifier(NativeImageZoom())
       }
       if !alt.isEmpty {
-        Text(alt).nativeTextStyle(theme.textStyle(.compactBody)).lineLimit(2)
+        Text(alt).nativeTextStyle(theme.textStyle(.body)).lineLimit(2)
           .frame(maxWidth: .infinity, alignment: .leading)
       }
     }
@@ -85,10 +85,10 @@ struct NativeImagePreviewHeader: View {
   @Environment(\.openUITheme) private var theme
   var body: some View {
     HStack(spacing: theme.spaceM) {
-      Text("Image preview", bundle: NativeControlResources.bundle).nativeTextStyle(theme.textStyle(.supporting))
+      Text("Image preview", bundle: NativeControlResources.bundle).nativeTextStyle(theme.objectTitleStyle())
       Spacer(minLength: theme.spaceM)
       if let position, count > 1 {
-        Text("\(position + 1) / \(count)").nativeTextStyle(theme.textStyle(.caption)).monospacedDigit()
+        Text("\(position + 1) / \(count)").nativeTextStyle(theme.textStyle(.supporting)).monospacedDigit()
           .accessibilityIdentifier("openui.image.preview.position")
       }
       Button(action: close) { Image(systemName: "xmark").openUIControlTarget() }
