@@ -1,18 +1,132 @@
-# swift-ui
+# OpenUISwiftUI
 
-The native SwiftUI adapter for OpenUI Lang. It depends on the sibling `OpenUILang` SwiftPM product; applications supply component views and tool transports. The dependency direction is `swift-ui → swift-lang → lang-core`. The SwiftPM product and module are `OpenUISwiftUI`.
+OpenUI 的原生 SwiftUI 渲染 SDK，依赖方向为 `swift-ui → swift-lang → lang-core`。SwiftPM 产品为 `OpenUISwiftUI` 和 `OpenUILang`。
 
-For a concise Chinese explanation of the SDK design, all 87 standard components and streaming decisions, see [SDK 设计与组件说明](SDK-REFERENCE.zh-CN.md).
+本文是整体设计入口，说明设计目标、组件职责和关键取舍。完整组件处理见 [SDK 设计与组件说明](SDK-REFERENCE.zh-CN.md)，渲染和验收边界见 [UI-DESIGN.md](UI-DESIGN.md)，公开 API 见 [组件编写](COMPONENTS.md)与[架构](ARCHITECTURE.md)。
 
-See [component authoring](COMPONENTS.md), the [standard catalog](NATIVE-COMPONENTS.md) and the [design and validation boundaries](UI-DESIGN.md) for the public API. SDK regressions are in `Tests/OpenUISwiftUITests`.
+> **版本范围（2026-11-12）**：已发布基线为 [0.1.1-rc.19](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.19)。本文描述 main，包括其后的本地候选改动；不能据此认为 RC19 已具备所有新行为。图库末行铺满的方案已暂停，当前仍保持等宽图项。具体发行能力以 tag 和消费客户端导出的契约为准。
 
-For matched schema/native registrations, host-authored named slots, semantic themes, message-scoped resources and the optional standard component collection, see [component authoring](COMPONENTS.md). `OpenUIStandardComponents.library()` supplies an opt-in reference catalog; extend this library when adding product definitions, preserving imported field order; applications can extend or override it while existing dictionary registrations remain supported.
+## 整体设计
 
-The standard collection defaults to role-based native typography, card-framed forms, capsule actions and explicit control feedback. See the [UI design contract and native captures](UI-DESIGN.md). Host accents remain opt-in through `OpenUITheme`; no component override is needed to obtain the default design.
+### 1. 一条回答怎样成为可阅读、可操作的页面
 
-Composition programs, preview applications and Simulator acceptance captures are maintained separately from this SDK-only distribution. They consume the installed registry and unchanged language runtime; they are not library dependencies or part of the SDK unit-test suite.
+**Intelligent UI 是 Assistant Message 中可阅读、理解和操作的内容页面；OpenUI Lang 声明这页内容的结构、数据、状态与动作。** SDK 将它映射为原生界面。页面可以很轻，也可以包含图文、比较、数据或局部操作，不要求每条回答都成为卡片墙或表单。
 
-For source organization and theme ownership, see [Architecture](ARCHITECTURE.md).
+```text
+Agent 使用实际组件契约组织回答
+  → assistant 正文交付完整 OpenUI Lang
+  → 共享核心解析、求值，OpenUIState 维持程序状态
+  → 原生组件根据空间与就绪状态逐步呈现
+  → 用户浏览、选择或提交
+  → 宿主处理 ActionEvent、导航、业务执行和后续 Agent 请求
+```
+
+| 归属 | 责任 |
+| --- | --- |
+| Lang 与注册库 | 合法组件、位置参数、类型、槽位、绑定和动作语义 |
+| SDK | 字体与颜色、布局测量、控件状态、资源、增量呈现及事件生成 |
+| 客户端宿主 | 消息生命周期、实际注册库、资源权限与代理、事件回传、导航与真正执行 |
+| 服务端／Agent | 事实来源、信息组织、组件选择，以及下一步意图 |
+
+SDK 不按地名、商品名或 case 编号选择布局。生成规范来自客户端实际注册库；渲染库和生成库可能不同，不手工维护第二套签名。
+
+### 2. 视觉基调与 token
+
+以连续阅读为主，用留白、对齐和文字层级建立秩序；表面、描边、图标和状态色承担具体职责。字体采用平台系统字体，数字保留数字角色。明暗外观与系统文字缩放沿用同一套语义。
+
+- **文字先定角色，再取样式。** 当前默认对象标题 18pt 半粗、正文 16pt、紧凑正文与辅助信息 14pt；主文字和辅助文字按职责区分颜色。小字号不自动等于浅色，价格、时间和按钮保持自己的尺度。
+- **颜色表达含义。** 普通属性使用中性色；成功、警告、错误有真实状态依据时才使用状态色。图表分类色属于数据表达，与控件状态色分别管理。
+- **尺寸、优先级和宽度分开。** 按钮 variant 表达强调程度，size 决定尺寸，容器决定是否通栏。可见小按钮不会因为触控区域而变成大块底色。
+- **几何与主题分开。** `OpenUITheme` 管共享字体、颜色、间距和表面；`OpenUIPresentation` 管原生阅读宽度、媒体比例、触控目标和动效，不成为新的 Lang 参数。
+
+完整字号、字重、颜色与行距见[文字角色表](SDK-REFERENCE.zh-CN.md#31-文字和颜色)。映射集中在 [TextStyles.swift](Sources/OpenUISwiftUI/Theme/TextStyles.swift)，实际值来自 [OpenUITheme.swift](Sources/OpenUISwiftUI/Theme/OpenUITheme.swift)；[文档站数据](../../sites/swift-sdk/public/generated/tokens.json)由代码导出。默认值是本 SDK 的设计选择，不宣称是 Apple 对所有组件的唯一规定。
+
+### 3. 容器先组织空间，再由组件完成阅读
+
+布局依据父级实际提供的空间，而非整屏长宽比。父容器分配宽度，文字在已分配的列内换行、向下增长，图片按既定媒体角色占位。
+
+| 能力 | 当前规则 |
+| --- | --- |
+| `Stack` | 方向、对齐、间距、分布与换行；普通横排不隐式变成等宽网格 |
+| `Card` | 同时参与空间分配和表面呈现；直接位于横排时可共享宽度，普通 Stack 包装不自动透传它的布局偏好 |
+| `Card(card)` | 有背景、边框和内容留白，适合需要独立识别的对象或区域 |
+| `Card(sunk)` | 浅底和内容留白，无分组边框 |
+| `Card(clear)` | 无边框、无内边距，仍保留宽度分配能力，可用于无框多列图文 |
+| 卡片网格 | 根据可用宽度、间距和已有阅读宽度分列；不同家族保留自己的上限和槽位规则 |
+| 横向卡片集合 | 卡宽与横滑浏览独立处理，保留下一项预览；选页不把后面的正文上下推移 |
+
+`wrap=true` 允许换行。原生 Card 以稳定的阅读宽度参与行分配，空间不足则换行；显式不换行或非响应式的声明保持原意。`align=stretch` 作用于交叉轴，不表示所有任意子项自动等宽。
+
+集合数量已知时可提前分配槽位，但未知条目不会变成可点击的假内容。横滑轨道按已挂载内容的最高项保持高度，内容继续增长仍可能改变整体高度。表格保留列关系，必要时横向滚动，不自动变成另一种卡片模板。
+
+### 4. Cards 是不同的信息结构，不是一种万能外框
+
+普通解释和章节可直接由文字、图文行、列表与留白组成；独立对象、比较候选和局部操作才需要清楚边界。减少不必要的描边，不等于删除 `clear Card` 的布局作用。
+
+| 家族 | 适合承担的职责 |
+| --- | --- |
+| Snippet | 左侧对象摘要与右侧短值；文字在右列换行，完整数字保留必要空间。集合仅支持 grid |
+| Overview | 标题／图文头与关键指标分层，适合概览与比较 |
+| Context | 简短背景、情境或前提，不承担整篇解释 |
+| Composite | 完整对象的 header、body 和价格／操作 footer |
+| Visual | 图片主导的视觉入口，标题和标签叠图并保持对比 |
+
+五种 CardBlock 的 items 均至少两项。单对象使用合法 Card 组合；Card.children 是受限槽位，不能把 CompositeCardItem 直接当任意内容塞进去。单对象和集合中的同类对象使用一致的图片、文字和操作规则，合法写法参考[标准用例](../../examples/agent-cases/README.md)。
+
+商品名称、图片、规格、价格口径和入口应对应同一对象；介绍、推荐判断和来源字段分清，不重复堆放。大图可铺满 Card 顶部或 Composite 图头，文字与操作仍保留内边距；正文中的图片不因此穿过内容边界。价格和按钮按空间并排或换行，不破坏金额，也不丢失动作。
+
+### 5. 图片、图库与预览各有自己的空间规则
+
+卡内照片默认使用宽度派生的 16:9 覆盖裁切；点开后的原图预览使用 fit，保持完整来源比例。缩略图、文档插图和叠图卡分别遵守各自角色，下载状态不决定栏目宽度。
+
+图库根据内容区域的宽度、间距和紧凑阅读宽度分列，内联最多预览五项，完整浏览保留全部来源。**当前图库最后一行仍为等宽图项；是否改为铺满已暂停，不把它当作已定的新规则。**
+
+预览统一使用本地化的工具栏与动态页码，说明放在图片下方。左右滑动切图、缩略图跳转与图片缩放分工明确：放大后拖动当前图片，恢复原尺寸后继续翻页，换图重置缩放。普通图片点击预览；已有整卡动作或选择语义时，通过长按菜单预览，原有点击意图保留。网络失败在原图位置点击重试，不另添 Retry 按钮。
+
+资源由宿主的 `OpenUIResourceContext` 统一提供，保持原地址、签名和权限。默认 SDK Map、MapPoint、SVG 不需要客户端再维护同名实现；Map 展示地点关系，SVG 展示受约束的图解，不代替实时导航或任意网页执行。
+
+### 6. 交互围绕一个明确任务
+
+Form 收集同一任务的字段并统一提交，默认已有 Card 面板；不为加框重复套 Card，不把纯展示商品或单个跳转包装成 Form。即时筛选和无需提交的勾选可以只用本地状态。
+
+操作事件保留当前对象、formName、formState 和既有动作上下文。宿主通过标准 `buildMessage`／`parseMessage` 与现有消息通道承载它们；点击意图不等于业务成功，SDK 不自行宣称已保存、已支付或已下单。
+
+Callout 的普通说明与真实状态分别呈现。中性／信息提示使用安静的引述形式，成功、警告、错误保留明确语义。分割线表达记录边界或结构关系，不作为每个章节标题的装饰。图表来自真实可确认数据，不用补零或虚构数值丰富画面。
+
+### 7. 流式渲染保留连续性，不猜测完整页面
+
+| 阶段 | 呈现原则 |
+| --- | --- |
+| 布局和集合形状尚未明确 | 保留安全阅读前缀；未确定宽度的媒体局部等待，不先猜一种完整布局 |
+| 布局角色已知、文字继续到达 | 按已分配宽度逐步显示，文字增长不反复撑大图片 |
+| URL 到齐、图片仍在下载 | 保留媒体框与中性加载反馈，不阻挡整组已有文字 |
+| 图表数据陆续确认 | 按图形语义消费数据；依赖完整总量的图形等待必要数据，不画虚假的完整骨架 |
+| 刷新、失败或旧请求晚返回 | 保留可用的既有内容，以程序和资源作用域隔离回调 |
+| 相同最终快照、空分片 | 保留当前呈现；主动重播使用显式 reset |
+
+容器定义关系与空间，不等于灰色骨架。SDK 不生成“正在整理内容”等业务叙述，不以整段隐藏或重建等待所有内容完成。稳定 statement／key 与同一布局子树共同保留控件和浏览状态。
+
+布局优先、叶子随后填充有利于增量呈现；它不保证未知文字高度、任意源码顺序或宿主主动重建消息时都零位移。具体就绪依赖见[流式处理表](SDK-REFERENCE.zh-CN.md#4-最难的部分是流式过程中保持可信与连续)。
+
+### 8. 语言、平台和验证边界
+
+SDK 内置文案随最近的 SwiftUI locale 选择中英文，图注和业务名称按输入原文显示。包最低支持 iOS 16／macOS 13；Map 需要 iOS 17／macOS 14，较旧系统保留可用性说明。横向意图识别在 iOS 18 起使用原生手势路径，旧系统有兼容实现。
+
+验证分开看：解析与契约、原生几何与状态、实际手势与语言、视觉审阅、业务端到端。编译、测试数量或某张截图都不能替代其他层的验收。案例资料、原始程序、候选版本、容器宽度、语言和证据应能对应；当前普通字号的模拟器检查不代表全部设备、真机手势或所有流式片段都已通过。
+
+图文选择、卡片数量和内容密度由 Agent 的组合指引承担；字体几何、资源生命周期和原生交互由 SDK／宿主实现。详见[验证契约](UI-DESIGN.md)与[生成指引分析材料](AGENT-AUTHORING-HANDOFF.zh-CN.md)。文档站的 Web 标本与 Swift 原生效果分别标识，以所测版本的原生结果为验收依据。
+
+### 9. 文档怎样保持一致
+
+- README 保留设计目标、整体规则和取舍，不复制 87 项组件的完整签名。
+- [SDK-REFERENCE.zh-CN.md](SDK-REFERENCE.zh-CN.md) 维护逐组件用途、处理和限制；[NATIVE-COMPONENTS.md](NATIVE-COMPONENTS.md) 与实际库说明接口。
+- 字体、颜色和几何的来源是 Theme／Presentation；交互站点从实际代码导出 token 和契约，不手写另一套默认值。
+- [examples/agent-cases](../../examples/agent-cases/README.md) 是标准用例唯一源码，消费方通过标准 examples 接口加入实际 Lang。
+- 发布时核对本文的版本范围、实际客户端导出与证据身份。main 的说明、已发布 tag、客户端实际注册库不混为一谈。
+
+---
+
+下文保留安装、公开 API 与开发说明。
 
 ## Installation
 
@@ -38,10 +152,16 @@ import OpenUILang
 import OpenUISwiftUI
 ```
 
-After the SDK is merged and released, use `https://github.com/thesysdev/openui.git`
-in Xcode's **File > Add Package Dependencies** and select a release containing
-the Swift SDK. For other distributions, use the repository URL and version
-listed in that distribution's release notes.
+This fork's published Swift SDK is distributed from `https://github.com/zyfn/openui.git`.
+For the released baseline, select the exact tag in Xcode or use:
+
+```swift
+.package(url: "https://github.com/zyfn/openui.git", exact: "0.1.1-rc.19")
+```
+
+The design overview above also describes later main candidates. Use a local checkout
+to review those changes until a new tag is published. Other distributions must use
+their own repository URL and release identity.
 
 For a language-only consumer, select `OpenUILang`. The nested manifests in
 `packages/swift-lang` and `packages/swift-ui` are local development entry points;
@@ -68,7 +188,8 @@ SDK prompt. CaseLab mirrors that single source for native streaming review.
 
 ## Appearance
 
-The default theme requires no setup. Override the supported React-named tokens
+The default theme requires no setup. The following values demonstrate intentional
+host overrides, not the SDK defaults. Override the supported React-named tokens
 without changing the generated content:
 
 ```swift
@@ -103,7 +224,8 @@ from this SDK.
 
 `TextContent` uses the upstream Markdown extensions for tables, line breaks,
 citations and mathematics. `MarkDownRenderer` retains its basic Markdown mode.
-Text and media captions use the upstream inline Markdown rules. Paragraphs,
+`Text`/`BoldText` and `ImageText` titles use the upstream inline Markdown rules.
+Image alt text and gallery detail strings are displayed as plain source text. Paragraphs,
 tables, links and code blocks are native SwiftUI views; fenced code shares the
 standard `CodeBlock` renderer and copy action.
 

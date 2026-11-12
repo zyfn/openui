@@ -50,6 +50,17 @@ At the center of OpenUI is **OpenUI Lang**: a compact, streaming-first language 
 - **Streaming renderer** - Parse and render model output progressively in React, Vue, Svelte, or Angular as tokens arrive.
 - **Chat and app surfaces** - Use the same foundation for assistants, copilots, and broader interactive product flows.
 
+## Swift SDK 设计与接入
+
+原生 SwiftUI SDK 的[整体设计写在这里](./packages/swift-ui/README.md#整体设计)：从 Assistant Message 的表达定位，到文字与 token、布局容器、Cards、图片预览、表单交互和流式渲染。它同时说明已实现的规则、平台取舍与验收边界。
+
+- [设计总览与 SwiftPM 接入](./packages/swift-ui/README.md)
+- [87 项组件的用途、呈现和限制](./packages/swift-ui/SDK-REFERENCE.zh-CN.md)
+- [原生渲染与验证契约](./packages/swift-ui/UI-DESIGN.md)
+- [标准 Agent 用例](./examples/agent-cases/README.md)与[交互文档站源码](./sites/swift-sdk)
+
+这部分记录本仓库 Swift SDK 的设计；main 中的候选能力不等于某个已发布版本或客户端已经接入的能力。实际生成规范以客户端导出的注册库为准。
+
 ## Quick Start
 
 ```bash
