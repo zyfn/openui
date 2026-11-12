@@ -28,7 +28,7 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMap.swift" : "39533c25fa7e49e6444f9b0acc4804ac1ed064aaab472faef5b1f061251f00b0",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMarkdownText.swift" : "9c91fd628eb8368cff5543f0cb6c965b7ef6f6e5bf08ae5b38e4f0b91d54af00",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMath.swift" : "e97d16ded5ce93f6ca02f5dfb2bca6132f828e8e0df86551e5bce6c45afa84f5",
-    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMedia.swift" : "fa7d1c30593fc4c486ed726a278438e099027a7efc2a1b984487bf6648251aab",
+    "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMedia.swift" : "64067a9b92c6e364c7b9afa21d4d6c90228f9d40b82eeaf845cc4baf636edf22",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativeMediaPreview.swift" : "cdcc1c4e889032cb0e632ca70c7890d023c427010e6e350a15d15583cd14238a",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePageControls.swift" : "d5680c814d940c024d98385d6bc2e48aa61c4011bbdbb1b0ba5adcb28b96fba3",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Components\/NativePager.swift" : "e16bab6793567c4cf38b046b48a76ede26c1d7421c95cbb7aacd833ee87f92f9",
@@ -73,5 +73,5 @@
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/TextStyles.swift" : "2035e04b7974589c52000a6ba0a8348f6833a5e7fcabe4bc443286ea57c4bc60",
     "packages\/swift-ui\/Sources\/OpenUISwiftUI\/Theme\/ThemeEnvironment.swift" : "c4be5e9a2767efb46a457930d54415456d37da730f7acb36c566f2130900be2c"
   },
-  "fingerprint" : "c4f9c0ea8f241d872ec951f8c1ce060541674df7792c88113f8678a908031a9e"
+  "fingerprint" : "727b96743d3db21bc22f9ce429f281490b4ae4047d542d783efccd093c811b47"
 }

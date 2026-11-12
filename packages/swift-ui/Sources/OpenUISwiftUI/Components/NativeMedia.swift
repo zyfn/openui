@@ -361,7 +361,8 @@ struct NativeImageGallery: View {
   @State private var selected: NativeGalleryResourceID?
   @State private var preview = false
   @State private var retries: [String: Int] = [:]
-  // The pinned upstream ImageGallery previews five items, with Show All.
+  // Keep a compact inline preview. Any image opens the complete gallery, so
+  // additional photos remain reachable without a separate Show All control.
   private let previewLimit = 5
   @State private var stableImages: [NativeGalleryImage]?
   private var images: [NativeGalleryImage] {
@@ -436,16 +437,6 @@ struct NativeImageGallery: View {
             }
           }
         }
-      }
-      if gridReady && images.count > previewLimit {
-        Button {
-          guard context.canActivate else { return }
-          if !images.contains(where: { $0.key == selected }) { selected = (images.first(where: { pictures[$0.key] != nil }) ?? images.first)?.key }
-          preview = true
-        } label: {
-          Text("Show all photos", bundle: NativeControlResources.bundle)
-            .openUIFont(context.theme.textLabelSmHeavy, role: .control).openUIControlTarget(alignment: .leading)
-        }.disabled(!context.canInteract).accessibilityIdentifier("openui.gallery.showAll")
       }
     }
     .accessibilityElement(children: .contain).accessibilityIdentifier("openui.gallery")

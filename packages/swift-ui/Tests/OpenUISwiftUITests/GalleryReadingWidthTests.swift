@@ -35,5 +35,14 @@ final class GalleryReadingWidthTests: XCTestCase {
     XCTAssertEqual(try height(partial, width: 1200, streaming: true), try height(completed, width: 1200), accuracy: 1,
       "Future records outside the five-photo preview must not make the first visible photo narrower")
   }
+
+  @MainActor func testAdditionalImagesDoNotAddAnInlineButtonOrExpandThePreview() throws {
+    func source(_ count: Int) -> String {
+      let images = (1...count).map { "{src:\"\",alt:\"Photo \($0)\"}" }.joined(separator: ",")
+      return "root=Stack([ImageGallery([\(images)])])"
+    }
+    // At one column a sixth image or an extra button would increase height.
+    XCTAssertEqual(try height(source(6), width: 240), try height(source(5), width: 240), accuracy: 1)
+  }
 }
 #endif
