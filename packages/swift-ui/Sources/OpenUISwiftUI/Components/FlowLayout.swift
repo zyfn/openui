@@ -6,6 +6,12 @@ struct OpenUIFlexGrowKey: LayoutValueKey {
     static let defaultValue = false
 }
 
+/// Reading space owned by a flexible content unit. This is a native layout
+/// preference, not a new Lang parameter or a width inferred from its copy.
+struct OpenUIFlexMinimumWidthKey: LayoutValueKey {
+    static let defaultValue: CGFloat = 0
+}
+
 /// Pure placement is also used by tests; no global display state is consulted.
 enum OpenUIFlowPlacement {
     static func frames(sizes: [CGSize], width: CGFloat, gap: CGFloat, align: String, justify: String,
@@ -87,7 +93,11 @@ struct OpenUIFlexLayout: Layout {
             // flex:1 contributes its minimum to line breaking, then shares the
             // line's available width. Intrinsic controls keep their own basis.
             let minimums = subviews.map { view in
-                view.sizeThatFits(ProposedViewSize(width: 0, height: nil)).width
+                let readingWidth = view[OpenUIFlexMinimumWidthKey.self]
+                // A declared reading basis is independent of arriving text.
+                // Measuring unfinished copy must not keep changing line breaks.
+                return readingWidth.isFinite && readingWidth > 0 ? readingWidth
+                    : view.sizeThatFits(ProposedViewSize(width: 0, height: nil)).width
             }
             let growing = subviews.map { $0[OpenUIFlexGrowKey.self] }
             let rows = OpenUIWrappedFlexRows.allocate(ideal: ideal.map(\.width), minimums: minimums,

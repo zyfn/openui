@@ -146,6 +146,10 @@ public struct OpenUIComponentContext {
     var layoutConfigurationReady: Bool {
         NativeLayoutContract.ready(element.sourceReadiness, fields: registry.presentationLayoutFields(element.typeName))
     }
+    var rowWidthReady: Bool {
+        NativeLayoutContract.rowWidthReady(value("children") ?? .null,
+            source: element.sourceReadiness["children"], registry: registry)
+    }
     func presentationValue(_ name: String = "children") -> Value {
         NativePresentationProxy.expandedValue(value(name) ?? .null, source: element.sourceReadiness[name], registry: registry)
     }

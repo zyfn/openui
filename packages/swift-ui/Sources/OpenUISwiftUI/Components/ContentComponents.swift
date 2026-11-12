@@ -191,16 +191,7 @@ struct NativeInlineText: View {
     return context.theme.textNeutralSecondary
   }
 }
-private struct NativeCardHeaderInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
-extension EnvironmentValues {
-  fileprivate var openUICardHeaderInset: CGFloat {
-    get { self[NativeCardHeaderInsetKey.self] }
-    set { self[NativeCardHeaderInsetKey.self] = newValue }
-  }
-}
-
 struct NativeMediaText: View {
-  @Environment(\.openUICardHeaderInset) private var cardHeaderInset
   @Environment(\.multilineTextAlignment) private var textAlignment
   @ScaledMetric(relativeTo: .body) private var iconScale: CGFloat = 1
   enum Media { case icon, thumbnail, banner }
@@ -221,9 +212,7 @@ struct NativeMediaText: View {
           NativeRemoteImage(
             src: context.string("src"), alt: context.string("alt") ?? context.string("title") ?? "",
             layout: .aspect(context.presentation.coverAspectRatio))
-            .clipShape(RoundedRectangle(cornerRadius: cardHeaderInset > 0 ? 0 : context.theme.radiusM, style: .continuous))
-            .padding(.horizontal, -cardHeaderInset)
-            .padding(.top, -cardHeaderInset)
+            .clipShape(RoundedRectangle(cornerRadius: context.theme.radiusM, style: .continuous))
           words
         }.frame(maxWidth: .infinity, alignment: .leading)
       } else {
@@ -676,9 +665,8 @@ struct NativeCardItem: View {
     if ["Text", "BoldText"].contains(rhs.typeName) { return PropValue.string(rhs, "variant") == "number" }
     return true
   }
-  private var bannerHeaderInset: CGFloat {
-    guard case .element(let header) = context.value("header"), header.typeName == "ImageTextLarge" else { return 0 }
-    return context.theme.spaceM
+  private var contentInset: CGFloat {
+    kind == "Composite" ? context.theme.componentStyle.panelInset : context.theme.componentStyle.objectInset
   }
   private var artworkSource: String? {
     guard ["Visual", "Context"].contains(kind), let source = context.string("bgImageSrc"),
@@ -842,7 +830,7 @@ struct NativeCardItem: View {
           }
         }
       default:
-        context.slot("header").environment(\.openUICardHeaderInset, bannerHeaderInset)
+        context.slot("header")
         context.slot("body")
         if let footer = context.value("footer"), footer != .null {
           NativeCompositeFooter(context: context, footer: footer)
@@ -852,7 +840,7 @@ struct NativeCardItem: View {
       groupEntry
     }
       .environment(\.openUICardGroupAction, nil)
-      .padding(context.theme.componentStyle.objectInset)
+      .padding(contentInset)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: centeredOverview ? .top : .topLeading)
   }
   @ViewBuilder private var groupEntry: some View {
@@ -881,9 +869,8 @@ struct NativeCompositeFooter: View {
     // An object footer balances amount and action when their complete widths
     // fit. It becomes a column before compressing either reading value. The
     // same mounted action survives that placement change.
-    NativeLabelValueLayout(gap: context.theme.componentStyle.footerGap,
-      minimumLabelWidth: .greatestFiniteMagnitude, centerVertically: true,
-      collapsesEmptySlots: true) {
+    OpenUIFlexLayout(direction: "row", gap: context.theme.componentStyle.footerGap,
+      align: "center", justify: "between", wrap: true) {
       context.render(NativeValue.prop(footer, "price") ?? .null)
       context.render(NativeValue.prop(footer, "button") ?? .null)
     }
@@ -894,6 +881,7 @@ struct NativeCardBlock: View {
   let kind: String
   @EnvironmentObject private var state: OpenUIState
   @Environment(\.dynamicTypeSize) private var typeSize
+  @ScaledMetric(relativeTo: .body) private var readingScale: CGFloat = 1
   @State private var selectedID = ""
   private var children: [OpenUIRenderChild] {
     var occurrences: [String: Int] = [:]
@@ -924,7 +912,8 @@ struct NativeCardBlock: View {
     return NativeCardGrid(maxPerRow: ["Overview", "Context", "Visual"].contains(kind) ? 3 : 2,
       responsive: context.flag("responsive") != false,
       singleColumn: typeSize.isAccessibilitySize,
-      minimumColumnWidth: kind == "Overview" ? overviewMinimumWidth : nil, spacing: gap)
+      minimumColumnWidth: (kind == "Overview" ? overviewMinimumWidth : context.presentation.minimumCardWidth) * readingScale,
+      spacing: gap)
   }
   private var overviewMinimumWidth: CGFloat {
     // Horizontal media needs a real reading column next to the thumbnail;

@@ -1,6 +1,26 @@
 import SwiftUI
 import OpenUILang
 
+struct OpenUIStyledCard: View {
+    let context: OpenUIComponentContext
+    @ScaledMetric(relativeTo: .body) private var readingScale: CGFloat = 1
+
+    private var minimumWidth: CGFloat {
+        let surface = NativeContentSurface(context.string("variant"), fallback: .card)
+        let width = surface == .clear ? context.presentation.minimumTextColumnWidth
+            : context.presentation.minimumCardWidth
+        return max(0, width.isFinite ? width * readingScale : 0)
+    }
+
+    var body: some View {
+        OpenUIStack(context: context)
+            .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant"),
+                active: context.layoutConfigurationReady))
+            .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
+            .layoutValue(key: OpenUIFlexMinimumWidthKey.self, value: minimumWidth)
+    }
+}
+
 struct OpenUICardSurface: ViewModifier {
     let theme: OpenUIThemeValues
     let variant: String?
@@ -53,6 +73,7 @@ struct OpenUIStack: View {
     private var children: [OpenUIRenderChild] { OpenUIRenderChild.children(of: projection.value) }
 
     var body: some View {
+        let mediaWidthReady = parentMediaWidthReady && layoutReady && (direction != "row" || context.rowWidthReady)
         OpenUIFlexLayout(
             direction: direction, gap: gap,
             align: layoutReady ? context.string("align") ?? "stretch" : "stretch",
@@ -63,11 +84,11 @@ struct OpenUIStack: View {
             ForEach(children) { child in
                 context.render(child.value)
                     .environment(\.openUIAncestorLayoutReady, layoutReady)
-                    // Row measurement may depend on an unfinished child's
-                    // intrinsic content. Keep reading text progressive, but
-                    // do not reveal fluid media inside that changing width.
+                    // Unknown siblings can still change the whole row's width
+                    // allocation. Once all native Card roles are known, copy
+                    // can grow independently inside their stable columns.
                     .environment(\.openUIMediaWidthReady,
-                        parentMediaWidthReady && layoutReady && (direction != "row" || mediaWidthReady(child.value)))
+                        mediaWidthReady)
                     .environment(\.openUIFillControlWidth,
                         direction == "column" && stretches)
                     .environment(\.openUIStretchHeight, direction == "row" && stretches)
@@ -79,13 +100,6 @@ struct OpenUIStack: View {
         }
     }
     private var stretches: Bool { !layoutReady || context.string("align") == nil || context.string("align") == "stretch" }
-    private func mediaWidthReady(_ value: Value) -> Bool {
-        switch value {
-        case .element(let element): return element.isSourceComplete
-        case .array(let values): return values.allSatisfy(mediaWidthReady)
-        default: return true
-        }
-    }
 }
 
 struct NativeContentImage: View {

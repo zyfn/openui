@@ -18,8 +18,9 @@ final class CardGridGeometryTests: XCTestCase {
       let grid = NativeCardGrid(maxPerRow: maximum, spacing: 12)
       XCTAssertEqual(grid.rows(width: 344, count: 4), [1, 1, 1, 1])
       XCTAssertEqual(grid.rows(width: 480, count: 3), [1, 1, 1])
-      XCTAssertEqual(grid.rows(width: 481, count: 3), [2, 1])
-      XCTAssertEqual(grid.rows(width: 768, count: 3), [2, 1])
+      XCTAssertEqual(grid.rows(width: 481, count: 3), [1, 1, 1])
+      XCTAssertEqual(grid.rows(width: 492, count: 3), [2, 1])
+      XCTAssertEqual(grid.rows(width: 768, count: 3), maximum == 2 ? [2, 1] : [3])
       XCTAssertEqual(grid.rows(width: 1040, count: 1), [1])
       XCTAssertEqual(grid.rows(width: 1040, count: 0), [])
     }

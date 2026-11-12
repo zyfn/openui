@@ -16,7 +16,7 @@
       "title": "杭州两日 · 实景与票务预览",
       "purpose": "两日图文、景点地图与票务商品卡",
       "file": "case-02-explore-visual-preview-ticket-booking.openui",
-      "sha256": "5ff97210105bdd171b534f8fa70a1f3cc60ba2adb1ce4a0aa91721cba7f0c103",
+      "sha256": "9971c403d61e30f1090a91379c41d3f974636927367d5ac3986dfb3270d88e32",
       "sourceSHA256": "576738be1afa6bce0ee44ccd67be8dbb7129230218fb7e0e808266e06f278726"
     },
     {
@@ -62,7 +62,7 @@
       "purpose": "路线、住宿选址、真实公开票价与出发前确认",
       "file": "case-07-plan-suzhou-family-trip-ticket-design.openui",
       "request": "想从上海去苏州玩两天，带父母，不想太累。交通、住宿和景点能一起安排吗？",
-      "sha256": "9b84ff92840620801bbb3f44f3499b19f0d41c2c85314597bdd4833580e5cd99",
+      "sha256": "5aa40c6ece958a18609e5c986c8e9a88509a927597d7138b40fabd627131a8d3",
       "sourceSHA256": "4c1f6a6e744e981e8385511ae28629cdf2c03334e82f9237ebd23553d3604c7f"
     },
     {

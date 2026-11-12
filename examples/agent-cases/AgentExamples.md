@@ -15,13 +15,13 @@ Map、MapPoint、SVG 已进入 SDK main 的默认注册库。Agent 仍须使用�
 | --- | --- |
 | 连续阅读、章节、图文顺序 | `Stack(column)`；内容按已分配宽度换行、向下增长 |
 | 按内容定宽的小字段、操作 | `Stack(row)`；`wrap`只表示能否换行，不表示等宽 |
-| 需要共享宽度的内容单元 | 将 `Card` 直接放在横向容器中；Swift SDK 的 `clear`保留等宽分配能力，不附加内边距；列间距由父 Stack 的 gap 管理 |
+| 需要共享宽度的内容单元 | 将 `Card` 直接放在横向容器中；Swift SDK 的 `clear`不附加内边距，wrap 开启时按现有最小文字阅读宽度分配，不够则换行；同一行共享剩余空间，列间距由父容器 gap 管理 |
 | 图片集合、横向浏览 | 使用 `ImageGallery`、卡片组或 `Carousel` 自己的布局能力；不要重复包容器 |
 | 单个完整对象 | 可用 `Card` 组合合法内容；不要为满足卡片组至少两项而虚构另一个对象 |
 
 Swift 的 clear 零内边距是明确的视觉策略，与固定参考 React 版本的横向 padding 不同；不新增 Lang 字段。card/sunk 仍保留内边距。
 
-`Card`被额外的普通`Stack`包住后，外层看到的是Stack，伸展关系不能穿透包装。
+`Card`被额外的普通`Stack`包住后，外层看到的是Stack，伸展关系不能穿透包装。显式 wrap=false 仍保留不换行的作者选择；wrap=true 时 clear 使用现有文字阅读宽度，有表面的内容卡使用现有对象阅读宽度，文字在分配好的列内增长。
 `Carousel`的合法children由导出的组件契约决定，不把任意Card/Stack塞入它。
 
 ## 商品数据边界
@@ -47,6 +47,8 @@ Agent 的选择建议放在商品卡外，并明确为建议。价格展示可�
 - 缺失原始商品属性时不补卖点；mock 不是给真实商品编属性的授权。资料出处与 mock 字段边界见 [内容依据](CONTENT-SOURCES.md)。
 
 按钮字号仍为14/16pt，数字值保持14/16/18pt阅读档位；不随正文统一放大。small仍是小号主文字，不自动代表低优先级。
+
+商品单对象与集合卡共用内容面板留白，图片统一内收；16:9 图片比例与覆盖裁切不变，满幅叠图属于 VisualCard 的角色。需要价格与按钮在两端并排、窄屏换行时，可用 clear Card 的 row／between／wrap 组合，价格放合法的 Stack 中、按钮放 Buttons 中；与集合商品 footer 共用行内空间分配，不靠猜测业务内容识别 footer。
 
 ## 流式编写
 
@@ -207,11 +209,12 @@ ticketSection_part2 = MarkDownRenderer("## 门票与预约")
 freeAdmission = Stack([freeAdmission_part1, freeAdmission_part2], "column", "xs")
 freeAdmission_part1 = TextContent("免费参观：德寿宫、南宋官窑博物馆、南宋遗址陈列馆；苏堤与孤山的公共游览区域也无需购买门票。", "small")
 freeAdmission_part2 = TextContent("德寿宫个人参观免预约；其他场馆的周末预约要求与临时展览以当期公告为准。", "small")
-ticketCards = Card([ticketCards_image, ticketCards_heading, ticketCards_detail1, ticketCards_footer], "card", "column", "s")
+ticketCards = Card([ticketCards_image, ticketCards_heading, ticketCards_detail1, ticketCards_footer], "card", "column", "m")
 ticketCards_image = Image("岳王庙正殿建筑实拍", "https://www.pelago.com/img/products/CN-China/yue-fei-temple-ticket/df78b90c-88b1-4dcf-9345-0f32d6a6d728_yue-fei-temple-ticket.jpg")
 ticketCards_heading = CardHeader("岳王庙", "杭州 · 西湖北岸")
 ticketCards_detail1 = TextContent("红柱重檐的祠庙建筑与墓区、碑刻共同构成纪念岳飞的游览空间。", "small")
-ticketCards_footer = Stack([ticketCards_price, ticketCards_buttons], "row", "m", "center", "between")
+ticketCards_footer = Card([ticketCards_footerAmount, ticketCards_buttons], "clear", "row", "s", "center", "between", true)
+ticketCards_footerAmount = Stack([ticketCards_price], "column", "none")
 ticketCards_price = BoldText("number", "¥25 起", "成人票", "text", "lg")
 ticketCards_buttons = Buttons([Button("预订", @OpenUrl("https://touch.piao.qunar.com/touch/detail.htm?id=3501705640"), "primary", "normal", "small")], "row")
 ticketConditions = TextContent("所选日期的价格、优惠与可订状态以票务页为准；此处保留原示例报价，未查询实时库存。", "small")
@@ -420,7 +423,7 @@ introduction_part3 = TextContent("住宿按 2 间客房、1 晚安排；父母�
 transport = Stack([transportTitle, transportIntro, outbound, inbound, transferNote], "column", "m")
 transportTitle = MarkDownRenderer("## 往返交通")
 transportIntro = TextContent("去程上午抵达，返程放在第二天下午。两程都以苏州站接驳古城，车站与酒店之间安排打车。以下按直达高铁预留出行时段。")
-outbound = Card([outboundHeading, outboundSpec, outboundJourney, outboundDetail, outboundFare], "card", "column", "s")
+outbound = Card([outboundHeading, outboundSpec, outboundJourney, outboundDetail, outboundFare], "card", "column", "m")
 outboundHeading = CardHeader("上海 → 苏州")
 outboundSpec = TextContent("11/21 · 高铁二等座 · 3 位成人 · 计划时段", "small")
 outboundJourney = Stack([outboundDeparture, outboundMiddle, outboundArrival], "row", "s", "start", "between")
@@ -434,10 +437,11 @@ outboundModeRow = Stack([outboundMode], "row", "none", "center", "center")
 outboundMode = Text("text", "直达", null, null, "xs")
 outboundArrival = BoldText("number", "10:05", "苏州站", "text", "lg")
 outboundDetail = TextContent("3 人单程预算 ¥180，具体车次和发车时间以购票查询为准。", "small")
-outboundFare = Stack([outboundPrice, outboundActions], "row", "m", "center", "between")
+outboundFare = Card([outboundFareAmount, outboundActions], "clear", "row", "s", "center", "between", true)
+outboundFareAmount = Stack([outboundPrice], "column", "none")
 outboundPrice = BoldText("number", "¥60", "每人 / 单程预算", "text", "lg")
 outboundActions = Buttons([Button("查询车次", @OpenUrl("https://www.12306.cn/index/"), "primary", "normal", "small")], "row")
-inbound = Card([inboundHeading, inboundSpec, inboundJourney, inboundDetail, inboundFare], "card", "column", "s")
+inbound = Card([inboundHeading, inboundSpec, inboundJourney, inboundDetail, inboundFare], "card", "column", "m")
 inboundHeading = CardHeader("苏州 → 上海")
 inboundSpec = TextContent("11/22 · 高铁二等座 · 3 位成人 · 计划时段", "small")
 inboundJourney = Stack([inboundDeparture, inboundMiddle, inboundArrival], "row", "s", "start", "between")
@@ -451,19 +455,21 @@ inboundModeRow = Stack([inboundMode], "row", "none", "center", "center")
 inboundMode = Text("text", "直达", null, null, "xs")
 inboundArrival = BoldText("number", "17:05", "上海站", "text", "lg")
 inboundDetail = TextContent("3 人单程预算 ¥180；15:00 前结束游览，先取行李再前往车站。", "small")
-inboundFare = Stack([inboundPrice, inboundActions], "row", "m", "center", "between")
+inboundFare = Card([inboundFareAmount, inboundActions], "clear", "row", "s", "center", "between", true)
+inboundFareAmount = Stack([inboundPrice], "column", "none")
 inboundPrice = BoldText("number", "¥60", "每人 / 单程预算", "text", "lg")
 inboundActions = Buttons([Button("查询车次", @OpenUrl("https://www.12306.cn/index/"), "primary", "normal", "small")], "row")
 transferNote = TextContent("往返交通预算 ¥360，未含市内接驳。时刻为行程预留安排，车次、票价及余票以 12306 查询结果为准。", "small")
 stay = Stack([stayTitle, stayIntro, hotelCard, hotelCaution], "column", "m")
 stayTitle = MarkDownRenderer("## 住一晚｜古城里的落脚点")
 stayIntro = TextContent("以同一间酒店作为两天的起终点，减少带行李换住处的折腾。选择古城内的落脚点，方便衔接两天行程。")
-hotelCard = Card([hotelHeading, hotelIntro, hotelSpec, hotelFare], "card", "column", "s")
+hotelCard = Card([hotelHeading, hotelIntro, hotelSpec, hotelFare], "card", "column", "m")
 hotelHeading = ImageText("https://cache.marriott.com/is/image/marriotts7prod/ar-wuxsa-entrance-25469:Wide-Hor?wid=1336&fit=constrain", "AC Hotel Suzhou China 酒店入口", "AC Hotel Suzhou China", "姑苏区 · 人民路 1585 号", true, "horizontal")
 hotelIntro = TextContent("酒店以现代玻璃、石材结合江南白墙黑瓦的建筑元素；客房配有书桌和可调节阅读灯。", "small")
 hotelSpec = TextContent("11/21 入住 · 11/22 退房 · 3 位成人
 用房需求：双床房 1 间 + 大床房 1 间，预订时确认可售房型。", "small")
-hotelFare = Stack([hotelPrice, hotelActions], "row", "m", "center", "between")
+hotelFare = Card([hotelFareAmount, hotelActions], "clear", "row", "s", "center", "between", true)
+hotelFareAmount = Stack([hotelPrice], "column", "none")
 hotelPrice = BoldText("number", "¥1,180", "2 间 × 1 晚 · 住宿预算", "text", "lg")
 hotelActions = Buttons([Button("查看酒店", @OpenUrl("https://www.marriott.com/en-us/hotels/wuxsa-ac-hotel-suzhou-china/overview/"), "primary", "normal", "small")], "row")
 hotelCaution = TextContent("住宿按每间每晚 ¥590 预留预算，具体房型、早餐与退改条件以酒店查询为准。官网另提示周边施工，预订前需确认噪声影响与父母的出入需求。", "small")

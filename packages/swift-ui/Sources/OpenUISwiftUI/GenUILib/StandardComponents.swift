@@ -22,11 +22,7 @@ public enum OpenUIStandardComponents {
             },
             OpenUIReference.component("Image") { NativeContentImage(context: $0) },
             OpenUIReference.component("Button") { OpenUINativeButton(context: $0) },
-            OpenUIReference.component("Card") { context in
-                OpenUIStack(context: context)
-                    .modifier(OpenUICardSurface(theme: context.theme, variant: context.string("variant"), active: context.layoutConfigurationReady))
-                    .layoutValue(key: OpenUIFlexGrowKey.self, value: true)
-            }
+            OpenUIReference.component("Card") { OpenUIStyledCard(context: $0) }
         ]
         let byName = Dictionary(uniqueKeysWithValues: implementations.map { ($0.definition.name, $0) })
         let pinned = OpenUIReference.definitions.map { definition in

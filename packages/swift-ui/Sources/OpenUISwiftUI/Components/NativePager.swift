@@ -307,12 +307,12 @@ struct NativeCardGrid {
   func rows(width: CGFloat, count: Int) -> [Int] {
     guard count > 0 else { return [] }
     if responsive && singleColumn { return Array(repeating: 1, count: count) }
-    if responsive, let minimumColumnWidth, minimumColumnWidth.isFinite, minimumColumnWidth > 0 {
-      let columns = max(1, min(maxPerRow, Int((max(1, width) + spacing) / (minimumColumnWidth + spacing))))
-      return Array(repeating: columns, count: count / columns) + (count % columns > 0 ? [count % columns] : [])
-    }
-    if responsive && width <= 480 { return Array(repeating: 1, count: count) }
-    if responsive && width <= 768 || maxPerRow == 2 {
+    let minimum = minimumColumnWidth.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
+      ?? OpenUIPresentation.defaults.minimumCardWidth
+    let availableColumns = responsive
+      ? max(1, min(maxPerRow, Int((max(1, width) + spacing) / (minimum + spacing)))) : maxPerRow
+    if availableColumns == 1 { return Array(repeating: 1, count: count) }
+    if availableColumns == 2 {
       return Array(repeating: 2, count: count / 2) + (count % 2 == 1 ? [1] : [])
     }
     if count == 1 { return [1] }

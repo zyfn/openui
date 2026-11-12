@@ -25,6 +25,26 @@ enum NativeLayoutContract {
   static func collectionShapeReady(_ source: NativeSourceReadiness, count: Int) -> Bool {
     source.complete || (source.closed && source.expectedCount.map { $0 >= count } == true)
   }
+
+  /// Every contributor to a row must be known before exposing fluid media.
+  /// Native Card has a copy-independent width basis, so its text can continue
+  /// streaming without holding back already allocated image regions.
+  static func rowWidthReady(_ value: Value, source: NativeSourceReadiness, registry: ComponentRegistry) -> Bool {
+    switch value {
+    case .array(let values):
+      guard source.complete || source.closed else { return false }
+      guard source.valueIndices?.contains(where: { $0 == nil }) != true else { return false }
+      if let count = source.expectedCount, count != values.count { return false }
+      return values.enumerated().allSatisfy { rowWidthReady($0.element, source: source[$0.offset], registry: registry) }
+    case .element(let element):
+      let fields = registry.presentationLayoutFields(element.typeName)
+      if element.typeName == "Card", !fields.isEmpty {
+        return ready(element.sourceReadiness, fields: fields)
+      }
+      return element.isSourceComplete
+    default: return source.complete
+    }
+  }
 }
 
 /// Preserve a readable leading text prefix while its enclosing layout is still

@@ -64,7 +64,9 @@ final class StreamingLayoutContractTests: XCTestCase {
     for variant in ["clear", "card", "sunk"] {
       for count in [2, 3] {
         let children = (0..<count).map { "Card([Image(\"\($0)\",\"\")],\"\(variant)\")" }.joined(separator: ",")
-        settle("root=Stack([\(children)],\"row\",\"m\",\"start\",\"start\",true)")
+        // Explicit no-wrap still shares the offered width, even when an
+        // author deliberately chooses narrower columns than the reading basis.
+        settle("root=Stack([\(children)],\"row\",\"m\",\"start\",\"start\",false)")
         let inset: CGFloat = variant == "clear" ? 0 : OpenUIThemeValues().componentStyle.panelInset
         let cell = (320 - CGFloat(count - 1) * 12) / CGFloat(count)
         for index in 0..<count {
