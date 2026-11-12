@@ -5,8 +5,9 @@ The [component reference](SDK-REFERENCE.zh-CN.md) owns component-by-component
 presentation rules. This document owns compatibility, source ownership and
 verification boundaries; it does not maintain another table of default tokens.
 
-This describes main, including local candidates after RC19. A design statement
-is not evidence that an older release or a consuming app has adopted it.
+This records the RC20 design baseline. A design statement is not evidence that
+an older release or a consuming app has adopted it. SVG render-ready loading
+feedback and the proposed gallery last-row fill are not included in this release.
 
 ## 1. Preserve the contract; document native choices
 

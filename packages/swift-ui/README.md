@@ -4,7 +4,7 @@ OpenUI 的原生 SwiftUI 渲染 SDK，依赖方向为 `swift-ui → swift-lang �
 
 本文是整体设计入口，说明设计目标、组件职责和关键取舍。完整组件处理见 [SDK 设计与组件说明](SDK-REFERENCE.zh-CN.md)，渲染和验收边界见 [UI-DESIGN.md](UI-DESIGN.md)，公开 API 见 [组件编写](COMPONENTS.md)与[架构](ARCHITECTURE.md)。
 
-> **版本范围（2026-11-12）**：已发布基线为 [0.1.1-rc.19](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.19)。本文描述 main，包括其后的本地候选改动；不能据此认为 RC19 已具备所有新行为。图库末行铺满的方案已暂停，当前仍保持等宽图项。具体发行能力以 tag 和消费客户端导出的契约为准。
+> **版本范围（2026-11-12）**：本文对应 [0.1.1-rc.20](https://github.com/zyfn/openui/releases/tag/0.1.1-rc.20) 的设计。RC19 不包含本版后续的卡片、图库和预览改进。图库末行铺满的方案仍暂停；SVG 的 WebView 渲染完成阶段尚未补齐加载反馈。客户端是否采用本版，以实际依赖和导出的契约为准。
 
 ## 整体设计
 
@@ -156,12 +156,12 @@ This fork's published Swift SDK is distributed from `https://github.com/zyfn/ope
 For the released baseline, select the exact tag in Xcode or use:
 
 ```swift
-.package(url: "https://github.com/zyfn/openui.git", exact: "0.1.1-rc.19")
+.package(url: "https://github.com/zyfn/openui.git", exact: "0.1.1-rc.20")
 ```
 
-The design overview above also describes later main candidates. Use a local checkout
-to review those changes until a new tag is published. Other distributions must use
-their own repository URL and release identity.
+The design overview above describes RC20. Later main changes must be reviewed
+against their own revision; adopting this release does not update a client or its
+exported contract automatically. Other distributions must use their own release identity.
 
 For a language-only consumer, select `OpenUILang`. The nested manifests in
 `packages/swift-lang` and `packages/swift-ui` are local development entry points;
