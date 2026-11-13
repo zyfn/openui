@@ -55,7 +55,7 @@ const MapView = defineComponent({
   component: ({ props }) =>
     props.crs === "gcj02" ? (
       <p className="micro">
-        此 Web 标本只显示 WGS-84。GCJ-02 转换请在 Swift MapKit 宿主验证。
+        此 Web 预览只显示 WGS-84。GCJ-02 转换请在 Swift MapKit 宿主验证。
       </p>
     ) : (
       <MapSpecimen

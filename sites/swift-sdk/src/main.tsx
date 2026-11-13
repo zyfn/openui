@@ -30,7 +30,7 @@ import {
   SystemDesign,
   ReadinessMatrix,
   HostIntegration,
-  talkTrack,
+  overview,
 } from "./SystemArticle";
 import DesignFrontiers from "./DesignFrontiers";
 import { sdkBaseline } from "./baseline";
@@ -238,22 +238,15 @@ function App() {
             <br className="mobile-break" />
             SDK 负责渲染。
           </h1>
-          <p className="lede">{talkTrack}</p>
+          <p className="lede">{overview}</p>
           <p className="release-note">
             <a href={sdkBaseline.url} target="_blank" rel="noreferrer">
               当前发布：{sdkBaseline.label}
               <ArrowUpRight size={13} />
             </a>
-            <CopyButton text={talkTrack} label="复制讲解摘要" />
           </p>
-          <nav className="reading-route" aria-label="讲解提纲">
-            <a href="#principle">怎么生成界面</a>
-            <a href="#system">怎么统一设计</a>
-            <a href="#streaming">流式为什么难</a>
-            <a href="#frontiers">RC20 还缺什么</a>
-          </nav>
           <div className="hero-stage">
-            <div className="garden-grid" aria-label="生成过程交互标本">
+            <div className="garden-grid" aria-label="生成过程示意">
               {[
                 {
                   title: "湖边漫步",
@@ -372,10 +365,7 @@ function App() {
                   <span>交互</span>
                 </div>
               )}
-              <p className="micro">
-                此处为布局原理交互标本；下方可运行真实 Lang 的 React
-                预览。SwiftUI 的呈现与平台边界均在组件说明中列明。
-              </p>
+              <p className="micro">布局示意 · Web</p>
             </aside>
           </div>
         </section>
@@ -470,9 +460,7 @@ function App() {
                   </p>
                 )}
               </div>
-              <p className="micro">
-                原理标本，非原生渲染回放。拖动时间轴可观察稳定的两列与图片区。
-              </p>
+              <p className="micro">流式过程示意 · Web</p>
             </div>
           </div>
           <div className="difficulty-list concise-mechanisms">
@@ -507,13 +495,13 @@ function App() {
             ))}
           </div>
           <p className="micro">
-            内容自然增高属于正常布局变化；目标是减少无谓重排与重建。时间轴为原理标本。
+            内容自然增高属于正常布局变化；目标是减少无谓重排与重建。
           </p>
           <ReadinessMatrix />
         </section>
         <details className="reference-shelf" id="reference">
           <summary>
-            <span>交互标本与组件 API</span>
+            <span>组件示例与 API</span>
             <small>排版、按钮、表单、87 个组件、地图与 SVG</small>
           </summary>
           <div className="reference-panels">
@@ -735,7 +723,7 @@ function App() {
               </summary>
               <section className="section" id="composition">
                 <div className="chapter-heading">
-                  <p className="eyebrow">REFERENCE / 组件标本</p>
+                  <p className="eyebrow">REFERENCE / 组件示例</p>
                   <h3>卡片、按钮与表单。</h3>
                   <p>
                     容器管理空间，卡片的表面表达边界，表单收集并提交选择。透明
@@ -1113,7 +1101,7 @@ function App() {
             <details className="reference-panel">
               <summary>
                 <b>地图与 SVG</b>
-                <small>Web 标本与原生截图</small>
+                <small>Web 示例与原生截图</small>
               </summary>
               <section className="section" id="map-svg">
                 <div className="chapter-heading">
@@ -1131,9 +1119,7 @@ function App() {
                       <span className="subtle-label">Map · MapPoint</span>
                     </div>
                     <Suspense
-                      fallback={
-                        <div className="map-loading">加载地图标本…</div>
-                      }
+                      fallback={<div className="map-loading">加载地图…</div>}
                     >
                       <MapSpecimen />
                     </Suspense>
@@ -1186,7 +1172,7 @@ function App() {
                     <p className="micro">
                       原生采用隔离 WKWebView 与限制性
                       CSP，禁用脚本和外部引用；inline content 与 HTTPS src
-                      二选一，内容上限 1MB。Web 标本仅运行内置图形。
+                      二选一，内容上限 1MB。Web 示例仅运行内置图形。
                     </p>
                   </div>
                 </div>
@@ -1260,7 +1246,7 @@ function App() {
                     <code>
                       {String(reference.upstreamRevision).slice(0, 12)}
                     </code>
-                    。本页的架构图与流式时间轴属于教学标本，React 0.18.1 预览与
+                    。本页的架构图与流式时间轴属于交互示意，React 0.18.1 预览与
                     SwiftUI 的原生度量、手势和平台行为分别验证。
                   </p>
                   <p>

@@ -2375,23 +2375,6 @@ footer > a:last-child {
 }
 
 /* Keep the reading path short; reference panels retain the existing specimens. */
-.reading-route {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 24px;
-  padding: 0 0 26px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.reading-route a {
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 5px;
-}
-.release-note .copy {
-  padding: 0;
-  float: none;
-  font-size: 11px;
-}
 .compact-pipeline {
   min-height: 210px;
 }
@@ -2529,11 +2512,6 @@ footer > a:last-child {
   max-width: 800px;
 }
 @media (max-width: 700px) {
-  .reading-route {
-    font-size: 11px;
-    gap: 10px 18px;
-    padding-bottom: 23px;
-  }
   .compact-pipeline {
     min-height: 0;
   }

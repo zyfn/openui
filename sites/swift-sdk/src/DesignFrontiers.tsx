@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { sdkBaseline, sdkSource } from "./baseline";
+import { sdkSource } from "./baseline";
 const frontiers = [
   {
     id: "svg",
@@ -106,7 +106,7 @@ export default function DesignFrontiers() {
       <div className="chapter-heading">
         <p className="eyebrow">04 / 当前限制</p>
         <h2>RC20 仍需完成与验证的工作。</h2>
-        <p>发布基线为 {sdkBaseline.label}。以下状态区分实现缺口与验证范围。</p>
+        <p>SVG 渲染反馈尚未补齐，布局、手势和应用链路仍需补充验证。</p>
       </div>
       <div className="frontier-filters" role="group" aria-label="按状态筛选">
         {["全部", "待实现", "待验证"].map((k) => (
@@ -158,8 +158,8 @@ export default function DesignFrontiers() {
       <details className="gallery-decision">
         <summary>图库末行：当前等宽，铺满方案暂缓</summary>
         <p>
-          等宽便于比较，铺满会改变末行图片的尺寸和裁切。这里保留两种布局示意，未将备选方案写成
-          SDK 默认。
+          等宽便于比较，铺满会改变末行图片的尺寸与裁切。RC20
+          保持等宽，末行铺满方案暂缓。
         </p>
         <GalleryAlternatives />
       </details>

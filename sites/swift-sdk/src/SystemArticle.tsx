@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { sdkSource } from "./baseline";
 
-export const talkTrack =
+export const overview =
   "OpenUI Swift SDK 将 Agent 输出的界面描述（OpenUI Lang）渲染为原生界面。设计系统统一排版、颜色与组件行为；流式渲染管理布局、状态和资源，减少重排、闪动与选择丢失。";
 const source = `root = Stack([intro, details, actions], "column", "xl")
 intro = TextContent("先看对象，再决定下一步。")
@@ -74,8 +74,8 @@ export function WorkingPrinciple() {
         <p className="eyebrow">01 / 工作流程</p>
         <h2>模型描述结构，SDK 渲染组件。</h2>
         <p>
-          这里采用声明式 UI（Declarative UI）：模型输出组件、内容和动作，SDK
-          根据组件定义创建界面。点击下方环节可查看其输入与输出。
+          OpenUI 采用声明式 UI（Declarative UI）。模型声明组件、内容和动作，SDK
+          根据组件定义创建原生界面。
         </p>
       </div>
       <div className="pipeline">
@@ -124,7 +124,7 @@ export function WorkingPrinciple() {
           <pre className="pipeline-code">{selected.example}</pre>
         </article>
         <p className="pipeline-loop">
-          每个分片更新同一份程序；用户操作携带当前选择进入下一轮对话。此图为流程说明。
+          每个分片更新同一份程序；用户操作携带当前选择进入下一轮对话。
         </p>
       </div>
     </section>
@@ -156,7 +156,7 @@ const designParts = [
       "定义组件结构（Anatomy）、变体（Variants）和状态（States），包括选中、加载、禁用、失败及相应交互。",
     example: "按钮的可见尺寸与点击区域分开；表单提交读取最新选择。",
     href: "#composition",
-    label: "操作组件标本",
+    label: "查看组件示例",
   },
   {
     term: "Patterns",
@@ -176,8 +176,8 @@ export function SystemDesign() {
         <p className="eyebrow">02 / 设计系统</p>
         <h2>统一视觉、组件和组合规则。</h2>
         <p>
-          设计系统（Design
-          System）让不同内容使用一致的样式和行为。这里按四项说明；流式更新的实现机制放在下一节。
+          OpenUI
+          的设计系统包含视觉规范、设计变量、组件规范与组合模式，使不同内容使用一致的样式和行为。
         </p>
       </div>
       <div className="design-layers concise-layers">
@@ -210,13 +210,13 @@ export function SystemDesign() {
 function Terminology() {
   return (
     <details className="terminology">
-      <summary>术语说明与官方参考</summary>
+      <summary>术语与参考</summary>
       <div className="article-table-wrap">
         <table className="article-table">
           <thead>
             <tr>
               <th>术语</th>
-              <th>在本文中的含义</th>
+              <th>含义</th>
             </tr>
           </thead>
           <tbody>
@@ -251,10 +251,6 @@ function Terminology() {
           </tbody>
         </table>
       </div>
-      <p className="micro">
-        Readiness、OpenUIPresentation 等名称只用于 SDK
-        实现说明，不作为设计系统的分类。
-      </p>
       <div className="term-sources">
         <a
           href="https://m3.material.io/foundations/design-tokens/overview"
@@ -292,9 +288,7 @@ function Terminology() {
           React · State / Keys <ArrowUpRight size={13} />
         </a>
       </div>
-      <p className="micro">
-        以上用于核对术语。OpenUI 的具体取值与平台行为以 SDK 为准。
-      </p>
+      <p className="micro">OpenUI 的具体取值与平台行为以 SDK 为准。</p>
     </details>
   );
 }
