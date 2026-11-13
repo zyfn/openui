@@ -56,20 +56,25 @@ final class NativeSliderDraft: ObservableObject {
   @Published private(set) var values: [Double] = []
   @Published private(set) var text: [String] = []
   private var external: [Double] = []
+  private var pending: [Double]?
+  private var work: Task<Void, Never>?
   var commit: (([Double]) -> Void)?
 
   func receive(_ values: [Double]) {
     guard values != external || self.values.isEmpty else { return }
     external = values
     if values != self.values {
+      work?.cancel(); work = nil; pending = nil
       self.values = values; text = values.map(jsNumberString)
     }
   }
   func edit(_ input: String, at index: Int) {
     guard text.indices.contains(index) else { return }
     text[index] = input
-    let number = toNumber(.string(input))
-    guard number.isFinite else { return }
+    // Empty or malformed edits must never become an implicit numeric zero.
+    // Keep incomplete input visible without changing the committed value.
+    let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty, let number = Double(trimmed), number.isFinite else { return }
     var next = values; next[index] = number
     values = next
     schedule(next)
@@ -81,15 +86,24 @@ final class NativeSliderDraft: ObservableObject {
     values = next; text = next.map(jsNumberString)
     schedule(next)
   }
-  // Committed values must be observable before a form action can read them.
-  // Keep invalid/incomplete numeric text local; only finite numbers are written.
+  // Coalesce rapid edits while ensuring a form action can synchronously
+  // flush the last valid draft before reading its Store payload.
   private func schedule(_ values: [Double]) {
-    guard values != external else { return }
-    external = values
-    commit?(values)
+    pending = values
+    work?.cancel()
+    work = Task { @MainActor [weak self] in
+      do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
+      self?.flush()
+    }
   }
-  // Retained for existing focus/disappear call sites; there is no delayed write.
-  func flush() { }
+  func flush() {
+    work?.cancel(); work = nil
+    guard let pending else { return }
+    self.pending = nil
+    external = pending
+    commit?(pending)
+  }
+  deinit { work?.cancel() }
 }
 
 private struct NativeSliderTarget: Equatable {
