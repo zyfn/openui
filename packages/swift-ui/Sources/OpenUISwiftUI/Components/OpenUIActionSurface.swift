@@ -36,7 +36,11 @@ public struct OpenUIActionSurface<Content: View>: View {
     private var button: some View {
         Button(role:role) {
             guard !performing, context.canActivate else { return }
+            // A form submission must see the latest local draft, even when
+            // the user taps its action before the edit debounce expires.
+            if needsValidation { validation?.flushPendingWrites() }
             if validateForm && needsValidation && validation?.validateAll() == false { return }
+            guard context.canActivate else { return }
             performing = true
             Task { @MainActor in
                 defer { performing = false }
