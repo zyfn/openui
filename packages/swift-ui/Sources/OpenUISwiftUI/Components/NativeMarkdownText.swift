@@ -69,7 +69,7 @@ struct NativeMarkdownText: View {
       .markdownBlockStyle(\.heading5) { heading($0.label, font: theme.textBodySmHeavy, role: .detail, before: theme.spaceM) }
       .markdownBlockStyle(\.heading6) { heading($0.label, font: theme.textBodyXs.weight(theme.textBodySmHeavy.weight), role: .caption, before: theme.spaceM) }
       .markdownBlockStyle(\.codeBlock) { configuration in
-        NativeCodeBlockContent(code: OpenUIString(configuration.content.trimmingCharacters(in: .whitespacesAndNewlines)),
+        NativeCodeBlockContent(code: OpenUIString(configuration.content),
           language: OpenUIString(NativeMarkdownCode.language(configuration.language)), theme: theme)
           .markdownMargin(top: theme.spacing("s"), bottom: theme.spacing("s"))
       }
