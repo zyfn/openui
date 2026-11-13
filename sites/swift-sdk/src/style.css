@@ -2353,57 +2353,6 @@ footer > a:last-child {
   font-weight: 400;
   letter-spacing: 0;
 }
-.workflow-diagram {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  list-style: none;
-  padding: 0;
-  margin: 36px 0 0;
-}
-.workflow-diagram li {
-  position: relative;
-  padding: 24px 18px;
-  min-width: 0;
-}
-.workflow-diagram li + li {
-}
-.workflow-diagram li:not(:last-child)::after {
-  content: "→";
-  position: absolute;
-  right: -8px;
-  top: 65px;
-  z-index: 1;
-  background: var(--page);
-  color: var(--muted);
-  font-size: 15px;
-}
-.workflow-topline {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 10px;
-  margin-bottom: 22px;
-}
-.workflow-topline small {
-  font-size: inherit;
-}
-.workflow-diagram h3 {
-  font-size: 16px;
-  letter-spacing: -0.02em;
-}
-.workflow-diagram .standard-term {
-  font-size: 10px;
-  line-height: 1.5;
-  min-height: 30px;
-  margin: 5px 0 13px;
-}
-.workflow-diagram li > p:last-child {
-  font-size: 12px;
-  line-height: 1.85;
-  color: var(--muted);
-  margin: 0;
-}
 .system-map {
   margin: 38px 0 26px;
   border: 1px solid var(--line);
@@ -2866,17 +2815,6 @@ footer > a:last-child {
   max-width: 800px;
 }
 @media (max-width: 1000px) {
-  .workflow-diagram {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .workflow-diagram li:nth-child(4) {
-    border-left: 0;
-  }
-  .workflow-diagram li:nth-child(n + 4) {
-  }
-  .workflow-diagram li:nth-child(3)::after {
-    content: none;
-  }
   .system-layers > li {
     grid-template-columns: 115px minmax(0, 1fr);
     gap: 20px;
@@ -2899,10 +2837,6 @@ footer > a:last-child {
   }
 }
 @media (max-width: 700px) {
-  .workflow-diagram {
-    grid-template-columns: 1fr;
-    margin-top: 24px;
-  }
   :root {
     scroll-padding-top: 120px;
   }
@@ -2938,25 +2872,6 @@ footer > a:last-child {
     font-size: 10px;
     padding: 10px 0;
     white-space: normal;
-  }
-  .workflow-diagram li {
-    padding: 19px 0;
-  }
-  .workflow-diagram li + li {
-  }
-  .workflow-topline {
-    margin-bottom: 10px;
-  }
-  .workflow-diagram .standard-term {
-    min-height: 0;
-    margin-bottom: 10px;
-  }
-  .workflow-diagram li:not(:last-child)::after {
-    content: "↓";
-    right: 15px;
-    top: auto;
-    bottom: -10px;
-    padding: 0 6px;
   }
   .system-map {
     margin-top: 26px;
@@ -3377,4 +3292,465 @@ footer > a:last-child {
 .anatomy-object.surface-clear > span {
   padding-left: 0;
   padding-right: 0;
+}
+
+/* Runtime diagrams use boundaries for ownership and arrows for data flow. */
+.principle-part {
+  margin-top: 48px;
+}
+.principle-part-heading {
+  max-width: 850px;
+}
+.principle-part-heading .eyebrow {
+  margin-bottom: 12px;
+}
+.principle-part-heading > p:last-child {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.runtime-architecture {
+  margin: 28px 0 0;
+}
+.runtime-architecture > figcaption {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: 14px;
+  font-weight: 550;
+  margin-bottom: 18px;
+}
+.runtime-architecture > figcaption > span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.runtime-architecture-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(250px, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+.runtime-architecture-map,
+.runtime-architecture-columns > *,
+.runtime-lab-columns > * {
+  min-width: 0;
+}
+.runtime-agent {
+  padding: 6px 20px;
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  font-size: 13px;
+}
+.runtime-agent > b {
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.runtime-agent > span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.runtime-connector {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.runtime-host-boundary {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.runtime-node {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.15s;
+}
+.runtime-node:hover {
+  background: var(--wash);
+}
+.runtime-node[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--page);
+}
+.runtime-node b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+}
+.runtime-node code {
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.runtime-node > span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.runtime-sdk-boundary {
+  padding: 18px;
+  margin-top: 10px;
+  background: var(--panel);
+  border-radius: 10px;
+}
+.runtime-scope-heading,
+.runtime-area-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+  margin-bottom: 18px;
+}
+.runtime-scope-heading {
+  justify-content: space-between;
+}
+.runtime-scope-heading > span,
+.runtime-area-label > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.runtime-area-label {
+  margin: 4px 12px 10px;
+  color: var(--ink);
+  font-weight: 550;
+}
+.runtime-core-modules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 5px;
+}
+.runtime-native-modules {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 3px;
+}
+.runtime-native-arrow {
+  color: var(--muted);
+}
+.runtime-theme-rail,
+.runtime-execution-note,
+.runtime-return-path {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 10px 12px 0;
+}
+.runtime-theme-rail {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+.runtime-return-path {
+  text-align: center;
+  margin: 14px 0 2px;
+}
+.runtime-module-detail {
+  position: sticky;
+  top: 100px;
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 24px;
+  scroll-margin-top: 115px;
+}
+.runtime-return-button {
+  display: none;
+}
+.runtime-module-detail .eyebrow {
+  margin-bottom: 14px;
+}
+.runtime-module-detail h4 {
+  font-size: 19px;
+}
+.runtime-detail-api {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  margin: 8px 0 18px;
+  color: var(--muted);
+}
+.runtime-module-detail > p:not(.eyebrow),
+.runtime-module-detail dd {
+  font-size: 13px;
+  line-height: 1.85;
+}
+.runtime-module-detail dl {
+  margin: 22px 0;
+}
+.runtime-module-detail dl > div + div {
+  margin-top: 15px;
+}
+.runtime-module-detail dt {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.runtime-module-detail dd {
+  margin: 0;
+}
+.runtime-package-note,
+.runtime-closing-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.9;
+  margin: 22px 0 0;
+}
+.runtime-package-note b,
+.runtime-closing-note b {
+  color: var(--ink);
+  font-weight: 550;
+}
+.runtime-contract-origin {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  padding: 17px 22px;
+  border-radius: 9px;
+  background: var(--wash);
+  font-size: 13px;
+  margin: 24px 0 20px;
+}
+.runtime-contract-origin > span {
+  color: var(--muted);
+}
+.runtime-contract-branches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+.runtime-contract-branches b {
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--ink);
+}
+.runtime-contract-branches p {
+  font-size: 13px;
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+.runtime-contract-note {
+  margin: 20px 0 0;
+}
+.runtime-update-paths {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  gap: 10px;
+}
+.runtime-update-paths li {
+  padding: 18px;
+  border-radius: 10px;
+}
+.runtime-update-paths li[data-active="true"] {
+  background: var(--wash);
+}
+.runtime-update-paths h4 {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 15px;
+}
+.runtime-update-paths h4 > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.runtime-update-paths p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.85;
+  margin: 10px 0 0;
+}
+.runtime-path,
+.runtime-path > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.runtime-path > span {
+  color: var(--text);
+  font-size: 11px;
+}
+.runtime-path svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.runtime-lab {
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 24px;
+}
+.runtime-lab-heading,
+.runtime-state-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.runtime-lab-heading {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 22px;
+}
+.runtime-lab-heading .quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 4px 0;
+}
+.runtime-lab-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 32px;
+}
+.runtime-lab h4 {
+  font-size: 13px;
+}
+.runtime-program > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 7px 0 14px;
+}
+.runtime-lab pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.9;
+  margin: 12px 0 0;
+  color: var(--text);
+}
+.runtime-state-heading code {
+  display: block;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.runtime-output {
+  display: grid;
+  gap: 6px;
+  margin: 24px 0 18px;
+}
+.runtime-output > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.runtime-output > strong {
+  font-size: 19px;
+  font-weight: 550;
+  color: var(--ink);
+}
+.runtime-demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.runtime-demo-actions .pill:not(.primary) {
+  border: 1px solid var(--line);
+}
+.runtime-event {
+  margin-top: 26px;
+}
+.runtime-event pre {
+  min-height: 165px;
+}
+.runtime-lab > .micro {
+  margin: 22px 0 0;
+  max-width: 850px;
+}
+@media (max-width: 1000px) {
+  .runtime-architecture-columns {
+    grid-template-columns: minmax(0, 1.85fr) minmax(225px, 1fr);
+    gap: 16px;
+  }
+  .runtime-core-modules {
+    grid-template-columns: 1fr;
+  }
+  .runtime-agent {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .runtime-lab-columns {
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+}
+@media (max-width: 700px) {
+  .principle-part {
+    margin-top: 35px;
+  }
+  .principle-part-heading > p:last-child {
+    font-size: 14px;
+  }
+  .runtime-architecture-columns,
+  .runtime-lab-columns,
+  .runtime-contract-branches,
+  .runtime-update-paths {
+    grid-template-columns: 1fr;
+  }
+  .runtime-module-detail {
+    position: static;
+    padding: 20px;
+  }
+  .runtime-return-button {
+    display: block;
+    font-size: 12px;
+    margin-top: 18px;
+    padding: 0;
+  }
+  .runtime-host-boundary {
+    padding: 10px;
+  }
+  .runtime-sdk-boundary {
+    padding: 12px 9px;
+  }
+  .runtime-node {
+    padding: 10px;
+  }
+  .runtime-native-modules {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .runtime-native-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+  .runtime-contract-origin {
+    padding: 16px 18px;
+    gap: 6px;
+  }
+  .runtime-contract-branches {
+    gap: 18px;
+  }
+  .runtime-update-paths {
+    gap: 5px;
+  }
+  .runtime-update-paths li {
+    padding: 15px;
+  }
+  .runtime-lab {
+    padding: 18px;
+  }
+  .runtime-lab-columns {
+    gap: 30px;
+  }
 }

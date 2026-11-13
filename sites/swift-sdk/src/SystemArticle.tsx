@@ -1,76 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { LoaderCircle, ImageOff } from "lucide-react";
 import tokens from "../public/generated/tokens.json";
+export { default as WorkingPrinciple } from "./WorkingPrinciple";
 
 export const overview =
   "OpenUI Swift SDK 将 Agent 输出的界面描述（OpenUI Lang）渲染为原生界面。设计系统统一排版、颜色与组件行为；流式渲染管理布局、状态和资源，减少重排、闪动与选择丢失。";
-
-const stages = [
-  [
-    "组件契约",
-    "Component Contract",
-    "组件库",
-    "名称、参数、槽位与动作形成统一契约，供生成、校验和渲染共同使用。",
-  ],
-  [
-    "声明式描述",
-    "Declarative UI",
-    "Agent",
-    "用 OpenUI Lang 选择组件、填入内容、声明绑定与动作。",
-  ],
-  [
-    "解析与求值",
-    "Parsing & Evaluation",
-    "语言核心",
-    "解析引用和表达式，把程序与当前状态求值为组件树。",
-  ],
-  [
-    "原生呈现",
-    "Native Rendering",
-    "SwiftUI",
-    "按设计系统和可用空间呈现组件；资源到达时更新已有视图。",
-  ],
-  [
-    "状态与事件",
-    "State & Events",
-    "组件",
-    "输入和选择更新本地状态；提交读取当前值并产生动作事件。",
-  ],
-  [
-    "应用处理",
-    "Host Integration",
-    "客户端",
-    "处理导航、工具或继续对话，把实际结果交回 Agent。",
-  ],
-];
-export function WorkingPrinciple() {
-  return (
-    <section
-      className="section"
-      id="principle"
-      aria-labelledby="principle-title"
-    >
-      <div className="chapter-heading">
-        <p className="eyebrow">01 / 工作原理</p>
-        <h2 id="principle-title">从界面描述到原生交互。</h2>
-        <p>生成、运行时和客户端各自承担明确职责，组件契约贯穿整个流程。</p>
-      </div>
-      <ol className="workflow-diagram" aria-label="生成与交互流程">
-        {stages.map(([title, term, owner, description], index) => (
-          <li key={term}>
-            <div className="workflow-topline">
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <small>{owner}</small>
-            </div>
-            <h3>{title}</h3>
-            <p className="standard-term">{term}</p>
-            <p>{description}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
 
 const systemSections = [
   ["scale", "2.1", "排版与颜色"],
