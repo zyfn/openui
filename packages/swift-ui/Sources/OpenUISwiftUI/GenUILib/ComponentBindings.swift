@@ -79,7 +79,7 @@ enum OpenUIDisplayComponents {
             OpenUIReference.component("CodeBlock") { NativeCodeBlock(context: $0) },
             OpenUIReference.component("Col") { _ in EmptyView() },
             OpenUIReference.component("Table") { NativeDataTable(context: $0) },
-            OpenUIReference.component("EditableTable") { NativeEditableTable(context: $0) },
+            OpenUIReference.component("EditableTable") { context in MainActor.assumeIsolated { NativeEditableTable(context: context) } },
             OpenUIReference.component("AccordionItem") { _ in EmptyView() },
             OpenUIReference.component("Accordion") { NativeAccordion(context: $0) },
             OpenUIReference.component("MetricIndicatorWithStrikethrough") {
