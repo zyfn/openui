@@ -129,23 +129,11 @@ struct OpenUIFlexLayout: Layout {
             return result
         }
         if !wrap {
-            // Offer the least flexible children space first, as a native stack
-            // does. No media/content percentage or component-type heuristic.
-            var remaining = max(0, width - gap * CGFloat(subviews.count - 1))
-            let order = subviews.indices.sorted { ideal[$0].width < ideal[$1].width }
-            for (position, index) in order.enumerated() {
-                let offered = min(ideal[index].width, remaining / CGFloat(order.count - position))
-                proposals[index] = max(0, offered)
-                remaining = max(0, remaining - subviews[index].sizeThatFits(ProposedViewSize(width: offered, height: nil)).width)
-            }
-            let growing = subviews.indices.filter { subviews[$0][OpenUIFlexGrowKey.self] }
-            if !growing.isEmpty {
-                let intrinsicWidth = subviews.indices.filter { !subviews[$0][OpenUIFlexGrowKey.self] }
-                    .reduce(CGFloat.zero) { sum, index in
-                        sum + subviews[index].sizeThatFits(ProposedViewSize(width: proposals[index], height: nil)).width
-                    }
-                let share = max(0, width - gap * CGFloat(subviews.count - 1) - intrinsicWidth) / CGFloat(growing.count)
-                for index in growing { proposals[index] = share }
+            proposals = NativeFlexRowWidths.proposals(
+                ideal: ideal.map(\.width), growing: subviews.map { $0[OpenUIFlexGrowKey.self] },
+                width: width, gap: gap
+            ) { index, offered in
+                subviews[index].sizeThatFits(ProposedViewSize(width: offered, height: nil)).width
             }
         }
         var dimensions = subviews.indices.map {
@@ -219,8 +207,6 @@ enum OpenUIWrappedFlexRows {
     }
 }
 
-enum NativeMediaRowAxis { case horizontal, vertical }
-
 /// Only an unspecified thumbnail may trade image width for reading space.
 /// All values are local presentation hints; authored imageSize stays fixed.
 struct NativeAdaptiveThumbnail {
@@ -260,51 +246,6 @@ struct NativeListMediaLayout {
             imageWidth = min(preferred, width)
             axis = .vertical
         }
-    }
-}
-
-/// Media keeps its declared dimensions; copy wraps in the remaining space.
-/// Direction is explicit rather than inferred from the length of the copy.
-enum NativeMediaRowPlacement {
-    struct Result {
-        var media: CGRect
-        var text: CGRect
-        var size: CGSize
-        var stacked: Bool
-    }
-
-    static func measure(width: CGFloat, media idealMedia: CGSize, gap: CGFloat,
-                        axis: NativeMediaRowAxis,
-                        centered: Bool, text: (CGFloat) -> CGSize) -> Result {
-        let width = width.isFinite ? max(1, width) : 1
-        func finite(_ value: CGFloat) -> CGFloat { value.isFinite ? max(0, value) : 0 }
-        func copy(_ proposed: CGFloat) -> CGSize {
-            let measured = text(max(1, proposed))
-            return CGSize(width: max(max(1, proposed), finite(measured.width)), height: finite(measured.height))
-        }
-        let full = copy(width)
-        let media = CGSize(width: finite(idealMedia.width), height: finite(idealMedia.height))
-        let gap = media.width > 0 && media.height > 0 ? max(0, gap) : 0
-        let remaining = max(0, width - media.width - gap)
-        let beside = copy(remaining)
-        if axis == .vertical {
-            let textFrame = CGRect(x: 0, y: media.height + gap, width: full.width, height: full.height)
-            return Result(media: CGRect(origin: CGPoint(x: centered ? max(0, (width - media.width) / 2) : 0, y: 0), size: media), text: textFrame,
-                          size: CGSize(width: max(width, max(media.width, full.width)), height: textFrame.maxY), stacked: true)
-        }
-
-        // Explicit horizontal layout remains horizontal. Preserve fixed media
-        // dimensions and give over-constrained copy its full viewport width.
-        // Scrolling then reveals that readable paragraph without a private
-        // minimum width, smaller font, or automatic direction change.
-        let overflows = remaining <= 0 || beside.width > remaining + 0.5
-        let measured = overflows ? full : beside
-        let height = max(media.height, measured.height)
-        let mediaY = centered ? (height - media.height) / 2 : 0
-        let textY = centered ? (height - measured.height) / 2 : 0
-        let textFrame = CGRect(x: media.width + gap, y: textY, width: measured.width, height: measured.height)
-        return Result(media: CGRect(origin: CGPoint(x: 0, y: mediaY), size: media), text: textFrame,
-                      size: CGSize(width: max(width, textFrame.maxX), height: height), stacked: false)
     }
 }
 

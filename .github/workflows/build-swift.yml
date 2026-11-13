@@ -34,7 +34,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
-        run: swift --version
+        shell: bash
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/openui-swift-logs"
+          {
+            printf 'repository=%s\nrun_id=%s\nrun_attempt=%s\nevent=%s\nworkflow_sha=%s\npr_head=%s\npr_base=%s\n' \
+              "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_EVENT_NAME" \
+              "$GITHUB_SHA" "$PR_HEAD_SHA" "$PR_BASE_SHA"
+            printf 'checkout_sha='
+            git rev-parse HEAD
+            swift --version
+            xcodebuild -version
+          } 2>&1 | tee "$RUNNER_TEMP/openui-swift-logs/provenance.log"
       - name: Verify bundled shared core
         run: |
           npm ci --prefix packages/swift-lang/scripts --ignore-scripts
@@ -47,7 +62,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/openui-swift-logs"
           swift test 2>&1 | tee "$RUNNER_TEMP/openui-swift-logs/sdk-tests.log"
       - name: Authoring validator
-        run: node --test packages/swift-lang/validation/validation.test.mjs
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/openui-swift-logs"
+          node --test packages/swift-lang/validation/validation.test.mjs \
+            2>&1 | tee "$RUNNER_TEMP/openui-swift-logs/authoring.log"
       - name: Language runtime memory checks
         shell: bash
         run: |
