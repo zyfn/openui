@@ -25,7 +25,7 @@ struct OpenUINativeButton: View {
     private var button: some View {
         OpenUIActionSurface(
             context: context, message: context.string("label") ?? "", action: context.value("action"),
-            role: role, useNativeStyle: true, validateForm: variant == "primary", showsProgress: true
+            role: role, useNativeStyle: true, validateForm: true, showsProgress: true
         ) {
             Text(context.string("label") ?? "").fixedSize(horizontal: false, vertical: true)
                 // The parent lays out the outer touch target. Expanding the label
