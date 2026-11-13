@@ -229,7 +229,11 @@ enum NativePagerContentHeight {
   static func measure(_ heights: [CGFloat], selected: Int, translation: CGFloat = 0, stride: CGFloat = 1) -> CGFloat {
     // One natural cross-axis extent for the mounted track. Selection and drag
     // affect horizontal placement, never the following document's position.
-    heights.filter(\.isFinite).map { max(0, $0) }.max() ?? 0
+    var height: CGFloat = 0
+    for value in heights where value.isFinite {
+      height = max(height, value)
+    }
+    return height
   }
 }
 
@@ -284,13 +288,14 @@ private struct NativePagerLayout: Layout {
       return
     }
     let heights = subviews.map { $0.sizeThatFits(ProposedViewSize(width: layout.pageWidth, height: nil)).height }
+    let trackHeight = NativePagerContentHeight.measure(heights, selected: selected)
     for (index, view) in subviews.enumerated() {
       let position = CGFloat(index) * layout.stride - layout.offset + translation
       let x = rightToLeft ? bounds.width - layout.pageWidth - position : position
       view.place(
         at: CGPoint(x: bounds.minX + x, y: bounds.minY), anchor: .topLeading,
         proposal: ProposedViewSize(width: layout.pageWidth,
-          height: NativePagerContentHeight.measure(heights, selected: selected)))
+          height: trackHeight))
     }
   }
 }

@@ -254,11 +254,21 @@ public final class OpenUIState: ObservableObject {
 
     /// Host-owned full-response and editing surfaces can retain user state.
     public func setSource(_ text: String, streaming: Bool = false) {
-        // Completion snapshots are often delivered more than once. Replaying
-        // identical final bytes is not a new program or a request to reset UI.
-        if !streaming, !isInterrupted, source.utf16.elementsEqual(text.utf16) {
-            complete()
-            return
+        // Hosting updates may replay the same full buffer. Compare UTF-16,
+        // not Swift's canonically equivalent String equality: the runtime
+        // preserves distinct code-unit spellings in literals and state keys.
+        if !isInterrupted, source.utf16.elementsEqual(text.utf16) {
+            if !streaming {
+                // An unchanged final snapshot must still commit the trailing
+                // token and enable completed actions exactly once.
+                complete()
+                return
+            }
+            if !isComplete, latestResult != nil {
+                // A repeated in-flight snapshot changes neither content nor
+                // readiness. Do not reparse, publish, or advance callback IDs.
+                return
+            }
         }
         // Full-buffer streaming is also supported: a growing UTF-16 prefix is
         // the same presentation, including its final completion snapshot.

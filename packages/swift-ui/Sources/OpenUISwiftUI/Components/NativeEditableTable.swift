@@ -29,15 +29,22 @@ struct NativeTableDraft {
     return rows[row].values[column]
   }
   func changes(columns: Int) -> Int {
-    rows.reduce(0) { count, row in
-      guard let previous = baseline.first(where: { $0.id == row.id }) else { return count }
-      return count
-        + (0..<columns).filter { index in
-          let a = row.values.indices.contains(index) ? row.values[index] : .undefined
-          let b = previous.values.indices.contains(index) ? previous.values[index] : .undefined
-          return a != b
-        }.count
+    guard columns > 0, !rows.isEmpty else { return 0 }
+    // Match the first baseline row for each ID, as before, without scanning
+    // the whole baseline for every displayed row. Keep this index local so
+    // load/reset/commit cannot leave a stale, independently owned cache.
+    let previousRows = Dictionary(baseline.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first })
+    var count = 0
+    for row in rows {
+      guard let previous = previousRows[row.id] else { continue }
+      for index in 0..<columns {
+        let a = row.values.indices.contains(index) ? row.values[index] : .undefined
+        let b = previous.values.indices.contains(index) ? previous.values[index] : .undefined
+        if a != b { count += 1 }
+      }
     }
+    return count
   }
   mutating func reset() { rows = baseline }
   mutating func commit() { baseline = rows }
