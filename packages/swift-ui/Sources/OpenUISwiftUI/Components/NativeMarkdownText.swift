@@ -19,11 +19,13 @@ struct NativeMarkdownText: View {
   @Environment(\.cardSources) private var sources
   @Environment(\.openURL) private var openURL
   @Environment(\.openUIInlineLinksReady) private var linksReady
+  @Environment(\.openUIStreamActive) private var streamActive
   @Environment(\.openUIActivationIntent) private var activationIntent
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.multilineTextAlignment) private var textAlignment
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
   @StateObject private var math = NativeMathRenderer()
+  @StateObject private var streamText = NativeStreamingTextBuffer()
   @State private var prepared: String?
   @State private var preparedRequest: NativeRichTextRequest?
   @State private var citation: NativeCitationSelection?
@@ -38,12 +40,15 @@ struct NativeMarkdownText: View {
   private var font: OpenUIFont { (style.font ?? inheritedFont ?? theme.textBodyDefault).resolved(for: style.role) }
   private var mathSize: CGFloat { font.size * scale }
   private var mathColor: String { NativeCSSColor.css(foreground, scheme: colorScheme) }
+  private var visibleText: String {
+    streamActive ? (streamText.displayed ?? text) : text
+  }
   private var request: NativeRichTextRequest {
-    .init(source: OpenUIString(text), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
+    .init(source: OpenUIString(visibleText), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
   }
 
   var body: some View {
-    MarkdownUI.Markdown(preparedRequest == request ? prepared ?? text : text,
+    MarkdownUI.Markdown(preparedRequest == request ? prepared ?? visibleText : visibleText,
       baseURL: resources.baseURL, imageBaseURL: resources.baseURL)
       .markdownTextStyle {
         ForegroundColor(foreground)
@@ -94,6 +99,13 @@ struct NativeMarkdownText: View {
         NativeCitationSources(indices: selected.indices, sources: sources)
           .environment(\.openUITheme, theme).environment(\.openUIResourceContext, resources)
       }
+      // Source parsing and Store publication are never throttled; only the
+      // native text presentation is coalesced. Do not animate reflow of
+      // already-visible paragraphs as the final line grows.
+      .transaction { if streamActive { $0.animation = nil } }
+      .onAppear { streamText.receive(text, streaming: streamActive) }
+      .onChange(of: text) { next in streamText.receive(next, streaming: streamActive) }
+      .onChange(of: streamActive) { active in streamText.receive(text, streaming: active) }
       .task(id: request) {
         let current = request
         let worker = Task.detached(priority: .userInitiated) {
@@ -108,10 +120,10 @@ struct NativeMarkdownText: View {
           guard !Task.isCancelled else { return }
           // Keep readable source on a resource/parse failure; the language
           // runtime's diagnostic and state channels remain independent.
-          prepared = text; preparedRequest = current
+          prepared = current.source.displayString; preparedRequest = current
         }
       }
-      .onDisappear { math.cancel() }
+      .onDisappear { streamText.cancel(); math.cancel() }
   }
   @ViewBuilder private func heading<Content: View>(_ content: Content, font: OpenUIFont, role: NativeTextRole, before: CGFloat) -> some View {
     let resolved = font.resolved(for: role)
