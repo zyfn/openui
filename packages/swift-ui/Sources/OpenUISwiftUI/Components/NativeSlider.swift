@@ -56,15 +56,12 @@ final class NativeSliderDraft: ObservableObject {
   @Published private(set) var values: [Double] = []
   @Published private(set) var text: [String] = []
   private var external: [Double] = []
-  private var pending: [Double]?
-  private var work: Task<Void, Never>?
   var commit: (([Double]) -> Void)?
 
   func receive(_ values: [Double]) {
     guard values != external || self.values.isEmpty else { return }
     external = values
     if values != self.values {
-      work?.cancel(); pending = nil
       self.values = values; text = values.map(jsNumberString)
     }
   }
@@ -84,21 +81,15 @@ final class NativeSliderDraft: ObservableObject {
     values = next; text = next.map(jsNumberString)
     schedule(next)
   }
+  // Committed values must be observable before a form action can read them.
+  // Keep invalid/incomplete numeric text local; only finite numbers are written.
   private func schedule(_ values: [Double]) {
-    pending = values
-    work?.cancel()
-    work = Task { @MainActor [weak self] in
-      do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
-      self?.flush()
-    }
+    guard values != external else { return }
+    external = values
+    commit?(values)
   }
-  func flush() {
-    work?.cancel(); work = nil
-    guard let pending else { return }
-    self.pending = nil
-    commit?(pending)
-  }
-  deinit { work?.cancel() }
+  // Retained for existing focus/disappear call sites; there is no delayed write.
+  func flush() { }
 }
 
 private struct NativeSliderTarget: Equatable {
