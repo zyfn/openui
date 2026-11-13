@@ -120,11 +120,14 @@ private struct NativeSliderTarget: Equatable {
 
 struct NativeSliderField: View {
     @Environment(\.locale) private var locale
+  @Environment(\.openUIFormValidation) private var validation
   let context: OpenUIComponentContext
   @Environment(\.openUIFieldLabel) private var fieldLabel
   @Environment(\.dynamicTypeSize) private var typeSize
   @ScaledMetric(relativeTo: .body) private var valueWidth: CGFloat = 88
   @StateObject private var draft = NativeSliderDraft()
+  @State private var pendingWriteOwner = UUID()
+  @State private var registeredPendingName: OpenUIString?
   @State private var picker: NativeSliderPickerRequest?
   @FocusState private var focusedValue: Int?
   private var field: NativeFieldState { .init(context: context) }
@@ -167,13 +170,19 @@ struct NativeSliderField: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .foregroundStyle(context.theme.textNeutralPrimary)
-    .onAppear { configure(target); draft.receive(external) }
-    .onChange(of: target) { configure($0) }
+    .onAppear { configure(target); draft.receive(external); registerPendingWrite() }
+    .onChange(of: target) { configure($0); registerPendingWrite() }
     .onChange(of: external) { draft.receive($0) }
     .onChange(of: context.presentationSourceRevision) { _ in picker = nil }
     .onChange(of: context.canInteract) { ready in if !ready { picker = nil } }
     .onChange(of: draft.values.count) { count in if let picker, picker.index >= count { self.picker = nil } }
-    .onDisappear { draft.flush() }
+    .onDisappear {
+      draft.flush()
+      if let name = registeredPendingName {
+        validation?.unregisterPendingWrite(name, owner: pendingWriteOwner)
+      }
+      registeredPendingName = nil
+    }
     .sheet(item: $picker) { request in
       if draft.values.indices.contains(request.index) {
         NativeSliderPicker(configuration: configuration, current: draft.values[request.index],
@@ -186,6 +195,18 @@ struct NativeSliderField: View {
           }
       }
     }
+  }
+  private func registerPendingWrite() {
+    guard let validation else { return }
+    let name = field.name
+    if let old = registeredPendingName, old != name {
+      validation.unregisterPendingWrite(old, owner: pendingWriteOwner)
+    }
+    let currentDraft = draft
+    validation.registerPendingWrite(name, owner: pendingWriteOwner) { [weak currentDraft] in
+      currentDraft?.flush()
+    }
+    registeredPendingName = name
   }
   private func configure(_ target: NativeSliderTarget) {
     draft.commit = { values in
