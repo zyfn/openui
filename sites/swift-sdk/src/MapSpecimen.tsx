@@ -19,6 +19,7 @@ const places = [
 type Place = { name: string; description: string; lat: number; lng: number };
 export default function MapSpecimen({ points = places }: { points?: Place[] }) {
   const container = useRef<HTMLDivElement>(null);
+  const cards = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef<L.Marker[]>([]);
   const [selected, setSelected] = useState(0);
@@ -88,6 +89,16 @@ export default function MapSpecimen({ points = places }: { points?: Place[] }) {
     return () => clearTimeout(t);
   }, [full]);
   useEffect(() => {
+    const strip = cards.current;
+    const card = strip?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (strip && card) {
+      strip.scrollTo({
+        left: card.offsetLeft - (strip.clientWidth - card.clientWidth) / 2,
+        behavior: "auto",
+      });
+    }
+  }, [selected, full]);
+  useEffect(() => {
     if (!full) return;
     const handle = (e: KeyboardEvent) => {
       if (e.key === "Escape") setFull(false);
@@ -115,7 +126,7 @@ export default function MapSpecimen({ points = places }: { points?: Place[] }) {
       >
         {full ? <X size={18} /> : <Maximize2 size={18} />}
       </button>
-      <div className="map-place-cards">
+      <div className="map-place-cards" ref={cards}>
         {points.map((p, i) => (
           <button
             key={p.name}
