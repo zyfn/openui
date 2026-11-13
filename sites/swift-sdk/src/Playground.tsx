@@ -42,37 +42,6 @@ export default function Playground({
         实际 Lang · React 0.18.1 预览。地图与图解使用标明边界的 Web
         适配器，原生行为见下方说明。动作仅显示事件，不跳转、不调用交易。
       </p>
-      <label className="source-label">
-        编辑源码
-        <textarea
-          spellCheck={false}
-          aria-label="Lang 源码"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-        />
-      </label>
-      <div className="preview-actions">
-        <button
-          className="pill primary"
-          onClick={() => {
-            setSource(draft);
-            setRevision((r) => r + 1);
-            setEvent(null);
-          }}
-        >
-          运行这段 Lang
-        </button>
-        <button
-          className="quiet"
-          onClick={() => {
-            setDraft(initialSource);
-            setSource(initialSource);
-            setRevision((r) => r + 1);
-          }}
-        >
-          恢复原稿
-        </button>
-      </div>
       <div className="react-preview" key={revision}>
         <ThemeContext.Provider value={chartTheme}>
           <Renderer
@@ -83,6 +52,40 @@ export default function Playground({
           />
         </ThemeContext.Provider>
       </div>
+      <details className="example-source">
+        <summary>编辑 OpenUI Lang</summary>
+        <label className="source-label">
+          编辑源码
+          <textarea
+            spellCheck={false}
+            aria-label="Lang 源码"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+        </label>
+        <div className="preview-actions">
+          <button
+            className="pill primary"
+            onClick={() => {
+              setSource(draft);
+              setRevision((r) => r + 1);
+              setEvent(null);
+            }}
+          >
+            运行这段 Lang
+          </button>
+          <button
+            className="quiet"
+            onClick={() => {
+              setDraft(initialSource);
+              setSource(initialSource);
+              setRevision((r) => r + 1);
+            }}
+          >
+            恢复原稿
+          </button>
+        </div>
+      </details>
       {errors.length > 0 && (
         <details>
           <summary>{errors.length} 条预览诊断</summary>

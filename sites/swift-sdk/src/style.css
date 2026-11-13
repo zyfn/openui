@@ -295,7 +295,6 @@ main {
   gap: 14px;
   flex-wrap: wrap;
   padding: 0 0 20px;
-  border-bottom: 1px solid var(--line);
   margin-bottom: 20px;
 }
 .pill {
@@ -349,7 +348,6 @@ main {
   font-size: 13px;
   font-weight: 550;
   padding: 16px 0;
-  border-top: 1px solid var(--line);
 }
 .rotated {
   transform: rotate(180deg);
@@ -397,7 +395,6 @@ main {
 }
 .section {
   padding: 64px 0;
-  border-top: 1px solid var(--line);
   scroll-margin-top: 0;
 }
 .split {
@@ -461,7 +458,6 @@ main {
   justify-content: space-between;
   gap: 16px;
   padding: 13px 0;
-  border-bottom: 1px solid var(--line);
   align-items: center;
   min-height: 58px;
 }
@@ -490,7 +486,6 @@ main {
   gap: 25px;
   margin-top: 42px;
   padding-top: 28px;
-  border-top: 1px solid var(--line);
 }
 .swatch {
   display: flex;
@@ -559,7 +554,6 @@ main {
 .experiment {
   min-width: 0;
   padding-top: 24px;
-  border-top: 1px solid var(--line);
 }
 .experiment-head {
   display: flex;
@@ -823,7 +817,6 @@ details[open] > summary {
   display: flex;
   gap: 20px;
   overflow: auto;
-  border-bottom: 1px solid var(--line);
   margin: 14px 0 26px;
 }
 .category-strip button {
@@ -879,7 +872,6 @@ details[open] > summary {
   background: var(--panel);
 }
 .component-detail {
-  border-left: 1px solid var(--line);
   padding-left: 35px;
   min-width: 0;
   scroll-margin-top: 100px;
@@ -1214,7 +1206,6 @@ details[open] > summary {
 }
 .reading a {
   padding: 14px 0;
-  border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1236,7 +1227,6 @@ details[open] > summary {
 footer {
   max-width: 1280px;
   margin: 0 auto;
-  border-top: 1px solid var(--line);
   padding: 30px 28px 50px;
   display: flex;
   justify-content: space-between;
@@ -1563,8 +1553,6 @@ footer > a:last-child {
     grid-column: 1/-1;
   }
   .component-detail {
-    border-left: 0;
-    border-top: 1px solid var(--line);
     padding: 24px 0 0;
   }
   .detail-title h3,
@@ -1885,7 +1873,6 @@ footer > a:last-child {
 .readiness-explainer {
   margin-top: 36px;
   padding-top: 28px;
-  border-top: 1px solid var(--line);
 }
 .readiness-explainer h3 {
   font-size: 20px;
@@ -1914,7 +1901,6 @@ footer > a:last-child {
 .article-table th,
 .article-table td {
   padding: 15px 18px 15px 0;
-  border-bottom: 1px solid var(--line);
   vertical-align: top;
   font-size: 13px;
   line-height: 1.8;
@@ -2012,7 +1998,6 @@ footer > a:last-child {
   display: flex;
   flex-wrap: wrap;
   gap: 14px 28px;
-  border-bottom: 1px solid var(--line);
   padding-top: 15px;
 }
 .frontier-filters button {
@@ -2027,7 +2012,6 @@ footer > a:last-child {
 }
 .frontier {
   margin: 0;
-  border-bottom: 1px solid var(--line);
   scroll-margin-top: 100px;
 }
 .frontier-title {
@@ -2375,8 +2359,6 @@ footer > a:last-child {
   list-style: none;
   padding: 0;
   margin: 36px 0 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
 }
 .workflow-diagram li {
   position: relative;
@@ -2384,7 +2366,6 @@ footer > a:last-child {
   min-width: 0;
 }
 .workflow-diagram li + li {
-  border-left: 1px solid var(--line);
 }
 .workflow-diagram li:not(:last-child)::after {
   content: "→";
@@ -2458,7 +2439,6 @@ footer > a:last-child {
   position: relative;
 }
 .system-layers > li + li {
-  border-top: 1px solid var(--line);
 }
 .system-layers > li:not(:last-child)::after {
   content: "↓";
@@ -2621,7 +2601,6 @@ footer > a:last-child {
   gap: 10px 30px;
   padding: 17px 24px;
   background: var(--panel);
-  border-top: 1px solid var(--line);
   font-size: 11px;
   color: var(--muted);
 }
@@ -2822,7 +2801,6 @@ footer > a:last-child {
 .parameter-reference {
   margin: 24px 0;
   padding-top: 20px;
-  border-top: 1px solid var(--line);
 }
 .parameter-reference h4 {
   font-size: 12px;
@@ -2839,7 +2817,6 @@ footer > a:last-child {
 .event-flow li {
   position: relative;
   padding-top: 18px;
-  border-top: 2px solid var(--line);
 }
 .event-flow li:not(:last-child)::after {
   content: "→";
@@ -2896,7 +2873,6 @@ footer > a:last-child {
     border-left: 0;
   }
   .workflow-diagram li:nth-child(n + 4) {
-    border-top: 1px solid var(--line);
   }
   .workflow-diagram li:nth-child(3)::after {
     content: none;
@@ -2967,8 +2943,6 @@ footer > a:last-child {
     padding: 19px 0;
   }
   .workflow-diagram li + li {
-    border-left: 0;
-    border-top: 1px solid var(--line);
   }
   .workflow-topline {
     margin-bottom: 10px;
@@ -3129,4 +3103,278 @@ footer > a:last-child {
     grid-template-columns: 1fr;
     gap: 23px;
   }
+}
+
+/* Interaction belongs to the existing specimens; page hierarchy uses space. */
+.system-layers > li {
+  padding: 28px 0;
+}
+.system-layers > li:not(:last-child)::after {
+  background: transparent;
+}
+.variant-examples > button,
+.state-examples > button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--wash);
+}
+.variant-examples > button[aria-pressed="true"],
+.state-examples > button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--invert);
+}
+.variant-examples > button:hover,
+.state-examples > button:hover {
+  filter: brightness(0.95);
+}
+.anatomy-object {
+  background: var(--sdk-foreground);
+  border-color: var(--sdk-borderDefault);
+}
+.anatomy-object.surface-sunk {
+  background: var(--sdk-sunk);
+  border-color: transparent;
+}
+.anatomy-object.surface-clear {
+  background: transparent;
+  border-color: transparent;
+}
+.anatomy-object > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.anatomy-object small {
+  color: var(--muted);
+  font-size: 9px;
+  min-width: 40px;
+}
+.anatomy-object span:last-child {
+  background: transparent;
+}
+.anatomy-object.state-selected {
+  outline: 2px solid var(--sdk-interactiveAccentDefault);
+  outline-offset: 2px;
+}
+.anatomy-object.state-error .anatomy-body {
+  color: var(--sdk-textDangerPrimary);
+}
+.diagram-action {
+  border-radius: 99px;
+  background: var(--sdk-interactiveAccentDefault);
+  color: var(--sdk-background);
+  padding: 5px 9px;
+  font-size: 10px;
+}
+.anatomy-object.state-loading .diagram-action {
+  opacity: 1;
+}
+.anatomy-object.state-disabled .diagram-action {
+  background: var(--sdk-interactiveAccentDisabled);
+}
+.loading-spin {
+  animation: control-spin 1.1s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes control-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.geometry-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.geometry-controls h4 {
+  margin-bottom: 0;
+}
+.spacing-scale > button {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 44px;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 10px 12px;
+  width: 100%;
+  border-radius: 9px;
+}
+.spacing-scale > button code,
+.spacing-scale > button b {
+  font-size: 11px;
+  font-weight: 400;
+}
+.spacing-scale > button b {
+  text-align: right;
+}
+.spacing-scale > button[aria-pressed="true"] {
+  background: var(--wash);
+}
+.spacing-scale > button:hover {
+  background: var(--panel);
+}
+.radius-scale > button {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 4px;
+  border-radius: 10px;
+}
+.radius-scale > button > span {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  background: var(--sdk-sunk);
+}
+.radius-scale > button code,
+.radius-scale > button b {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.radius-scale > button[aria-pressed="true"] {
+  background: var(--wash);
+}
+.geometry-live {
+  margin-top: 30px;
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 20px;
+}
+.geometry-live-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  align-items: center;
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.geometry-live-meta code {
+  color: var(--ink);
+  margin: 0 5px;
+  font-size: 10px;
+}
+.geometry-live-meta .quiet {
+  margin-left: auto;
+  padding: 0;
+}
+.geometry-live-layout {
+  display: flex;
+  align-items: center;
+  border-radius: var(--sdk-radius3xl);
+  background: var(--sdk-highlight);
+  min-height: 126px;
+}
+.geometry-content-block {
+  flex: 1;
+  min-width: 0;
+  padding: 18px 5px;
+  background: var(--sdk-foreground);
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+}
+.geometry-shape-button {
+  background: var(--sdk-interactiveAccentDefault);
+  color: var(--sdk-background);
+  flex-shrink: 0;
+  padding: 12px 18px;
+  font-size: 12px;
+}
+.button-phases {
+  margin-bottom: 14px;
+}
+.action-example {
+  gap: 7px;
+}
+.phase-performing .action-example:disabled {
+  opacity: 1;
+}
+.phase-disabled .action-example:disabled {
+  background: var(--sdk-interactiveAccentDisabled);
+  opacity: 1;
+}
+.live-example {
+  min-height: 160px;
+}
+.preview-loading {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.example-source {
+  margin-top: 20px;
+}
+.playground > .micro {
+  margin-bottom: 14px;
+}
+.article-table thead th {
+  border-bottom: 1px solid var(--line);
+}
+.article-table tbody tr:hover {
+  background: var(--panel);
+}
+.swatches {
+  padding-top: 0;
+  margin-top: 32px;
+}
+@media (max-width: 700px) {
+  .geometry-live {
+    padding: 14px;
+  }
+  .geometry-live-meta {
+    font-size: 10px;
+    gap: 8px 14px;
+  }
+  .geometry-live-meta code {
+    font-size: 9px;
+  }
+  .geometry-content-block {
+    font-size: 10px;
+    padding: 16px 4px;
+  }
+  .geometry-shape-button {
+    font-size: 11px;
+    padding: 11px 13px;
+  }
+  .spacing-scale > button {
+    grid-template-columns: 80px minmax(0, 1fr) 40px;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+  .radius-scale > button > span {
+    width: 42px;
+    height: 42px;
+  }
+  .radius-scale > button code {
+    font-size: 9px;
+  }
+}
+
+.action-example {
+  position: relative;
+}
+.button-progress {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.anatomy-object.surface-clear > span {
+  padding-left: 0;
+  padding-right: 0;
 }

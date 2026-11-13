@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { LoaderCircle, ImageOff } from "lucide-react";
 import tokens from "../public/generated/tokens.json";
 
 export const overview =
@@ -79,7 +80,23 @@ const systemSections = [
   ["map-svg", "2.5", "地图与 SVG"],
   ["integration", "2.6", "组合模式"],
 ];
-export function SystemDesign({ children }: { children: ReactNode }) {
+export function SystemDesign({
+  children,
+  variant,
+  onVariantChange,
+}: {
+  children: ReactNode;
+  variant: string;
+  onVariantChange: (value: string) => void;
+}) {
+  const [state, setState] = useState("default");
+  const states = [
+    { value: "default", label: "默认" },
+    { value: "selected", label: "选中" },
+    { value: "loading", label: "加载" },
+    { value: "disabled", label: "禁用" },
+    { value: "error", label: "失败" },
+  ];
   return (
     <section
       className="section system-chapter"
@@ -95,7 +112,7 @@ export function SystemDesign({ children }: { children: ReactNode }) {
       </div>
       <figure className="system-map" aria-labelledby="system-map-title">
         <figcaption id="system-map-title">
-          设计系统结构 <span>Design System Architecture</span>
+          设计系统结构 <span>Design System Architecture · Web</span>
         </figcaption>
         <ol className="system-layers">
           <li>
@@ -165,10 +182,43 @@ export function SystemDesign({ children }: { children: ReactNode }) {
                 <b>
                   结构 <span>Anatomy</span>
                 </b>
-                <div className="anatomy-object">
-                  <span>标题 / Header</span>
-                  <span>内容 / Body</span>
-                  <span>操作 / Actions</span>
+                <div
+                  className={`anatomy-object surface-${variant} state-${state}`}
+                  aria-label="组件结构与状态预览"
+                  aria-busy={state === "loading"}
+                >
+                  <span>
+                    <small>Header</small>对象名称
+                  </span>
+                  <span className="anatomy-body" aria-live="polite">
+                    <small>Body</small>
+                    {state === "loading" ? (
+                      <>
+                        <LoaderCircle size={14} className="loading-spin" />
+                        资源加载中
+                      </>
+                    ) : state === "error" ? (
+                      <>
+                        <ImageOff size={14} />
+                        资源未能加载
+                      </>
+                    ) : (
+                      "对象内容"
+                    )}
+                  </span>
+                  <span>
+                    <small>Actions</small>
+                    <button
+                      className="diagram-action"
+                      aria-pressed={state === "selected"}
+                      disabled={state === "disabled" || state === "loading"}
+                      onClick={() =>
+                        setState(state === "selected" ? "default" : "selected")
+                      }
+                    >
+                      {state === "selected" ? "取消选择" : "选择对象"}
+                    </button>
+                  </span>
                 </div>
               </div>
               <div>
@@ -176,9 +226,15 @@ export function SystemDesign({ children }: { children: ReactNode }) {
                   变体 <span>Variants</span>
                 </b>
                 <div className="variant-examples">
-                  <span className="variant-card">card</span>
-                  <span className="variant-sunk">sunk</span>
-                  <span>clear</span>
+                  {["card", "sunk", "clear"].map((value) => (
+                    <button
+                      key={value}
+                      aria-pressed={variant === value}
+                      onClick={() => onVariantChange(value)}
+                    >
+                      {value}
+                    </button>
+                  ))}
                 </div>
                 <p>同一内容结构，采用不同的容器表面。</p>
               </div>
@@ -187,13 +243,16 @@ export function SystemDesign({ children }: { children: ReactNode }) {
                   状态 <span>States</span>
                 </b>
                 <div className="state-examples">
-                  <span>默认</span>
-                  <span className="selected-state">选中</span>
-                  <span>加载</span>
-                  <span className="disabled-state">禁用</span>
-                  <span>失败</span>
+                  {states.map((item) => (
+                    <button
+                      key={item.value}
+                      aria-pressed={state === item.value}
+                      onClick={() => setState(item.value)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
-                <p>状态对应真实输入、资源与动作结果。</p>
               </div>
             </div>
           </li>
@@ -238,7 +297,29 @@ export function SystemDesign({ children }: { children: ReactNode }) {
   );
 }
 
+const spacingKeys = [
+  "space2xs",
+  "spaceS",
+  "spaceM",
+  "spaceML",
+  "spaceXl",
+  "space2xl",
+] as const;
+const radiusKeys = [
+  "radiusXs",
+  "radiusM",
+  "radiusXl",
+  "radius3xl",
+  "radiusFull",
+] as const;
+type SpacingKey = (typeof spacingKeys)[number];
+type RadiusKey = (typeof radiusKeys)[number];
 export function LayoutFoundations() {
+  const [target, setTarget] = useState<"padding" | "gap">("padding");
+  const [padding, setPadding] = useState<SpacingKey>("spaceML");
+  const [gap, setGap] = useState<SpacingKey>("spaceM");
+  const [radius, setRadius] = useState<RadiusKey>("radiusFull");
+  const currentSpacing = target === "padding" ? padding : gap;
   return (
     <section
       className="section system-subsection"
@@ -249,34 +330,48 @@ export function LayoutFoundations() {
         <p className="eyebrow">2.2 / Foundations · Spacing & Shape</p>
         <h3 id="geometry-title">间距表达关系，形状建立边界。</h3>
         <p>
-          内边距（Padding）属于容器，项目间距（Gap）属于排列。圆角（Corner
-          Radius）决定表面的轮廓，不代替内容分组。
+          Padding 控制容器内边距，Gap 控制项目间距；Corner Radius
+          控制轮廓。选择现有 Token，预览中的尺寸同步变化。
         </p>
       </div>
       <div className="geometry-specimens">
         <div>
-          <h4>
-            间距阶梯 <span>Spacing Scale</span>
-          </h4>
+          <div className="geometry-controls">
+            <h4>
+              间距阶梯 <span>Spacing Scale</span>
+            </h4>
+            <div className="segmented" role="group" aria-label="间距作用位置">
+              <button
+                aria-pressed={target === "padding"}
+                onClick={() => setTarget("padding")}
+              >
+                Padding
+              </button>
+              <button
+                aria-pressed={target === "gap"}
+                onClick={() => setTarget("gap")}
+              >
+                Gap
+              </button>
+            </div>
+          </div>
           <div className="spacing-scale">
-            {(
-              [
-                "space2xs",
-                "spaceS",
-                "spaceM",
-                "spaceML",
-                "spaceXl",
-                "space2xl",
-              ] as const
-            ).map((key) => (
-              <div key={key}>
+            {spacingKeys.map((key) => (
+              <button
+                key={key}
+                aria-pressed={currentSpacing === key}
+                aria-label={`${target === "padding" ? "内边距" : "项目间距"} ${key} ${tokens.metrics[key]} pt`}
+                onClick={() =>
+                  target === "padding" ? setPadding(key) : setGap(key)
+                }
+              >
                 <code>{key}</code>
                 <span
                   className="spacing-bar"
                   style={{ width: tokens.metrics[key] * 3 }}
                 />
                 <b>{tokens.metrics[key]} pt</b>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -285,16 +380,12 @@ export function LayoutFoundations() {
             圆角阶梯 <span>Radius Scale</span>
           </h4>
           <div className="radius-scale">
-            {(
-              [
-                "radiusXs",
-                "radiusM",
-                "radiusXl",
-                "radius3xl",
-                "radiusFull",
-              ] as const
-            ).map((key) => (
-              <div key={key}>
+            {radiusKeys.map((key) => (
+              <button
+                key={key}
+                aria-pressed={radius === key}
+                onClick={() => setRadius(key)}
+              >
                 <span style={{ borderRadius: tokens.metrics[key] }} />
                 <code>{key}</code>
                 <b>
@@ -302,21 +393,46 @@ export function LayoutFoundations() {
                     ? "胶囊形"
                     : `${tokens.metrics[key]} pt`}
                 </b>
-              </div>
+              </button>
             ))}
           </div>
-          <div className="layout-anatomy" aria-label="容器内边距与项目间距示意">
-            <span className="padding-label">Padding · 内边距</span>
-            <div>
-              <span>内容 A</span>
-              <b>
-                Gap
-                <br />
-                项目间距
-              </b>
-              <span>内容 B</span>
-            </div>
-          </div>
+        </div>
+      </div>
+      <div className="geometry-live">
+        <div className="geometry-live-meta">
+          <span>
+            Padding <code>{padding}</code> {tokens.metrics[padding]} pt
+          </span>
+          <span>
+            Gap <code>{gap}</code> {tokens.metrics[gap]} pt
+          </span>
+          <span>
+            Corner Radius <code>{radius}</code>
+          </span>
+          <button
+            className="quiet"
+            onClick={() => {
+              setPadding("spaceML");
+              setGap("spaceM");
+              setRadius("radiusFull");
+            }}
+          >
+            重置
+          </button>
+        </div>
+        <div
+          className="geometry-live-layout"
+          aria-label="内边距与项目间距预览"
+          style={{ padding: tokens.metrics[padding], gap: tokens.metrics[gap] }}
+        >
+          <div className="geometry-content-block">内容 A</div>
+          <div className="geometry-content-block">内容 B</div>
+          <button
+            className="geometry-shape-button"
+            style={{ borderRadius: tokens.metrics[radius] }}
+          >
+            操作
+          </button>
         </div>
       </div>
     </section>

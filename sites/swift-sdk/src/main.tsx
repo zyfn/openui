@@ -24,7 +24,8 @@ import {
 import tokens from "../public/generated/tokens.json";
 import reference from "../public/generated/reference.json";
 import "./style.css";
-import PreviewBoundary from "./PreviewBoundary";
+import LiveExample from "./LiveExample";
+import ButtonPreview from "./ButtonPreview";
 import {
   WorkingPrinciple,
   SystemDesign,
@@ -35,7 +36,6 @@ import {
 } from "./SystemArticle";
 import DesignFrontiers from "./DesignFrontiers";
 import { sdkBaseline } from "./baseline";
-const Playground = lazy(() => import("./Playground"));
 const MapSpecimen = lazy(() => import("./MapSpecimen"));
 const github = "https://github.com/zyfn/openui";
 const lake =
@@ -101,14 +101,10 @@ function App() {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("全部");
   const [selected, setSelected] = useState("Card");
-  const [preview, setPreview] = useState(false);
   const [example, setExample] = useState("");
   const [step, setStep] = useState(4);
   const [streamPlay, setStreamPlay] = useState(false);
   const [variant, setVariant] = useState("card");
-  const [size, setSize] = useState("small");
-  const [filled, setFilled] = useState(false);
-  const [target, setTarget] = useState(false);
   const [chosen, setChosen] = useState(["自然松弛"]);
   const [submitted, setSubmitted] = useState(false);
   const [status, setStatus] = useState("neutral");
@@ -169,7 +165,6 @@ function App() {
   const choose = (c: ComponentInfo) => {
     setSelected(c.name);
     setExample(c.examples[0] || "");
-    setPreview(false);
     history.replaceState(null, "", `#component-${c.name}`);
   };
   useEffect(() => {
@@ -181,7 +176,6 @@ function App() {
       if (component) {
         setSelected(component.name);
         setExample(component.examples[0] || "");
-        setPreview(false);
       }
       const target = document.getElementById(component ? "components" : hash);
       if (!target) return;
@@ -365,7 +359,7 @@ function App() {
           </div>
         </section>
         <WorkingPrinciple />
-        <SystemDesign>
+        <SystemDesign variant={variant} onVariantChange={setVariant}>
           <div className="system-content" id="reference">
             <div className="system-sections">
               <section className="section system-subsection" id="scale">
@@ -571,7 +565,7 @@ function App() {
               <section className="section system-subsection" id="composition">
                 <div className="chapter-heading">
                   <p className="eyebrow">
-                    2.3 / Components · Anatomy, Variants & States
+                    2.3 / Components · Anatomy, Variants & States · Web
                   </p>
                   <h3>卡片、按钮与表单。</h3>
                   <p>
@@ -615,62 +609,7 @@ function App() {
                     </p>
                   </div>
                   <div className="experiment">
-                    <div className="experiment-head">
-                      <h4>按钮的尺寸与触控区域</h4>
-                      <select
-                        aria-label="按钮档位"
-                        value={size}
-                        onChange={(e) => setSize(e.target.value)}
-                      >
-                        {["extra-small", "small", "medium", "large"].map(
-                          (s) => (
-                            <option key={s}>{s}</option>
-                          ),
-                        )}
-                      </select>
-                    </div>
-                    <div className="button-stage">
-                      <div
-                        className={target ? "touch-target" : ""}
-                        style={{ width: filled ? "100%" : undefined }}
-                      >
-                        <button
-                          className={`sdk-button ${size}`}
-                          style={{ width: filled ? "100%" : undefined }}
-                          onClick={() => setTarget(!target)}
-                        >
-                          查看详情
-                        </button>
-                      </div>
-                    </div>
-                    <div className="inline-controls">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={filled}
-                          onChange={(e) => setFilled(e.target.checked)}
-                        />
-                        纵排铺满
-                      </label>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={target}
-                          onChange={(e) => setTarget(e.target.checked)}
-                        />
-                        显示触控范围
-                      </label>
-                    </div>
-                    <p className="micro">
-                      可见最小高度{" "}
-                      {
-                        { "extra-small": 28, small: 32, medium: 40, large: 48 }[
-                          size
-                        ]
-                      }
-                      pt；外层目标至少 44pt。small 常用于卡内入口，large
-                      留给独立主要操作。
-                    </p>
+                    <ButtonPreview />
                   </div>
                 </div>
                 <div className="experiment-grid">
@@ -879,12 +818,6 @@ function App() {
                       <span className="subtle-label">{current.purpose}</span>
                     </div>
                     <p>{current.treatment}</p>
-                    <div className="parameter-reference">
-                      <h4>参数与位置顺序</h4>
-                      <pre className="signature">{current.signature}</pre>
-                      <p className="micro">{current.description}</p>
-                      <CopyButton text={current.signature} />
-                    </div>
                     {activeExample ? (
                       <>
                         <div className="preview-toolbar">
@@ -895,7 +828,6 @@ function App() {
                               value={activeExample.id}
                               onChange={(e) => {
                                 setExample(e.target.value);
-                                setPreview(false);
                               }}
                             >
                               {currentExamples.map((e) => (
@@ -905,39 +837,25 @@ function App() {
                               ))}
                             </select>
                           </label>
-                          <button
-                            className="pill primary"
-                            onClick={() => setPreview(!preview)}
-                          >
-                            <Code2 size={14} />
-                            {preview ? "收起预览" : "打开可编辑预览"}
-                          </button>
+                          <span className="subtle-label">交互预览 · React</span>
                         </div>
-                        {preview ? (
-                          <PreviewBoundary key={activeExample.id}>
-                            <Suspense
-                              fallback={<p className="micro">加载交互预览…</p>}
-                            >
-                              <Playground
-                                key={activeExample.id}
-                                initialSource={activeExample.source}
-                                dark={dark}
-                              />
-                            </Suspense>
-                          </PreviewBoundary>
-                        ) : (
-                          <p className="micro">
-                            {activeExample.origin}。预览使用固定版本 React
-                            组件与相同 Lang；Swift
-                            的表面、触控与流式就绪策略以本页说明为准。
-                          </p>
-                        )}
+                        <LiveExample
+                          id={activeExample.id}
+                          source={activeExample.source}
+                          dark={dark}
+                        />
                       </>
                     ) : (
                       <p className="note">
                         这是由父级消费的记录或原生专属能力。请结合上方用途与参数使用；地图和图解可在下文交互查看。
                       </p>
                     )}
+                    <div className="parameter-reference">
+                      <h4>参数与位置顺序</h4>
+                      <pre className="signature">{current.signature}</pre>
+                      <p className="micro">{current.description}</p>
+                      <CopyButton text={current.signature} />
+                    </div>
                   </article>
                 </div>
               </section>
