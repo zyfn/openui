@@ -103,7 +103,7 @@ final class LiveElementIndexTests: XCTestCase {
     XCTAssertNotEqual(children[0].statementId, children[1].statementId)
     for child in children {
       let stale = EvaluatedElement(typeName: child.typeName, props: child.props,
-        partial: child.partial, statementId: child.statementId, isSourceComplete: false)
+        statementId: child.statementId, partial: child.partial, isSourceComplete: false)
       XCTAssertTrue(state.liveElement(matching: stale) === child)
     }
   }
@@ -114,7 +114,7 @@ final class LiveElementIndexTests: XCTestCase {
     state.setSource("root=Stack([first])\nfirst=TextContent(\"Before\")\n")
     let first = try XCTUnwrap(PropValue.children(try XCTUnwrap(state.root)).first)
     let stale = EvaluatedElement(typeName: first.typeName, props: first.props,
-      partial: first.partial, statementId: first.statementId, isSourceComplete: false)
+      statementId: first.statementId, partial: first.partial, isSourceComplete: false)
     XCTAssertTrue(state.liveElement(matching: stale) === first)
     state.setSource("root=Stack([first])\nfirst=TextContent(\"After\")\n")
     XCTAssertTrue(state.liveElement(matching: stale) === stale,
