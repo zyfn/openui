@@ -69,6 +69,21 @@ export default function MapSpecimen({ points = places }: { points?: Place[] }) {
     );
   }, [selected, JSON.stringify(points)]);
   useEffect(() => {
+    const element = container.current;
+    if (!element) return;
+    const observer = new ResizeObserver((entries) => {
+      if (
+        entries.some(
+          (entry) =>
+            entry.contentRect.width > 0 && entry.contentRect.height > 0,
+        )
+      )
+        map.current?.invalidateSize();
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
     const t = setTimeout(() => map.current?.invalidateSize(), 100);
     return () => clearTimeout(t);
   }, [full]);

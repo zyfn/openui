@@ -2373,3 +2373,208 @@ footer > a:last-child {
     font-size: 13px;
   }
 }
+
+/* Keep the reading path short; reference panels retain the existing specimens. */
+.reading-route {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  padding: 0 0 26px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.reading-route a {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+}
+.release-note .copy {
+  padding: 0;
+  float: none;
+  font-size: 11px;
+}
+.compact-pipeline {
+  min-height: 210px;
+}
+.concise-layers article {
+  padding: 23px 0;
+}
+.terminology {
+  margin-top: 22px;
+}
+.terminology > summary {
+  font-size: 12px;
+}
+.term-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 18px;
+}
+.term-sources a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.terminology .article-table {
+  min-width: 480px;
+}
+.terminology .article-table th {
+  width: 27%;
+}
+.concise-mechanisms {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 35px;
+  margin-top: 32px;
+}
+.concise-mechanisms .mechanism-term {
+  font-size: 10px;
+  margin: 5px 0 10px;
+  line-height: 1.5;
+}
+.readiness-explainer > summary {
+  font-size: 12px;
+}
+.reference-shelf {
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+.reference-shelf > summary {
+  padding: 25px 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 22px;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 550;
+}
+.reference-shelf > summary::-webkit-details-marker {
+  display: none;
+}
+.reference-shelf > summary:after {
+  content: "+";
+  margin-left: auto;
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--muted);
+}
+.reference-shelf[open] > summary:after {
+  content: "−";
+}
+.reference-shelf > summary > small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.reference-shelf[open] > summary {
+  margin: 0;
+}
+.reference-panels {
+  padding-bottom: 30px;
+}
+.reference-panel {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.reference-panel > summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  padding: 18px 0;
+  font-size: 13px;
+  list-style: inside;
+}
+.reference-panel > summary b {
+  font-weight: 550;
+}
+.reference-panel > summary small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.reference-panel[open] > summary {
+  margin: 0;
+}
+.reference-panel > .section {
+  padding: 24px 0 40px;
+  border: 0;
+}
+.reference-panel .chapter-heading > h3,
+.reference-panel .article-copy > h3,
+.reference-panel .catalog-heading h3 {
+  font-size: 28px;
+  line-height: 1.35;
+  margin-bottom: 18px;
+}
+.reference-panel .article-reference {
+  padding: 20px 0 35px;
+}
+.reference-panel > .section > .split > .article-copy > p {
+  font-size: 14px;
+}
+.gallery-decision {
+  margin: 25px 0 0;
+}
+.gallery-decision > summary {
+  font-size: 12px;
+}
+.gallery-decision > p {
+  margin-top: 15px;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 800px;
+}
+@media (max-width: 700px) {
+  .reading-route {
+    font-size: 11px;
+    gap: 10px 18px;
+    padding-bottom: 23px;
+  }
+  .compact-pipeline {
+    min-height: 0;
+  }
+  .concise-layers article {
+    padding: 22px 0;
+  }
+  .concise-mechanisms {
+    grid-template-columns: 1fr;
+    gap: 23px;
+  }
+  .concise-mechanisms .mechanism-term {
+    font-size: 9px;
+    margin-top: 5px;
+  }
+  .reference-shelf > summary {
+    padding: 22px 0;
+    font-size: 15px;
+    gap: 6px;
+  }
+  .reference-shelf > summary small {
+    font-size: 10px;
+    flex-basis: 80%;
+    order: 1;
+  }
+  .reference-shelf > summary:after {
+    font-size: 20px;
+  }
+  .reference-panel > summary {
+    font-size: 12px;
+    gap: 6px 15px;
+    padding: 17px 0;
+  }
+  .reference-panel > summary small {
+    font-size: 10px;
+  }
+  .reference-panel > .section {
+    padding: 20px 0 32px;
+  }
+  .reference-panel .chapter-heading > h3,
+  .reference-panel .article-copy > h3,
+  .reference-panel .catalog-heading h3 {
+    font-size: 24px;
+  }
+}
