@@ -29,38 +29,89 @@ struct NativeMathImage: @unchecked Sendable {
 /// the trusted, self-contained equation and bundled fonts. Paragraphs, tables,
 /// links and controls remain native. No external math resource is requested.
 @MainActor final class NativeMathRenderer: ObservableObject {
+  private struct Key: Hashable {
+    let descriptor: NativeMathDescriptor
+    let fontSize: CGFloat
+    let color: String
+  }
+  private final class Pending {
+    let id = UUID()
+    var task: Task<Void, Never>?
+    var waiters: [UUID: CheckedContinuation<NativeMathImage, Error>] = [:]
+  }
+  private static let admission = NativeResourceAdmission(maximum: 1)
   private weak var host: MathPlatformView?
   private var jobs: [UUID: NativeMathJob] = [:]
-  private var cache: [String: NativeMathImage] = [:]
-  private var order: [String] = []
+  private var pending: [Key: Pending] = [:]
+  private var cache: [Key: NativeMathImage] = [:]
+  private var costs: [Key: Int] = [:]
+  private var order: [Key] = []
+  private var cacheBytes = 0
+  private var generation = 0
+  var pendingRequestCount: Int { pending.count }
+  var pendingSubscriberCount: Int { pending.values.reduce(0) { $0 + $1.waiters.count } }
+  var cachedPixelBytes: Int { cacheBytes }
 
   fileprivate func attach(_ view: MathPlatformView) {
     host = view
     guard view.window != nil else { return }
-    for job in jobs.values { job.start(in: view) }
+    for job in Array(jobs.values) { job.start(in: view) }
   }
   func cancel() {
+    generation &+= 1
+    let groups = Array(pending.values); pending.removeAll()
+    for group in groups {
+      group.task?.cancel(); group.task = nil
+      for waiter in group.waiters.values { waiter.resume(throwing: CancellationError()) }
+      group.waiters.removeAll()
+    }
     for job in Array(jobs.values) { job.finish(.failure(CancellationError())) }
+    jobs.removeAll()
   }
   func image(for descriptor: NativeMathDescriptor, fontSize: CGFloat, color: String) async throws -> NativeMathImage {
-    let key = descriptor.tex.utf8.map { String(format: "%02x", $0) }.joined()
-      + ":\(descriptor.display):\(fontSize):\(color)"
-    if let image = cache[key] { return image }
-    let html = try await Task.detached(priority: .userInitiated) {
-      try NativeRichTextEngine.shared.mathHTML(descriptor)
-    }.value
     try Task.checkCancellation()
-    let id = UUID()
+    guard descriptor.tex.utf16.count <= 16_384, fontSize.isFinite, fontSize > 0, fontSize <= 512,
+      color.range(of: #"^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"#, options: .regularExpression) != nil else {
+      throw URLError(.dataLengthExceedsMaximum)
+    }
+    let key = Key(descriptor: descriptor, fontSize: fontSize, color: color)
+    if let value = cache[key] {
+      order.removeAll { $0 == key }; order.append(key)
+      return value
+    }
+    let waiterID = UUID(), epoch = generation
     return try await withTaskCancellationHandler(operation: {
+      try await withCheckedThrowingContinuation { continuation in
+        guard !Task.isCancelled else { continuation.resume(throwing: CancellationError()); return }
+        if let group = pending[key] { group.waiters[waiterID] = continuation; return }
+        let group = Pending(); group.waiters[waiterID] = continuation; pending[key] = group
+        let id = group.id
+        group.task = Task { @MainActor [weak self] in
+          let result: Result<NativeMathImage, Error>
+          do {
+            try await Self.admission.acquire()
+            defer { Task { await Self.admission.release() } }
+            try Task.checkCancellation()
+            let html = try await Task.detached(priority: .userInitiated) {
+              try NativeRichTextEngine.shared.mathHTML(descriptor)
+            }.value
+            try Task.checkCancellation()
+            guard html.utf8.count <= 1_000_000, let self, self.generation == epoch else { throw CancellationError() }
+            result = .success(try await self.render(html: html, fontSize: fontSize, color: color, id: id))
+          } catch { result = .failure(error) }
+          self?.finish(key, id: id, epoch: epoch, result: result)
+        }
+      }
+    }, onCancel: { [weak self] in
+      Task { @MainActor in self?.cancelWaiter(key, id: waiterID) }
+    })
+  }
+  private func render(html: String, fontSize: CGFloat, color: String, id: UUID) async throws -> NativeMathImage {
+    try await withTaskCancellationHandler(operation: {
       try await withCheckedThrowingContinuation { continuation in
         guard !Task.isCancelled else { continuation.resume(throwing: CancellationError()); return }
         let job = NativeMathJob(html: html, fontSize: fontSize, color: color) { [weak self] result in
           self?.jobs.removeValue(forKey: id)
-          if case .success(let image) = result {
-            self?.cache[key] = image
-            self?.order.append(key)
-            if let self, order.count > 32 { cache.removeValue(forKey: order.removeFirst()) }
-          }
           continuation.resume(with: result)
         }
         jobs[id] = job
@@ -69,6 +120,37 @@ struct NativeMathImage: @unchecked Sendable {
     }, onCancel: { [weak self] in
       Task { @MainActor in self?.jobs[id]?.finish(.failure(CancellationError())) }
     })
+  }
+  private func cancelWaiter(_ key: Key, id: UUID) {
+    guard let group = pending[key], let waiter = group.waiters.removeValue(forKey: id) else { return }
+    waiter.resume(throwing: CancellationError())
+    if group.waiters.isEmpty {
+      pending.removeValue(forKey: key); group.task?.cancel(); group.task = nil
+      jobs[group.id]?.finish(.failure(CancellationError()))
+    }
+  }
+  private func finish(_ key: Key, id: UUID, epoch: Int, result: Result<NativeMathImage, Error>) {
+    guard generation == epoch, let group = pending[key], group.id == id else { return }
+    pending.removeValue(forKey: key); group.task = nil
+    if case .success(let image) = result {
+      #if os(iOS)
+      let pixels = image.image.size.width * image.image.scale * image.image.size.height * image.image.scale
+      #else
+      let pixels = image.image.representations.map { Double($0.pixelsWide) * Double($0.pixelsHigh) }.max() ?? 0
+      #endif
+      let cost = Int(min(Double(16 * 1024 * 1024 + 1), max(0, Double(pixels) * 4)))
+      if cost <= 16 * 1024 * 1024 {
+        cacheBytes -= costs[key] ?? 0; cacheBytes += cost
+        cache[key] = image; costs[key] = cost
+        order.removeAll { $0 == key }; order.append(key)
+        while order.count > 32 || cacheBytes > 16 * 1024 * 1024 {
+          let old = order.removeFirst(); cache.removeValue(forKey: old)
+          cacheBytes -= costs.removeValue(forKey: old) ?? 0
+        }
+      }
+    }
+    for waiter in group.waiters.values { waiter.resume(with: result) }
+    group.waiters.removeAll()
   }
 }
 

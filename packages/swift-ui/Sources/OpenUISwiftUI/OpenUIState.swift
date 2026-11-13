@@ -50,9 +50,9 @@ public final class OpenUIState: ObservableObject {
     /// Recoverable rendering diagnostics remain local to their components.
     var canExecuteActions: Bool {
         guard isComplete, !isInterrupted, let result = latestResult else { return false }
-        return !result.meta.incomplete && result.meta.unresolved.isEmpty
+        return !result.nativeLimitExceeded && !result.meta.incomplete && result.meta.unresolved.isEmpty
     }
-    private var liveElements: [String: [EvaluatedElement]] = [:]
+    private var liveElements = NativeLiveElementIndex()
     private var liveElementCache: [ObjectIdentifier: (snapshot: EvaluatedElement, current: EvaluatedElement)] = [:]
     func liveElement(matching element: EvaluatedElement) -> EvaluatedElement {
         guard let root, root !== element else { return element }
@@ -78,8 +78,8 @@ public final class OpenUIState: ObservableObject {
         // A stable native child may hold an earlier readiness snapshot even
         // when its displayed props have not changed. Match nested values too;
         // never borrow readiness from a semantically different control.
-        let matches = (liveElements[element.typeName] ?? []).filter {
-            $0.statementId == element.statementId && props($0, element, depth: 0)
+        let matches = liveElements.candidates(for: element).filter {
+            props($0, element, depth: 0)
         }
         func readiness(_ a: Value, _ b: Value, depth: Int) -> Bool {
             guard depth < 256 else { return false }
@@ -112,7 +112,7 @@ public final class OpenUIState: ObservableObject {
             switch value {
             case .element(let element):
                 guard seen.insert(ObjectIdentifier(element)).inserted else { return }
-                liveElements[element.typeName, default: []].append(element)
+                liveElements.insert(element)
                 element.props.forEach { visit($0.1, depth: depth + 1) }
             case .array(let values):
                 guard seen.insert(ObjectIdentifier(values)).inserted else { return }
@@ -127,7 +127,7 @@ public final class OpenUIState: ObservableObject {
     }
     func isElementReady(_ snapshot: EvaluatedElement) -> Bool {
         let element = snapshot.isSourceComplete ? snapshot : liveElement(matching: snapshot)
-        guard latestResult != nil, element.isSourceComplete else { return false }
+        guard let result = latestResult, !result.nativeLimitExceeded, element.isSourceComplete else { return false }
         func ready(_ value: Value) -> Bool {
             switch value {
             case .actionPlan(let plan): return isPlanReady(plan)
@@ -179,6 +179,20 @@ public final class OpenUIState: ObservableObject {
     private var idleMutations: [String: Value] = [:]
     let mediaCache = NativeMediaCache()
     let resourceStore = NativeResourceStore()
+    // Unrepresentable edits may outlive a mounted view. These records are not
+    // another committed Store and never appear in actions or serialization.
+    private struct EditingKey: Hashable { let kind: String; let form: OpenUIString?; let name: OpenUIString }
+    private var editingRecords: [EditingKey: AnyObject] = [:]
+    func editingRecord<T: AnyObject>(kind: String, form: OpenUIString?, name: OpenUIString,
+                                     create: () -> T) -> T {
+        let key = EditingKey(kind: kind, form: form, name: name)
+        if let record = editingRecords[key] as? T { return record }
+        let record = create(); editingRecords[key] = record; return record
+    }
+    func existingEditingRecord<T: AnyObject>(kind: String, form: OpenUIString?, name: OpenUIString) -> T? {
+        editingRecords[EditingKey(kind: kind, form: form, name: name)] as? T
+    }
+
 
     public init(schema: LibrarySchema, functions: [String: CustomFunction] = [:],
                 toolProvider: ToolProvider? = nil, persistedState: [OpenUIString: Value] = [:]) {
@@ -212,10 +226,11 @@ public final class OpenUIState: ObservableObject {
     }
 
     public func push(_ chunk: String) {
-        guard !chunk.isEmpty else { return }
+        guard !chunk.isEmpty, latestResult?.nativeLimitExceeded != true else { return }
         if isComplete { reset() }
-        source += chunk
-        acceptSource(parser.push(chunk, complete: false))
+        let result = parser.push(chunk, complete: false)
+        if !result.nativeLimitExceeded { source += chunk }
+        acceptSource(result)
     }
 
     public func complete() {
@@ -239,6 +254,7 @@ public final class OpenUIState: ObservableObject {
         streamGeneration += 1
         mediaCache.removeAll()
         resourceStore.removeAll()
+        editingRecords.removeAll()
         presentationRevision += 1
         unsubscribe?(); queryManager.dispose()
         queryManager = QueryManager(provider: toolProvider)
@@ -254,21 +270,55 @@ public final class OpenUIState: ObservableObject {
 
     /// Host-owned full-response and editing surfaces can retain user state.
     public func setSource(_ text: String, streaming: Bool = false) {
-        // Completion snapshots are often delivered more than once. Replaying
-        // identical final bytes is not a new program or a request to reset UI.
-        if !streaming, !isInterrupted, source.utf16.elementsEqual(text.utf16) {
-            complete()
-            return
+        guard OpenUIRuntimeBudget.acceptsSource(text) else {
+            acceptSource(parser.set(text, complete: !streaming)); return
+        }
+        // Hosting updates may replay the same full buffer. Compare UTF-16,
+        // not Swift's canonically equivalent String equality: the runtime
+        // preserves distinct code-unit spellings in literals and state keys.
+        if !isInterrupted, source.utf16.elementsEqual(text.utf16) {
+            if !streaming {
+                // An unchanged final snapshot must still commit the trailing
+                // token and enable completed actions exactly once.
+                complete()
+                return
+            }
+            if !isComplete, latestResult != nil {
+                // A repeated in-flight snapshot changes neither content nor
+                // readiness. Do not reparse, publish, or advance callback IDs.
+                return
+            }
         }
         // Full-buffer streaming is also supported: a growing UTF-16 prefix is
         // the same presentation, including its final completion snapshot.
         let extendsStream = !isComplete && !source.isEmpty && text.utf16.starts(with: source.utf16)
+        if extendsStream {
+            // A full-buffer streaming host is delivering only a new suffix.
+            // Keep the same document epoch, query subscriptions, and user drafts.
+            // The shared streaming parser already owns completed-prefix reuse.
+            let boundary = String.Index(utf16Offset: source.utf16.count, in: text)
+            let suffix = String(text[boundary...])
+            if !suffix.isEmpty {
+                source = text
+                if !streaming { isComplete = true }
+                if text.contains("]]" + ">openui:") {
+                    // Protocol framing is interpreted by shared set(); raw
+                    // append alone cannot reselect a bundled program safely.
+                    acceptSource(parser.set(text, complete: !streaming))
+                } else {
+                    acceptSource(parser.push(suffix, complete: !streaming))
+                }
+            }
+            return
+        }
         replaceSource(text, streaming: streaming, replacesPresentation: !extendsStream)
     }
 
     private func replaceSource(_ text: String, streaming: Bool, replacesPresentation: Bool) {
         streamGeneration += 1
-        if replacesPresentation { presentationRevision += 1; mediaCache.removeAll(); resourceStore.removeAll() }
+        if replacesPresentation {
+            presentationRevision += 1; mediaCache.removeAll(); resourceStore.removeAll(); editingRecords.removeAll()
+        }
         unsubscribe?(); observeQueries()
         queryManager.invalidateMutations(); idleMutations = [:]
         source = text; isComplete = !streaming; isInterrupted = false
@@ -526,6 +576,25 @@ public final class OpenUIState: ObservableObject {
     }
 
     private func update(from result: ParseResult, synchronizeQueries: Bool = true) {
+        if result.nativeLimitExceeded {
+            let firstFailure = latestResult?.nativeLimitExceeded != true
+            latestResult = result
+            if firstFailure {
+                streamGeneration += 1
+                unsubscribe?(); queryManager.dispose()
+                queryManager = QueryManager(provider: toolProvider); observeQueries()
+                isInterrupted = true; isComplete = true
+                if result.root == nil && result.rootExpression == nil {
+                    indexLiveElements(nil); root = nil; presentationRoot = nil
+                }
+                if !queryStates.isEmpty { queryStates = [:] }
+                if !mutationStates.isEmpty { mutationStates = [:] }
+                errorRevision = nil
+                errors = result.meta.errors
+                onError?(errors)
+            }
+            return
+        }
         latestResult = result
         store.initialize(defaults: result.stateDeclarations, persisted: persistedState)
         persistedState = [:]
@@ -572,12 +641,17 @@ public final class OpenUIState: ObservableObject {
             queryValues[query.statementId] = queryManager.queryState(for: query.statementId)
                 ?? QueryState(status: .idle, data: evaluator.context.resolveRef(query.statementId))
         }
-        queryStates = queryValues
-        mutationStates = Dictionary(uniqueKeysWithValues: result.mutationStatements.map {
+        // Empty auxiliary channels have no changed value to publish. Root and
+        // readiness still update above; nonempty values keep their existing
+        // delivery semantics, including the transition back to an empty value.
+        if !queryValues.isEmpty || !queryStates.isEmpty { queryStates = queryValues }
+        let mutationValues = Dictionary(uniqueKeysWithValues: result.mutationStatements.map {
             ($0.statementId, queryManager.mutationState(for: $0.statementId) ?? MutationState(status: .idle))
         })
-        errors = result.meta.errors + (isComplete ? evaluator.errors : [])
-            + queryValues.values.compactMap(\.error) + mutationStates.values.compactMap(\.error)
+        if !mutationValues.isEmpty || !mutationStates.isEmpty { mutationStates = mutationValues }
+        let nextErrors = result.meta.errors + (isComplete ? evaluator.errors : [])
+            + queryValues.values.compactMap(\.error) + mutationValues.values.compactMap(\.error)
+        if !nextErrors.isEmpty || !errors.isEmpty { errors = nextErrors }
         let revision = errors.map { error in
             [error.source.rawValue, error.code.rawValue, error.statementId ?? "", error.component ?? "",
              error.path.map(jsonStringLiteral) ?? "", error.severity ?? "", error.message].joined(separator: "\u{0}")

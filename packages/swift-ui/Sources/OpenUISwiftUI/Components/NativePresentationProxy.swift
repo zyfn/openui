@@ -28,7 +28,15 @@ enum NativePresentationProxy {
     // Only committed layout scalars are supplied. Required data/actions stay
     // absent, so a proxy cannot fabricate samples, fetch media or be activated.
     let layoutKeys: Set<String> = ["height", "imageSize", "size", "iconSize", "variant", "appearance", "layout", "direction", "gap", "align", "justify", "wrap", "id", "key", "resourceId"]
-    let properties = hint.properties.filter { layoutKeys.contains($0.key.displayString) }
+    let allowed = layoutKeys.union(registry.presentationLayoutFields(hint.typeName))
+    let properties = hint.properties.filter { field in
+      guard allowed.contains(field.key.displayString) else { return false }
+      switch field.value {
+      case .string, .boolean, .null: return true
+      case .number(let number): return number.isFinite
+      default: return false
+      }
+    }
     let fields = properties.map { ($0.key.displayString, $0.value) }
     let known = Dictionary(properties.keys.map { ($0, NativeSourceReadiness(complete: true, closed: true)) },
       uniquingKeysWith: { _, last in last })

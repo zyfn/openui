@@ -19,13 +19,14 @@ struct NativeMarkdownText: View {
   @Environment(\.cardSources) private var sources
   @Environment(\.openURL) private var openURL
   @Environment(\.openUIInlineLinksReady) private var linksReady
+  @Environment(\.openUIStreamActive) private var streamActive
   @Environment(\.openUIActivationIntent) private var activationIntent
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.multilineTextAlignment) private var textAlignment
   @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
   @StateObject private var math = NativeMathRenderer()
-  @State private var prepared: String?
-  @State private var preparedRequest: NativeRichTextRequest?
+  @StateObject private var streamText = NativeStreamingTextBuffer()
+  @StateObject private var document = NativeMarkdownDocument()
   @State private var citation: NativeCitationSelection?
   private var foreground: Color { style.color ?? theme.textNeutralPrimary }
   private var frameAlignment: Alignment {
@@ -38,12 +39,15 @@ struct NativeMarkdownText: View {
   private var font: OpenUIFont { (style.font ?? inheritedFont ?? theme.textBodyDefault).resolved(for: style.role) }
   private var mathSize: CGFloat { font.size * scale }
   private var mathColor: String { NativeCSSColor.css(foreground, scheme: colorScheme) }
+  private var visibleText: String {
+    streamText.text(for: text, streaming: streamActive)
+  }
   private var request: NativeRichTextRequest {
-    .init(source: OpenUIString(text), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
+    .init(source: OpenUIString(visibleText), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
   }
 
   var body: some View {
-    MarkdownUI.Markdown(preparedRequest == request ? prepared ?? text : text,
+    MarkdownUI.Markdown(document.content(for: request),
       baseURL: resources.baseURL, imageBaseURL: resources.baseURL)
       .markdownTextStyle {
         ForegroundColor(foreground)
@@ -69,7 +73,7 @@ struct NativeMarkdownText: View {
       .markdownBlockStyle(\.heading5) { heading($0.label, font: theme.textBodySmHeavy, role: .detail, before: theme.spaceM) }
       .markdownBlockStyle(\.heading6) { heading($0.label, font: theme.textBodyXs.weight(theme.textBodySmHeavy.weight), role: .caption, before: theme.spaceM) }
       .markdownBlockStyle(\.codeBlock) { configuration in
-        NativeCodeBlockContent(code: OpenUIString(configuration.content.trimmingCharacters(in: .whitespacesAndNewlines)),
+        NativeCodeBlockContent(code: OpenUIString(configuration.content),
           language: OpenUIString(NativeMarkdownCode.language(configuration.language)), theme: theme)
           .markdownMargin(top: theme.spacing("s"), bottom: theme.spacing("s"))
       }
@@ -94,24 +98,16 @@ struct NativeMarkdownText: View {
         NativeCitationSources(indices: selected.indices, sources: sources)
           .environment(\.openUITheme, theme).environment(\.openUIResourceContext, resources)
       }
-      .task(id: request) {
-        let current = request
-        let worker = Task.detached(priority: .userInitiated) {
-          try NativeRichTextEngine.shared.prepare(current.source.displayString, mode: current.mode,
-            sources: current.sources, fontSize: current.fontSize, color: current.color)
-        }
-        do {
-          let value = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
-          guard !Task.isCancelled else { return }
-          prepared = value; preparedRequest = current
-        } catch {
-          guard !Task.isCancelled else { return }
-          // Keep readable source on a resource/parse failure; the language
-          // runtime's diagnostic and state channels remain independent.
-          prepared = text; preparedRequest = current
-        }
-      }
-      .onDisappear { math.cancel() }
+      // Source parsing and Store publication are never throttled; only the
+      // native text presentation is coalesced. Do not animate reflow of
+      // already-visible paragraphs as the final line grows.
+      .transaction { if streamActive { $0.animation = nil } }
+      .onAppear { streamText.receive(text, streaming: streamActive) }
+      .onChange(of: OpenUIString(text)) { _ in streamText.receive(text, streaming: streamActive) }
+      .onChange(of: streamActive) { active in streamText.receive(text, streaming: active) }
+      .onAppear { document.receive(request) }
+      .onChange(of: request) { document.receive($0) }
+      .onDisappear { document.cancel(); streamText.cancel(); math.cancel() }
   }
   @ViewBuilder private func heading<Content: View>(_ content: Content, font: OpenUIFont, role: NativeTextRole, before: CGFloat) -> some View {
     let resolved = font.resolved(for: role)
@@ -129,6 +125,96 @@ struct NativeMarkdownText: View {
       styled
     }
   }
+}
+
+/// Immutable parsed content crosses the serialized worker once. MarkdownUI's
+/// content is a value tree; it is not mutated after construction or shared with
+/// an active parser. No views or native UI objects cross this boundary.
+private struct NativePreparedMarkdown: @unchecked Sendable {
+  let request: NativeRichTextRequest
+  let content: MarkdownContent
+}
+
+private actor NativeMarkdownWorker {
+  static let shared = NativeMarkdownWorker()
+  func prepare(_ request: NativeRichTextRequest) throws -> NativePreparedMarkdown {
+    try Task.checkCancellation()
+    let source: String
+    do {
+      source = try NativeRichTextEngine.shared.prepare(request.source.displayString,
+        mode: request.mode, sources: request.sources, fontSize: request.fontSize, color: request.color)
+    } catch is CancellationError { throw CancellationError() }
+    catch { source = request.source.displayString }
+    try Task.checkCancellation()
+    let result = NativePreparedMarkdown(request: request, content: MarkdownContent(source))
+    try Task.checkCancellation()
+    return result
+  }
+}
+
+/// One current task plus one replaceable pending request. Appending does not
+/// cancel already useful work; source corrections, configuration changes and
+/// unmounts reject old results. A fit reads this projection without publishing.
+@MainActor final class NativeMarkdownDocument: ObservableObject {
+  @Published private var prepared: NativePreparedMarkdown?
+  private var latest: NativeRichTextRequest?
+  private var work: Task<Void, Never>?
+  private var generation: UInt64 = 0
+  private var fallbackSource: OpenUIString?
+  private var fallback = MarkdownContent("")
+  private(set) var fallbackParseCount = 0
+  private(set) var preparationCount = 0
+  var currentSource: OpenUIString? { prepared?.request.source }
+
+  private func compatible(_ old: NativeRichTextRequest, _ next: NativeRichTextRequest) -> Bool {
+    old.mode == next.mode && old.sources == next.sources
+      && old.fontSize == next.fontSize && old.color == next.color
+      && next.source.displayString.utf16.starts(with: old.source.displayString.utf16)
+  }
+
+  func content(for request: NativeRichTextRequest) -> MarkdownContent {
+    if let prepared, compatible(prepared.request, request) { return prepared.content }
+    // Synchronous snapshot/size-only hosts still receive readable content on
+    // first render. Cache that one prefix rather than parsing in every body/fit.
+    if fallbackSource != request.source {
+      fallbackSource = request.source
+      fallback = MarkdownContent(request.source.displayString)
+      fallbackParseCount += 1
+    }
+    return fallback
+  }
+
+  func receive(_ request: NativeRichTextRequest) {
+    if latest == request, work != nil || prepared?.request == request { return }
+    let previous = latest
+    latest = request
+    if let previous, !compatible(previous, request) {
+      generation &+= 1
+      work?.cancel(); work = nil
+    }
+    guard work == nil, prepared?.request != request else { return }
+    start(request)
+  }
+
+  private func start(_ request: NativeRichTextRequest) {
+    preparationCount += 1
+    let epoch = generation
+    work = Task { @MainActor [weak self] in
+      let result = try? await NativeMarkdownWorker.shared.prepare(request)
+      guard !Task.isCancelled, let self, self.generation == epoch else { return }
+      self.work = nil
+      if let result, let latest = self.latest, self.compatible(request, latest) {
+        self.prepared = result
+      }
+      if let next = self.latest, next != request { self.start(next) }
+    }
+  }
+
+  func cancel() {
+    generation &+= 1
+    work?.cancel(); work = nil; latest = nil
+  }
+  deinit { work?.cancel() }
 }
 
 enum NativeMarkdownCode {
@@ -175,15 +261,9 @@ private struct NativeMarkdownInlineImages: InlineImageProvider {
       return try await math.image(for: descriptor, fontSize: fontSize, color: color).swiftUIImage(label: label)
     }
     guard let request = resources.request(for: url.absoluteString) else { throw URLError(.unsupportedURL) }
-    let data = try await resources.loader.data(for: request)
-    try Task.checkCancellation()
-    #if os(iOS)
-    guard let image = UIImage(data: data), let cgImage = image.cgImage else { throw URLError(.cannotDecodeContentData) }
-    return Image(cgImage, scale: image.scale, label: Text(label))
-    #else
-    guard let image = NSImage(data: data), let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { throw URLError(.cannotDecodeContentData) }
-    return Image(cgImage, scale: 1, label: Text(label))
-    #endif
+    let entry = try await NativeMediaCache.load(request, loader: resources.loader,
+      targetPixelSize: max(1, Int(min(256, fontSize * 3))))
+    return await MainActor.run { entry.image }
   }
 }
 
@@ -244,5 +324,13 @@ private struct NativeMarkdownImage: View {
     case .loaded: return "openui.markdown.image.loaded"
     case .unavailable: return "openui.markdown.image.unavailable"
     }
+  }
+}
+
+// Internal test seam; normal consumers still use the registered components.
+extension NativeMarkdownText {
+  @MainActor init(text: String, document: NativeMarkdownDocument) {
+    self.init(text: text)
+    _document = StateObject(wrappedValue: document)
   }
 }

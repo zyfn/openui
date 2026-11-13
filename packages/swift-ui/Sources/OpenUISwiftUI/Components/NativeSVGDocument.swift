@@ -6,12 +6,15 @@ import FoundationXML
 struct NativeSVGDocument {
     let markup: String
     let ratio: CGFloat
+    /// Bounded native viewport; SVG's own preserveAspectRatio still fits all
+    /// artwork, rather than cropping or fabricating a different viewBox.
+    var viewportRatio: CGFloat { min(8, max(0.25, ratio)) }
     static func parse(_ source: String) -> NativeSVGDocument? {
         guard source.utf8.count <= 1_000_000, !source.localizedCaseInsensitiveContains("<!DOCTYPE"),
               !source.localizedCaseInsensitiveContains("<!ENTITY") else { return nil }
         let reader = SVGReader()
         let parser = XMLParser(data: Data(source.utf8)); parser.shouldResolveExternalEntities = false; parser.delegate = reader
-        guard parser.parse(), reader.valid, let ratio = reader.ratio else { return nil }
+        guard parser.parse(), reader.valid, let ratio = reader.ratio, ratio.isFinite, ratio > 0 else { return nil }
         return NativeSVGDocument(markup: source, ratio: ratio)
     }
 }
@@ -19,7 +22,13 @@ private final class SVGReader: NSObject, XMLParserDelegate {
     var valid = true
     var ratio: CGFloat?
     private var root = false
+    private var depth = 0
+    private var elements = 0
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes: [String: String]) {
+        depth += 1
+        elements += 1
+        // Bound SVG structural complexity independently of markup byte size.
+        if depth > 128 || elements > 10_000 { valid = false; parser.abortParsing(); return }
         let name = elementName.lowercased().split(separator: ":").last.map(String.init) ?? ""
         if !root {
             root = true
@@ -29,8 +38,12 @@ private final class SVGReader: NSObject, XMLParserDelegate {
             guard tokens.count == 4, values.count == 4, values.allSatisfy(\.isFinite), values[2] > 0, values[3] > 0 else { valid = false; return }
             if let mode = attributes["preserveAspectRatio"], mode.contains("slice") || mode.contains("none") { valid = false }
             let aspect = values[2] / values[3]
-            guard aspect.isFinite, aspect > 0 else { valid = false; return }
-            ratio = CGFloat(aspect)
+            // Prevent extreme aspect ratios from creating unbounded fitting
+            // dimensions in the native layout host.
+            guard aspect.isFinite, aspect >= 0.0001, aspect <= 10_000 else { valid = false; return }
+            let nativeRatio = CGFloat(aspect)
+            guard nativeRatio.isFinite, nativeRatio > 0 else { valid = false; return }
+            ratio = nativeRatio
         }
         if name.hasPrefix("animate") || ["script", "foreignobject", "iframe", "object", "embed", "audio", "video", "set", "discard"].contains(name) { valid = false }
         for (key, value) in attributes {
@@ -41,5 +54,24 @@ private final class SVGReader: NSObject, XMLParserDelegate {
             }
         }
     }
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        depth = max(0, depth - 1)
+    }
 }
 
+
+/// Parsing is a local, single-entry projection cache. Repeated size proposals
+/// do not repeat XML validation. Source replacement invalidates by exact UTF-16.
+final class NativeSVGDocumentCache {
+    private var source: String?
+    private var document: NativeSVGDocument?
+    private(set) var parseCount = 0
+    func value(_ source: String?) -> NativeSVGDocument? {
+        if self.source?.utf16.elementsEqual(source?.utf16 ?? "".utf16) == true { return document }
+        if self.source == nil && source == nil { return nil }
+        self.source = source
+        parseCount += 1
+        document = source.flatMap(NativeSVGDocument.parse)
+        return document
+    }
+}

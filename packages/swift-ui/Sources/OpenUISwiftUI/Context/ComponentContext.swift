@@ -6,8 +6,13 @@ private struct OpenUIFormKey: EnvironmentKey { static let defaultValue: String? 
 private struct OpenUIProgramScopeKey: EnvironmentKey { static let defaultValue: ObjectIdentifier? = nil }
 private struct NativeInteractionScopeKey: EnvironmentKey { static let defaultValue = true }
 private struct NativeInlineLinksKey: EnvironmentKey { static let defaultValue = true }
+private struct NativeUserInteractionKey: EnvironmentKey { static let defaultValue: (() -> Void)? = nil }
 
 extension EnvironmentValues {
+    var openUIUserInteraction: (() -> Void)? {
+        get { self[NativeUserInteractionKey.self] }
+        set { self[NativeUserInteractionKey.self] = newValue }
+    }
     var openUIInteractionScopeReady: Bool {
         get { self[NativeInteractionScopeKey.self] }
         set { self[NativeInteractionScopeKey.self] = newValue }
@@ -63,6 +68,8 @@ public struct OpenUIComponentContext {
     let hasInterruptedData: Bool
     var interactionScopeReady = true
     var activationIntent: NativeActivationIntent?
+    var onUserInteraction: (() -> Void)?
+    @MainActor func recordUserInteraction() { if isCurrentPresentation { onUserInteraction?() } }
     private let state: OpenUIState
     private let registry: ComponentRegistry
     private let sourceRevision: Int
@@ -104,6 +111,33 @@ public struct OpenUIComponentContext {
     @MainActor func setPresentationFieldValue(_ name: OpenUIString, value: Value) {
         guard isCurrentPresentation else { return }
         state.setFieldValue(form: exactFormName, name: name, value: value, componentType: nil)
+    }
+    /// Editing records can be retained by the document. Their callbacks must
+    /// not retain the document in return, or releasing a renderer leaks it.
+    @MainActor func weakOperation<Input>(_ body: @escaping (OpenUIComponentContext, Input) -> Void) -> (Input) -> Void {
+        let element = element, registry = registry, theme = theme, presentation = presentation
+        let resources = resources, form = exactFormName, revision = sourceRevision
+        let scopeReady = interactionScopeReady
+        return { [weak state] value in
+            guard let state, state.sourceRevision == revision else { return }
+            var current = OpenUIComponentContext(element: element, registry: registry, state: state,
+                theme: theme, presentation: presentation, resources: resources, exactFormName: form)
+            current.interactionScopeReady = scopeReady
+            body(current, value)
+        }
+    }
+    @MainActor func editingRecord<T: AnyObject>(kind: String, name: OpenUIString, create: () -> T) -> T {
+        state.editingRecord(kind: kind, form: exactFormName, name: name, create: create)
+    }
+    @MainActor func existingEditingRecord<T: AnyObject>(kind: String, name: OpenUIString) -> T? {
+        state.existingEditingRecord(kind: kind, form: exactFormName, name: name)
+    }
+    @MainActor func childContext(_ child: EvaluatedElement, form: OpenUIString?) -> OpenUIComponentContext {
+        var next = OpenUIComponentContext(element: child, registry: registry, state: state,
+            theme: theme, presentation: presentation, resources: resources, exactFormName: form)
+        next.interactionScopeReady = interactionScopeReady
+        next.activationIntent = activationIntent
+        return next
     }
     public func value(_ name: String) -> Value? { element.props.last(where: { $0.0 == name })?.1 }
     /// Geometry/style arguments must not consume an unfinished numeric or enum
@@ -220,6 +254,7 @@ struct OpenUIComponentHost<Content: View>: View {
     @Environment(\.openUIProgramScoped) private var programScoped
     @Environment(\.openUIInteractionScopeReady) private var interactionScopeReady
     @Environment(\.openUIActivationIntent) private var activationIntent
+    @Environment(\.openUIUserInteraction) private var userInteraction
 
     var body: some View {
         let element = self.element.isSourceComplete ? self.element : state.liveElement(matching: self.element)
@@ -229,6 +264,7 @@ struct OpenUIComponentHost<Content: View>: View {
         context.fillsControlWidth = fillsControlWidth
         context.interactionScopeReady = interactionScopeReady
         context.activationIntent = activationIntent
+        context.onUserInteraction = userInteraction
         let atomic = ["Card", "Form", "CompositeCardItem", "VisualCardItem", "ContextCardItem", "OverviewCardItem", "SnippetCardItem"].contains(element.typeName)
         let presented = Group {
             if !context.layoutConfigurationReady && element.typeName != "Stack" && element.typeName != "Card" {

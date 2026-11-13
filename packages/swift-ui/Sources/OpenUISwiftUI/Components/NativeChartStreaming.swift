@@ -46,6 +46,11 @@ extension NativeChartStreamingPresentation {
         count += 1
       }
       var result = current
+      let expectedWidth = NativeValue.array(context.value("labels")).count
+      result.invalidData = rows.prefix(count).contains {
+        let cells = NativeValue.array($0)
+        return cells.count != expectedWidth || !cells.dropFirst().allSatisfy(NativeChartData.validSample)
+      }
       result.labels = Array(result.labels.prefix(count))
       result.series = result.series.map { .init(name: $0.name, values: Array($0.values.prefix(count))) }
       result.isProgressive = true
@@ -53,6 +58,7 @@ extension NativeChartStreamingPresentation {
     }
     guard let sources = entries(rows, ready["series"], expectedType: "Series") else { return nil }
     var pairs: [ObjectField] = []
+    var invalid = false
     for source in sources {
       let rowReady = source.readiness
       guard rowReady["category"].complete, let category = source.string("category") else { break }
@@ -64,6 +70,7 @@ extension NativeChartStreamingPresentation {
           count += 1
         }
       }
+      if !values.prefix(count).allSatisfy(NativeChartData.validSample) { invalid = true }
       let key = OpenUIString(category)
       // A later duplicate series replaces values only after that replacement
       // is complete; it must not erase an already readable series with zeros.
@@ -71,6 +78,7 @@ extension NativeChartStreamingPresentation {
       pairs.append(.init(key: key, value: .array(Array(values.prefix(count)))))
     }
     var result = current
+    result.invalidData = invalid
     let keyed = OpenUIObject(pairs)
     let colors = NativeChartData.sourceColorIndices(pairs.map(\.key))
     result.colorIndices = keyed.map { colors[$0.key] ?? 0 }

@@ -1,5 +1,6 @@
 @_spi(RuntimeInspection) import OpenUILang
 import SwiftUI
+import Combine
 
 
 struct NativeTabPanel: Identifiable, Equatable {
@@ -51,12 +52,20 @@ struct NativeTabsSelection {
 struct NativeTabsView: View {
     let context: OpenUIComponentContext
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.openUIUserInteraction) private var parentInteraction
+    @Environment(\.openUIFormValidation) private var validation
     @State private var local = NativeTabsSelection()
     @State private var width: CGFloat = 0
     @State private var contentWidth: CGFloat = 0
     @Namespace private var viewport
     private var panels: [NativeTabPanel] { NativeTabPanel.read(context.children("items")) }
-    private var selected: OpenUIString? { local.selected }
+    private var selected: OpenUIString? {
+        if let binding = context.presentationBinding("value") {
+            if case .string(let key) = binding.wrappedValue { return key }
+            return panels.first?.id
+        }
+        return local.selected
+    }
     private var active: NativeTabPanel? { panels.first { $0.id == selected } }
     private var showsOverflowHint: Bool {
         NativeTabsOverflow.shouldShowHint(contentWidth: contentWidth, viewportWidth: width)
@@ -64,7 +73,11 @@ struct NativeTabsView: View {
     private var nativeSelection: Binding<OpenUIString> {
         Binding(
             get: { active?.id ?? "" },
-            set: { local.choose($0) })
+            set: {
+                local.choose($0)
+                if let binding = context.presentationBinding("value") { binding.wrappedValue = .string($0) }
+                parentInteraction?()
+            })
     }
     var body: some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("l")) {
@@ -73,11 +86,23 @@ struct NativeTabsView: View {
                     .accessibilityIdentifier(
                         "openui.tabs.\(context.element.statementId ?? "tabs")")
             }
-            if let active { context.render(active.content).id(active.id) }
+            if let active {
+                context.render(active.content).id(active.id)
+                    .environment(\.openUIUserInteraction, {
+                        local.choose(active.id); parentInteraction?()
+                    })
+                    .simultaneousGesture(TapGesture().onEnded { local.choose(active.id); parentInteraction?() })
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .onAppear { local.reconcile(panels) }
-        .onChange(of: panels) { updated in local.reconcile(updated) }
+        .onAppear { if context.presentationBinding("value") == nil { local.reconcile(panels) } }
+        .onChange(of: panels) { updated in
+            if context.presentationBinding("value") == nil { local.reconcile(updated) }
+        }
+        .onReceive(validation?.$focusRequest.eraseToAnyPublisher() ?? Empty<NativeFormValidation.FocusRequest?, Never>().eraseToAnyPublisher()) { request in
+            guard let name = request?.name, let panel = panels.first(where: { NativeFormValidation.containsField(name, in: $0.content) }) else { return }
+            if selected != panel.id { nativeSelection.wrappedValue = panel.id }
+        }
     }
     private var selector: some View {
         ScrollViewReader { proxy in

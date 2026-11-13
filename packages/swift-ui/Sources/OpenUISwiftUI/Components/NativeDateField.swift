@@ -3,11 +3,12 @@ import SwiftUI
 
 /// Same JSON boundary as the reference's Date / DateRange values.
 enum NativeCalendarDate {
-    static func parse(_ value: Value?) -> Date? {
+    static func parse(_ value: Value?, timeZone: TimeZone = .current) -> Date? {
         guard case .string(let raw) = value, let text = raw.wellFormedString else { return nil }
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.isLenient = false
         if text.count == 10, let date = formatter.date(from: text), formatter.string(from: date) == text {
@@ -41,6 +42,8 @@ struct NativeDateField: View {
     let context: OpenUIComponentContext
     let label: String
     @Environment(\.locale) private var locale
+    @Environment(\.calendar) private var calendar
+    @Environment(\.timeZone) private var timeZone
     @Environment(\.openUIFieldPresentation) private var fieldPresentation
     @EnvironmentObject private var runtime: OpenUIState
     @State private var request: NativeDateRequest?
@@ -48,20 +51,22 @@ struct NativeDateField: View {
     private var range: Bool { context.string("mode") == "range" }
     private func date(_ part: NativeDatePart) -> Date? {
         if let key = part.key, case .object(let object) = field.value {
-            return NativeCalendarDate.parse(object[key])
+            return NativeCalendarDate.parse(object[key], timeZone: timeZone)
         }
-        return NativeCalendarDate.parse(field.value)
+        return NativeCalendarDate.parse(field.value, timeZone: timeZone)
     }
     private func write(_ selected: Date, part: NativeDatePart, context: OpenUIComponentContext) {
         let field = NativeFieldState(context: context)
         guard context.canInteract else { return }
-        let selected = Calendar.current.startOfDay(for: selected)
+        var scopedCalendar = calendar
+        scopedCalendar.timeZone = timeZone
+        let selected = scopedCalendar.startOfDay(for: selected)
         if let key = part.key {
             var values: [ObjectField] = []
             if case .object(let object) = field.value { values = Array(object).filter { $0.key != key } }
             values.append(ObjectField(key: key, value: NativeCalendarDate.encode(selected)))
-            let from = values.first { $0.key == "from" }.flatMap { NativeCalendarDate.parse($0.value) }
-            let to = values.first { $0.key == "to" }.flatMap { NativeCalendarDate.parse($0.value) }
+            let from = values.first { $0.key == "from" }.flatMap { NativeCalendarDate.parse($0.value, timeZone: timeZone) }
+            let to = values.first { $0.key == "to" }.flatMap { NativeCalendarDate.parse($0.value, timeZone: timeZone) }
             if let from, let to, from > to {
                 let other = key == "from" ? "to" : "from"
                 values.removeAll { $0.key == other }
@@ -107,7 +112,7 @@ struct NativeDateField: View {
                     if let date = date(part) {
                         Text(
                             date.formatted(
-                                Date.FormatStyle(date: .abbreviated, time: .omitted).locale(locale)))
+                                Date.FormatStyle(date: .abbreviated, time: .omitted, locale: locale, calendar: calendar, timeZone: timeZone)))
                     } else {
                         Text("Select date", bundle: NativeControlResources.bundle).foregroundStyle(context.theme.textNeutralSecondary)
                     }

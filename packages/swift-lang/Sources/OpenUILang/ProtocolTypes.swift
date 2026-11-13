@@ -371,6 +371,9 @@ public struct MutationStatementInfo: Sendable {
 }
 
 public struct ParseResult: Sendable {
+    /// Native adapter guard only; not part of the shared wire format. A
+    /// preserved root after a limit failure is display-only, never executable.
+    public internal(set) var nativeLimitExceeded = false
     private var nativeRoot: ElementNode?
     private var nativeExpression: ASTNode?
     private var rootOverridden: Bool

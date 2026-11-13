@@ -4,6 +4,21 @@ import OpenUILang
 @testable import OpenUISwiftUI
 
 final class ComponentLibraryTests: XCTestCase {
+    func testPublicPresentationMetadataUsesOnlyDeclaredFieldsAndSurvivesRegistration() throws {
+        let component = OpenUIComponent(name: "CustomNote", description: "A host note", params: [
+            OpenUIParameter.string("text"), OpenUIParameter.number("height")
+        ]) { Text($0.string("text") ?? "") }
+        .presentation(layoutFields: ["height", "missing", "height"], supportsPlaceholder: true, ownsFormControlLabel: true)
+        let library = try OpenUIComponentLibrary(components: [component])
+        XCTAssertEqual(library.registry.presentationLayoutFields("CustomNote"), ["height"])
+        XCTAssertTrue(library.registry.supportsPresentationPlaceholder("CustomNote"))
+        XCTAssertTrue(library.registry.ownsFormControlLabel("CustomNote"))
+        XCTAssertEqual(library.library.toSchema().components["CustomNote"]?.map(\.name), ["text", "height"])
+        let removed = try library.extending(removing: ["CustomNote"])
+        XCTAssertFalse(removed.registry.supportsPresentationPlaceholder("CustomNote"))
+        XCTAssertTrue(removed.registry.presentationLayoutFields("CustomNote").isEmpty)
+    }
+
     @MainActor func testStandardSelectionsShareStateWithoutHostActions() throws {
         let library = try OpenUIStandardComponents.library()
         let source = """
@@ -213,4 +228,34 @@ final class ComponentLibraryTests: XCTestCase {
         }
         wait(for: [finished], timeout: 3)
     }
+}
+
+extension ComponentLibraryTests {
+  @MainActor func testOptInSelectionBindingsDoNotChangePinnedDefaultContracts() throws {
+    let standard = try OpenUIStandardComponents.library()
+    let replacements = OpenUIStandardComponents.components.compactMap { component -> OpenUIComponent? in
+      guard ["Tabs", "Map", "MapPoint"].contains(component.definition.name) else { return nil }
+      var definition = component.definition
+      definition.params.append(definition.name == "MapPoint"
+        ? OpenUIParameter.string("id", required: false)
+        : OpenUIParameter.selection("value", required: false))
+      return component.replacingDefinition(definition)
+    }
+    let extended = try standard.extending(overriding: replacements)
+    XCTAssertEqual(standard.library.toSchema().components["Tabs"]?.map(\.name), ["items"])
+    XCTAssertEqual(standard.library.toSchema().components["Map"]?.map(\.name), ["points", "crs"])
+    let state = OpenUIState(schema: extended.library.toSchema())
+    state.setSource("$choice=\"a\"\nroot=Stack([Tabs([TabItem(\"a\",\"A\",[TextContent(\"A\")]),TabItem(\"b\",\"B\",[TextContent(\"B\")])],$choice),Map([MapPoint(\"A\",30,120,null,null,null,\"a\"),MapPoint(\"B\",31,121,null,null,null,\"b\")],\"wgs84\",$choice)])")
+    XCTAssertTrue(state.errors.isEmpty, "\(state.errors)")
+    let children = PropValue.children(try XCTUnwrap(state.root))
+    let tabs = OpenUIComponentContext(element: children[0], registry: extended.registry, state: state)
+    let map = OpenUIComponentContext(element: children[1], registry: extended.registry, state: state)
+    let places = NativeMapPlace.decode(map.value("points"), crs: "wgs84")
+    XCTAssertEqual(places.map(\.id), ["a", "b"])
+    var actions = 0
+    state.onAction = { _ in actions += 1 }
+    try XCTUnwrap(tabs.presentationBinding("value")).wrappedValue = .string("b")
+    XCTAssertEqual(try XCTUnwrap(map.presentationBinding("value")).wrappedValue, .string("b"))
+    XCTAssertEqual(actions, 0, "Local selection does not launch an Agent conversation")
+  }
 }

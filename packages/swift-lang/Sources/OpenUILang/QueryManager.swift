@@ -111,19 +111,23 @@ public final class QueryManager {
     private func startTool(_ name: JSValue, _ args: JSValue, _ resolve: JSValue, _ reject: JSValue) {
         guard !disposed else { reject.call(withArguments: [core.call("error", ["Disposed"])]); return }
         let tool = core.string(name), id = UUID(), provider = self.provider, tools = self.tools
+        let realm = core
         let decoded = core.decode(args, interpret: false)
         let arguments: OpenUIObject
         if case .object(let fields) = decoded { arguments = fields } else { arguments = OpenUIObject([]) }
         let task = Task { [weak self] in
             let result: Result<Value, Error>
             do {
+                try Task.checkCancellation()
                 if let tools {
                     guard let fn = tools[tool] else { throw ToolNotFoundError(toolName: tool, availableTools: tools.keys.sorted { $0.codeUnits.lexicographicallyPrecedes($1.codeUnits) }) }
                     result = .success(try await fn(arguments))
                 } else if let provider { result = .success(try await provider.callTool(name: tool, arguments: arguments)) }
                 else { throw ToolNotFoundError(toolName: tool) }
             } catch { result = .failure(error) }
-            self?.finishTool(id, result, resolve, reject)
+            // Do not keep the native manager alive while waiting for another
+            // realm operation (notably dispose) to release its lock.
+            realm.sync { [weak self] in self?.finishTool(id, result, resolve, reject) }
         }
         pending[id] = (task, reject)
     }

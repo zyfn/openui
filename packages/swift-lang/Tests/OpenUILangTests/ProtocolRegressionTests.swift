@@ -188,3 +188,29 @@ extension ProtocolRegressionTests {
         XCTAssertTrue(createParser(schema: schema).parse(chain).meta.errors.contains { $0.code == .parseException })
     }
 }
+
+extension ProtocolRegressionTests {
+    func testNativeGuardUsesSharedTokenSemanticsForStringsCommentsAndOperators() {
+        XCTAssertFalse(sourceExceedsLimits("root=Text(\"" + String(repeating: "([+", count: 500) + "\")"))
+        XCTAssertFalse(sourceExceedsLimits("// " + String(repeating: "([+", count: 500) + "\nroot=Text(\"safe\")"))
+        XCTAssertTrue(sourceExceedsLimits("root=" + String(repeating: "(", count: 129) + "1" + String(repeating: ")", count: 129)))
+        XCTAssertTrue(sourceExceedsLimits("root=" + Array(repeating: "1", count: 258).joined(separator: "+")))
+        XCTAssertFalse(OpenUIRuntimeBudget.acceptsSource(String(repeating: "x", count: OpenUIRuntimeBudget.maximumSourceUTF16 + 1)))
+        XCTAssertTrue(OpenUIRuntimeBudget.acceptsSource(String(repeating: "x", count: OpenUIRuntimeBudget.maximumSourceUTF16)))
+    }
+
+    func testFailedStreamTailPreservesPrefixAndRequiresExplicitReplacement() throws {
+        let parser = createStreamingParser(schema: schema)
+        let valid = parser.push("root=Text(\"readable\")\n")
+        XCTAssertNotNil(valid.root)
+        let failed = parser.push("bad=" + String(repeating: "(", count: 130))
+        XCTAssertTrue(failed.nativeLimitExceeded)
+        XCTAssertNotNil(failed.root)
+        XCTAssertTrue(failed.meta.incomplete)
+        XCTAssertTrue(parser.getResult(complete: true).nativeLimitExceeded)
+        XCTAssertTrue(parser.push("1").nativeLimitExceeded)
+        let recovered = parser.set("root=Text(\"replacement\")", complete: true)
+        XCTAssertFalse(recovered.nativeLimitExceeded)
+        XCTAssertNotNil(recovered.root)
+    }
+}

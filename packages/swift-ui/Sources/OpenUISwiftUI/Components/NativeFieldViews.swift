@@ -1,5 +1,6 @@
 import OpenUILang
 import SwiftUI
+import Combine
 
 struct OpenUINativeField: View {
     enum Kind { case input, textArea, select, radio, checkbox, switches, slider, date, chips, optionCards }
@@ -14,6 +15,7 @@ struct OpenUINativeField: View {
     private var inputFont: OpenUIFont { context.theme.fieldFont(context.string("size")).resolved(for: .control) }
     private var lineHeight: CGFloat { inputFont.measuredLineHeight(scale: textScale) }
     @FocusState private var focused: Bool
+    @AccessibilityFocusState private var accessibilityFocused: Bool
     @State private var localError: String?
     @State private var registration = UUID()
     @State private var registeredName: OpenUIString?
@@ -24,6 +26,11 @@ struct OpenUINativeField: View {
 
     var body: some View {
         feedback.disabled(!context.canInteract)
+            .onReceive(validation?.$focusRequest.eraseToAnyPublisher() ?? Empty<NativeFormValidation.FocusRequest?, Never>().eraseToAnyPublisher()) { request in
+                guard request?.name == field.name, validation?.errors[field.name] != nil else { return }
+                if kind == .input || kind == .textArea { focused = true }
+                accessibilityFocused = true
+            }
             .onAppear {
                 field.initialize()
                 register()
@@ -60,6 +67,7 @@ struct OpenUINativeField: View {
     private func fieldBody(_ error: String?) -> some View {
         VStack(alignment: .leading, spacing: context.theme.spacing("xs")) {
             control.accessibilityIdentifier("openui.field.\(field.name.displayString)")
+                .accessibilityFocused($accessibilityFocused)
             if let error {
                 Label(NativeControlText.localized(error, locale: locale), systemImage: "exclamationmark.circle.fill")
                     .nativeTextStyle(context.theme.textStyle(.fieldError))

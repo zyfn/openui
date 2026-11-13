@@ -70,11 +70,12 @@ struct NativeCitationSources: View {
               openURL(target); dismiss()
             } label: {
               HStack(alignment: .top, spacing: theme.spacing("m")) {
-                if let host = target?.host {
-                  let favicon = "https://www.google.com/s2/favicons?sz=128&domain="
-                    + (host.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? host)
-                  NativeRemoteImage(src: favicon, alt: source.sourceName, layout: .thumbnail(CGSize(width: 20, height: 20)))
-                } else { Image(systemName: "globe").frame(width: 20, height: 20) }
+                // Source domains must not be disclosed to a third-party icon
+                // service merely because a user opened the citations sheet.
+                // A host may supply its own explicitly authorized resource UI.
+                Image(systemName: "globe").frame(width: 20, height: 20)
+                  .foregroundStyle(theme.textNeutralSecondary)
+                  .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: theme.spacing("2xs")) {
                   Text(source.title).openUIFont(theme.textBodyDefaultHeavy, role: .title).foregroundStyle(theme.textNeutralPrimary)
                   Text(source.sourceName).nativeTextStyle(theme.textStyle(.caption))

@@ -29,15 +29,22 @@ struct NativeTableDraft {
     return rows[row].values[column]
   }
   func changes(columns: Int) -> Int {
-    rows.reduce(0) { count, row in
-      guard let previous = baseline.first(where: { $0.id == row.id }) else { return count }
-      return count
-        + (0..<columns).filter { index in
-          let a = row.values.indices.contains(index) ? row.values[index] : .undefined
-          let b = previous.values.indices.contains(index) ? previous.values[index] : .undefined
-          return a != b
-        }.count
+    guard columns > 0, !rows.isEmpty else { return 0 }
+    // Match the first baseline row for each ID, as before, without scanning
+    // the whole baseline for every displayed row. Keep this index local so
+    // load/reset/commit cannot leave a stale, independently owned cache.
+    let previousRows = Dictionary(baseline.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first })
+    var count = 0
+    for row in rows {
+      guard let previous = previousRows[row.id] else { continue }
+      for index in 0..<columns {
+        let a = row.values.indices.contains(index) ? row.values[index] : .undefined
+        let b = previous.values.indices.contains(index) ? previous.values[index] : .undefined
+        if a != b { count += 1 }
+      }
     }
+    return count
   }
   mutating func reset() { rows = baseline }
   mutating func commit() { baseline = rows }
@@ -58,22 +65,39 @@ struct NativeTableDraft {
 @MainActor final class NativeTableEditingState: ObservableObject {
   @Published var draft = NativeTableDraft()
   @Published private(set) var saving = false
+  @Published private(set) var hasSourceConflict = false
+  private var latestSource: Value?
+  private var conflictSource: Value?
   private var revision: Int?
   private var saveID: UUID?
 
   func receive(_ value: Value, revision: Int) {
     if self.revision != revision {
       self.revision = revision; saveID = nil; saving = false
+      latestSource = value; conflictSource = nil; hasSourceConflict = false
       draft.load(value)
     } else if !saving && !draft.hasChanges {
+      latestSource = value; conflictSource = nil; hasSourceConflict = false
       draft.load(value)
+    } else if !saving && latestSource != value && draft.value != value {
+      // Never silently replace dirty edits, or save them over a refreshed
+      // source without an explicit local choice.
+      conflictSource = value; hasSourceConflict = true
+      latestSource = value
     }
-    // Store publication from a rejected save must not turn the retryable
-    // draft into a new baseline. Source replacement still resets it above.
+    // A Save's own Store publication is not a remote refresh/conflict.
+  }
+  func useUpdatedSource() {
+    guard let conflictSource else { return }
+    draft.load(conflictSource); latestSource = conflictSource
+    self.conflictSource = nil; hasSourceConflict = false
+  }
+  func keepLocalEdits() {
+    conflictSource = nil; hasSourceConflict = false
   }
 
   func save(context: OpenUIComponentContext, name: OpenUIString, columns: Int) async {
-    guard context.canActivate, !saving, draft.changes(columns: columns) > 0 else { return }
+    guard context.canActivate, !saving, !hasSourceConflict, draft.changes(columns: columns) > 0 else { return }
     let id = UUID(), pending = draft.value
     saveID = id; saving = true
     defer { if saveID == id { saving = false; saveID = nil } }
@@ -81,14 +105,19 @@ struct NativeTableDraft {
     _ = await context.commitFieldAndTrigger("Save Changes", form: name, name: name,
       value: pending, componentType: "EditableTable", onDispatch: { delivered = true })
     guard saveID == id, context.isCurrentPresentation else { return }
-    if delivered { draft.commit() }
+    if delivered { draft.commit(); latestSource = draft.value; conflictSource = nil; hasSourceConflict = false }
   }
 }
 
 struct NativeEditableTable: View {
   let context: OpenUIComponentContext
   @EnvironmentObject private var state: OpenUIState
-  @StateObject private var editing = NativeTableEditingState()
+  @StateObject private var editing: NativeTableEditingState
+  @MainActor init(context: OpenUIComponentContext) {
+    self.context = context
+    _editing = StateObject(wrappedValue: context.editingRecord(kind: "table",
+      name: context.codeUnitString("name") ?? "", create: NativeTableEditingState.init))
+  }
   private var draft: NativeTableDraft { editing.draft }
   private var saving: Bool { editing.saving }
   private var name: OpenUIString { context.codeUnitString("name") ?? "" }
@@ -97,6 +126,20 @@ struct NativeEditableTable: View {
     state.fieldValue(form: name, name: name, fallback: context.value("data") ?? .array([]))
   }
   private var changed: Int { draft.changes(columns: columns.count) }
+  private struct RowIdentity: Identifiable {
+    struct Key: Hashable { let value: OpenUIString; let occurrence: Int }
+    let id: Key
+    let index: Int
+  }
+  private var rowIdentities: [RowIdentity] {
+    var occurrences: [OpenUIString: Int] = [:]
+    return draft.rows.enumerated().map { index, row in
+      let occurrence = occurrences[row.id, default: 0]
+      occurrences[row.id] = occurrence + 1
+      return .init(id: .init(value: row.id, occurrence: occurrence), index: index)
+    }
+  }
+
 
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
@@ -109,7 +152,9 @@ struct NativeEditableTable: View {
                 .frame(width: width(index), alignment: alignment(column)).padding(context.theme.spaceM)
             }
           }.background(context.theme.sunk)
-          ForEach(Array(draft.rows.enumerated()), id: \.offset) { row, item in
+          ForEach(rowIdentities, id: \.id) { identity in
+            let row = identity.index
+            let item = draft.rows[row]
             Divider()
             HStack(alignment: .center, spacing: 0) {
               ForEach(Array(columns.enumerated()), id: \.offset) { column, definition in
@@ -129,6 +174,17 @@ struct NativeEditableTable: View {
           RoundedRectangle(cornerRadius: context.theme.radiusL).strokeBorder(
             context.theme.borderDefault, lineWidth: context.presentation.borderWidth))
       }.disabled(!context.canInteract || saving)
+      if editing.hasSourceConflict {
+        VStack(alignment: .leading, spacing: context.theme.spaceS) {
+          Text("Source data changed. Review your edits before saving.", bundle: NativeControlResources.bundle)
+            .nativeTextStyle(context.theme.textStyle(.supporting))
+            .fixedSize(horizontal: false, vertical: true)
+          NativeButtonsLayout(rowGap: context.theme.spaceS, columnGap: context.theme.spaceS) {
+            Button { editing.useUpdatedSource() } label: { Text("Use updated data", bundle: NativeControlResources.bundle) }
+            Button { editing.keepLocalEdits() } label: { Text("Keep my edits", bundle: NativeControlResources.bundle) }
+          }.buttonStyle(NativeActionButtonStyle(theme: context.theme, variant: "secondary", size: "small"))
+        }.accessibilityIdentifier("openui.table.source-conflict")
+      }
       if changed > 0 {
         NativeLabelValueLayout(gap: context.theme.spaceM,
           minimumLabelWidth: .greatestFiniteMagnitude, centerVertically: true) {
@@ -148,13 +204,14 @@ struct NativeEditableTable: View {
             Button(action: save) { Text("Save Changes", bundle: NativeControlResources.bundle) }
               .buttonStyle(
                 NativeActionButtonStyle(theme: context.theme, variant: "primary", size: "small"))
+              .disabled(editing.hasSourceConflict)
           }
         }.openUIFont(context.theme.textBodySm, role: .detail).disabled(!context.canInteract || saving)
       }
     }
-    .onAppear { editing.receive(source, revision: state.sourceRevision) }
-    .onChange(of: source) { value in editing.receive(value, revision: state.sourceRevision) }
-    .onChange(of: state.sourceRevision) { revision in editing.receive(source, revision: revision) }
+    .onAppear { editing.receive(source, revision: state.presentationRevision) }
+    .onChange(of: source) { value in editing.receive(value, revision: state.presentationRevision) }
+    .onChange(of: state.presentationRevision) { revision in editing.receive(source, revision: revision) }
   }
   private func width(_ index: Int) -> CGFloat {
     NativeEditableColumn.width(context.element.sourceReadiness["columns"][index]["width"].complete
@@ -174,6 +231,7 @@ struct NativeEditableTable: View {
       },
       set: { text in
         guard context.canInteract else { return }
+        context.recordUserInteraction()
         let numeric = NativeValue.string(columns[column], "type") == "number"
         if numeric, let value = Double(text), value.isFinite {
           editing.draft.write(.number(value), row: row, column: column)
@@ -228,6 +286,7 @@ extension NativeEditableTable {
 
 private struct NativeTableDateCell: View {
   @Environment(\.openUITheme) private var theme
+  @Environment(\.timeZone) private var timeZone
   @Binding var value: String
   let label: String
   @State private var showing = false
@@ -237,11 +296,15 @@ private struct NativeTableDateCell: View {
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.calendar = Calendar(identifier: .gregorian)
     formatter.dateFormat = "yyyy-MM-dd"
+    formatter.timeZone = timeZone
+    formatter.isLenient = false
     return formatter
   }
   var body: some View {
     Button {
-      draft = formatter.date(from: value) ?? Date()
+      if value.count == 10, let parsed = formatter.date(from: value), formatter.string(from: parsed) == value {
+        draft = parsed
+      } else { draft = Date() }
       showing = true
     } label: {
       HStack {

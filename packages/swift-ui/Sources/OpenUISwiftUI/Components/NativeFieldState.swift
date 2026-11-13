@@ -6,12 +6,35 @@ final class NativeFormValidation: ObservableObject {
     struct Field {
         let rules: [ParsedRule]
         let value: () -> Value
+        var prepare: () -> Void = {}
+        var draftError: () -> String? = { nil }
     }
+    private var declaredFields: [OpenUIString: Field] = [:]
     private var fields: [OpenUIString: Field] = [:]
     private var owners: [OpenUIString: UUID] = [:]
+    // Field-local pending edits are flushed before semantic form actions.
+    // Owner identity prevents a disappearing view from unregistering its replacement.
+    private var pendingWrites: [OpenUIString: (owner: UUID, flush: () -> Void, error: () -> String?)] = [:]
+    private var fieldOrder: [OpenUIString] = []
     @Published private(set) var errors: [OpenUIString: String] = [:]
     @Published private(set) var firstInvalid: OpenUIString?
+    struct FocusRequest { let name: OpenUIString; let id = UUID() }
+    @Published private(set) var focusRequest: FocusRequest?
+    func requestInvalidFieldFocus() {
+        if let firstInvalid { focusRequest = FocusRequest(name: firstInvalid) }
+    }
 
+    static func containsField(_ name: OpenUIString, in value: Value, depth: Int = 0) -> Bool {
+        guard depth < 128 else { return false }
+        switch value {
+        case .element(let element):
+            if PropValue.codeUnitString(element, "name") == name { return true }
+            return element.props.contains { containsField(name, in: $0.1, depth: depth + 1) }
+        case .array(let values): return values.contains { containsField(name, in: $0, depth: depth + 1) }
+        case .object(let fields): return fields.contains { containsField(name, in: $0.value, depth: depth + 1) }
+        default: return false
+        }
+    }
     static func requiresValidation(_ plan: ActionPlan?) -> Bool {
         guard let plan else { return true }
         return plan.steps.contains { step in
@@ -22,9 +45,17 @@ final class NativeFormValidation: ObservableObject {
             }
         }
     }
+    static func requiresValidation(action: Value?) -> Bool {
+        if case .actionPlan(let plan) = action { return requiresValidation(plan) }
+        if case .object(let fields) = action,
+           case .string(let type) = fields.last(where: { $0.key == "type" })?.value,
+           type == "open_url" { return false }
+        return true
+    }
     func register(
         _ name: OpenUIString, owner: UUID? = nil, rules: [ParsedRule], value: @escaping () -> Value
     ) {
+        if fields[name] == nil && !fieldOrder.contains(name) { fieldOrder.append(name) }
         fields[name] = Field(rules: rules, value: value)
         owners[name] = owner ?? owners[name] ?? UUID()
     }
@@ -32,21 +63,86 @@ final class NativeFormValidation: ObservableObject {
         if let owner, owners[name] != owner { return }
         owners.removeValue(forKey: name)
         fields.removeValue(forKey: name)
-        if errors[name] != nil { errors.removeValue(forKey: name) }
+        if declaredFields[name] == nil {
+            fieldOrder.removeAll { $0 == name }
+            if errors[name] != nil { errors.removeValue(forKey: name) }
+        }
+        updateFirstInvalid()
     }
+    func registerPendingWrite(_ name: OpenUIString, owner: UUID,
+        flush: @escaping () -> Void, error: @escaping () -> String? = { nil }) {
+        if !fieldOrder.contains(name) { fieldOrder.append(name) }
+        pendingWrites[name] = (owner, flush, error)
+        if var declared = declaredFields[name] {
+            declared.prepare = flush; declared.draftError = error
+            declaredFields[name] = declared
+        }
+    }
+    func setDeclarations(_ fields: [(OpenUIString, Field)]) {
+        declaredFields = Dictionary(fields, uniquingKeysWith: { _, latest in latest })
+        let retained = Set(declaredFields.keys).union(self.fields.keys).union(pendingWrites.keys)
+        fieldOrder = fieldOrder.filter { retained.contains($0) }
+        let next = errors.filter { retained.contains($0.key) }
+        if next != errors { errors = next }
+        setFieldOrder(fields.map { $0.0 })
+    }
+    func setFieldOrder(_ names: [OpenUIString]) {
+        var seen = Set<OpenUIString>()
+        fieldOrder = (names + fieldOrder).filter { seen.insert($0).inserted }
+        updateFirstInvalid()
+    }
+    private func updateFirstInvalid() {
+        let next = fieldOrder.first { errors[$0] != nil }
+            ?? errors.keys.sorted().first
+        if firstInvalid != next { firstInvalid = next }
+    }
+    /// Validate unrepresentable editing text before any Store writes occur.
+    /// Disabling declarative form rules must not submit an older numeric value.
+    @discardableResult func preparePendingWrites() -> Bool {
+        let mounted = pendingWrites
+        let declared = declaredFields
+        var next = errors
+        var invalid = false
+        for name in fieldOrder {
+            let error = mounted[name]?.error() ?? declared[name]?.draftError()
+            if let error { next[name] = error; invalid = true }
+            else {
+                let field = fields[name] ?? declared[name]
+                next[name] = field.flatMap { OpenUILang.validate($0.value(), rules: $0.rules) }
+            }
+        }
+        if errors != next { errors = next }
+        updateFirstInvalid()
+        guard !invalid else { return false }
+        for name in fieldOrder {
+            if let write = mounted[name] {
+                guard pendingWrites[name]?.owner == write.owner else { continue }
+                write.flush()
+            } else { declared[name]?.prepare() }
+        }
+        return true
+    }
+    func unregisterPendingWrite(_ name: OpenUIString, owner: UUID) {
+        guard pendingWrites[name]?.owner == owner else { return }
+        pendingWrites.removeValue(forKey: name)
+    }
+    func flushPendingWrites() { _ = preparePendingWrites() }
     @discardableResult func validateAll() -> Bool {
-        let next = fields.reduce(into: [OpenUIString: String]()) { result, entry in
+        guard preparePendingWrites() else { return false }
+        let candidates = declaredFields.merging(fields, uniquingKeysWith: { _, mounted in mounted })
+        let next = candidates.reduce(into: [OpenUIString: String]()) { result, entry in
             if let error = OpenUILang.validate(entry.value.value(), rules: entry.value.rules) {
                 result[entry.key] = error
             }
         }
         if errors != next { errors = next }
-        firstInvalid = next.keys.sorted().first
+        updateFirstInvalid()
         return next.isEmpty
     }
     func changed(_ name: OpenUIString, value: Value, rules: [ParsedRule]) {
         let error = OpenUILang.validate(value, rules: rules)
         if errors[name] != error { errors[name] = error }
+        updateFirstInvalid()
     }
 }
 
@@ -112,6 +208,7 @@ struct NativeFieldState {
     }
     func write(_ value: Value) {
         guard context.canInteract else { return }
+        context.recordUserInteraction()
         if let binding = context.binding("value") {
             binding.wrappedValue = value
         } else {

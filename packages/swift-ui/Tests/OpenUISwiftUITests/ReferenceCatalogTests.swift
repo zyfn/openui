@@ -135,7 +135,7 @@ final class ReferenceCatalogTests: XCTestCase {
   @MainActor func testChartDataSupportsReferencesAndNegativeValues() throws {
     let library = try OpenUIStandardComponents.library()
     let programs = [
-      "root=BarChart([\"A\",\"B\"],[Series(\"First\",[-2,4]),Series(\"Second\",[3])],\"stacked\")",
+      "root=BarChart([\"A\",\"B\"],[Series(\"First\",[-2,4]),Series(\"Second\",[3,0])],\"stacked\")",
       "root=ScatterChart([ScatterSeries(\"Points\",[Point(-2,3,4),Point(5,-6)])],\"X\",\"Y\")",
       "root=PieChart([\"A\",\"B\"],[2,3],\"donut\",\"semiCircular\")",
     ]
@@ -150,6 +150,7 @@ final class ReferenceCatalogTests: XCTestCase {
       if source.contains("BarChart") {
         XCTAssertEqual(data.value(0, 0), -2)
         XCTAssertEqual(data.value(1, 1), 0)
+        XCTAssertTrue(data.hasValue(1, 1), "An explicit zero remains a real sample")
       }
       if source.contains("ScatterChart") { XCTAssertEqual(data.scatter.first?.points.last?.y, -6) }
     }
