@@ -56,12 +56,17 @@ struct NativeMediaReveal: ViewModifier {
     @Environment(\.openUIPresentation) private var nativePresentation
 
   var enabled = true
+  var fallbackSystemImage: String? = nil
   @Environment(\.openUITheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var visible = false
   func body(content: Content) -> some View {
     ZStack {
-      theme.sunk.opacity(visible || !enabled ? 0 : 1)
+      Group {
+        if let fallbackSystemImage {
+          NativeUnavailableMedia(theme: theme, systemImage: fallbackSystemImage)
+        } else { theme.sunk }
+      }.opacity(visible || !enabled ? 0 : 1)
       content.opacity(visible || !enabled ? 1 : 0)
     }
       .onAppear {

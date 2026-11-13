@@ -13,35 +13,37 @@ enum NativeMediaLayout {
   case cover, aspect(CGFloat), thumbnail(CGSize), fit, fill, intrinsic
 }
 
-/// A resource placeholder is not an alert. Copy is shown only when it fits;
-/// the enclosing image retains its accessible unavailable status at every size.
+/// Optional artwork is not an error message. A semantic fallback is supplied
+/// by its owning component; absent artwork otherwise leaves the declared slot
+/// transparent. Keeping that slot avoids reflowing text on a network failure.
 struct NativeUnavailableMedia: View {
   let theme: OpenUIThemeValues
-  @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 16
+  var systemImage: String? = nil
+  @ScaledMetric(relativeTo: .body) private var glyphSize: CGFloat = 24
 
   var body: some View {
-    GeometryReader { geometry in
-      let side = min(glyphSize, max(0, min(geometry.size.width, geometry.size.height)))
-      ViewThatFits(in: .vertical) {
-        if geometry.size.width >= 160 {
-          VStack(spacing: theme.spaceXs) {
-            glyph(side)
-            Text("Image unavailable", bundle: NativeControlResources.bundle)
-              .nativeTextStyle(theme.textStyle(.supporting))
-              .multilineTextAlignment(.center)
-              .fixedSize(horizontal: false, vertical: true)
-              .padding(.horizontal, theme.spaceS)
-          }.fixedSize(horizontal: false, vertical: true)
+    Group {
+      if let systemImage {
+        GeometryReader { geometry in
+          let available = max(0, min(geometry.size.width, geometry.size.height))
+          let side = min(glyphSize, available * 0.42)
+          ZStack {
+            theme.interactiveAccentDefault.opacity(0.08)
+            Circle()
+              .fill(theme.foreground)
+              .frame(width: side * 1.75, height: side * 1.75)
+              .overlay(Circle().strokeBorder(theme.interactiveAccentDefault.opacity(0.12), lineWidth: 1))
+            Image(systemName: systemImage)
+              .font(.system(size: side, weight: .medium))
+              .foregroundStyle(theme.interactiveAccentDefault)
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        glyph(side)
+      } else {
+        Color.clear
       }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-  }
-
-  private func glyph(_ side: CGFloat) -> some View {
-    Image(systemName: "photo").resizable().scaledToFit()
-      .frame(width: side, height: side).foregroundStyle(theme.textNeutralSecondary)
+    .accessibilityHidden(true).allowsHitTesting(false)
   }
 }
 
@@ -247,7 +249,7 @@ struct NativeRemoteImage: View {
   let src: String?
   var alt = ""
   var layout: NativeMediaLayout = .cover
-  var showsFailureSymbol = true
+  var fallbackSystemImage: String? = nil
   var cachedImage: Image?
   var attempt = 0
   var onStatus: ((NativeMediaStatus, Image?) -> Void)?
@@ -256,6 +258,7 @@ struct NativeRemoteImage: View {
   @State private var localRetry = NativeImageRetryState()
   @Environment(\.openUIMediaSourceReady) private var sourceReady
   @Environment(\.openUIStreamActive) private var streamActive
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.openUIMediaWidthReady) private var widthReady
   @State private var phase: AsyncImagePhase = .empty
   @State private var imageSize: CGSize?
@@ -272,30 +275,23 @@ struct NativeRemoteImage: View {
       // layout argument must not temporarily replace it with a small thumbnail.
       if !widthReady && needsResolvedWidth {
         NativePendingContent(loading: streamActive, message: "Loading image")
-      } else if !sourceReady {
-        placeholder(loading: streamActive).onAppear { onStatus?(streamActive ? .loading : .unavailable, nil) }
-      } else if let cachedImage {
-        picture(cachedImage, reveal: false).onAppear { onStatus?(.loaded, cachedImage) }
-      } else if loadedRequest != requestID, let retained = mediaCache?[requestID] {
-        picture(retained.image, retainedSize: retained.size, reveal: !retained.wasPresented)
-          .onAppear { mediaCache?.markPresented(requestID); onStatus?(.loaded, retained.image) }
-      } else if resources.request(for: src) != nil {
-        Group {
-          switch loadedRequest == requestID ? phase : .empty {
-          case .success(let image): picture(image, reveal: revealLoadedImage).onAppear {
-            mediaCache?.markPresented(requestID); onStatus?(.loaded, image)
+      } else if let presentation = presentedImage {
+        picture(presentation.image, retainedSize: presentation.size, reveal: presentation.reveal)
+          .onAppear { mediaCache?.markPresented(requestID); onStatus?(.loaded, presentation.image) }
+          .onChange(of: requestID) { _ in
+            mediaCache?.markPresented(requestID); onStatus?(.loaded, presentation.image)
           }
-          case .empty: loading.onAppear { onStatus?(.loading, nil) }
-          case .failure: unavailable.onAppear { onStatus?(.unavailable, nil) }
-          @unknown default: unavailable.onAppear { onStatus?(.unavailable, nil) }
-          }
-        }
       } else {
-        unavailable.onAppear { onStatus?(.unavailable, nil) }
+        // Keep the placeholder in one structural branch. Only its loading
+        // overlay fades out; a terminal failure never animates parent geometry.
+        placeholder(loading: waitingForImage)
+          .onAppear { onStatus?(waitingForImage ? .loading : .unavailable, nil) }
+          .onChange(of: waitingForImage) { loading in onStatus?(loading ? .loading : .unavailable, nil) }
+          .onChange(of: requestID) { _ in onStatus?(waitingForImage ? .loading : .unavailable, nil) }
       }
     }
     .modifier(NativeImageInteraction(source: src, image: displayedImage, alt: alt,
-      enabled: interactionEnabled, previewEnabled: previewEnabled, failed: failed,
+      enabled: interactionEnabled && !hasHiddenFailure, previewEnabled: previewEnabled, failed: failed,
       retry: { localRetry.retry(baseRequestID) }))
     .task(id: NativeMediaTaskID(request: sourceReady ? requestID : nil, sourceReady: sourceReady, pixelSize: targetPixelSize)) {
       guard sourceReady, cachedImage == nil else { return }
@@ -310,6 +306,24 @@ struct NativeRemoteImage: View {
       }
       if requestID.request == nil { onStatus?(.unavailable, nil) } else { await load() }
     }
+  }
+  private var presentedImage: (image: Image, size: CGSize?, reveal: Bool)? {
+    guard sourceReady else { return nil }
+    if let cachedImage { return (cachedImage, nil, false) }
+    if loadedRequest != requestID, let retained = mediaCache?[requestID] {
+      return (retained.image, retained.size, !retained.wasPresented)
+    }
+    if loadedRequest == requestID, case .success(let image) = phase {
+      return (image, imageSize, revealLoadedImage)
+    }
+    return nil
+  }
+  private var waitingForImage: Bool {
+    if !sourceReady { return streamActive }
+    return requestID.request != nil && !failed
+  }
+  private var hasHiddenFailure: Bool {
+    fallbackSystemImage == nil && presentedImage == nil && !waitingForImage
   }
   private var displayedImage: Image? {
     if let cachedImage { return cachedImage }
@@ -365,36 +379,33 @@ struct NativeRemoteImage: View {
     Group {
       switch layout {
       case .intrinsic, .fit:
-        canvas(sourceSize: retainedSize) { image.resizable().scaledToFit().modifier(NativeMediaReveal(enabled: reveal)) }
+        canvas(sourceSize: retainedSize) { image.resizable().scaledToFit().modifier(NativeMediaReveal(enabled: reveal, fallbackSystemImage: fallbackSystemImage)) }
       default:
-        canvas(sourceSize: retainedSize) { image.resizable().scaledToFill().modifier(NativeMediaReveal(enabled: reveal)) }
+        canvas(sourceSize: retainedSize) { image.resizable().scaledToFill().modifier(NativeMediaReveal(enabled: reveal, fallbackSystemImage: fallbackSystemImage)) }
       }
     }
     .accessibilityElement(children: .ignore).accessibilityLabel(alt)
     .accessibilityAddTraits(.isImage).accessibilityHidden(alt.isEmpty && !interactionEnabled)
   }
-  private var loading: some View { placeholder(loading: true) }
-  private var unavailable: some View { placeholder(loading: false) }
   private func placeholder(loading: Bool) -> some View {
     canvas {
-      if loading {
-        NativeLoadingSurface(showsMediaSymbol: true)
-      } else {
-        ZStack {
-          theme.sunk
-          if showsFailureSymbol {
-            NativeUnavailableMedia(theme: theme)
-          }
+      ZStack {
+        NativeUnavailableMedia(theme: theme, systemImage: fallbackSystemImage)
+        if fallbackSystemImage == nil {
+          // This view survives loading -> failure. Opacity is local, respects
+          // Reduce Motion and uses the existing presentation motion token.
+          NativeLoadingSurface(active: loading, showsMediaSymbol: true)
+            .opacity(loading ? 1 : 0)
+            .animation(reduceMotion ? nil : .easeOut(duration: nativePresentation.motion.mediaRevealDuration), value: loading)
         }
       }
     }
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(
-      alt.isEmpty
-        ? Text(loading ? "Loading image" : "Image unavailable", bundle: NativeControlResources.bundle) : Text(alt)
-    )
-    .accessibilityValue(Text(loading ? "Loading image" : "Image unavailable", bundle: NativeControlResources.bundle))
+    .accessibilityLabel(alt.isEmpty ? Text("Loading image", bundle: NativeControlResources.bundle) : Text(alt))
+    .accessibilityValue(Text(loading && fallbackSystemImage == nil ? "Loading image" : "", bundle: NativeControlResources.bundle))
     .accessibilityAddTraits(.isImage)
+    .accessibilityHidden(!loading && fallbackSystemImage == nil)
+    .allowsHitTesting(loading || fallbackSystemImage != nil)
     .accessibilityIdentifier(loading ? "openui.media.loading" : "openui.media.unavailable")
   }
   // Document illustrations retain their source proportions; photo previews

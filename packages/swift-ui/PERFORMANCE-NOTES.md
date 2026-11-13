@@ -69,3 +69,17 @@ swift test -c release --filter HostSizingIsolationTests
 ```
 
 Local Linux validation of the repair checks syntax and the unchanged extracted cache/subscriber and slider-geometry code. Its image/platform types are test stand-ins; it is not ImageIO, SwiftUI, WebKit, Apple SDK or client UI acceptance. Client follow-up should rerun RTL value/tooltip/drag association, one-visible-error feedback, one-cancelled/one-live image requests, and repeated formula page reentry on iOS as well as macOS. No FPS or zero-bug claim is made from these tests.
+
+## Quiet image failure and map place artwork
+
+The integration branch keeps the D1-D5 changes. This follow-up changes only native media presentation/reveal, map place thumbnails and their existing visual tests; the language, resources/cache ownership, registered components and dependencies are unchanged.
+
+Map place cards now use a theme-colored `mappin.and.ellipse` badge when a photo is missing, pending or fails. It is a generic location symbol, not a category inferred from model-authored place names. Photos still use the existing resource loader and crossfade from the same badge (no intermediate gray photo tile); the thumbnail layout also requests an appropriately sized decode instead of a full-size fill image. Coordinates, marker numbering, selection and the details action remain independent of photography.
+
+Ordinary failed images no longer paint a photo error glyph or visible “Image unavailable” copy. The loading pixels fade to transparent using the existing media-reveal duration and Reduce Motion setting. Only opacity changes: explicitly allocated cover/thumbnail frames stay stable, including during streaming. This does **not** collapse the host's reserved image geometry or animate surrounding text. Missing optional artwork has no loading flash; a semantic fallback can occupy its slot. Failure status callbacks and source replacement/recovery remain supported. Hidden standalone image surfaces do not expose an invisible retry target.
+
+Five native tests were added to `VisualPolishTests`: map missing-artwork visibility in both directions/themes; transparent absent artwork and declared geometry; gated failure without refetch during fitting; identical semantic artwork while loading/after failure; and valid-source recovery. They export `map-poi-*`, `map-photo-*` and `media-*-transparent.png` with `OPENUI_SNAPSHOT_DIR`. These require Apple-platform execution; Linux syntax/architecture/authoring results are not native visual acceptance.
+
+```sh
+swift test --filter 'VisualPolishTests|StreamingMediaRetentionTests|GeographicGraphicTests|ResourceStoreTests'
+```

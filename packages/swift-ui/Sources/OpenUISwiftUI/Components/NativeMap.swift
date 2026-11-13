@@ -261,9 +261,7 @@ private struct NativeMap: View {
         let side = min(72, max(48, width * 0.20))
         let rowHeight = max(side, textBlockHeight)
         return HStack(spacing: 10) {
-            NativeRemoteImage(src: place.image, alt: place.title, layout: .fill)
-                .frame(width: side, height: side)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            NativeMapPlaceArtwork(source: place.image, title: place.title, side: side)
             VStack(alignment: .leading, spacing: 4) {
                 Text(place.title).nativeTextStyle(context.theme.textStyle(.fieldLabel)).lineLimit(2)
                 if let description = place.description, !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -295,6 +293,23 @@ private struct NativeMap: View {
     }
 
 }
+/// The location remains useful without photography. Reuse the same resource
+/// pipeline and fixed thumbnail slot for missing, pending and failed images;
+/// do not guess place categories from model-authored names or descriptions.
+struct NativeMapPlaceArtwork: View {
+    let source: String?
+    let title: String
+    let side: CGFloat
+
+    var body: some View {
+        NativeRemoteImage(src: source, alt: title,
+            layout: .thumbnail(CGSize(width: side, height: side)),
+            fallbackSystemImage: "mappin.and.ellipse")
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .accessibilityIdentifier("openui.map.place-artwork")
+    }
+}
+
 /// Each presented map owns its own viewport. Sharing the scroll-position
 /// binding between inline and fullscreen views leaves a new view at page one.
 @available(iOS 17, macOS 14, *)

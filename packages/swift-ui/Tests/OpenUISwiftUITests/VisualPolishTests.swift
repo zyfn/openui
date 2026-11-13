@@ -233,5 +233,174 @@ final class VisualPolishTests: XCTestCase {
       }
     }
   }
+
+  @MainActor private func artworkRoot<Content: View>(_ view: Content, width: CGFloat) -> AnyView {
+    AnyView(view.environment(\.accessibilityReduceMotion, true).frame(width: width).background(Color.white))
+  }
+
+  @MainActor private func artworkHost<Content: View>(_ view: Content, size: CGSize = CGSize(width: 72, height: 72)) -> (NSHostingView<AnyView>, NSWindow) {
+    _ = NSApplication.shared
+    let host = NSHostingView(rootView: artworkRoot(view, width: size.width))
+    let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.appearance = NSAppearance(named: .aqua)
+    window.contentView = host
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000)); window.orderFront(nil)
+    host.layoutSubtreeIfNeeded()
+    return (host, window)
+  }
+
+  @MainActor private func artworkPixels(_ host: NSHostingView<AnyView>, name: String) throws -> Raster {
+    host.layoutSubtreeIfNeeded()
+    let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+    host.cacheDisplay(in: host.bounds, to: bitmap)
+    let image = try XCTUnwrap(bitmap.cgImage)
+    let canvas = try XCTUnwrap(CGContext(data: nil, width: image.width, height: image.height,
+      bitsPerComponent: 8, bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    canvas.setFillColor(CGColor(gray: 1, alpha: 1))
+    canvas.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+    canvas.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+    if let directory = ProcessInfo.processInfo.environment["OPENUI_SNAPSHOT_DIR"] {
+      try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+      try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        .write(to: URL(fileURLWithPath: directory).appendingPathComponent(name + ".png"))
+    }
+    return Raster(width: image.width, height: image.height,
+      pixels: Data(bytes: try XCTUnwrap(canvas.data), count: image.width * image.height * 4))
+  }
+
+  @MainActor func testMissingMapArtworkIsAPOISymbolNotABlankPhoto() throws {
+    for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+      for scheme in [ColorScheme.light, .dark] {
+        let (host, window) = artworkHost(NativeMapPlaceArtwork(source: nil, title: "地点", side: 72)
+          .environment(\.layoutDirection, direction).environment(\.colorScheme, scheme))
+        defer { window.close() }
+        let image = try artworkPixels(host, name: "map-poi-\(direction)-\(scheme)")
+        XCTAssertGreaterThan(image.count { r, g, b in min(r, g, b) < 180 }, 20,
+          "A semantic location glyph must be visible, not merely an empty photo frame")
+        XCTAssertEqual(host.fittingSize.width, 72, accuracy: 1)
+        XCTAssertEqual(host.fittingSize.height, 72, accuracy: 1)
+      }
+    }
+  }
+
+  @MainActor func testMissingOrdinaryArtworkIsTransparentAndPreservesDeclaredGeometry() throws {
+    let (host, window) = artworkHost(NativeRemoteImage(src: nil, alt: "描述", layout: .aspect(1.5)),
+      size: CGSize(width: 180, height: 120))
+    defer { window.close() }
+    let image = try artworkPixels(host, name: "media-missing-transparent")
+    XCTAssertEqual(image.count { r, g, b in min(r, g, b) < 250 }, 0,
+      "No photo symbol, error copy or sunk rectangle is painted when artwork is absent")
+    XCTAssertEqual(host.fittingSize.height, 120, accuracy: 1)
+  }
+
+  @MainActor func testFailedPhotoBecomesTransparentWithoutRefetchingOnFitting() async throws {
+    let loader = ArtworkFailureLoader()
+    let loading = expectation(description: "loading presented")
+    let unavailable = expectation(description: "failure presented")
+    var sawLoading = false, sawFailure = false
+    let (host, window) = artworkHost(NativeRemoteImage(src: "https://artwork.test/fail", alt: "描述", layout: .aspect(1.5),
+      onStatus: { status, _ in
+        if status == .loading && !sawLoading { sawLoading = true; loading.fulfill() }
+        if status == .unavailable && !sawFailure { sawFailure = true; unavailable.fulfill() }
+      }).openUIResourceContext(.init(loader: loader)), size: CGSize(width: 180, height: 120))
+    defer { window.close(); Task { await loader.releaseFailure() } }
+    await fulfillment(of: [loading], timeout: 3)
+    let before = host.fittingSize
+    await loader.releaseFailure()
+    await fulfillment(of: [unavailable], timeout: 3)
+    let image = try artworkPixels(host, name: "media-failed-transparent")
+    XCTAssertEqual(image.count { r, g, b in min(r, g, b) < 250 }, 0)
+    XCTAssertEqual(host.fittingSize, before, "A failure must not move neighboring text")
+    for _ in 0..<20 { _ = host.fittingSize; host.layoutSubtreeIfNeeded() }
+    XCTAssertEqual(loader.calls, 1)
+  }
+
+  @MainActor func testSemanticArtworkIsIdenticalWhileLoadingAndAfterFailure() async throws {
+    let loader = ArtworkFailureLoader()
+    let loading = expectation(description: "symbol while loading")
+    let unavailable = expectation(description: "symbol after failure")
+    var sawLoading = false, sawFailure = false
+    let (host, window) = artworkHost(NativeRemoteImage(src: "https://artwork.test/fail", alt: "地点",
+      layout: .thumbnail(CGSize(width: 72, height: 72)), fallbackSystemImage: "mappin.and.ellipse",
+      onStatus: { status, _ in
+        if status == .loading && !sawLoading { sawLoading = true; loading.fulfill() }
+        if status == .unavailable && !sawFailure { sawFailure = true; unavailable.fulfill() }
+      }).openUIResourceContext(.init(loader: loader)))
+    defer { window.close(); Task { await loader.releaseFailure() } }
+    await fulfillment(of: [loading], timeout: 3)
+    let before = try artworkPixels(host, name: "map-poi-loading")
+    XCTAssertGreaterThan(before.count { r, g, b in min(r, g, b) < 180 }, 20)
+    await loader.releaseFailure()
+    await fulfillment(of: [unavailable], timeout: 3)
+    let after = try artworkPixels(host, name: "map-poi-failed")
+    XCTAssertEqual(after.pixels, before.pixels, "Failure does not replace the place glyph with an error tile")
+  }
+
+  @MainActor func testPhotoCanRecoverWhenTheSourceChangesAfterFailure() async throws {
+    let loader = ArtworkFailureLoader()
+    let failed = expectation(description: "initial request failed")
+    let loaded = expectation(description: "replacement image loaded")
+    var sawFailure = false, sawSuccess = false
+    func content(_ path: String) -> some View {
+      NativeRemoteImage(src: "https://artwork.test/" + path, alt: "地点",
+        layout: .thumbnail(CGSize(width: 72, height: 72)), fallbackSystemImage: "mappin.and.ellipse",
+        onStatus: { status, _ in
+          if status == .unavailable && !sawFailure { sawFailure = true; failed.fulfill() }
+          if status == .loaded && !sawSuccess { sawSuccess = true; loaded.fulfill() }
+        }).openUIResourceContext(.init(loader: loader))
+    }
+    let (host, window) = artworkHost(content("fail"))
+    defer { window.close(); Task { await loader.releaseFailure() } }
+    await loader.releaseFailure()
+    await fulfillment(of: [failed], timeout: 3)
+    let before = try artworkPixels(host, name: "map-poi-before-recovery")
+    host.rootView = artworkRoot(content("success"), width: 72)
+    host.layoutSubtreeIfNeeded()
+    await fulfillment(of: [loaded], timeout: 3)
+    let after = try artworkPixels(host, name: "map-photo-after-recovery")
+    XCTAssertNotEqual(after.pixels, before.pixels)
+    XCTAssertEqual(host.fittingSize, CGSize(width: 72, height: 72))
+    XCTAssertEqual(loader.calls, 2, "A failed source cannot suppress a later valid image")
+  }
   #endif
 }
+
+#if os(macOS)
+/// A gated, in-memory failure keeps tests independent of networking and timing.
+private final class ArtworkFailureLoader: OpenUIResourceLoading {
+  private actor Gate {
+    var resolved = false
+    var waiters: [CheckedContinuation<Data, Error>] = []
+    func wait() async throws -> Data {
+      try await withCheckedThrowingContinuation { continuation in
+        if resolved { continuation.resume(throwing: URLError(.cannotLoadFromNetwork)) }
+        else { waiters.append(continuation) }
+      }
+    }
+    func release() {
+      resolved = true
+      let current = waiters; waiters.removeAll()
+      for waiter in current { waiter.resume(throwing: URLError(.cannotLoadFromNetwork)) }
+    }
+  }
+  private let gate = Gate()
+  private let lock = NSLock()
+  private var count = 0
+  var calls: Int { lock.lock(); defer { lock.unlock() }; return count }
+  private func record() { lock.lock(); defer { lock.unlock() }; count += 1 }
+  func request(for source: String, relativeTo baseURL: URL?) -> URLRequest? {
+    OpenUIURLSessionResourceLoader.shared.request(for: source, relativeTo: baseURL)
+  }
+  func data(for request: URLRequest) async throws -> Data {
+    record()
+    if request.url?.lastPathComponent == "success" {
+      return Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII=")!
+    }
+    return try await withTaskCancellationHandler(operation: { try await gate.wait() },
+      onCancel: { Task { await self.gate.release() } })
+  }
+  func releaseFailure() async { await gate.release() }
+}
+#endif
