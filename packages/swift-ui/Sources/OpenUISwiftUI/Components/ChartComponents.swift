@@ -113,7 +113,7 @@ struct NativeChartData: Equatable {
       }
     }
   }
-  private static func validSample(_ value: Value) -> Bool {
+  static func validSample(_ value: Value) -> Bool {
     switch value {
     case .number(let number): return number.isFinite
     case .string(let raw):
@@ -170,7 +170,8 @@ struct NativeChartData: Equatable {
 
 /// The parser can auto-close a partial numeric token. Keep the last completed
 /// chart during a stream instead of presenting that provisional number as fact.
-/// Complete inputs still use the upstream chart data rules unchanged.
+/// Valid complete inputs keep upstream data rules. Missing or invalid completed
+/// samples are diagnosed locally rather than rendered as fabricated zeroes.
 enum NativeChartStreamingPresentation {
   static func data(current: NativeChartData, stable: NativeChartData?, partial: Bool) -> NativeChartData {
     partial ? stable ?? NativeChartData() : current

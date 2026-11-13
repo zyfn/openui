@@ -102,3 +102,13 @@
 "Image preview" = "图片预览";
 "Swipe to change image" = "左右滑动切换图片";
 "Drag to move image" = "拖动查看放大的图片";
+
+"Chart data is invalid" = "图表数据不完整或无效";
+
+"No valid locations" = "暂无有效地点";
+
+"Source data changed. Review your edits before saving." = "来源数据已更新，请确认如何处理当前修改。";
+
+"Use updated data" = "使用更新的数据";
+
+"Keep my edits" = "保留我的修改";

@@ -18,7 +18,23 @@ final class NativeFormValidation: ObservableObject {
     private var fieldOrder: [OpenUIString] = []
     @Published private(set) var errors: [OpenUIString: String] = [:]
     @Published private(set) var firstInvalid: OpenUIString?
+    struct FocusRequest { let name: OpenUIString; let id = UUID() }
+    @Published private(set) var focusRequest: FocusRequest?
+    func requestInvalidFieldFocus() {
+        if let firstInvalid { focusRequest = FocusRequest(name: firstInvalid) }
+    }
 
+    static func containsField(_ name: OpenUIString, in value: Value, depth: Int = 0) -> Bool {
+        guard depth < 128 else { return false }
+        switch value {
+        case .element(let element):
+            if PropValue.codeUnitString(element, "name") == name { return true }
+            return element.props.contains { containsField(name, in: $0.1, depth: depth + 1) }
+        case .array(let values): return values.contains { containsField(name, in: $0, depth: depth + 1) }
+        case .object(let fields): return fields.contains { containsField(name, in: $0.value, depth: depth + 1) }
+        default: return false
+        }
+    }
     static func requiresValidation(_ plan: ActionPlan?) -> Bool {
         guard let plan else { return true }
         return plan.steps.contains { step in
@@ -192,6 +208,7 @@ struct NativeFieldState {
     }
     func write(_ value: Value) {
         guard context.canInteract else { return }
+        context.recordUserInteraction()
         if let binding = context.binding("value") {
             binding.wrappedValue = value
         } else {

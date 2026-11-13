@@ -16,6 +16,10 @@ final class NativeCodeSyntax: @unchecked Sendable {
 
   func tokens(code: String, language: String) -> [NativeCodeToken] {
     let plain = [NativeCodeToken(text: code, types: [])]
+    // Large or unusually long lines retain exact selectable code without
+    // running a potentially expensive third-party grammar over them.
+    guard code.utf16.count <= 131_072,
+      code.split(separator: "\n", omittingEmptySubsequences: false).allSatisfy({ $0.utf16.count <= 8_192 }) else { return plain }
     lock.lock()
     defer { lock.unlock() }
     guard !Task.isCancelled else { return plain }

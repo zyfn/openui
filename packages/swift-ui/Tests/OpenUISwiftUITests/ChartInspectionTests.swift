@@ -280,3 +280,24 @@ extension ChartInspectionTests {
     XCTAssertFalse(data.hasValue(2, 0))
   }
 }
+
+extension ChartInspectionTests {
+  @MainActor func testCompletedInvalidSamplesDoNotBecomeZeroDuringAnOpenChart() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=LineChart([\"A\",\"B\"],[Series(\"S\",[1,null],")
+    if let element = state.root {
+      let context = OpenUIComponentContext(element: element, registry: library.registry, state: state)
+      if let data = NativeChartStreamingPresentation.staged(context: context) {
+        XCTAssertTrue(data.invalidData || !data.hasValue(0, 1))
+        XCTAssertFalse(data.accessibilityRows.contains { $0.contains("B: S 0") })
+      }
+    }
+    state.setSource("root=BarChart([\"A\",\"B\"],[Series(\"First\",[-2,4]),Series(\"Second\",[3])],\"stacked\")")
+    let data = NativeChartData(context: .init(element: try XCTUnwrap(state.root), registry: library.registry, state: state))
+    XCTAssertTrue(data.invalidData, "Completed ragged series are not zero-filled")
+    XCTAssertFalse(data.hasContent(for: "BarChart"))
+    XCTAssertFalse(data.hasValue(1, 1))
+    XCTAssertTrue(data.accessibilityRows.isEmpty)
+  }
+}

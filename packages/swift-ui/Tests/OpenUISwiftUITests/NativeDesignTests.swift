@@ -93,3 +93,31 @@ final class NativeDesignTests: XCTestCase {
             state.stateValue("$date"), .null, "A stale calendar must not write to a replacement response")
     }
 }
+
+
+extension NativeDesignTests {
+  func testDateOnlyValuesUseScopedTimeZoneWithoutChangingCalendarDay() throws {
+    for identifier in ["America/Los_Angeles", "Asia/Shanghai", "Pacific/Kiritimati"] {
+      let zone = try XCTUnwrap(TimeZone(identifier: identifier))
+      var calendar = Calendar(identifier: .gregorian); calendar.timeZone = zone
+      for text in ["2024-02-29", "2026-03-08", "2026-11-01"] {
+        let date = try XCTUnwrap(NativeCalendarDate.parse(.string(text), timeZone: zone))
+        let parts = text.split(separator: "-").compactMap { Int($0) }
+        XCTAssertEqual(calendar.component(.year, from: date), parts[0])
+        XCTAssertEqual(calendar.component(.month, from: date), parts[1])
+        XCTAssertEqual(calendar.component(.day, from: date), parts[2])
+        let roundTrip = try XCTUnwrap(NativeCalendarDate.parse(NativeCalendarDate.encode(date), timeZone: zone))
+        XCTAssertEqual(roundTrip.timeIntervalSince1970, date.timeIntervalSince1970, accuracy: 0.001)
+      }
+      XCTAssertNil(NativeCalendarDate.parse(.string("2025-02-29"), timeZone: zone))
+      XCTAssertNil(NativeCalendarDate.parse(.string("2026-02-31"), timeZone: zone))
+    }
+  }
+
+  func testTimestampIsAnInstantRegardlessOfDisplayTimeZone() throws {
+    let text: Value = .string("2026-11-13T00:30:00.000Z")
+    let west = try XCTUnwrap(TimeZone(identifier: "America/Los_Angeles"))
+    let east = try XCTUnwrap(TimeZone(identifier: "Asia/Shanghai"))
+    XCTAssertEqual(NativeCalendarDate.parse(text, timeZone: west), NativeCalendarDate.parse(text, timeZone: east))
+  }
+}

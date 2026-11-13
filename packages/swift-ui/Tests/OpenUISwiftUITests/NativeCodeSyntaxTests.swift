@@ -26,3 +26,14 @@ final class NativeCodeSyntaxTests: XCTestCase {
     XCTAssertEqual(NativeCodeSyntax.shared.tokens(code: "", language: "swift").map(\.text).joined(), "")
   }
 }
+
+
+extension NativeCodeSyntaxTests {
+  func testOversizedHighlightingFallsBackWithoutChangingCode() {
+    for code in [String(repeating: "x", count: 8_193), String(repeating: "let a = 1\n", count: 15_000)] {
+      let tokens = NativeCodeSyntax.shared.tokens(code: code, language: "swift")
+      XCTAssertEqual(tokens, [NativeCodeToken(text: code, types: [])])
+      XCTAssertTrue(tokens.map(\.text).joined().utf16.elementsEqual(code.utf16))
+    }
+  }
+}

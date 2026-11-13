@@ -1,5 +1,6 @@
 import OpenUILang
 import SwiftUI
+import Combine
 
 
 struct NativeSeparator: View {
@@ -113,6 +114,8 @@ struct NativeAccordionSelection {
 
 struct NativeAccordion: View {
     let context: OpenUIComponentContext
+    @Environment(\.openUIUserInteraction) private var parentInteraction
+    @Environment(\.openUIFormValidation) private var validation
     @Environment(\.displayScale) private var displayScale
     @State private var local = NativeAccordionSelection()
     private var items: [OpenUIRenderChild] { context.children("items") }
@@ -136,6 +139,8 @@ struct NativeAccordion: View {
                     ) {
                         context.render(PropValue.value(item, "content") ?? .null)
                             .padding(.top, context.theme.spacing("m"))
+                            .environment(\.openUIUserInteraction, { local.choose(key); parentInteraction?() })
+                            .simultaneousGesture(TapGesture().onEnded { local.choose(key); parentInteraction?() })
                     } label: {
                         Text(PropValue.string(item, "trigger") ?? "").nativeTextStyle(context.theme.textStyle(.fieldLabel))
                             .multilineTextAlignment(.leading)
@@ -151,6 +156,15 @@ struct NativeAccordion: View {
         }
         .onAppear { local.reconcile(keys) }
         .onChange(of: keys) { updated in local.reconcile(updated) }
+        .onReceive(validation?.$focusRequest.eraseToAnyPublisher() ?? Empty<NativeFormValidation.FocusRequest?, Never>().eraseToAnyPublisher()) { request in
+            guard let name = request?.name else { return }
+            for child in items {
+                guard case .element(let item) = child.value,
+                    let key = PropValue.codeUnitString(item, "value"),
+                    NativeFormValidation.containsField(name, in: PropValue.value(item, "content") ?? .null) else { continue }
+                local.choose(key); break
+            }
+        }
     }
 
 }

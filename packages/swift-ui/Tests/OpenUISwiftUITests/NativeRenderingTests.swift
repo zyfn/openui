@@ -242,4 +242,55 @@
             }
         }
     }
+
+
+extension NativeRenderingTests {
+  /// Deterministic SDK visual fixtures. No live prices, remote images or map
+  /// tiles are requested. Geometry checks always run; PNG export is opt-in.
+  @MainActor func testNativeVisualAcceptanceMatrix() throws {
+    _ = NSApplication.shared
+    let library = try OpenUIStandardComponents.library()
+    let pages: [(String, String)] = [
+      ("reading", ###"root=Stack([TextContent("阅读与解释","large-heavy"),TextContent("先给出清楚的结论，再展开必要的理由。**强调不是另一套字号**。\n\n## 信息的关系\n\n- 同组内容应该紧密\n- 不同章节留出呼吸空间\n\n支持 [来源入口](https://example.com)，以及 `inline code`。"),TextCallout("info","说明","这是 SDK 视觉测试内容，不包含实时数据。"),CodeBlock("swift","    let amount = 12\n    print(amount)\n")])"###),
+      ("object", ###"root=Stack([TextContent("单个对象","large-heavy"),Card([Image("图片不可用时仍保留对象信息",null),CardHeader("适合阅读的独立对象","辅助信息不抢标题"),TextContent("对象介绍允许自然换行。缺少图片不应让价格、说明与操作一起消失。"),MetricIndicatorInline("¥1,299.00","示例金额，不是实时报价"),Buttons([Button("查看详情", "secondary")])])])"###),
+      ("comparison", ###"root=Stack([TextContent("比较与数据","large-heavy"),TextContent("表格保持明确的行列关系，图表只显示真实存在的数据。"),Table([Col("方案",["标准方案","包含较长名称的方案"]),Col("示例数值",[1200,2450.75],"number")]),BarChart(["五月","六月","七月"],[Series("示例",[12,0,-4])]),MetricIndicatorWithStrikethrough("¥2,450.75","数值不截断","¥2,999.00")])"###),
+      ("input", ###"root=Stack([TextContent("选择与输入","large-heavy"),Form("example",Buttons([Button("提交"),Button("返回","tertiary")]),[FormControl("联系邮箱",Input("email","请输入邮箱","email",{required:true,email:true})),FormControl("预算范围",Slider("budget","continuous",0,100,1,[20,80],"示例范围")),FormControl("偏好",CheckBoxGroup("preferences",[CheckBoxItem("安静","减少不必要的提示","quiet",true),CheckBoxItem("辅助说明","保留可读的详细信息","details",false)]))])])"###),
+      ("process", ###"root=Stack([TextContent("步骤与披露","large-heavy"),TextContent("已有 Steps 表达过程，不新增时间线组件。"),Steps([StepsItem("确认内容","先确定真正需要展示的信息。"),StepsItem("检查状态","保留用户编辑，错误就近反馈。"),StepsItem("完成操作","展示已确认的结果，不把派发事件等同于远端保存成功。")]),Accordion([AccordionItem("detail","查看详细说明",[TextContent("在大字号下，文字与控件应自然扩展，不重叠或被裁切。")])])])"###),
+      ("mixed", ###"root=Stack([TextContent("混合内容","large-heavy"),TextContent("连续正文、独立对象和操作区域不必具有同样的视觉重量。"),TagBlock(["清晰","可扩展","无业务定制"]),ListBlock([ListItem("文字与图片","缺失内容能够自然收拢"),ListItem("动作与状态","可操作性在点击之前就能辨认")],"number"),Separator("horizontal",true),TextContent("## 接下来\n\n默认主题无需逐组件补样式。"),Buttons([Button("继续","secondary")])])"###)
+    ]
+    let variants: [(String, CGFloat, ColorScheme, DynamicTypeSize, LayoutDirection)] = [
+      ("compact-light", 320, .light, .large, .leftToRight),
+      ("wide-light", 600, .light, .large, .leftToRight),
+      ("compact-dark", 320, .dark, .large, .leftToRight),
+      ("large-type", 320, .light, .accessibility2, .leftToRight),
+      ("rtl", 320, .light, .large, .rightToLeft)
+    ]
+    for (name, source) in pages {
+      let state = OpenUIState(schema: library.library.toSchema())
+      state.setSource(source)
+      XCTAssertTrue(state.errors.isEmpty, "\(name): \(state.errors)")
+      for (variant, width, scheme, size, direction) in variants {
+        let renderer = ImageRenderer(content: OpenUIRenderer(state: state, registry: library.registry)
+          .environment(\.locale, Locale(identifier: "zh-Hans"))
+          .environment(\.dynamicTypeSize, size)
+          .environment(\.layoutDirection, direction)
+          .environment(\.colorScheme, scheme)
+          .padding(16).frame(width: width)
+          .background(scheme == .dark ? Color.black : Color.white))
+        renderer.proposedSize = ProposedViewSize(width: width, height: nil)
+        renderer.scale = 1
+        let image = try XCTUnwrap(renderer.nsImage, "\(name):\(variant)")
+        XCTAssertEqual(image.size.width, width, accuracy: 1)
+        XCTAssertTrue(image.size.height.isFinite && image.size.height > 30 && image.size.height < 12000)
+        if let directory = ProcessInfo.processInfo.environment["OPENUI_SNAPSHOT_DIR"] {
+          try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+          let tiff = try XCTUnwrap(image.tiffRepresentation)
+          let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiff))
+          let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+          try data.write(to: URL(fileURLWithPath: directory).appendingPathComponent("\(name)-\(variant).png"))
+        }
+      }
+    }
+  }
+}
 #endif

@@ -42,7 +42,9 @@ struct NativeMapPlace: Identifiable {
                   lat.isFinite, lng.isFinite, (-90...90).contains(lat), (-180...180).contains(lng) else { return nil }
             // Length-prefix the display name and use exact coordinate bits, not
             // an array index, so sorting or appended metadata doesn't change it.
-            let id = "\(title.utf8.count):\(title):\(lat.bitPattern):\(lng.bitPattern)"
+            let declaredID = PropValue.codeUnitString(element, "id")?.wellFormedString
+            let id = declaredID.flatMap { $0.isEmpty ? nil : $0 }
+                ?? "\(title.utf8.count):\(title):\(lat.bitPattern):\(lng.bitPattern)"
             guard seen.insert(id).inserted else { return nil }
             return Self(id: id, title: title, image: element.isSourceComplete ? PropValue.string(element, "imageSrc") : nil,
                         url: element.isSourceComplete ? PropValue.string(element, "url") : nil,
@@ -63,6 +65,7 @@ private struct NativeMap: View {
     @ScaledMetric(relativeTo: .subheadline) private var textBlockHeight: CGFloat = 54
     @Environment(\.openUIResourceContext) private var resources
     @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var surfaceColor: Color {
         context.theme.foreground
     }
@@ -71,7 +74,10 @@ private struct NativeMap: View {
         return NativeMapPlace.decode(context.value("points"), crs: context.string("crs") ?? "wgs84")
     }
     private var selectedID: String {
-        places.first(where: { $0.id == localSelection })?.id ?? places.first?.id ?? ""
+        if let binding = context.presentationBinding("value"), case .string(let value) = binding.wrappedValue {
+            return places.first { OpenUIString($0.id) == value }?.id ?? ""
+        }
+        return places.first(where: { $0.id == localSelection })?.id ?? places.first?.id ?? ""
     }
     private func number(_ place: NativeMapPlace) -> Int {
         (places.firstIndex { $0.id == place.id } ?? 0) + 1
@@ -79,9 +85,13 @@ private struct NativeMap: View {
     private func select(_ id: String) {
         guard context.canInteract, let place = places.first(where: { $0.id == id }) else { return }
         localSelection = id
+        if let binding = context.presentationBinding("value"), binding.wrappedValue != .string(id) {
+            binding.wrappedValue = .string(id)
+        }
+        context.recordUserInteraction()
         // Use a consistent neighborhood context instead of reusing a region
         // reported by the other (inline/fullscreen) map instance.
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
             let position = MapCameraPosition.region(MKCoordinateRegion(center: place.coordinate,
                                                 latitudinalMeters: 1600, longitudinalMeters: 1600))
             camera = position; fullscreenCamera = position
@@ -128,6 +138,13 @@ private struct NativeMap: View {
             #else
             .sheet(isPresented: $expanded, onDismiss: restoreInlineOverview) { surface(fullscreen: true) }
             #endif
+            .onChange(of: selectedID) { id in
+                guard context.presentationBinding("value") != nil,
+                    let place = places.first(where: { $0.id == id }) else { return }
+                let position = MapCameraPosition.region(MKCoordinateRegion(center: place.coordinate,
+                    latitudinalMeters: 1600, longitudinalMeters: 1600))
+                camera = position; fullscreenCamera = position
+            }
             .task(id: "\(context.canInteract):\(places.map(\.id))") {
                 guard context.canInteract else { return }
                 if !places.contains(where: { $0.id == localSelection }) {
@@ -136,6 +153,11 @@ private struct NativeMap: View {
                 fitPlaces()
             }
 
+        } else {
+            Text("No valid locations", bundle: NativeControlResources.bundle)
+                .nativeTextStyle(context.theme.textStyle(.supporting))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("openui.map.empty")
         }
     }
     private var pointMenu: some View {

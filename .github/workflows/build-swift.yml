@@ -50,7 +50,7 @@ jobs:
           retention-days: 7
   test:
     runs-on: macos-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
@@ -76,11 +76,21 @@ jobs:
           node packages/swift-lang/scripts/build.mjs
           git diff --exit-code -- packages/swift-lang/Sources/OpenUILang/Resources
       - name: SDK tests through the distribution manifest
+        env:
+          OPENUI_SNAPSHOT_DIR: ${{ runner.temp }}/openui-swift-logs/visual
         shell: bash
         run: |
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/openui-swift-logs"
           swift test 2>&1 | tee "$RUNNER_TEMP/openui-swift-logs/sdk-tests.log"
+      - name: Release native host fitting probe
+        env:
+          OPENUI_SNAPSHOT_DIR: ${{ runner.temp }}/openui-swift-logs/visual
+        shell: bash
+        run: |
+          set -o pipefail
+          swift test -c release --filter HostSizingIsolationTests \
+            2>&1 | tee "$RUNNER_TEMP/openui-swift-logs/native-release.log"
       - name: Authoring validator
         shell: bash
         run: |
@@ -117,6 +127,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: swift-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/openui-swift-logs/*.log
+          path: ${{ runner.temp }}/openui-swift-logs/
           if-no-files-found: ignore
           retention-days: 7

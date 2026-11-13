@@ -65,22 +65,39 @@ struct NativeTableDraft {
 @MainActor final class NativeTableEditingState: ObservableObject {
   @Published var draft = NativeTableDraft()
   @Published private(set) var saving = false
+  @Published private(set) var hasSourceConflict = false
+  private var latestSource: Value?
+  private var conflictSource: Value?
   private var revision: Int?
   private var saveID: UUID?
 
   func receive(_ value: Value, revision: Int) {
     if self.revision != revision {
       self.revision = revision; saveID = nil; saving = false
+      latestSource = value; conflictSource = nil; hasSourceConflict = false
       draft.load(value)
     } else if !saving && !draft.hasChanges {
+      latestSource = value; conflictSource = nil; hasSourceConflict = false
       draft.load(value)
+    } else if !saving && latestSource != value && draft.value != value {
+      // Never silently replace dirty edits, or save them over a refreshed
+      // source without an explicit local choice.
+      conflictSource = value; hasSourceConflict = true
+      latestSource = value
     }
-    // Store publication from a rejected save must not turn the retryable
-    // draft into a new baseline. Source replacement still resets it above.
+    // A Save's own Store publication is not a remote refresh/conflict.
+  }
+  func useUpdatedSource() {
+    guard let conflictSource else { return }
+    draft.load(conflictSource); latestSource = conflictSource
+    self.conflictSource = nil; hasSourceConflict = false
+  }
+  func keepLocalEdits() {
+    conflictSource = nil; hasSourceConflict = false
   }
 
   func save(context: OpenUIComponentContext, name: OpenUIString, columns: Int) async {
-    guard context.canActivate, !saving, draft.changes(columns: columns) > 0 else { return }
+    guard context.canActivate, !saving, !hasSourceConflict, draft.changes(columns: columns) > 0 else { return }
     let id = UUID(), pending = draft.value
     saveID = id; saving = true
     defer { if saveID == id { saving = false; saveID = nil } }
@@ -88,7 +105,7 @@ struct NativeTableDraft {
     _ = await context.commitFieldAndTrigger("Save Changes", form: name, name: name,
       value: pending, componentType: "EditableTable", onDispatch: { delivered = true })
     guard saveID == id, context.isCurrentPresentation else { return }
-    if delivered { draft.commit() }
+    if delivered { draft.commit(); latestSource = draft.value; conflictSource = nil; hasSourceConflict = false }
   }
 }
 
@@ -157,6 +174,17 @@ struct NativeEditableTable: View {
           RoundedRectangle(cornerRadius: context.theme.radiusL).strokeBorder(
             context.theme.borderDefault, lineWidth: context.presentation.borderWidth))
       }.disabled(!context.canInteract || saving)
+      if editing.hasSourceConflict {
+        VStack(alignment: .leading, spacing: context.theme.spaceS) {
+          Text("Source data changed. Review your edits before saving.", bundle: NativeControlResources.bundle)
+            .nativeTextStyle(context.theme.textStyle(.supporting))
+            .fixedSize(horizontal: false, vertical: true)
+          NativeButtonsLayout(rowGap: context.theme.spaceS, columnGap: context.theme.spaceS) {
+            Button { editing.useUpdatedSource() } label: { Text("Use updated data", bundle: NativeControlResources.bundle) }
+            Button { editing.keepLocalEdits() } label: { Text("Keep my edits", bundle: NativeControlResources.bundle) }
+          }.buttonStyle(NativeActionButtonStyle(theme: context.theme, variant: "secondary", size: "small"))
+        }.accessibilityIdentifier("openui.table.source-conflict")
+      }
       if changed > 0 {
         NativeLabelValueLayout(gap: context.theme.spaceM,
           minimumLabelWidth: .greatestFiniteMagnitude, centerVertically: true) {
@@ -176,6 +204,7 @@ struct NativeEditableTable: View {
             Button(action: save) { Text("Save Changes", bundle: NativeControlResources.bundle) }
               .buttonStyle(
                 NativeActionButtonStyle(theme: context.theme, variant: "primary", size: "small"))
+              .disabled(editing.hasSourceConflict)
           }
         }.openUIFont(context.theme.textBodySm, role: .detail).disabled(!context.canInteract || saving)
       }
@@ -202,6 +231,7 @@ struct NativeEditableTable: View {
       },
       set: { text in
         guard context.canInteract else { return }
+        context.recordUserInteraction()
         let numeric = NativeValue.string(columns[column], "type") == "number"
         if numeric, let value = Double(text), value.isFinite {
           editing.draft.write(.number(value), row: row, column: column)
@@ -256,6 +286,7 @@ extension NativeEditableTable {
 
 private struct NativeTableDateCell: View {
   @Environment(\.openUITheme) private var theme
+  @Environment(\.timeZone) private var timeZone
   @Binding var value: String
   let label: String
   @State private var showing = false
@@ -265,11 +296,15 @@ private struct NativeTableDateCell: View {
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.calendar = Calendar(identifier: .gregorian)
     formatter.dateFormat = "yyyy-MM-dd"
+    formatter.timeZone = timeZone
+    formatter.isLenient = false
     return formatter
   }
   var body: some View {
     Button {
-      draft = formatter.date(from: value) ?? Date()
+      if value.count == 10, let parsed = formatter.date(from: value), formatter.string(from: parsed) == value {
+        draft = parsed
+      } else { draft = Date() }
       showing = true
     } label: {
       HStack {

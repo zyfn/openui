@@ -179,3 +179,72 @@ final class StreamingFormCorrectnessTests: XCTestCase {
   }
 
 }
+
+
+extension StreamingFormCorrectnessTests {
+  @MainActor func testTableExternalRefreshRequiresExplicitConflictDecision() {
+    func source(_ value: String) -> Value {
+      .array([.object([.init(key: "id", value: .string("r")),
+        .init(key: "values", value: .array([.string(value)]))])])
+    }
+    let editing = NativeTableEditingState()
+    editing.receive(source("base"), revision: 1)
+    editing.draft.write(.string("local"), row: 0, column: 0)
+    editing.receive(source("remote"), revision: 1)
+    XCTAssertTrue(editing.hasSourceConflict)
+    XCTAssertEqual(editing.draft.value(row: 0, column: 0), .string("local"))
+    editing.keepLocalEdits()
+    XCTAssertFalse(editing.hasSourceConflict)
+    editing.receive(source("remote"), revision: 1)
+    XCTAssertFalse(editing.hasSourceConflict, "Acknowledged remote version must not recreate the same conflict")
+    editing.receive(source("newer remote"), revision: 1)
+    XCTAssertTrue(editing.hasSourceConflict)
+    editing.useUpdatedSource()
+    XCTAssertEqual(editing.draft.value(row: 0, column: 0), .string("newer remote"))
+    XCTAssertFalse(editing.draft.hasChanges)
+    XCTAssertFalse(editing.hasSourceConflict)
+    editing.draft.write(.string("later local"), row: 0, column: 0)
+    editing.receive(source("replacement"), revision: 2)
+    XCTAssertFalse(editing.hasSourceConflict)
+    XCTAssertEqual(editing.draft.value(row: 0, column: 0), .string("replacement"))
+  }
+
+  @MainActor func testValidationCanLocateAFieldInsideNestedDisclosureContent() {
+    let field = EvaluatedElement(typeName: "Input", props: [("name", .string("amount"))])
+    let panel = EvaluatedElement(typeName: "TabItem", props: [
+      ("value", .string("details")), ("content", .array([.element(field)]))])
+    XCTAssertTrue(NativeFormValidation.containsField("amount", in: .element(panel)))
+    XCTAssertFalse(NativeFormValidation.containsField("other", in: .element(panel)))
+    XCTAssertFalse(NativeFormValidation.containsField("amount", in: .element(panel), depth: 128))
+  }
+
+  @MainActor func testEditingRecordsAreIsolatedByFormAndComponentKind() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.setSource("root=TextContent(\"Example\")")
+    let first = state.editingRecord(kind: "table", form: "first", name: "same", create: NativeTableEditingState.init)
+    let second = state.editingRecord(kind: "table", form: "second", name: "same", create: NativeTableEditingState.init)
+    XCTAssertFalse(first === second)
+    let retained = state.editingRecord(kind: "table", form: "first", name: "same", create: NativeTableEditingState.init)
+    XCTAssertTrue(first === retained)
+    let other: NativeSliderDraft? = state.existingEditingRecord(kind: "slider", form: "first", name: "same")
+    XCTAssertNil(other)
+  }
+}
+
+extension StreamingFormCorrectnessTests {
+  @MainActor func testValidationDoesNotStealFocusUntilAnExplicitSubmitAttempt() throws {
+    let validation = NativeFormValidation()
+    let rules = parseStructuredRules(try parseJSONPreservingOrder(#"{"required":true}"#))
+    validation.register("name", rules: rules, value: { .string("") })
+    validation.changed("name", value: .string(""), rules: rules)
+    XCTAssertNil(validation.focusRequest)
+    XCTAssertFalse(validation.validateAll())
+    XCTAssertNil(validation.focusRequest)
+    validation.requestInvalidFieldFocus()
+    XCTAssertEqual(validation.focusRequest?.name, "name")
+    let firstID = validation.focusRequest?.id
+    validation.requestInvalidFieldFocus()
+    XCTAssertNotEqual(validation.focusRequest?.id, firstID, "Another rejected attempt can focus the same field again")
+  }
+}

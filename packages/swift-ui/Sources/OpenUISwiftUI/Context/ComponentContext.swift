@@ -6,8 +6,13 @@ private struct OpenUIFormKey: EnvironmentKey { static let defaultValue: String? 
 private struct OpenUIProgramScopeKey: EnvironmentKey { static let defaultValue: ObjectIdentifier? = nil }
 private struct NativeInteractionScopeKey: EnvironmentKey { static let defaultValue = true }
 private struct NativeInlineLinksKey: EnvironmentKey { static let defaultValue = true }
+private struct NativeUserInteractionKey: EnvironmentKey { static let defaultValue: (() -> Void)? = nil }
 
 extension EnvironmentValues {
+    var openUIUserInteraction: (() -> Void)? {
+        get { self[NativeUserInteractionKey.self] }
+        set { self[NativeUserInteractionKey.self] = newValue }
+    }
     var openUIInteractionScopeReady: Bool {
         get { self[NativeInteractionScopeKey.self] }
         set { self[NativeInteractionScopeKey.self] = newValue }
@@ -63,6 +68,8 @@ public struct OpenUIComponentContext {
     let hasInterruptedData: Bool
     var interactionScopeReady = true
     var activationIntent: NativeActivationIntent?
+    var onUserInteraction: (() -> Void)?
+    @MainActor func recordUserInteraction() { if isCurrentPresentation { onUserInteraction?() } }
     private let state: OpenUIState
     private let registry: ComponentRegistry
     private let sourceRevision: Int
@@ -247,6 +254,7 @@ struct OpenUIComponentHost<Content: View>: View {
     @Environment(\.openUIProgramScoped) private var programScoped
     @Environment(\.openUIInteractionScopeReady) private var interactionScopeReady
     @Environment(\.openUIActivationIntent) private var activationIntent
+    @Environment(\.openUIUserInteraction) private var userInteraction
 
     var body: some View {
         let element = self.element.isSourceComplete ? self.element : state.liveElement(matching: self.element)
@@ -256,6 +264,7 @@ struct OpenUIComponentHost<Content: View>: View {
         context.fillsControlWidth = fillsControlWidth
         context.interactionScopeReady = interactionScopeReady
         context.activationIntent = activationIntent
+        context.onUserInteraction = userInteraction
         let atomic = ["Card", "Form", "CompositeCardItem", "VisualCardItem", "ContextCardItem", "OverviewCardItem", "SnippetCardItem"].contains(element.typeName)
         let presented = Group {
             if !context.layoutConfigurationReady && element.typeName != "Stack" && element.typeName != "Card" {

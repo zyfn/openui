@@ -1,5 +1,6 @@
 @_spi(RuntimeInspection) import OpenUILang
 import SwiftUI
+import Combine
 
 struct NativeSliderConfiguration: Equatable {
   let minimum: Double
@@ -185,7 +186,7 @@ struct NativeSliderField: View {
         NativeSliderTrack(values: draft.values.isEmpty ? external : draft.values,
           configuration: configuration, enabled: context.canInteract,
           showsDots: showsDots, label: label,
-          select: { value, index in draft.select(value, at: index) },
+          select: { value, index in context.recordUserInteraction(); draft.select(value, at: index) },
           ended: { draft.flush() })
         ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
           if let error = draft.error(at: index, configuration: configuration) {
@@ -203,6 +204,13 @@ struct NativeSliderField: View {
     .onAppear { configure(target); draft.receive(external); registerPendingWrite() }
     .onChange(of: target) { configure($0); registerPendingWrite() }
     .onChange(of: external) { draft.receive($0) }
+    .onReceive(validation?.$focusRequest.eraseToAnyPublisher() ?? Empty<NativeFormValidation.FocusRequest?, Never>().eraseToAnyPublisher()) { request in
+      guard request?.name == field.name, draft.validationError() != nil, !configuration.discrete else { return }
+      focusedValue = draft.text.indices.first { index in
+        let value = Double(draft.text[index].trimmingCharacters(in: .whitespacesAndNewlines))
+        return value?.isFinite != true || configuration.error(for: draft.values, index: index) != nil
+      } ?? 0
+    }
     .onChange(of: focusedValue) { if $0 == nil { draft.flush() } }
     .onChange(of: context.presentationSourceRevision) { _ in picker = nil }
     .onChange(of: context.canInteract) { ready in if !ready { picker = nil } }
@@ -290,7 +298,7 @@ struct NativeSliderField: View {
       } else {
         HStack(spacing: context.theme.spaceXs) {
           TextField("", text: Binding(get: { draft.text.indices.contains(index) ? draft.text[index] : "" },
-            set: { draft.edit($0, at: index) }))
+            set: { context.recordUserInteraction(); draft.edit($0, at: index) }))
             .textFieldStyle(.plain).monospacedDigit().nativeSliderKeyboard()
             .focused($focusedValue, equals: index).submitLabel(.done)
             .onSubmit { draft.flush(); focusedValue = nil }

@@ -236,3 +236,40 @@ extension StreamingTextPresentationTests {
     document.cancel()
   }
 }
+
+
+extension StreamingTextPresentationTests {
+  @MainActor func testFormulaBudgetsRejectBeforeCreatingAWebViewJob() async {
+    let renderer = NativeMathRenderer()
+    for (tex, size, color) in [
+      (String(repeating: "x", count: 16_385), CGFloat(16), "#202124"),
+      ("x", CGFloat.infinity, "#202124"),
+      ("x", CGFloat(0), "#202124"),
+      ("x", CGFloat(16), "red; background:url(https://invalid.example)")
+    ] {
+      do { _ = try await renderer.image(for: .init(tex: tex, display: false), fontSize: size, color: color); XCTFail("Budget violation accepted") }
+      catch { XCTAssertEqual((error as? URLError)?.code, .dataLengthExceedsMaximum) }
+    }
+    XCTAssertEqual(renderer.pendingRequestCount, 0)
+    XCTAssertEqual(renderer.cachedPixelBytes, 0)
+  }
+
+  @MainActor func testIdenticalFormulaSubscribersShareWorkAndCanCancelIndependently() async {
+    let renderer = NativeMathRenderer()
+    let first = Task { try await renderer.image(for: .init(tex: "x + 1", display: true), fontSize: 16, color: "#202124") }
+    let second = Task { try await renderer.image(for: .init(tex: "x + 1", display: true), fontSize: 16, color: "#202124") }
+    let shared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in renderer.pendingSubscriberCount == 2 }, object: nil)
+    await fulfillment(of: [shared], timeout: 3)
+    XCTAssertEqual(renderer.pendingRequestCount, 1)
+    first.cancel()
+    do { _ = try await first.value; XCTFail("Cancelled subscriber returned an image") }
+    catch { XCTAssertTrue(error is CancellationError) }
+    XCTAssertFalse(second.isCancelled)
+    XCTAssertEqual(renderer.pendingRequestCount, 1)
+    second.cancel()
+    do { _ = try await second.value; XCTFail("Cancelled subscriber returned an image") }
+    catch { XCTAssertTrue(error is CancellationError) }
+    XCTAssertEqual(renderer.pendingRequestCount, 0)
+    renderer.cancel()
+  }
+}
