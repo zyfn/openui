@@ -682,7 +682,7 @@ struct NativeCardItem: View {
     var request = artworkResources.request(for: source)
     if artworkAttempt > 0 { request?.cachePolicy = .reloadIgnoringLocalCacheData }
     return .init(request: request,
-      loader: ObjectIdentifier(artworkResources.loader), attempt: artworkAttempt)
+      loader: ObjectIdentifier(artworkResources.loader), attempt: artworkAttempt, authorizationScope: artworkResources.loader.authorizationScopeID)
   }
   private var hasLoadedArtwork: Bool {
     guard context.element.sourceReadiness["bgImageSrc"].complete, let request = artworkRequest else { return false }
@@ -762,7 +762,7 @@ struct NativeCardItem: View {
                 value: [artworkLayoutScope: geometry.frame(in: .named(artworkLayoutScope)).minY > 0.5])
             }
             if usesArtworkOverlay {
-              LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.62)],
+              LinearGradient(colors: [.black.opacity(0.62), .black.opacity(0.72)],
                 startPoint: .top, endPoint: .bottom).allowsHitTesting(false)
             }
           }
@@ -900,7 +900,7 @@ struct NativeCardBlock: View {
     let source = context.element.sourceReadiness["items"]
     return !source.complete && source.closed ? source.expectedCount : nil
   }
-  private var selection: Binding<String> {
+  private func selection(_ children: [OpenUIRenderChild]) -> Binding<String> {
     Binding(get: { children.contains(where: { $0.id == selectedID }) ? selectedID : children.first?.id ?? "" },
       set: { selectedID = $0 })
   }
@@ -909,7 +909,7 @@ struct NativeCardBlock: View {
       min(
         128, max(0, context.presentationNumber("gap") ?? Double(context.theme.spacing(context.presentationString("gap"))))))
   }
-  private var grid: NativeCardGrid? {
+  private func grid(_ children: [OpenUIRenderChild]) -> NativeCardGrid? {
     let layout = context.string("layout")
     // The standard component host admits only a committed layout. No guessed
     // carousel is needed while positional collection arguments are arriving.
@@ -917,10 +917,10 @@ struct NativeCardBlock: View {
     return NativeCardGrid(maxPerRow: ["Overview", "Context", "Visual"].contains(kind) ? 3 : 2,
       responsive: context.flag("responsive") != false,
       singleColumn: typeSize.isAccessibilitySize,
-      minimumColumnWidth: (kind == "Overview" ? overviewMinimumWidth : context.presentation.minimumCardWidth) * readingScale,
+      minimumColumnWidth: (kind == "Overview" ? overviewMinimumWidth(children) : context.presentation.minimumCardWidth) * readingScale,
       spacing: gap)
   }
-  private var overviewMinimumWidth: CGFloat {
+  private func overviewMinimumWidth(_ children: [OpenUIRenderChild]) -> CGFloat {
     // Horizontal media needs a real reading column next to the thumbnail;
     // compact text/icon metrics can share the row. This follows declared
     // component/layout roles, never the wording or length of a particular case.
@@ -931,16 +931,19 @@ struct NativeCardBlock: View {
     return hasHorizontalMedia ? context.presentation.minimumCardWidth : context.presentation.minimumCompactCardWidth
   }
   var body: some View {
-    Group {
+    let children = self.children
+    let byID = Dictionary(children.enumerated().map { ($0.element.id, $0.offset) },
+      uniquingKeysWith: { first, _ in first })
+    return Group {
       if children.isEmpty {
         EmptyView()
       } else {
-        NativePager(ids: children.map(\.id), selection: selection, enabled: true,
+        NativePager(ids: children.map(\.id), selection: selection(children), enabled: true,
           identifier: "openui.card-block.\(kind.lowercased())",
           showsControls: false,
           maximumPageWidth: context.presentation.maximumCarouselCardWidth,
-          trailingPeek: context.presentation.carouselPeek, pageSpacing: gap, grid: grid, layoutCount: layoutCount, supportsAdjustment: false) { id in
-          if let index = children.firstIndex(where: { $0.id == id }) {
+          trailingPeek: context.presentation.carouselPeek, pageSpacing: gap, grid: grid(children), layoutCount: layoutCount, supportsAdjustment: false) { id in
+          if let index = byID[id] {
             item(children[index], index: index)
           }
         }

@@ -119,8 +119,8 @@ extension NativeChartData {
     colorIndices.indices.contains(index) ? colorIndices[index] : index
   }
   func inspection(at index: Int, locale: Locale) -> NativeChartInspection? {
-    guard index >= 0 else { return nil }
-    func number(_ value: Double) -> String { NativeChartNumber.tooltip(value, locale: locale) }
+    guard index >= 0, !invalidData else { return nil }
+    func number(_ value: Double) -> String { jsNumberString(value) }
     func colorIndex(_ index: Int) -> Int {
       self.colorIndex(at: index)
     }
@@ -147,8 +147,9 @@ extension NativeChartData {
       }
       return rows.isEmpty ? nil : .init(title: labels[index], rows: rows)
     }
+    guard slices.indices.contains(index), slices[index].isFinite else { return nil }
     return .init(title: labels[index], rows: [
-      .init(id: "value", label: nil, value: number(slices.indices.contains(index) ? slices[index] : 0),
+      .init(id: "value", label: nil, value: number(slices[index]),
         colorIndex: colorIndex(index)),
     ])
   }
@@ -189,6 +190,7 @@ extension NativeChartData {
   }
 
   func hasContent(for name: String) -> Bool {
+    guard !invalidData else { return false }
     if isProgressive {
       return name == "ScatterChart" ? scatter.contains { !$0.points.isEmpty }
         : !labels.isEmpty && series.contains { !$0.values.isEmpty }

@@ -118,6 +118,10 @@ final class SharedCoreBridgeTests: XCTestCase {
             let activeCount = await provider.count()
             XCTAssertGreaterThanOrEqual(activeCount, 2)
             manager?.dispose();manager = nil
+            let deallocated = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in released.value == nil }, object: nil)
+            let releaseResult = await XCTWaiter.fulfillment(of: [deallocated], timeout: 2)
+            XCTAssertEqual(releaseResult, .completed, "Disposed managers must release after in-flight callbacks unwind")
             XCTAssertNil(released.value)
             try? await Task.sleep(nanoseconds: 10_000_000)
             let count = await provider.count()

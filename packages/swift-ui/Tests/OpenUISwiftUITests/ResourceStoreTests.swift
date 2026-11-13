@@ -1,4 +1,7 @@
 import Foundation
+import ImageIO
+import CoreGraphics
+import UniformTypeIdentifiers
 import XCTest
 @testable import OpenUISwiftUI
 
@@ -67,6 +70,118 @@ final class ResourceStoreTests: XCTestCase {
     _ = try await b.loader.data(for: request)
     XCTAssertEqual(loader.count, 2, "Resetting one reply cannot discard another reply's data")
   }
+  @MainActor func testChangingAuthorizationScopeCannotReuseOrRefillOldBytes() async throws {
+    let owner = ScopedFixtureLoader(), store = NativeResourceStore()
+    let first = store.scoped(.init(loader: owner))
+    let request = try XCTUnwrap(first.request(for: "https://resource.example/private"))
+    let a = try await first.loader.data(for: request)
+    XCTAssertEqual(a, Data("account-a".utf8))
+    owner.account = "account-b"
+    XCTAssertNil(first.request(for: "https://resource.example/private"))
+    do { _ = try await first.loader.data(for: request); XCTFail("Old authorization is invalid") }
+    catch { XCTAssertTrue(error is CancellationError) }
+    let b = try await store.scoped(.init(loader: owner)).loader.data(for: request)
+    XCTAssertEqual(b, Data("account-b".utf8))
+    XCTAssertEqual(owner.calls, 2)
+  }
+
+  @MainActor func testCustomLoaderOversizeResultIsRejectedBeforeCaching() async throws {
+    let owner = ScopedFixtureLoader(limit: 2), store = NativeResourceStore()
+    let scope = store.scoped(.init(loader: owner))
+    let request = try XCTUnwrap(scope.request(for: "https://resource.example/private"))
+    for _ in 0..<2 {
+      do { _ = try await scope.loader.data(for: request); XCTFail("Oversize custom results must not enter cache") }
+      catch { XCTAssertEqual((error as? URLError)?.code, .dataLengthExceedsMaximum) }
+    }
+    XCTAssertEqual(owner.calls, 2)
+  }
+
+  func testDefaultDownloadLimitAppliesToAdvertisedAndActualBytes() async throws {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [ResourceFixtureProtocol.self]
+    let session = URLSession(configuration: configuration)
+    defer { session.invalidateAndCancel() }
+    let loader = OpenUIURLSessionResourceLoader(session: session,
+      limits: OpenUIResourceLimits(maximumResponseBytes: 32))
+    for path in ["advertised", "unknown-length"] {
+      let request = try XCTUnwrap(loader.request(for: "https://resource.test/" + path, relativeTo: nil))
+      do { _ = try await loader.data(for: request); XCTFail("Bytes must be bounded for " + path) }
+      catch { XCTAssertEqual((error as? URLError)?.code, .dataLengthExceedsMaximum) }
+    }
+    let exact = try XCTUnwrap(loader.request(for: "https://resource.test/exact", relativeTo: nil))
+    let bytes = try await loader.data(for: exact)
+    XCTAssertEqual(bytes.count, 32, "The maximum itself is accepted")
+    let failure = try XCTUnwrap(loader.request(for: "https://resource.test/error", relativeTo: nil))
+    do { _ = try await loader.data(for: failure); XCTFail("HTTP errors cannot become image bytes") }
+    catch { XCTAssertEqual((error as? URLError)?.code, .badServerResponse) }
+  }
+
+  func testRedirectPolicyRejectsDowngradesCredentialsAndUnexpectedOrigins() {
+    let from = URL(string: "https://example.com/image")!
+    let limits = OpenUIResourceLimits()
+    XCTAssertTrue(NativeResourceRedirectPolicy.permitted(from: from,
+      to: URL(string: "https://example.com:443/cached"), limits: limits))
+    for target in ["http://example.com/image", "https://other.example/image",
+                   "file:///secret", "https://user:password@example.com/image", "https://example.com:8443/image"] {
+      XCTAssertFalse(NativeResourceRedirectPolicy.permitted(from: from, to: URL(string: target), limits: limits), target)
+    }
+    var explicit = limits; explicit.allowsCrossOriginRedirects = true
+    XCTAssertTrue(NativeResourceRedirectPolicy.permitted(from: from,
+      to: URL(string: "https://cdn.example.com/image"), limits: explicit))
+    XCTAssertFalse(NativeResourceRedirectPolicy.permitted(from: from,
+      to: URL(string: "http://cdn.example.com/image"), limits: explicit))
+  }
+
+  @MainActor func testCancellingOneSubscriberDoesNotCancelAnotherAndLastCancellationStopsTransport() async throws {
+    let store = NativeResourceStore()
+    let started = expectation(description: "transport started once")
+    let cancelled = expectation(description: "transport cancelled when last subscriber exits")
+    let owner = SuspendedResourceLoader(started: started, cancelled: cancelled)
+    let scope = store.scoped(.init(loader: owner))
+    let request = try XCTUnwrap(scope.request(for: "https://resource.example/shared"))
+    let first = Task { try await scope.loader.data(for: request) }
+    let second = Task { try await scope.loader.data(for: request) }
+    defer { first.cancel(); second.cancel(); store.removeAll() }
+    await fulfillment(of: [started], timeout: 2)
+    let joined = expectation(description: "both subscribers joined")
+    let observer = Task { @MainActor in
+      while !Task.isCancelled && store.pendingSubscriberCount != 2 { await Task.yield() }
+      if !Task.isCancelled { joined.fulfill() }
+    }
+    await fulfillment(of: [joined], timeout: 2)
+    observer.cancel()
+    first.cancel()
+    do { _ = try await first.value; XCTFail("Cancelled subscriber must resume without waiting for transport") }
+    catch { XCTAssertTrue(error is CancellationError) }
+    XCTAssertFalse(second.isCancelled)
+    second.cancel()
+    do { _ = try await second.value; XCTFail("Last subscriber must be cancelled") }
+    catch { XCTAssertTrue(error is CancellationError) }
+    await fulfillment(of: [cancelled], timeout: 2)
+  }
+
+  @MainActor func testImageDownsamplingPreservesSourceGeometryAndChecksPixelBudget() async throws {
+    let context = try XCTUnwrap(CGContext(data: nil, width: 800, height: 400,
+      bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    let image = try XCTUnwrap(context.makeImage())
+    let data = NSMutableData()
+    let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil))
+    CGImageDestinationAddImage(destination, image, nil)
+    XCTAssertTrue(CGImageDestinationFinalize(destination))
+    let loader = OpenUIURLSessionResourceLoader()
+    let small = try await NativeMediaCache.prepare(data as Data, loader: loader, targetPixelSize: 80)
+    XCTAssertEqual(small.size, CGSize(width: 800, height: 400))
+    XCTAssertLessThanOrEqual(small.decodedPixelSize, 80)
+    XCTAssertLessThanOrEqual(small.cost, 80 * 80 * 4)
+    XCTAssertFalse(small.satisfies(200))
+    let strict = OpenUIURLSessionResourceLoader(limits: OpenUIResourceLimits(maximumImageSourcePixels: 100))
+    do {
+      _ = try await NativeMediaCache.prepare(data as Data, loader: strict, targetPixelSize: 80)
+      XCTFail("A large compressed source cannot bypass its source-pixel budget")
+    } catch { XCTAssertEqual((error as? URLError)?.code, .cannotDecodeContentData) }
+  }
+
 }
 private final class ByteLoader: OpenUIResourceLoading {
   private let lock = NSLock()
@@ -97,4 +212,32 @@ private final class SuspendedResourceLoader: OpenUIResourceLoading {
     catch { cancelled.fulfill(); throw error }
     return Data()
   }
+}
+
+private final class ScopedFixtureLoader: OpenUIResourceLoading {
+  var account = "account-a"
+  var calls = 0
+  var authorizationScopeID: String { account }
+  let resourceLimits: OpenUIResourceLimits
+  init(limit: Int = 1024) { resourceLimits = OpenUIResourceLimits(maximumResponseBytes: limit) }
+  func request(for source: String, relativeTo baseURL: URL?) -> URLRequest? {
+    URL(string: source, relativeTo: baseURL).map { URLRequest(url: $0) }
+  }
+  func data(for request: URLRequest) async throws -> Data { calls += 1; return Data(account.utf8) }
+}
+
+private final class ResourceFixtureProtocol: URLProtocol {
+  override class func canInit(with request: URLRequest) -> Bool { request.url?.host == "resource.test" }
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+  override func startLoading() {
+    guard let url = request.url else { return }
+    let count = url.path == "/exact" ? 32 : 64
+    let headers = url.path == "/advertised" ? ["Content-Length": String(count)] : [:]
+    let response = HTTPURLResponse(url: url, statusCode: url.path == "/error" ? 503 : 200,
+      httpVersion: "HTTP/1.1", headerFields: headers)!
+    client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+    client?.urlProtocol(self, didLoad: Data(repeating: 7, count: count))
+    client?.urlProtocolDidFinishLoading(self)
+  }
+  override func stopLoading() { }
 }

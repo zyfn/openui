@@ -24,6 +24,7 @@ struct NativeChartData: Equatable {
   var scatter: [Scatter]
   var colorIndices: [Int] = []
   var isProgressive = false
+  var invalidData = false
   init() { labels = []; series = []; slices = []; scatter = [] }
   init(context: OpenUIComponentContext) {
     labels = NativeValue.array(context.value("labels")).map { value in
@@ -78,7 +79,50 @@ struct NativeChartData: Equatable {
           return Point(x: x, y: y, z: NativeValue.number(point, "z"))
         })
     }
+    if context.element.isSourceComplete {
+      let polar = ["PieChart", "RadialChart", "SingleStackedBarChart"].contains(context.element.typeName)
+      if !rawRows.isEmpty {
+        if case .array = rawRows.first {
+          let width = NativeValue.array(context.value("labels")).count
+          invalidData = rawRows.contains {
+            let row = NativeValue.array($0)
+            return row.count != width || !row.dropFirst().allSatisfy(Self.validSample)
+          }
+        } else {
+          invalidData = rawRows.contains {
+            let raw = NativeValue.array(NativeValue.prop($0, "values"))
+            return raw.count != labels.count || !raw.allSatisfy(Self.validSample)
+          }
+        }
+      }
+      if polar {
+        let raw = NativeValue.array(context.value("values"))
+        if !raw.isEmpty { invalidData = invalidData || raw.count != labels.count || !raw.allSatisfy(Self.validSample) }
+        else {
+          let rawLabels = NativeValue.array(context.value("labels"))
+          invalidData = invalidData || rawLabels.count != slices.count
+        }
+      }
+      if context.element.typeName == "ScatterChart" {
+        invalidData = NativeValue.array(context.value("datasets")).contains { dataset in
+          NativeValue.array(NativeValue.prop(dataset, "points")).contains {
+            NativeValue.number($0, "x") == nil || NativeValue.number($0, "y") == nil
+              || (NativeValue.prop($0, "z").map { !$0.isNullish && !Self.validSample($0) } ?? false)
+          }
+        }
+      }
+    }
   }
+  private static func validSample(_ value: Value) -> Bool {
+    switch value {
+    case .number(let number): return number.isFinite
+    case .string(let raw):
+      let text = raw.displayString.trimmingCharacters(in: .whitespacesAndNewlines)
+      return !text.isEmpty && Double(text)?.isFinite == true
+    default: return false
+    }
+  }
+
   static func numbers(_ value: Value?) -> [Double] {
     NativeValue.array(value).map {
       if case .number(let value) = $0 { return value.isFinite ? value : 0 }
@@ -98,9 +142,12 @@ struct NativeChartData: Equatable {
     return series[seriesIndex].values[labelIndex]
   }
   func hasValue(_ seriesIndex: Int, _ labelIndex: Int) -> Bool {
-    !isProgressive || (series.indices.contains(seriesIndex) && series[seriesIndex].values.indices.contains(labelIndex))
+    !invalidData && series.indices.contains(seriesIndex)
+      && series[seriesIndex].values.indices.contains(labelIndex)
+      && series[seriesIndex].values[labelIndex].isFinite
   }
   var accessibilityRows: [String] {
+    guard !invalidData else { return [] }
     if !scatter.isEmpty {
       return scatter.flatMap { s in
         s.points.map { "\(s.name): x \($0.x), y \($0.y)" + ($0.z.map { ", z \($0)" } ?? "") }
@@ -114,7 +161,10 @@ struct NativeChartData: Equatable {
           + known.map { "\(series[$0].name) \(value($0, i))" }.joined(separator: ", ")
       }
     }
-    return labels.indices.map { "\(labels[$0]): \(slices.indices.contains($0) ? slices[$0] : 0)" }
+    return labels.indices.compactMap { index in
+      guard slices.indices.contains(index), slices[index].isFinite else { return nil }
+      return "\(labels[index]): \(slices[index])"
+    }
   }
 }
 
@@ -206,7 +256,8 @@ struct NativeChart: View {
     Group {
       if !allData.hasContent(for: name) {
         NativePendingContent(loading: waiting, message: "Loading data",
-          terminalMessage: context.hasDataFailure ? "Unable to load chart" : incomplete ? "Chart is incomplete" : "No data")
+          terminalMessage: context.hasDataFailure ? "Unable to load chart"
+            : allData.invalidData ? "Chart data is invalid" : incomplete ? "Chart is incomplete" : "No data")
       } else { chartBody }
     }
     .onAppear(perform: rememberStableData)
@@ -676,7 +727,7 @@ struct NativeChartDrawing {
     return min(data.labels.count - 1, max(0, Int(fraction * CGFloat(data.labels.count))))
   }
   func draw(in canvas: inout GraphicsContext, size: CGSize, xLabel: String?, yLabel: String?) {
-    guard size.width > 0, size.height > 0 else { return }
+    guard !data.invalidData, size.width > 0, size.height > 0 else { return }
     switch name {
     case "PieChart", "RadialChart", "SingleStackedBarChart": circular(&canvas, size)
     case "RadarChart": radar(&canvas, size)
@@ -862,7 +913,7 @@ struct NativeChartDrawing {
       }
     } else {
       for s in 0..<seriesCount {
-        let visibleCount = data.isProgressive ? min(count, data.series[s].values.count) : count
+        let visibleCount = min(count, data.series[s].values.count)
         let points = (0..<visibleCount).map {
           CGPoint(x: rect.minX + pitch * (CGFloat($0) + 0.5), y: numeric(data.value(s, $0)))
         }

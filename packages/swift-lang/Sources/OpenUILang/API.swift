@@ -9,6 +9,7 @@ final class CoreParser: Parser {
         parser = runtime.sync { runtime.core("createParser", [runtime.json(runtime.schemaJSON(schema)), schema.rootComponent as Any]) }
     }
     public func parse(_ input: String) -> ParseResult { core.sync {
+        guard OpenUIRuntimeBudget.acceptsSource(input) else { return limitedParseResult() }
         let content = stripMessageMarkers(input)
         if sourceExceedsLimits(content) { return limitedParseResult() }
         return core.parseResult(parser.invokeMethod("parse", withArguments: [content]))

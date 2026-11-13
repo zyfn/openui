@@ -95,7 +95,12 @@ struct NativeTableDraft {
 struct NativeEditableTable: View {
   let context: OpenUIComponentContext
   @EnvironmentObject private var state: OpenUIState
-  @StateObject private var editing = NativeTableEditingState()
+  @StateObject private var editing: NativeTableEditingState
+  @MainActor init(context: OpenUIComponentContext) {
+    self.context = context
+    _editing = StateObject(wrappedValue: context.editingRecord(kind: "table",
+      name: context.codeUnitString("name") ?? "", create: NativeTableEditingState.init))
+  }
   private var draft: NativeTableDraft { editing.draft }
   private var saving: Bool { editing.saving }
   private var name: OpenUIString { context.codeUnitString("name") ?? "" }
@@ -104,6 +109,20 @@ struct NativeEditableTable: View {
     state.fieldValue(form: name, name: name, fallback: context.value("data") ?? .array([]))
   }
   private var changed: Int { draft.changes(columns: columns.count) }
+  private struct RowIdentity: Identifiable {
+    struct Key: Hashable { let value: OpenUIString; let occurrence: Int }
+    let id: Key
+    let index: Int
+  }
+  private var rowIdentities: [RowIdentity] {
+    var occurrences: [OpenUIString: Int] = [:]
+    return draft.rows.enumerated().map { index, row in
+      let occurrence = occurrences[row.id, default: 0]
+      occurrences[row.id] = occurrence + 1
+      return .init(id: .init(value: row.id, occurrence: occurrence), index: index)
+    }
+  }
+
 
   var body: some View {
     VStack(alignment: .leading, spacing: context.theme.spacing("m")) {
@@ -116,7 +135,9 @@ struct NativeEditableTable: View {
                 .frame(width: width(index), alignment: alignment(column)).padding(context.theme.spaceM)
             }
           }.background(context.theme.sunk)
-          ForEach(Array(draft.rows.enumerated()), id: \.offset) { row, item in
+          ForEach(rowIdentities, id: \.id) { identity in
+            let row = identity.index
+            let item = draft.rows[row]
             Divider()
             HStack(alignment: .center, spacing: 0) {
               ForEach(Array(columns.enumerated()), id: \.offset) { column, definition in

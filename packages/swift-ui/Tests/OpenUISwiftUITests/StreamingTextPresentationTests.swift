@@ -1,5 +1,6 @@
 import Combine
 import XCTest
+import OpenUILang
 @testable import OpenUISwiftUI
 
 final class StreamingTextPresentationTests: XCTestCase {
@@ -176,5 +177,62 @@ final class StreamingTextPresentationTests: XCTestCase {
     buffer.receive("AB", streaming: true)
     await fulfillment(of: [delivered], timeout: 3)
     XCTAssertEqual(buffer.displayed, "AB")
+  }
+}
+
+extension StreamingTextPresentationTests {
+  @MainActor func testCanonicalMarkdownPreparationCoalescesWithoutStarvingContinuousInput() async throws {
+    let document = NativeMarkdownDocument()
+    func request(_ text: String) -> NativeRichTextRequest {
+      .init(source: OpenUIString(text), mode: .textContent, sources: [], fontSize: 16, color: "#202124")
+    }
+    document.receive(request("**Start**"))
+    var final = ""
+    for index in 1...100 {
+      final = "**Start** " + String(repeating: "中文内容 ", count: index)
+      document.receive(request(final))
+    }
+    let finalSource = OpenUIString(final)
+    let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      document.currentSource == finalSource
+    }, object: nil)
+    await fulfillment(of: [ready], timeout: 5)
+    XCTAssertEqual(document.currentSource, finalSource)
+    XCTAssertLessThanOrEqual(document.preparationCount, 2,
+      "One active snapshot and one latest pending snapshot, not 100 queued jobs")
+    XCTAssertTrue(document.content(for: request(final)).renderPlainText().contains("中文内容"))
+    document.cancel()
+  }
+
+  @MainActor func testRepeatedMarkdownSizingReadsReuseTheSameParsedFallback() {
+    let document = NativeMarkdownDocument()
+    let request = NativeRichTextRequest(source: "**Readable** before mount", mode: .markdown,
+      sources: [], fontSize: 16, color: "#202124")
+    for _ in 0..<100 { _ = document.content(for: request) }
+    XCTAssertEqual(document.fallbackParseCount, 1)
+    XCTAssertEqual(document.preparationCount, 0, "A read must not launch background preparation")
+    XCTAssertNil(document.currentSource)
+  }
+
+  @MainActor func testMarkdownCorrectionRejectsEarlierPreparedResult() async {
+    let document = NativeMarkdownDocument()
+    func request(_ source: String) -> NativeRichTextRequest {
+      .init(source: OpenUIString(source), mode: .textContent, sources: [], fontSize: 16, color: "#202124")
+    }
+    document.receive(request("Old content"))
+    document.receive(request("Replacement"))
+    let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      document.currentSource == "Replacement"
+    }, object: nil)
+    await fulfillment(of: [ready], timeout: 5)
+    XCTAssertEqual(document.content(for: request("Replacement")).renderPlainText(), "Replacement")
+    document.cancel()
+    document.receive(request("After remount"))
+    let remounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      document.currentSource == "After remount"
+    }, object: nil)
+    await fulfillment(of: [remounted], timeout: 5)
+    XCTAssertEqual(document.currentSource, "After remount")
+    document.cancel()
   }
 }

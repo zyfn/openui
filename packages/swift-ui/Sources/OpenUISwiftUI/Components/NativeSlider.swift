@@ -59,6 +59,7 @@ final class NativeSliderDraft: ObservableObject {
   private var pending: [Double]?
   private var work: Task<Void, Never>?
   var commit: (([Double]) -> Void)?
+  var configuration: NativeSliderConfiguration?
 
   func receive(_ values: [Double]) {
     guard values != external || self.values.isEmpty else { return }
@@ -74,13 +75,16 @@ final class NativeSliderDraft: ObservableObject {
     // Empty or malformed edits must never become an implicit numeric zero.
     // Keep incomplete input visible without changing the committed value.
     let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty, let number = Double(trimmed), number.isFinite else { return }
+    guard !trimmed.isEmpty, let number = Double(trimmed), number.isFinite else {
+      work?.cancel(); work = nil; pending = nil
+      return
+    }
     var next = values; next[index] = number
     values = next
     schedule(next)
   }
   func select(_ value: Double, at index: Int, sorted: Bool = true) {
-    guard values.indices.contains(index) else { return }
+    guard values.indices.contains(index), value.isFinite else { return }
     var next = values; next[index] = value
     if sorted { next.sort() }
     values = next; text = next.map(jsNumberString)
@@ -96,8 +100,28 @@ final class NativeSliderDraft: ObservableObject {
       self?.flush()
     }
   }
+  func error(at index: Int, configuration: NativeSliderConfiguration) -> String? {
+    guard text.indices.contains(index) else { return nil }
+    let input = text[index].trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !input.isEmpty, let number = Double(input), number.isFinite else { return "Invalid number" }
+    return configuration.error(for: values, index: index)
+  }
+  func validationError(configuration: NativeSliderConfiguration? = nil) -> String? {
+    for input in text {
+      let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !value.isEmpty, let number = Double(value), number.isFinite else { return "Invalid number" }
+    }
+    if let configuration = configuration ?? self.configuration {
+      guard configuration.valid else { return "Value unavailable" }
+      for index in values.indices {
+        if let error = configuration.error(for: values, index: index) { return error }
+      }
+    }
+    return nil
+  }
   func flush() {
     work?.cancel(); work = nil
+    guard validationError() == nil else { pending = nil; return }
     guard let pending else { return }
     self.pending = nil
     external = pending
@@ -125,7 +149,12 @@ struct NativeSliderField: View {
   @Environment(\.openUIFieldLabel) private var fieldLabel
   @Environment(\.dynamicTypeSize) private var typeSize
   @ScaledMetric(relativeTo: .body) private var valueWidth: CGFloat = 88
-  @StateObject private var draft = NativeSliderDraft()
+  @StateObject private var draft: NativeSliderDraft
+  @MainActor init(context: OpenUIComponentContext) {
+    self.context = context
+    _draft = StateObject(wrappedValue: context.editingRecord(kind: "slider",
+      name: context.codeUnitString("name") ?? "", create: NativeSliderDraft.init))
+  }
   @State private var pendingWriteOwner = UUID()
   @State private var registeredPendingName: OpenUIString?
   @State private var picker: NativeSliderPickerRequest?
@@ -156,9 +185,10 @@ struct NativeSliderField: View {
         NativeSliderTrack(values: draft.values.isEmpty ? external : draft.values,
           configuration: configuration, enabled: context.canInteract,
           showsDots: showsDots, label: label,
-          select: { value, index in draft.select(value, at: index) })
+          select: { value, index in draft.select(value, at: index) },
+          ended: { draft.flush() })
         ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
-          if let error = configuration.error(for: draft.values, index: index) {
+          if let error = draft.error(at: index, configuration: configuration) {
             Text(NativeControlText.localized(error, locale: locale)).nativeTextStyle(context.theme.textStyle(.fieldError))
               .fixedSize(horizontal: false, vertical: true)
               .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
@@ -173,6 +203,7 @@ struct NativeSliderField: View {
     .onAppear { configure(target); draft.receive(external); registerPendingWrite() }
     .onChange(of: target) { configure($0); registerPendingWrite() }
     .onChange(of: external) { draft.receive($0) }
+    .onChange(of: focusedValue) { if $0 == nil { draft.flush() } }
     .onChange(of: context.presentationSourceRevision) { _ in picker = nil }
     .onChange(of: context.canInteract) { ready in if !ready { picker = nil } }
     .onChange(of: draft.values.count) { count in if let picker, picker.index >= count { self.picker = nil } }
@@ -191,6 +222,7 @@ struct NativeSliderField: View {
           label: label) { value in
             guard context.canInteract else { return }
             draft.select(value, at: request.index)
+            draft.flush()
             picker = nil
           }
       }
@@ -203,14 +235,16 @@ struct NativeSliderField: View {
       validation.unregisterPendingWrite(old, owner: pendingWriteOwner)
     }
     let currentDraft = draft
-    validation.registerPendingWrite(name, owner: pendingWriteOwner) { [weak currentDraft] in
-      currentDraft?.flush()
-    }
+    let limits = configuration
+    validation.registerPendingWrite(name, owner: pendingWriteOwner,
+      flush: { [weak currentDraft] in currentDraft?.flush() },
+      error: { [weak currentDraft] in currentDraft?.validationError(configuration: limits) })
     registeredPendingName = name
   }
   private func configure(_ target: NativeSliderTarget) {
-    draft.commit = { values in
-      NativeFieldState(context: target.context).write(.array(values.map(Value.number)))
+    draft.configuration = configuration
+    draft.commit = target.context.weakOperation { context, values in
+      NativeFieldState(context: context).write(.array(values.map(Value.number)))
     }
   }
   private var header: some View {
@@ -343,6 +377,7 @@ private struct NativeSliderTrack: View {
   let showsDots: Bool
   let label: String
   let select: (Double, Int) -> Void
+  var ended: () -> Void = {}
   @Environment(\.openUITheme) private var theme
   @State private var dragging: Int?
   private func fraction(_ value: Double) -> CGFloat {
@@ -386,9 +421,9 @@ private struct NativeSliderTrack: View {
         .modifier(NativeSliderPan(enabled: enabled,
           fallback: DragGesture(minimumDistance: 0).onChanged { gesture in
             update(location: gesture.location, start: gesture.startLocation, width: width)
-          }.onEnded { _ in dragging = nil },
+          }.onEnded { _ in dragging = nil; ended() },
           changed: { location, start in update(location: location, start: start, width: width) },
-          ended: { dragging = nil }))
+          ended: { dragging = nil; ended() }))
     }.frame(height: 44).opacity(enabled ? 1 : 0.5)
   }
   private func update(location: CGPoint, start: CGPoint, width: CGFloat) {

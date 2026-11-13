@@ -243,3 +243,40 @@ final class ChartInspectionTests: XCTestCase {
 
 
 }
+
+extension ChartInspectionTests {
+  @MainActor func testIncompleteAndInvalidCompletedSeriesCannotBecomeRealZeros() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.setSource("root=TextContent(\"Ready\")")
+    func data(_ values: [Value]) -> NativeChartData {
+      let series = EvaluatedElement(typeName: "Series", props: [
+        ("category", .string("Count")), ("values", .array(values))])
+      let chart = EvaluatedElement(typeName: "LineChart", props: [
+        ("labels", .array([.string("A"), .string("B")])), ("series", .array([.element(series)]))])
+      return NativeChartData(context: .init(element: chart, registry: library.registry, state: state))
+    }
+    for samples: [Value] in [[.number(12)], [.number(12), .null], [.number(12), .string("invalid")],
+                             [.number(12), .number(.infinity)]] {
+      let invalid = data(samples)
+      XCTAssertTrue(invalid.invalidData)
+      XCTAssertFalse(invalid.hasContent(for: "LineChart"))
+      XCTAssertTrue(invalid.accessibilityRows.isEmpty)
+      XCTAssertNil(invalid.inspection(at: 1, locale: Locale(identifier: "en_US")))
+    }
+    let valid = data([.number(12), .number(0)])
+    XCTAssertFalse(valid.invalidData)
+    XCTAssertTrue(valid.hasValue(0, 1))
+    XCTAssertEqual(valid.inspection(at: 1, locale: Locale(identifier: "en_US"))?.rows.first?.value, "0")
+  }
+
+  func testChartInspectionRetainsExactLargeAndFractionalValues() {
+    var data = NativeChartData()
+    data.labels = ["A", "B"]
+    data.series = [.init(name: "Value", values: [123456.789, -2555555])]
+    XCTAssertEqual(data.inspection(at: 0, locale: Locale(identifier: "en_US"))?.rows.first?.value, "123456.789")
+    XCTAssertEqual(data.inspection(at: 1, locale: Locale(identifier: "en_US"))?.rows.first?.value, "-2555555")
+    XCTAssertFalse(data.hasValue(0, 2), "A finished chart does not acquire missing zeros")
+    XCTAssertFalse(data.hasValue(2, 0))
+  }
+}

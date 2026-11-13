@@ -15,6 +15,25 @@ public struct OpenUIComponent {
         self.init(defineComponent(name: name, description: description, params: params), content: content)
     }
 
+    /// Configure the existing native presentation contract without exposing
+    /// parser internals or inventing new model-facing parameters. Unknown field
+    /// names are ignored so metadata cannot add a second undeclared schema.
+    public func presentation(
+        layoutFields: [String] = [],
+        supportsPlaceholder: Bool = false,
+        ownsFormControlLabel: Bool = false
+    ) -> OpenUIComponent {
+        var result = self
+        let declared = Set(definition.params.map(\.name))
+        var seen = Set<String>()
+        result.presentationLayoutFields = layoutFields.filter {
+            declared.contains($0) && seen.insert($0).inserted
+        }
+        result.supportsPresentationPlaceholder = supportsPlaceholder
+        result.ownsFormControlLabel = ownsFormControlLabel
+        return result
+    }
+
     /// Replace a typed contract while retaining the original native renderer.
     /// The builder still receives the final extended registry and shared state.
     public func replacingDefinition(_ definition: DefinedComponent) -> OpenUIComponent {

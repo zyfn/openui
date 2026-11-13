@@ -105,6 +105,33 @@ public struct OpenUIComponentContext {
         guard isCurrentPresentation else { return }
         state.setFieldValue(form: exactFormName, name: name, value: value, componentType: nil)
     }
+    /// Editing records can be retained by the document. Their callbacks must
+    /// not retain the document in return, or releasing a renderer leaks it.
+    @MainActor func weakOperation<Input>(_ body: @escaping (OpenUIComponentContext, Input) -> Void) -> (Input) -> Void {
+        let element = element, registry = registry, theme = theme, presentation = presentation
+        let resources = resources, form = exactFormName, revision = sourceRevision
+        let scopeReady = interactionScopeReady
+        return { [weak state] value in
+            guard let state, state.sourceRevision == revision else { return }
+            var current = OpenUIComponentContext(element: element, registry: registry, state: state,
+                theme: theme, presentation: presentation, resources: resources, exactFormName: form)
+            current.interactionScopeReady = scopeReady
+            body(current, value)
+        }
+    }
+    @MainActor func editingRecord<T: AnyObject>(kind: String, name: OpenUIString, create: () -> T) -> T {
+        state.editingRecord(kind: kind, form: exactFormName, name: name, create: create)
+    }
+    @MainActor func existingEditingRecord<T: AnyObject>(kind: String, name: OpenUIString) -> T? {
+        state.existingEditingRecord(kind: kind, form: exactFormName, name: name)
+    }
+    @MainActor func childContext(_ child: EvaluatedElement, form: OpenUIString?) -> OpenUIComponentContext {
+        var next = OpenUIComponentContext(element: child, registry: registry, state: state,
+            theme: theme, presentation: presentation, resources: resources, exactFormName: form)
+        next.interactionScopeReady = interactionScopeReady
+        next.activationIntent = activationIntent
+        return next
+    }
     public func value(_ name: String) -> Value? { element.props.last(where: { $0.0 == name })?.1 }
     /// Geometry/style arguments must not consume an unfinished numeric or enum
     /// token. Data text continues to use value/string for progressive reading.

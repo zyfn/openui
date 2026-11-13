@@ -163,3 +163,25 @@ final class StreamingReplayTests: XCTestCase {
     XCTAssertEqual(Array(value.utf16), Array("e\u{0301}".utf16))
   }
 }
+
+extension StreamingReplayTests {
+  @MainActor func testBudgetFailureKeepsReadablePrefixButStopsItsActions() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.push("root=Stack([TextContent(\"Safe prefix\"),Button(\"Submit\")])\n")
+    let root = try XCTUnwrap(state.root)
+    state.push("bad=" + String(repeating: "(", count: 130))
+    XCTAssertTrue(state.root === root)
+    XCTAssertTrue(state.isInterrupted)
+    XCTAssertTrue(state.isComplete)
+    XCTAssertFalse(state.canExecuteActions)
+    XCTAssertFalse(state.isElementReady(root))
+    XCTAssertTrue(state.errors.contains { $0.code == .parseException })
+    state.push("ignored trailing bytes")
+    XCTAssertTrue(state.root === root)
+    state.setSource("root=TextContent(\"Recovered\")")
+    XCTAssertFalse(state.isInterrupted)
+    XCTAssertTrue(state.errors.isEmpty)
+    XCTAssertTrue(state.canExecuteActions)
+  }
+}

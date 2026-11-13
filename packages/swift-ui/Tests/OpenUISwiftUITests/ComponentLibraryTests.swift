@@ -4,6 +4,21 @@ import OpenUILang
 @testable import OpenUISwiftUI
 
 final class ComponentLibraryTests: XCTestCase {
+    func testPublicPresentationMetadataUsesOnlyDeclaredFieldsAndSurvivesRegistration() throws {
+        let component = OpenUIComponent(name: "CustomNote", description: "A host note", params: [
+            OpenUIParameter.string("text"), OpenUIParameter.number("height")
+        ]) { Text($0.string("text") ?? "") }
+        .presentation(layoutFields: ["height", "missing", "height"], supportsPlaceholder: true, ownsFormControlLabel: true)
+        let library = try OpenUIComponentLibrary(components: [component])
+        XCTAssertEqual(library.registry.presentationLayoutFields("CustomNote"), ["height"])
+        XCTAssertTrue(library.registry.supportsPresentationPlaceholder("CustomNote"))
+        XCTAssertTrue(library.registry.ownsFormControlLabel("CustomNote"))
+        XCTAssertEqual(library.library.toSchema().components["CustomNote"]?.map(\.name), ["text", "height"])
+        let removed = try library.extending(removing: ["CustomNote"])
+        XCTAssertFalse(removed.registry.supportsPresentationPlaceholder("CustomNote"))
+        XCTAssertTrue(removed.registry.presentationLayoutFields("CustomNote").isEmpty)
+    }
+
     @MainActor func testStandardSelectionsShareStateWithoutHostActions() throws {
         let library = try OpenUIStandardComponents.library()
         let source = """

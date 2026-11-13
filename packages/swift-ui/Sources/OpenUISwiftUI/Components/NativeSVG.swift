@@ -16,17 +16,28 @@ private struct NativeSVG: View {
     let context: OpenUIComponentContext
     @State private var downloaded: String?
     @State private var failed = false
+    @State private var drawingStatus = NativeMediaStatus.loading
+    @State private var documents = NativeSVGDocumentCache()
     @Environment(\.colorScheme) private var scheme
     @Environment(\.openUIResourceContext) private var resources
     private var document: NativeSVGDocument? {
         if context.string("content") != nil && context.string("src") != nil { return nil }
         guard context.string("content") == nil || context.element.sourceReadiness["content"].complete else { return nil }
-        return (context.string("content") ?? downloaded).flatMap(NativeSVGDocument.parse)
+        return documents.value(context.string("content") ?? downloaded)
     }
     var body: some View {
         Group {
             if let document {
-                web(document).aspectRatio(document.ratio, contentMode: .fit)
+                web(document).aspectRatio(document.viewportRatio, contentMode: .fit)
+                    .frame(maxHeight: 1024)
+                    .overlay {
+                        if drawingStatus == .loading {
+                            NativePendingContent(loading: true, message: "Loading")
+                        } else if drawingStatus == .unavailable {
+                            Text("Unable to load graphic", bundle: NativeControlResources.bundle)
+                                .nativeTextStyle(context.theme.textStyle(.supporting))
+                        }
+                    }
             } else if !failed && (context.isStreaming || (context.string("src") != nil && context.string("content") == nil && downloaded == nil)) {
                 NativePendingContent(loading: true, message: "Loading")
             } else {
@@ -37,7 +48,7 @@ private struct NativeSVG: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(context.string("alt") ?? "SVG")
-        .task(id: NativeResourceRequestID(request: remoteRequest, loader: ObjectIdentifier(resources.loader), attempt: 0)) {
+        .task(id: NativeResourceRequestID(request: remoteRequest, loader: ObjectIdentifier(resources.loader), attempt: 0, authorizationScope: resources.loader.authorizationScopeID)) {
             downloaded = nil; failed = false
             guard context.element.sourceReadiness["src"].complete, context.string("src") != nil, context.string("content") == nil else { return }
             guard var request = remoteRequest else { failed = true; return }
@@ -60,12 +71,55 @@ private struct NativeSVG: View {
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'none'; connect-src 'none'; base-uri 'none'">
         <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;color:\(NativeCSSColor.css(context.theme.textNeutralPrimary, scheme: scheme));font-family:-apple-system,sans-serif}svg{display:block;width:100%!important;height:100%!important}</style>
         </head><body>\(document.markup)</body></html>
-        """)
+        """, onStatus: { drawingStatus = $0 })
     }
 }
 
 @MainActor private final class SVGWebCoordinator: NSObject, WKNavigationDelegate {
-    var html = ""
+    private var html = ""
+    private var generation = 0
+    private var navigation: WKNavigation?
+    private var timeout: Task<Void, Never>?
+    private var onStatus: ((NativeMediaStatus) -> Void)?
+    func update(_ html: String, view: WKWebView, onStatus: @escaping (NativeMediaStatus) -> Void) {
+        self.onStatus = onStatus
+        guard self.html != html else { return }
+        self.html = html
+        generation += 1
+        let epoch = generation
+        timeout?.cancel()
+        navigation = view.loadHTMLString(html, baseURL: nil)
+        Task { @MainActor [weak self] in
+            guard let self, self.generation == epoch else { return }
+            self.onStatus?(.loading)
+        }
+        timeout = Task { @MainActor [weak self, weak view] in
+            do { try await Task.sleep(nanoseconds: 20_000_000_000) } catch { return }
+            guard let self, self.generation == epoch else { return }
+            view?.stopLoading(); self.finish(.unavailable)
+        }
+    }
+    private func finish(_ status: NativeMediaStatus) {
+        timeout?.cancel(); timeout = nil
+        onStatus?(status)
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard navigation === self.navigation else { return }
+        finish(.loaded)
+    }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        guard navigation === self.navigation else { return }
+        finish(.unavailable)
+    }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        guard navigation === self.navigation else { return }
+        finish(.unavailable)
+    }
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { finish(.unavailable) }
+    func dispose(_ view: WKWebView) {
+        generation += 1; timeout?.cancel(); timeout = nil; onStatus = nil
+        view.navigationDelegate = nil; view.stopLoading(); navigation = nil
+    }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         decisionHandler(navigationAction.request.url?.scheme == "about" ? .allow : .cancel)
     }
@@ -82,20 +136,24 @@ private struct NativeSVG: View {
 #if os(iOS)
 private struct SVGWebView: UIViewRepresentable {
     let html: String
+    let onStatus: (NativeMediaStatus) -> Void
     func makeCoordinator() -> SVGWebCoordinator { SVGWebCoordinator() }
     func makeUIView(context: Context) -> WKWebView { svgWebView(context.coordinator) }
     func updateUIView(_ view: WKWebView, context: Context) {
-        if context.coordinator.html != html { context.coordinator.html = html; view.loadHTMLString(html, baseURL: nil) }
+        context.coordinator.update(html, view: view, onStatus: onStatus)
     }
+    static func dismantleUIView(_ view: WKWebView, coordinator: SVGWebCoordinator) { coordinator.dispose(view) }
 }
 #else
 private struct SVGWebView: NSViewRepresentable {
     let html: String
+    let onStatus: (NativeMediaStatus) -> Void
     func makeCoordinator() -> SVGWebCoordinator { SVGWebCoordinator() }
     func makeNSView(context: Context) -> WKWebView { svgWebView(context.coordinator) }
     func updateNSView(_ view: WKWebView, context: Context) {
-        if context.coordinator.html != html { context.coordinator.html = html; view.loadHTMLString(html, baseURL: nil) }
+        context.coordinator.update(html, view: view, onStatus: onStatus)
     }
+    static func dismantleNSView(_ view: WKWebView, coordinator: SVGWebCoordinator) { coordinator.dispose(view) }
 }
 #endif
 

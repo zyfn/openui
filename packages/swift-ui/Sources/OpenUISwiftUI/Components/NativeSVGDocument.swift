@@ -6,6 +6,9 @@ import FoundationXML
 struct NativeSVGDocument {
     let markup: String
     let ratio: CGFloat
+    /// Bounded native viewport; SVG's own preserveAspectRatio still fits all
+    /// artwork, rather than cropping or fabricating a different viewBox.
+    var viewportRatio: CGFloat { min(8, max(0.25, ratio)) }
     static func parse(_ source: String) -> NativeSVGDocument? {
         guard source.utf8.count <= 1_000_000, !source.localizedCaseInsensitiveContains("<!DOCTYPE"),
               !source.localizedCaseInsensitiveContains("<!ENTITY") else { return nil }
@@ -56,3 +59,19 @@ private final class SVGReader: NSObject, XMLParserDelegate {
     }
 }
 
+
+/// Parsing is a local, single-entry projection cache. Repeated size proposals
+/// do not repeat XML validation. Source replacement invalidates by exact UTF-16.
+final class NativeSVGDocumentCache {
+    private var source: String?
+    private var document: NativeSVGDocument?
+    private(set) var parseCount = 0
+    func value(_ source: String?) -> NativeSVGDocument? {
+        if self.source?.utf16.elementsEqual(source?.utf16 ?? "".utf16) == true { return document }
+        if self.source == nil && source == nil { return nil }
+        self.source = source
+        parseCount += 1
+        document = source.flatMap(NativeSVGDocument.parse)
+        return document
+    }
+}

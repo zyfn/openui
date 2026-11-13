@@ -38,8 +38,10 @@ public struct OpenUIActionSurface<Content: View>: View {
             guard !performing, context.canActivate else { return }
             // A form submission must see the latest local draft, even when
             // the user taps its action before the edit debounce expires.
-            if needsValidation { validation?.flushPendingWrites() }
-            if validateForm && needsValidation && validation?.validateAll() == false { return }
+            if needsValidation {
+                let prepared = validateForm ? validation?.validateAll() : validation?.preparePendingWrites()
+                if prepared == false { return }
+            }
             guard context.canActivate else { return }
             performing = true
             Task { @MainActor in
@@ -63,13 +65,10 @@ public struct OpenUIActionSurface<Content: View>: View {
             !hostEnabled ? .disabled : performing ? .performing : context.canInteract ? .ready : .pending)
     }
     private var needsValidation: Bool {
-        let plan: ActionPlan?
         switch dispatch {
-        case .plan(let action): plan = action
-        case .value(_,let value):
-            if case .actionPlan(let action) = value { plan = action } else { plan = nil }
+        case .plan(let action): return NativeFormValidation.requiresValidation(action)
+        case .value(_,let value): return NativeFormValidation.requiresValidation(action: value)
         }
-        return NativeFormValidation.requiresValidation(plan)
     }
 }
 
