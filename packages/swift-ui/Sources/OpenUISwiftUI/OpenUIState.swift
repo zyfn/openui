@@ -52,7 +52,7 @@ public final class OpenUIState: ObservableObject {
         guard isComplete, !isInterrupted, let result = latestResult else { return false }
         return !result.meta.incomplete && result.meta.unresolved.isEmpty
     }
-    private var liveElements: [String: [EvaluatedElement]] = [:]
+    private var liveElements = NativeLiveElementIndex()
     private var liveElementCache: [ObjectIdentifier: (snapshot: EvaluatedElement, current: EvaluatedElement)] = [:]
     func liveElement(matching element: EvaluatedElement) -> EvaluatedElement {
         guard let root, root !== element else { return element }
@@ -78,8 +78,8 @@ public final class OpenUIState: ObservableObject {
         // A stable native child may hold an earlier readiness snapshot even
         // when its displayed props have not changed. Match nested values too;
         // never borrow readiness from a semantically different control.
-        let matches = (liveElements[element.typeName] ?? []).filter {
-            $0.statementId == element.statementId && props($0, element, depth: 0)
+        let matches = liveElements.candidates(for: element).filter {
+            props($0, element, depth: 0)
         }
         func readiness(_ a: Value, _ b: Value, depth: Int) -> Bool {
             guard depth < 256 else { return false }
@@ -112,7 +112,7 @@ public final class OpenUIState: ObservableObject {
             switch value {
             case .element(let element):
                 guard seen.insert(ObjectIdentifier(element)).inserted else { return }
-                liveElements[element.typeName, default: []].append(element)
+                liveElements.insert(element)
                 element.props.forEach { visit($0.1, depth: depth + 1) }
             case .array(let values):
                 guard seen.insert(ObjectIdentifier(values)).inserted else { return }
@@ -582,12 +582,17 @@ public final class OpenUIState: ObservableObject {
             queryValues[query.statementId] = queryManager.queryState(for: query.statementId)
                 ?? QueryState(status: .idle, data: evaluator.context.resolveRef(query.statementId))
         }
-        queryStates = queryValues
-        mutationStates = Dictionary(uniqueKeysWithValues: result.mutationStatements.map {
+        // Empty auxiliary channels have no changed value to publish. Root and
+        // readiness still update above; nonempty values keep their existing
+        // delivery semantics, including the transition back to an empty value.
+        if !queryValues.isEmpty || !queryStates.isEmpty { queryStates = queryValues }
+        let mutationValues = Dictionary(uniqueKeysWithValues: result.mutationStatements.map {
             ($0.statementId, queryManager.mutationState(for: $0.statementId) ?? MutationState(status: .idle))
         })
-        errors = result.meta.errors + (isComplete ? evaluator.errors : [])
-            + queryValues.values.compactMap(\.error) + mutationStates.values.compactMap(\.error)
+        if !mutationValues.isEmpty || !mutationStates.isEmpty { mutationStates = mutationValues }
+        let nextErrors = result.meta.errors + (isComplete ? evaluator.errors : [])
+            + queryValues.values.compactMap(\.error) + mutationValues.values.compactMap(\.error)
+        if !nextErrors.isEmpty || !errors.isEmpty { errors = nextErrors }
         let revision = errors.map { error in
             [error.source.rawValue, error.code.rawValue, error.statementId ?? "", error.component ?? "",
              error.path.map(jsonStringLiteral) ?? "", error.severity ?? "", error.message].joined(separator: "\u{0}")
