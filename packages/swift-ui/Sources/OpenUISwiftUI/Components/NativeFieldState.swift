@@ -9,6 +9,9 @@ final class NativeFormValidation: ObservableObject {
     }
     private var fields: [OpenUIString: Field] = [:]
     private var owners: [OpenUIString: UUID] = [:]
+    // Field-local pending edits are flushed before semantic form actions.
+    // Owner identity prevents a disappearing view from unregistering its replacement.
+    private var pendingWrites: [OpenUIString: (owner: UUID, flush: () -> Void)] = [:]
     @Published private(set) var errors: [OpenUIString: String] = [:]
     @Published private(set) var firstInvalid: OpenUIString?
 
@@ -34,7 +37,19 @@ final class NativeFormValidation: ObservableObject {
         fields.removeValue(forKey: name)
         if errors[name] != nil { errors.removeValue(forKey: name) }
     }
+    func registerPendingWrite(_ name: OpenUIString, owner: UUID, flush: @escaping () -> Void) {
+        pendingWrites[name] = (owner, flush)
+    }
+    func unregisterPendingWrite(_ name: OpenUIString, owner: UUID) {
+        guard pendingWrites[name]?.owner == owner else { return }
+        pendingWrites.removeValue(forKey: name)
+    }
+    func flushPendingWrites() {
+        // Take a snapshot: a write may synchronously publish a new view tree.
+        for item in Array(pendingWrites.values) { item.flush() }
+    }
     @discardableResult func validateAll() -> Bool {
+        flushPendingWrites()
         let next = fields.reduce(into: [OpenUIString: String]()) { result, entry in
             if let error = OpenUILang.validate(entry.value.value(), rules: entry.value.rules) {
                 result[entry.key] = error
