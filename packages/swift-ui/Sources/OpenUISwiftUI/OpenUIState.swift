@@ -273,6 +273,18 @@ public final class OpenUIState: ObservableObject {
         // Full-buffer streaming is also supported: a growing UTF-16 prefix is
         // the same presentation, including its final completion snapshot.
         let extendsStream = !isComplete && !source.isEmpty && text.utf16.starts(with: source.utf16)
+        if extendsStream && streaming {
+            // A full-buffer streaming host is delivering only a new suffix.
+            // Keep the same document epoch, query subscriptions, and user drafts.
+            // The shared streaming parser already owns completed-prefix reuse.
+            let boundary = String.Index(utf16Offset: source.utf16.count, in: text)
+            let suffix = String(text[boundary...])
+            if !suffix.isEmpty {
+                source = text
+                acceptSource(parser.push(suffix, complete: false))
+            }
+            return
+        }
         replaceSource(text, streaming: streaming, replacesPresentation: !extendsStream)
     }
 
