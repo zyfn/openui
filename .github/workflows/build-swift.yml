@@ -28,6 +28,26 @@ permissions:
   contents: read
 
 jobs:
+  source-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Archive tracked SDK inputs only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/openui-sdk-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/openui-sdk-source/checkout-sha.txt"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/openui-sdk-source/git-tree.txt"
+          git archive --format=tar HEAD Package.swift packages/swift-ui packages/swift-lang packages/lang-core spec examples/agent-cases examples/app-frameworks/swiftui-macos .github/workflows/build-swift.yml > "$RUNNER_TEMP/openui-sdk-source/sdk-source.tar"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdk-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/openui-sdk-source/
+          retention-days: 7
   test:
     runs-on: macos-latest
     timeout-minutes: 20
