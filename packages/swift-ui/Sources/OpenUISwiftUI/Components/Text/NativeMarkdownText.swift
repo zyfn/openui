@@ -41,7 +41,7 @@ struct NativeMarkdownText: View {
   private var mathSize: CGFloat { font.size * scale }
   private var mathColor: String { NativeCSSColor.css(foreground, scheme: colorScheme) }
   private var visibleText: String {
-    streamActive ? (streamText.displayed ?? text) : text
+    streamText.text(for: text, streaming: streamActive)
   }
   private var request: NativeRichTextRequest {
     .init(source: OpenUIString(visibleText), mode: mode, sources: sources, fontSize: Double(mathSize), color: mathColor)
@@ -104,17 +104,13 @@ struct NativeMarkdownText: View {
       // already-visible paragraphs as the final line grows.
       .transaction { if streamActive { $0.animation = nil } }
       .onAppear { streamText.receive(text, streaming: streamActive) }
-      .onChange(of: text) { next in streamText.receive(next, streaming: streamActive) }
+      .onChange(of: OpenUIString(text)) { _ in streamText.receive(text, streaming: streamActive) }
       .onChange(of: streamActive) { active in streamText.receive(text, streaming: active) }
       .task(id: request) {
         let current = request
-        // Avoid starting a full rich-text preprocessing pass for every
-        // streamed suffix. During active generation, wait for a short idle
-        // window; completion still displays its exact source immediately.
-        if streamActive {
-          do { try await Task.sleep(nanoseconds: 160_000_000) }
-          catch { return }
-        }
+        // Presentation snapshots are already coalesced by this text component.
+        // A second trailing-edge debounce can starve preparation throughout
+        // a continuous stream, then restyle the whole answer at completion.
         guard !Task.isCancelled else { return }
         let worker = Task.detached(priority: .userInitiated) {
           try NativeRichTextEngine.shared.prepare(current.source.displayString, mode: current.mode,
