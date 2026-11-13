@@ -92,11 +92,8 @@ export default function DesignFrontiers() {
   }, []);
   useEffect(() => {
     if (!anchor || kind !== "全部") return;
-    const target = document.getElementById(
-      `frontier-${anchor}`,
-    ) as HTMLDetailsElement | null;
+    const target = document.getElementById(`frontier-${anchor}`);
     if (target) {
-      target.open = true;
       target.scrollIntoView({ block: "start" });
     }
     setAnchor(null);
@@ -119,24 +116,20 @@ export default function DesignFrontiers() {
         {frontiers
           .filter((item) => kind === "全部" || item.kind === kind)
           .map((item) => (
-            <details
+            <article
               key={item.id}
               id={`frontier-${item.id}`}
               className="frontier"
-              open={kind !== "全部" || item.id === "svg"}
             >
-              <summary>
+              <div className="frontier-title">
                 <span className="frontier-index">
                   {String(frontiers.indexOf(item) + 1).padStart(2, "0")}
                 </span>
-                <span className="frontier-heading">
+                <div className="frontier-heading">
                   <span className="frontier-kind">{item.kind}</span>
-                  <strong>{item.title}</strong>
-                </span>
-                <span className="frontier-disclosure" aria-hidden="true">
-                  +
-                </span>
-              </summary>
+                  <h3>{item.title}</h3>
+                </div>
+              </div>
               <div className="frontier-body">
                 <p>{item.current}</p>
                 <p className="frontier-next">
@@ -152,17 +145,17 @@ export default function DesignFrontiers() {
                   实现依据 <ArrowUpRight size={13} />
                 </a>
               </div>
-            </details>
+            </article>
           ))}
       </div>
-      <details className="gallery-decision">
-        <summary>图库末行：当前等宽，铺满方案暂缓</summary>
+      <div className="gallery-decision">
+        <h3>图库末行：当前等宽，铺满方案暂缓</h3>
         <p>
           等宽便于比较，铺满会改变末行图片的尺寸与裁切。RC20
           保持等宽，末行铺满方案暂缓。
         </p>
         <GalleryAlternatives />
-      </details>
+      </div>
     </section>
   );
 }

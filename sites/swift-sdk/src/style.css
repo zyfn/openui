@@ -569,7 +569,8 @@ main {
   min-height: 35px;
   margin-bottom: 22px;
 }
-.experiment-head h3 {
+.experiment-head h3,
+.experiment-head h4 {
   font-size: 15px;
   letter-spacing: -0.015em;
 }
@@ -889,7 +890,8 @@ details[open] > summary {
   align-items: baseline;
   flex-wrap: wrap;
 }
-.detail-title h3 {
+.detail-title h3,
+.detail-title h4 {
   font-size: 24px;
 }
 .component-detail > p {
@@ -1096,12 +1098,15 @@ details[open] > summary {
   position: absolute;
   bottom: 25px;
   left: 12px;
-  right: 50px;
+  right: 12px;
   display: flex;
   gap: 8px;
   overflow-x: auto;
   z-index: 2;
   padding: 3px;
+}
+.map-shell .leaflet-bottom.leaflet-right {
+  bottom: 112px;
 }
 .map-place-cards button {
   flex: 0 0 235px;
@@ -1499,7 +1504,8 @@ footer > a:last-child {
   .experiment {
     padding-top: 22px;
   }
-  .experiment-head h3 {
+  .experiment-head h3,
+  .experiment-head h4 {
     font-size: 14px;
   }
   .experiment-head {
@@ -1561,7 +1567,8 @@ footer > a:last-child {
     border-top: 1px solid var(--line);
     padding: 24px 0 0;
   }
-  .detail-title h3 {
+  .detail-title h3,
+  .detail-title h4 {
     font-size: 23px;
   }
   .component-detail > p {
@@ -2023,16 +2030,12 @@ footer > a:last-child {
   border-bottom: 1px solid var(--line);
   scroll-margin-top: 100px;
 }
-.frontier > summary {
-  list-style: none;
+.frontier-title {
   display: flex;
   align-items: center;
   gap: 22px;
-  padding: 26px 0;
+  padding: 26px 0 15px;
   color: var(--text);
-}
-.frontier > summary::-webkit-details-marker {
-  display: none;
 }
 .frontier-index {
   font-size: 10px;
@@ -2053,23 +2056,11 @@ footer > a:last-child {
   color: var(--muted);
   font-weight: 400;
 }
-.frontier-heading strong {
+.frontier-heading h3 {
   font-size: 21px;
   line-height: 1.5;
   font-weight: 550;
   letter-spacing: -0.025em;
-}
-.frontier-disclosure {
-  font-size: 23px;
-  font-weight: 300;
-  color: var(--muted);
-}
-.frontier[open] .frontier-disclosure {
-  transform: rotate(45deg);
-}
-.frontier[open] > summary {
-  margin: 0;
-  padding-bottom: 15px;
 }
 .frontier-body {
   max-width: 880px;
@@ -2334,11 +2325,11 @@ footer > a:last-child {
   .frontier-filters button {
     font-size: 11px;
   }
-  .frontier > summary {
+  .frontier-title {
     gap: 14px;
-    padding: 22px 0;
+    padding: 22px 0 15px;
   }
-  .frontier-heading strong {
+  .frontier-heading h3 {
     font-size: 18px;
   }
   .frontier-heading {
@@ -2346,9 +2337,6 @@ footer > a:last-child {
   }
   .frontier-kind {
     font-size: 9px;
-  }
-  .frontier-disclosure {
-    font-size: 20px;
   }
   .frontier-body {
     padding: 0 0 22px 26px;
@@ -2374,37 +2362,509 @@ footer > a:last-child {
   }
 }
 
-/* Keep the reading path short; reference panels retain the existing specimens. */
-.compact-pipeline {
-  min-height: 210px;
+/* The document hierarchy remains visible; only raw payloads and evidence fold. */
+.standard-term {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0;
 }
-.concise-layers article {
-  padding: 23px 0;
+.workflow-diagram {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 36px 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
-.terminology {
-  margin-top: 22px;
+.workflow-diagram li {
+  position: relative;
+  padding: 24px 18px;
+  min-width: 0;
 }
-.terminology > summary {
+.workflow-diagram li + li {
+  border-left: 1px solid var(--line);
+}
+.workflow-diagram li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -8px;
+  top: 65px;
+  z-index: 1;
+  background: var(--page);
+  color: var(--muted);
+  font-size: 15px;
+}
+.workflow-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 22px;
+}
+.workflow-topline small {
+  font-size: inherit;
+}
+.workflow-diagram h3 {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.workflow-diagram .standard-term {
+  font-size: 10px;
+  line-height: 1.5;
+  min-height: 30px;
+  margin: 5px 0 13px;
+}
+.workflow-diagram li > p:last-child {
   font-size: 12px;
+  line-height: 1.85;
+  color: var(--muted);
+  margin: 0;
 }
-.term-sources {
+.system-map {
+  margin: 38px 0 26px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.system-map figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 17px 24px;
+  background: var(--panel);
+  font-size: 13px;
+  font-weight: 550;
+}
+.system-map figcaption > span {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.system-layers {
+  margin: 0;
+  padding: 0 24px;
+  list-style: none;
+}
+.system-layers > li {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 26px;
+  padding: 24px 0;
+  position: relative;
+}
+.system-layers > li + li {
+  border-top: 1px solid var(--line);
+}
+.system-layers > li:not(:last-child)::after {
+  content: "↓";
+  position: absolute;
+  left: 50px;
+  bottom: -10px;
+  line-height: 18px;
+  padding: 0 7px;
+  z-index: 1;
+  background: var(--page);
+  color: var(--muted);
+}
+.system-layer-title h3 {
+  font-size: 17px;
+  margin: 0 0 5px;
+}
+.system-layer-title > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.foundation-domains {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+.foundation-domains b,
+.foundation-domains span,
+.foundation-domains small {
+  display: block;
+}
+.foundation-domains b,
+.token-mapping b {
+  font-size: 13px;
+  font-weight: 550;
+}
+.foundation-domains span {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 4px 0 8px;
+}
+.foundation-domains small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.token-mapping {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.token-mapping code,
+.token-mapping span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.token-mapping code {
+  margin: 5px 0;
+}
+.token-color {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--sdk-textNeutralPrimary);
+}
+.component-system {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.1fr;
+  gap: 24px;
+}
+.component-system > div > b {
+  font-size: 12px;
+  font-weight: 550;
+}
+.component-system > div > b > span {
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+  font-size: 11px;
+}
+.component-system p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 10px 0 0;
+}
+.anatomy-object {
+  display: grid;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  font-size: 11px;
+}
+.anatomy-object span {
+  padding: 7px 12px;
+}
+.anatomy-object span + span {
+  border-top: 1px dashed var(--line);
+}
+.anatomy-object span:last-child {
+  background: var(--panel);
+}
+.variant-examples,
+.state-examples {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 24px;
-  margin-top: 18px;
-}
-.term-sources a {
-  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11px;
+}
+.variant-examples > span {
+  padding: 13px 10px;
+  border-radius: 8px;
+}
+.variant-card {
+  border: 1px solid var(--line);
+}
+.variant-sunk {
+  background: var(--wash);
+}
+.state-examples > span {
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+}
+.state-examples .selected-state {
+  color: var(--invert);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.state-examples .disabled-state {
+  opacity: 0.45;
+}
+.pattern-examples {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+.pattern-examples b {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+  margin-bottom: 7px;
+}
+.pattern-examples span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.platform-foundation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 30px;
+  padding: 17px 24px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
   font-size: 11px;
   color: var(--muted);
 }
-.terminology .article-table {
-  min-width: 480px;
+.platform-foundation b {
+  font-weight: 550;
+  color: var(--ink);
 }
-.terminology .article-table th {
-  width: 27%;
+.platform-foundation b span {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.system-contents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0 0 12px;
+  padding: 17px 0;
+}
+.system-contents a {
+  font-size: 12px;
+  padding: 5px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.system-contents a:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.system-contents a span {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.system-chapter {
+  padding-bottom: 0;
+}
+.system-subsection {
+  padding: 48px 0;
+}
+.system-subsection .chapter-heading > h3,
+.system-subsection .article-copy > h3,
+.system-subsection .catalog-heading h3 {
+  font-size: 28px;
+  line-height: 1.35;
+  margin-bottom: 18px;
+}
+.system-subsection .chapter-heading {
+  margin-bottom: 28px;
+}
+.system-subsection .eyebrow {
+  letter-spacing: 0.07em;
+}
+.system-subsection .split {
+  grid-template-columns: 0.85fr 1.4fr;
+  gap: 50px;
+}
+.type-lines .type-line {
+  display: grid;
+  grid-template-columns: 125px minmax(0, 1fr) auto;
+  gap: 15px;
+  padding: 16px 0;
+  min-height: 80px;
+}
+.type-role {
+  min-width: 0;
+}
+.type-role b,
+.type-role small,
+.type-role code {
+  display: block;
+}
+.type-role b {
+  font-size: 11px;
+  line-height: 1.6;
+  font-weight: 550;
+}
+.type-role small {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 3px 0;
+}
+.type-role code {
+  font-size: 9px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.type-lab {
+  padding: 24px;
+}
+.type-lab .specimen-top {
+  gap: 12px;
+}
+.type-lines .type-meta {
+  min-width: 62px;
+}
+.geometry-specimens {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 60px;
+}
+.geometry-specimens h4 {
+  font-size: 14px;
+  margin: 0 0 22px;
+}
+.geometry-specimens h4 span {
+  display: inline-block;
+  margin-left: 9px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.spacing-scale {
+  display: grid;
+  gap: 15px;
+}
+.spacing-scale > div {
+  display: grid;
+  grid-template-columns: 85px 1fr 45px;
+  align-items: center;
+  gap: 18px;
+  min-height: 21px;
+}
+.spacing-scale code,
+.spacing-scale b {
+  font-size: 11px;
+  font-weight: 400;
+}
+.spacing-scale code {
+  color: var(--muted);
+}
+.spacing-bar {
+  display: block;
+  max-width: 100%;
+  height: 8px;
+  background: var(--ink);
+  border-radius: 2px;
+}
+.radius-scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+.radius-scale > div {
+  min-width: 0;
+}
+.radius-scale > div > span {
+  display: block;
+  width: 54px;
+  height: 54px;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.radius-scale code,
+.radius-scale b {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.radius-scale code {
+  color: var(--muted);
+}
+.layout-anatomy {
+  border: 1px dashed var(--muted);
+  margin-top: 30px;
+  padding: 12px 18px 18px;
+  border-radius: 10px;
+}
+.padding-label {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+.layout-anatomy > div {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 15px;
+  align-items: center;
+}
+.layout-anatomy > div > span {
+  background: var(--wash);
+  padding: 18px 10px;
+  text-align: center;
+  font-size: 12px;
+}
+.layout-anatomy b {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  text-align: center;
+}
+.parameter-reference {
+  margin: 24px 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.parameter-reference h4 {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.event-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 30px 0 0;
+  gap: 28px;
+}
+.event-flow li {
+  position: relative;
+  padding-top: 18px;
+  border-top: 2px solid var(--line);
+}
+.event-flow li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -20px;
+  top: 15px;
+  color: var(--muted);
+}
+.event-flow h4 {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.event-flow li > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.event-flow p {
+  font-size: 12px;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+.pattern-boundary {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 28px 0 0;
 }
 .concise-mechanisms {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2416,143 +2876,257 @@ footer > a:last-child {
   margin: 5px 0 10px;
   line-height: 1.5;
 }
-.readiness-explainer > summary {
-  font-size: 12px;
-}
-.reference-shelf {
-  border-top: 1px solid var(--line);
-  margin: 0;
-}
-.reference-shelf > summary {
-  padding: 25px 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px 22px;
-  color: var(--text);
-  font-size: 17px;
-  font-weight: 550;
-}
-.reference-shelf > summary::-webkit-details-marker {
-  display: none;
-}
-.reference-shelf > summary:after {
-  content: "+";
-  margin-left: auto;
-  font-size: 22px;
-  font-weight: 300;
-  color: var(--muted);
-}
-.reference-shelf[open] > summary:after {
-  content: "−";
-}
-.reference-shelf > summary > small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--muted);
-}
-.reference-shelf[open] > summary {
-  margin: 0;
-}
-.reference-panels {
-  padding-bottom: 30px;
-}
-.reference-panel {
-  margin: 0;
-  border-top: 1px solid var(--line);
-}
-.reference-panel > summary {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 10px 20px;
-  padding: 18px 0;
-  font-size: 13px;
-  list-style: inside;
-}
-.reference-panel > summary b {
-  font-weight: 550;
-}
-.reference-panel > summary small {
-  font-size: 11px;
-  color: var(--muted);
-}
-.reference-panel[open] > summary {
-  margin: 0;
-}
-.reference-panel > .section {
-  padding: 24px 0 40px;
-  border: 0;
-}
-.reference-panel .chapter-heading > h3,
-.reference-panel .article-copy > h3,
-.reference-panel .catalog-heading h3 {
-  font-size: 28px;
-  line-height: 1.35;
-  margin-bottom: 18px;
-}
-.reference-panel .article-reference {
-  padding: 20px 0 35px;
-}
-.reference-panel > .section > .split > .article-copy > p {
-  font-size: 14px;
-}
 .gallery-decision {
   margin: 25px 0 0;
 }
-.gallery-decision > summary {
-  font-size: 12px;
+.gallery-decision > h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
 }
 .gallery-decision > p {
-  margin-top: 15px;
   font-size: 13px;
   color: var(--muted);
   max-width: 800px;
 }
-@media (max-width: 700px) {
-  .compact-pipeline {
-    min-height: 0;
+@media (max-width: 1000px) {
+  .workflow-diagram {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .concise-layers article {
-    padding: 22px 0;
+  .workflow-diagram li:nth-child(4) {
+    border-left: 0;
+  }
+  .workflow-diagram li:nth-child(n + 4) {
+    border-top: 1px solid var(--line);
+  }
+  .workflow-diagram li:nth-child(3)::after {
+    content: none;
+  }
+  .system-layers > li {
+    grid-template-columns: 115px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .component-system {
+    grid-template-columns: 1fr 1fr;
+  }
+  .component-system > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .foundation-domains {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .system-subsection .split {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .geometry-specimens {
+    gap: 35px;
+  }
+}
+@media (max-width: 700px) {
+  .workflow-diagram {
+    grid-template-columns: 1fr;
+    margin-top: 24px;
+  }
+  :root {
+    scroll-padding-top: 120px;
+  }
+  .nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 44px 44px;
+    height: 96px;
+    padding: 4px 20px;
+    gap: 0 16px;
+  }
+  .nav .wordmark {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .nav .nav-end {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .nav nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    gap: 8px;
+    overflow: visible;
+  }
+  .nav nav a {
+    font-size: 10px;
+    padding: 10px 0;
+    white-space: normal;
+  }
+  .workflow-diagram li {
+    padding: 19px 0;
+  }
+  .workflow-diagram li + li {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .workflow-topline {
+    margin-bottom: 10px;
+  }
+  .workflow-diagram .standard-term {
+    min-height: 0;
+    margin-bottom: 10px;
+  }
+  .workflow-diagram li:not(:last-child)::after {
+    content: "↓";
+    right: 15px;
+    top: auto;
+    bottom: -10px;
+    padding: 0 6px;
+  }
+  .system-map {
+    margin-top: 26px;
+  }
+  .system-map figcaption {
+    align-items: start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 15px 18px;
+  }
+  .system-layers {
+    padding: 0 18px;
+  }
+  .system-layers > li {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 23px 0;
+  }
+  .system-layers > li:not(:last-child)::after {
+    left: 16px;
+  }
+  .system-layer-title {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .system-layer-title h3 {
+    font-size: 16px;
+    margin: 0;
+  }
+  .system-layer-title > span {
+    font-size: 10px;
+  }
+  .foundation-domains {
+    gap: 18px;
+  }
+  .token-mapping {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .token-mapping > div {
+    display: grid;
+    grid-template-columns: 75px minmax(0, 1fr);
+    gap: 4px 10px;
+  }
+  .token-mapping code {
+    margin: 0;
+  }
+  .token-mapping > div > span {
+    grid-column: 2;
+  }
+  .component-system {
+    gap: 20px;
+  }
+  .component-system > div {
+    grid-column: 1 / -1;
+  }
+  .anatomy-object {
+    max-width: 240px;
+  }
+  .pattern-examples {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .pattern-examples b {
+    margin-bottom: 4px;
+  }
+  .platform-foundation {
+    padding: 16px 18px;
+    line-height: 1.8;
+  }
+  .platform-foundation b span {
+    display: block;
+    margin: 0;
+  }
+  .system-contents {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 18px;
+    padding: 12px 0;
+  }
+  .system-contents a {
+    font-size: 11px;
+    min-height: 34px;
+  }
+  .system-subsection {
+    padding: 34px 0;
+  }
+  .system-subsection .chapter-heading > h3,
+  .system-subsection .article-copy > h3,
+  .system-subsection .catalog-heading h3 {
+    font-size: 24px;
+  }
+  .system-subsection .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+  .type-lab {
+    padding: 18px;
+  }
+  .type-lines .type-line {
+    grid-template-columns: minmax(0, 1fr) 63px;
+    gap: 10px;
+  }
+  .type-role {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 9px;
+  }
+  .type-role code {
+    flex-basis: 100%;
+  }
+  .type-role small {
+    margin: 0;
+  }
+  .geometry-specimens {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .geometry-specimens h4 span {
+    display: block;
+    margin: 5px 0 0;
+  }
+  .radius-scale {
+    gap: 8px;
+  }
+  .radius-scale > div > span {
+    width: 45px;
+    height: 45px;
+  }
+  .radius-scale code {
+    font-size: 9px;
+  }
+  .event-flow {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .event-flow li:nth-child(2)::after {
+    content: none;
   }
   .concise-mechanisms {
     grid-template-columns: 1fr;
     gap: 23px;
-  }
-  .concise-mechanisms .mechanism-term {
-    font-size: 9px;
-    margin-top: 5px;
-  }
-  .reference-shelf > summary {
-    padding: 22px 0;
-    font-size: 15px;
-    gap: 6px;
-  }
-  .reference-shelf > summary small {
-    font-size: 10px;
-    flex-basis: 80%;
-    order: 1;
-  }
-  .reference-shelf > summary:after {
-    font-size: 20px;
-  }
-  .reference-panel > summary {
-    font-size: 12px;
-    gap: 6px 15px;
-    padding: 17px 0;
-  }
-  .reference-panel > summary small {
-    font-size: 10px;
-  }
-  .reference-panel > .section {
-    padding: 20px 0 32px;
-  }
-  .reference-panel .chapter-heading > h3,
-  .reference-panel .article-copy > h3,
-  .reference-panel .catalog-heading h3 {
-    font-size: 24px;
   }
 }

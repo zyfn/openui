@@ -1,304 +1,334 @@
-import { useState } from "react";
-import { ArrowUpRight, ArrowRight } from "lucide-react";
-import { sdkSource } from "./baseline";
+import type { ReactNode } from "react";
+import tokens from "../public/generated/tokens.json";
 
 export const overview =
   "OpenUI Swift SDK 将 Agent 输出的界面描述（OpenUI Lang）渲染为原生界面。设计系统统一排版、颜色与组件行为；流式渲染管理布局、状态和资源，减少重排、闪动与选择丢失。";
-const source = `root = Stack([intro, details, actions], "column", "xl")
-intro = TextContent("先看对象，再决定下一步。")
-details = Card([CardHeader("对象名称", "必要的说明")])
-actions = Buttons([Button("继续了解", @ToAssistant("继续了解"))])`;
+
 const stages = [
-  {
-    title: "组件定义",
-    term: "API / Schema",
-    owner: "组件库",
-    description:
-      "组件库定义名称、参数类型和内容槽位，并关联原生实现。同一份定义生成给模型的说明，并用于解析和校验返回结果。",
-    example:
-      "CardHeader(title?, subtitle?)\nTextContent(text, size?)\n组件定义 → prompt / spec / schema",
-    link: "GenUILib/ComponentLibrary.swift",
-  },
-  {
-    title: "模型生成",
-    term: "OpenUI Lang",
-    owner: "Agent",
-    description:
-      "Agent 选择组件、组织内容并声明动作。字体、颜色与布局细节由 SDK 的统一规则落实。",
-    example: source,
-    link: "SDK-REFERENCE.zh-CN.md",
-  },
-  {
-    title: "解析求值",
-    term: "Parser / Evaluator",
-    owner: "共享语言核心",
-    description:
-      "解析组件声明、引用、状态绑定与动作。后面的引用尚未到达时，已有内容继续保留。",
-    example: "已解析的文字 → 可供显示\n未解析的引用 → 等待后续分片",
-    link: "ARCHITECTURE.md",
-  },
-  {
-    title: "原生渲染",
-    term: "Native Rendering",
-    owner: "SwiftUI",
-    description:
-      "组件按主题和可用空间布局。内容、图片与数据逐步到达时，更新已有视图，保留其状态。",
-    example: "设计变量 → 组件样式\n布局约束 → 宽度与排列\n增量更新 → 已有视图",
-    link: "UI-DESIGN.md",
-  },
-  {
-    title: "交互事件",
-    term: "State / Events",
-    owner: "组件",
-    description:
-      "选择与输入更新当前状态；提交读取最新值，并携带对象和表单上下文产生事件。",
-    example: "选择 / 输入 → 当前字段值\n校验 → ActionEvent",
-    link: "Context/ComponentContext.swift",
-  },
-  {
-    title: "应用处理",
-    term: "App Integration",
-    owner: "客户端",
-    description:
-      "客户端处理导航、工具调用或继续对话，将真实结果交回 Agent。点击成功与业务执行成功分别确认。",
-    example: "事件与当前选择 → 客户端\n真实结果 → 下一轮回答",
-    link: "README.md#6-交互围绕一个明确任务",
-  },
+  [
+    "组件契约",
+    "Component Contract",
+    "组件库",
+    "名称、参数、槽位与动作形成统一契约，供生成、校验和渲染共同使用。",
+  ],
+  [
+    "声明式描述",
+    "Declarative UI",
+    "Agent",
+    "用 OpenUI Lang 选择组件、填入内容、声明绑定与动作。",
+  ],
+  [
+    "解析与求值",
+    "Parsing & Evaluation",
+    "语言核心",
+    "解析引用和表达式，把程序与当前状态求值为组件树。",
+  ],
+  [
+    "原生呈现",
+    "Native Rendering",
+    "SwiftUI",
+    "按设计系统和可用空间呈现组件；资源到达时更新已有视图。",
+  ],
+  [
+    "状态与事件",
+    "State & Events",
+    "组件",
+    "输入和选择更新本地状态；提交读取当前值并产生动作事件。",
+  ],
+  [
+    "应用处理",
+    "Host Integration",
+    "客户端",
+    "处理导航、工具或继续对话，把实际结果交回 Agent。",
+  ],
 ];
 export function WorkingPrinciple() {
-  const [stage, setStage] = useState(0);
-  const selected = stages[stage];
   return (
-    <section className="section" id="principle">
+    <section
+      className="section"
+      id="principle"
+      aria-labelledby="principle-title"
+    >
       <div className="chapter-heading">
-        <p className="eyebrow">01 / 工作流程</p>
-        <h2>模型描述结构，SDK 渲染组件。</h2>
-        <p>
-          OpenUI 采用声明式 UI（Declarative UI）。模型声明组件、内容和动作，SDK
-          根据组件定义创建原生界面。
-        </p>
+        <p className="eyebrow">01 / 工作原理</p>
+        <h2 id="principle-title">从界面描述到原生交互。</h2>
+        <p>生成、运行时和客户端各自承担明确职责，组件契约贯穿整个流程。</p>
       </div>
-      <div className="pipeline">
-        <div className="pipeline-steps" role="group" aria-label="选择工作环节">
-          {stages.map((item, index) => (
-            <button
-              key={item.title}
-              aria-pressed={stage === index}
-              aria-controls="pipeline-detail"
-              onClick={() => setStage(index)}
-            >
-              <span className="pipeline-number">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <b>{item.title}</b>
-              <small>{item.term}</small>
-              {index < stages.length - 1 && (
-                <ArrowRight size={14} aria-hidden="true" />
-              )}
-            </button>
-          ))}
-        </div>
-        <article
-          id="pipeline-detail"
-          className="pipeline-detail compact-pipeline"
-          aria-live="polite"
-        >
-          <div className="pipeline-copy">
-            <p className="eyebrow">{selected.owner}</p>
-            <h3>{selected.title}</h3>
-            <p>{selected.description}</p>
-            <a
-              className="text-link"
-              href={sdkSource(
-                selected.link.startsWith("GenUILib/") ||
-                  selected.link.startsWith("Context/")
-                  ? "Sources/OpenUISwiftUI/" + selected.link
-                  : selected.link,
-              )}
-              target="_blank"
-              rel="noreferrer"
-            >
-              查看实现 <ArrowUpRight size={14} />
-            </a>
-          </div>
-          <pre className="pipeline-code">{selected.example}</pre>
-        </article>
-        <p className="pipeline-loop">
-          每个分片更新同一份程序；用户操作携带当前选择进入下一轮对话。
-        </p>
-      </div>
+      <ol className="workflow-diagram" aria-label="生成与交互流程">
+        {stages.map(([title, term, owner, description], index) => (
+          <li key={term}>
+            <div className="workflow-topline">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <small>{owner}</small>
+            </div>
+            <h3>{title}</h3>
+            <p className="standard-term">{term}</p>
+            <p>{description}</p>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }
-const designParts = [
-  {
-    term: "Foundations",
-    title: "视觉规范",
-    decision:
-      "确定字体、字号、字重、行高、颜色、间距与圆角。正文、说明、价格和操作分别使用对应样式。",
-    example: "正文 16pt；辅助说明 14pt、辅助色。价格和按钮保持各自尺度。",
-    href: "#scale",
-    label: "查看排版与颜色",
-  },
-  {
-    term: "Design Tokens",
-    title: "设计变量",
-    decision:
-      "将共享的设计值命名，组件统一引用。修改正文样式或主文字色时，同一角色的内容一起更新。",
-    example: "值来自 OpenUITheme；文字样式由 TextStyles 映射到组件槽位。",
-    href: "#scale",
-    label: "查看实际变量",
-  },
-  {
-    term: "Components",
-    title: "组件规范",
-    decision:
-      "定义组件结构（Anatomy）、变体（Variants）和状态（States），包括选中、加载、禁用、失败及相应交互。",
-    example: "按钮的可见尺寸与点击区域分开；表单提交读取最新选择。",
-    href: "#composition",
-    label: "查看组件示例",
-  },
-  {
-    term: "Patterns",
-    title: "组合模式",
-    decision:
-      "规定多个组件怎样完成一项任务：比较对象、展示商品、收集偏好或继续对话。",
-    example:
-      "商品按名称、介绍、属性、价格口径和操作组织；Form 用于填写与统一提交。",
-    href: "#integration",
-    label: "查看组合与事件",
-  },
+
+const systemSections = [
+  ["scale", "2.1", "排版与颜色"],
+  ["geometry", "2.2", "间距与形状"],
+  ["composition", "2.3", "组件结构与状态"],
+  ["components", "2.4", "组件目录与 API"],
+  ["map-svg", "2.5", "地图与 SVG"],
+  ["integration", "2.6", "组合模式"],
 ];
-export function SystemDesign() {
+export function SystemDesign({ children }: { children: ReactNode }) {
   return (
-    <section className="section" id="system">
+    <section
+      className="section system-chapter"
+      id="system"
+      aria-labelledby="system-title"
+    >
       <div className="chapter-heading">
         <p className="eyebrow">02 / 设计系统</p>
-        <h2>统一视觉、组件和组合规则。</h2>
+        <h2 id="system-title">从视觉基础，到完整的交互任务。</h2>
         <p>
-          OpenUI
-          的设计系统包含视觉规范、设计变量、组件规范与组合模式，使不同内容使用一致的样式和行为。
+          视觉基础定义设计规则，设计变量为设计值命名并供组件引用，组件落实结构与行为，组合模式把组件组织成任务。
         </p>
       </div>
-      <div className="design-layers concise-layers">
-        {designParts.map((item, index) => (
-          <article key={item.term}>
-            <div className="layer-heading">
-              <span className="layer-index">
-                {String(index + 1).padStart(2, "0")}
-              </span>
+      <figure className="system-map" aria-labelledby="system-map-title">
+        <figcaption id="system-map-title">
+          设计系统结构 <span>Design System Architecture</span>
+        </figcaption>
+        <ol className="system-layers">
+          <li>
+            <div className="system-layer-title">
+              <h3>视觉基础</h3>
+              <span>Foundations</span>
+            </div>
+            <div className="foundation-domains">
               <div>
-                <p className="eyebrow">{item.term}</p>
-                <h3>{item.title}</h3>
+                <b>字体排印</b>
+                <span>Typography</span>
+                <small>文字角色 · 字号阶梯 · 行高</small>
+              </div>
+              <div>
+                <b>颜色</b>
+                <span>Color</span>
+                <small>文字 · 表面 · 边界 · 状态</small>
+              </div>
+              <div>
+                <b>间距</b>
+                <span>Spacing</span>
+                <small>内边距 · 项目间距 · 区段间距</small>
+              </div>
+              <div>
+                <b>形状</b>
+                <span>Shape</span>
+                <small>圆角 · 轮廓 · 对象边界</small>
               </div>
             </div>
-            <div className="layer-copy">
-              <p>{item.decision}</p>
-              <p className="layer-lesson">{item.example}</p>
-              <a className="text-link" href={item.href}>
-                {item.label}
-                <ArrowRight size={14} />
-              </a>
+          </li>
+          <li>
+            <div className="system-layer-title">
+              <h3>设计变量</h3>
+              <span>Design Tokens</span>
             </div>
-          </article>
+            <div className="token-mapping">
+              <div>
+                <b>标题文字</b>
+                <code>textHeadingMd</code>
+                <span>
+                  {tokens.fonts.textHeadingMd.size} pt /{" "}
+                  {tokens.fonts.textHeadingMd.weight}
+                </span>
+              </div>
+              <div>
+                <b>主文字色</b>
+                <code>textNeutralPrimary</code>
+                <span>
+                  <i className="token-color" />
+                  随浅色 / 深色外观解析
+                </span>
+              </div>
+              <div>
+                <b>内容内距</b>
+                <code>spaceML</code>
+                <span>{tokens.metrics.spaceML} pt</span>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div className="system-layer-title">
+              <h3>组件规范</h3>
+              <span>Components</span>
+            </div>
+            <div className="component-system">
+              <div className="anatomy-example">
+                <b>
+                  结构 <span>Anatomy</span>
+                </b>
+                <div className="anatomy-object">
+                  <span>标题 / Header</span>
+                  <span>内容 / Body</span>
+                  <span>操作 / Actions</span>
+                </div>
+              </div>
+              <div>
+                <b>
+                  变体 <span>Variants</span>
+                </b>
+                <div className="variant-examples">
+                  <span className="variant-card">card</span>
+                  <span className="variant-sunk">sunk</span>
+                  <span>clear</span>
+                </div>
+                <p>同一内容结构，采用不同的容器表面。</p>
+              </div>
+              <div>
+                <b>
+                  状态 <span>States</span>
+                </b>
+                <div className="state-examples">
+                  <span>默认</span>
+                  <span className="selected-state">选中</span>
+                  <span>加载</span>
+                  <span className="disabled-state">禁用</span>
+                  <span>失败</span>
+                </div>
+                <p>状态对应真实输入、资源与动作结果。</p>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div className="system-layer-title">
+              <h3>组合模式</h3>
+              <span>Patterns</span>
+            </div>
+            <div className="pattern-examples">
+              <div>
+                <b>对象比较</b>
+                <span>集合布局 → 对象卡片 → 对应操作</span>
+              </div>
+              <div>
+                <b>填写与提交</b>
+                <span>字段 → 本地状态 → 校验 → 提交</span>
+              </div>
+              <div>
+                <b>地点浏览</b>
+                <span>地图点位 ↔ 对象卡片 → 详情</span>
+              </div>
+            </div>
+          </li>
+        </ol>
+        <div className="platform-foundation">
+          <b>
+            平台适配 <span>Platform Adaptation</span>
+          </b>
+          <span>可用空间 · 深浅外观 · Dynamic Type · 触控与辅助功能</span>
+        </div>
+      </figure>
+      <nav className="system-contents" aria-label="第二章目录">
+        {systemSections.map(([id, number, title]) => (
+          <a href={`#${id}`} key={id}>
+            <span>{number}</span>
+            {title}
+          </a>
         ))}
-      </div>
-      <Terminology />
+      </nav>
+      {children}
     </section>
   );
 }
-function Terminology() {
+
+export function LayoutFoundations() {
   return (
-    <details className="terminology">
-      <summary>术语与参考</summary>
-      <div className="article-table-wrap">
-        <table className="article-table">
-          <thead>
-            <tr>
-              <th>术语</th>
-              <th>含义</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>Typography</th>
-              <td>排版：字体、字号、字重、行高和文字层级。</td>
-            </tr>
-            <tr>
-              <th>Design Tokens</th>
-              <td>
-                设计变量：对共享设计值的命名，如主文字色、正文样式、间距。
-              </td>
-            </tr>
-            <tr>
-              <th>Anatomy / States</th>
-              <td>
-                组件结构与状态：内容区域、变体，以及选中、加载、禁用等行为。
-              </td>
-            </tr>
-            <tr>
-              <th>Layout Stability</th>
-              <td>布局稳定性：减少更新引发的不必要位移与重排。</td>
-            </tr>
-            <tr>
-              <th>Identity / Key</th>
-              <td>组件标识：让更新后的组件保留原有状态。</td>
-            </tr>
-            <tr>
-              <th>Incremental Rendering</th>
-              <td>增量渲染：分片到达后更新已有界面。</td>
-            </tr>
-          </tbody>
-        </table>
+    <section
+      className="section system-subsection"
+      id="geometry"
+      aria-labelledby="geometry-title"
+    >
+      <div className="chapter-heading">
+        <p className="eyebrow">2.2 / Foundations · Spacing & Shape</p>
+        <h3 id="geometry-title">间距表达关系，形状建立边界。</h3>
+        <p>
+          内边距（Padding）属于容器，项目间距（Gap）属于排列。圆角（Corner
+          Radius）决定表面的轮廓，不代替内容分组。
+        </p>
       </div>
-      <div className="term-sources">
-        <a
-          href="https://m3.material.io/foundations/design-tokens/overview"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Material · Design Tokens <ArrowUpRight size={13} />
-        </a>
-        <a
-          href="https://m3.material.io/styles/typography/overview"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Material · Typography <ArrowUpRight size={13} />
-        </a>
-        <a
-          href="https://carbondesignsystem.com/components/button/style/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Carbon · Component States <ArrowUpRight size={13} />
-        </a>
-        <a
-          href="https://developer.apple.com/videos/play/wwdc2021/10022/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Apple · Identity / Lifetime <ArrowUpRight size={13} />
-        </a>
-        <a
-          href="https://react.dev/learn/preserving-and-resetting-state"
-          target="_blank"
-          rel="noreferrer"
-        >
-          React · State / Keys <ArrowUpRight size={13} />
-        </a>
+      <div className="geometry-specimens">
+        <div>
+          <h4>
+            间距阶梯 <span>Spacing Scale</span>
+          </h4>
+          <div className="spacing-scale">
+            {(
+              [
+                "space2xs",
+                "spaceS",
+                "spaceM",
+                "spaceML",
+                "spaceXl",
+                "space2xl",
+              ] as const
+            ).map((key) => (
+              <div key={key}>
+                <code>{key}</code>
+                <span
+                  className="spacing-bar"
+                  style={{ width: tokens.metrics[key] * 3 }}
+                />
+                <b>{tokens.metrics[key]} pt</b>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h4>
+            圆角阶梯 <span>Radius Scale</span>
+          </h4>
+          <div className="radius-scale">
+            {(
+              [
+                "radiusXs",
+                "radiusM",
+                "radiusXl",
+                "radius3xl",
+                "radiusFull",
+              ] as const
+            ).map((key) => (
+              <div key={key}>
+                <span style={{ borderRadius: tokens.metrics[key] }} />
+                <code>{key}</code>
+                <b>
+                  {key === "radiusFull"
+                    ? "胶囊形"
+                    : `${tokens.metrics[key]} pt`}
+                </b>
+              </div>
+            ))}
+          </div>
+          <div className="layout-anatomy" aria-label="容器内边距与项目间距示意">
+            <span className="padding-label">Padding · 内边距</span>
+            <div>
+              <span>内容 A</span>
+              <b>
+                Gap
+                <br />
+                项目间距
+              </b>
+              <span>内容 B</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <p className="micro">OpenUI 的具体取值与平台行为以 SDK 为准。</p>
-    </details>
+    </section>
   );
 }
+
 export function ReadinessMatrix() {
   return (
-    <details className="readiness-explainer">
-      <summary>各类组件的增量渲染条件</summary>
-      <p className="micro">
-        这是 SDK 内部的呈现判断，不要求 Agent 增加 Lang 参数。
-      </p>
+    <div className="readiness-explainer">
+      <h3>
+        呈现就绪 <span className="standard-term">Rendering Readiness</span>
+      </h3>
       <div
         className="article-table-wrap"
         role="region"
@@ -335,41 +365,42 @@ export function ReadinessMatrix() {
             </tr>
             <tr>
               <th>SVG</th>
-              <td>
-                文档校验后交给 WebKit；
-                <a href="#frontier-svg">渲染反馈仍待补齐</a>。
-              </td>
+              <td>文档校验后交给 WebKit；完整渲染反馈尚未接入。</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </details>
+    </div>
   );
 }
+
 export function HostIntegration() {
   return (
-    <section className="section" id="integration">
+    <section className="section system-subsection" id="integration">
       <div className="chapter-heading">
-        <p className="eyebrow">REFERENCE / 应用集成</p>
-        <h3>交互事件要携带当前选择。</h3>
+        <p className="eyebrow">2.6 / Patterns · State & Event Flow</p>
+        <h3>组件围绕任务组合，事件携带当前状态。</h3>
         <p>
-          Form
-          收集同一任务的字段并统一提交。即时筛选可以直接更新本地状态，商品展示和单个跳转无需套用
-          Form。
+          表单模式（Form
+          Pattern）把同一任务的输入、选择、校验与提交组合在一起；即时筛选直接更新本地状态，单个导航动作直接关联当前对象。
         </p>
       </div>
-      <div className="handoff-chain">
-        <span>当前对象与字段值</span>
-        <ArrowRight size={15} />
-        <span>校验 / ActionEvent</span>
-        <ArrowRight size={15} />
-        <span>客户端处理</span>
-        <ArrowRight size={15} />
-        <span>下一轮回答</span>
-      </div>
-      <p className="micro">
-        客户端通过既有 buildMessage／parseMessage 传递上下文。事件已发出、Agent
-        收到选择、业务执行成功分别确认。
+      <ol className="event-flow" aria-label="表单状态与事件流">
+        {[
+          ["输入与选择", "Input / Selection", "字段写入当前表单状态。"],
+          ["校验与提交", "Validation / Submission", "读取提交时的最新值。"],
+          ["动作事件", "ActionEvent", "携带当前对象、字段和动作上下文。"],
+          ["宿主处理", "Host Handling", "导航、调用工具或交给 Agent。"],
+        ].map(([title, term, text]) => (
+          <li key={term}>
+            <h4>{title}</h4>
+            <span>{term}</span>
+            <p>{text}</p>
+          </li>
+        ))}
+      </ol>
+      <p className="pattern-boundary">
+        事件发出、Agent 收到选择、业务执行成功，是三个需要分别确认的结果。
       </p>
     </section>
   );
