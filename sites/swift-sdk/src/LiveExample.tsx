@@ -1,6 +1,18 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import PreviewBoundary from "./PreviewBoundary";
-const Playground = lazy(() => import("./Playground"));
+let pending: ReturnType<typeof importPlayground> | null = null;
+function importPlayground() {
+  return import("./Playground");
+}
+function loadPlayground() {
+  if (!pending)
+    pending = importPlayground().catch((error) => {
+      pending = null;
+      throw error;
+    });
+  return pending;
+}
+const Playground = lazy(loadPlayground);
 
 export default function LiveExample({
   id,
@@ -26,7 +38,21 @@ export default function LiveExample({
       { rootMargin: "240px" },
     );
     observer.observe(element);
-    return () => observer.disconnect();
+    const precedingSection = document.getElementById("composition");
+    const warmup = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadPlayground().catch(() => {});
+          warmup.disconnect();
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    if (precedingSection) warmup.observe(precedingSection);
+    return () => {
+      observer.disconnect();
+      warmup.disconnect();
+    };
   }, []);
   return (
     <div ref={container} className="live-example">
