@@ -14,9 +14,6 @@ struct NativeSVGDocument {
         guard parser.parse(), reader.valid, let ratio = reader.ratio, ratio.isFinite, ratio > 0 else { return nil }
         return NativeSVGDocument(markup: source, ratio: ratio)
     }
-    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
-        depth = max(0, depth - 1)
-    }
 }
 private final class SVGReader: NSObject, XMLParserDelegate {
     var valid = true
@@ -53,6 +50,9 @@ private final class SVGReader: NSObject, XMLParserDelegate {
                 if !value.hasPrefix("#") && !value.hasPrefix("data:image/") { valid = false }
             }
         }
+    }
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        depth = max(0, depth - 1)
     }
 }
 
