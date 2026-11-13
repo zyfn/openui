@@ -37,7 +37,7 @@ export default function ButtonPreview() {
   return (
     <>
       <div className="experiment-head">
-        <h4>按钮尺寸、状态与触控区域</h4>
+        <h4>Button</h4>
         <select
           aria-label="按钮档位"
           value={size}

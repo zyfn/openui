@@ -5,37 +5,33 @@ const frontiers = [
   {
     id: "svg",
     kind: "待实现",
-    title: "SVG 渲染状态反馈",
-    current:
-      "RC20 在文档可用后交给 WebKit，但尚未把 WebView 的加载状态接入完整反馈。",
-    next: "连接文档校验、下载、渲染和失败状态，验证慢加载与消息切换时的局部反馈。",
+    title: "SVG 渲染反馈",
+    current: "文档交给 WebKit 后，尚未接入完整的渲染状态反馈。",
+    next: "补齐加载、完成与失败状态，验证慢资源和消息切换。",
     source: "Sources/OpenUISwiftUI/Components/NativeSVG.swift",
   },
   {
     id: "allocation",
     kind: "待验证",
-    title: "流式布局的边界场景",
-    current:
-      "已知布局和集合可以提前分配空间。后续声明改变布局、文字自然增长时，仍可能发生必要重排。",
-    next: "用不同分片顺序和内容长度回放，检查既有区域位移、视图重建及首次内容出现时间。",
+    title: "动态布局",
+    current: "后续声明与文字增高仍会触发必要重排。",
+    next: "回放不同分片顺序和长文本，测量内容位移、视图重建与首次呈现时间。",
     source: "Tests/OpenUISwiftUITests/StreamingLayoutContractTests.swift",
   },
   {
     id: "gestures",
     kind: "待验证",
-    title: "图片预览与手势冲突",
-    current:
-      "已有缩放、拖动、翻页和关闭规则；模拟器检查不能覆盖真机捏合、极端比例及长说明。",
-    next: "在真实输入下检查缩放、换图、返回的连续操作，确认手势响应和状态保留。",
+    title: "图片手势",
+    current: "已有模拟器验证；真机捏合、极端比例和长图注待测。",
+    next: "真机验证缩放、换图、关闭及手势冲突。",
     source: "Sources/OpenUISwiftUI/Components/NativeMediaPreview.swift",
   },
   {
     id: "handoff",
     kind: "待验证",
-    title: "选择值到 Agent 的完整链路",
-    current:
-      "SDK 能生成字段值和动作上下文；客户端如何传递、Agent 是否使用当前条件，需要实际链路验证。",
-    next: "从选择、提交一直核对到 Agent 的后续回答，并确认商品信息与操作入口对应同一对象。",
+    title: "交互回传",
+    current: "SDK 已生成事件；客户端传递与 Agent 使用当前选择的链路待验。",
+    next: "核对选择、事件、后续回答中的条件与对象是否一致。",
     source: "README.md#6-交互围绕一个明确任务",
   },
 ];
@@ -101,9 +97,8 @@ export default function DesignFrontiers() {
   return (
     <section className="section design-frontiers" id="frontiers">
       <div className="chapter-heading">
-        <p className="eyebrow">04 / 当前限制</p>
-        <h2>RC20 仍需完成与验证的工作。</h2>
-        <p>SVG 渲染反馈尚未补齐，布局、手势和应用链路仍需补充验证。</p>
+        <p className="eyebrow">04</p>
+        <h2>当前限制</h2>
       </div>
       <div className="frontier-filters" role="group" aria-label="按状态筛选">
         {["全部", "待实现", "待验证"].map((k) => (
@@ -133,7 +128,7 @@ export default function DesignFrontiers() {
               <div className="frontier-body">
                 <p>{item.current}</p>
                 <p className="frontier-next">
-                  <b>下一步</b>
+                  <b>待办</b>
                   {item.next}
                 </p>
                 <a
@@ -149,11 +144,8 @@ export default function DesignFrontiers() {
           ))}
       </div>
       <div className="gallery-decision">
-        <h3>图库末行：当前等宽，铺满方案暂缓</h3>
-        <p>
-          等宽便于比较，铺满会改变末行图片的尺寸与裁切。RC20
-          保持等宽，末行铺满方案暂缓。
-        </p>
+        <h3>图库末行</h3>
+        <p>RC20 保持等宽；铺满会改变尺寸与裁切，方案暂缓。</p>
         <GalleryAlternatives />
       </div>
     </section>

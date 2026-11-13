@@ -221,12 +221,8 @@ function App() {
       </header>
       <main>
         <section className="hero" id="language">
-          <p className="eyebrow">OPENUI · THE SWIFT EXPERIENCE</p>
-          <h1>
-            模型生成结构，
-            <br className="mobile-break" />
-            SDK 负责渲染。
-          </h1>
+          <p className="eyebrow">iOS · macOS</p>
+          <h1>OpenUI Swift SDK</h1>
           <p className="lede">{overview}</p>
           <p className="release-note">
             <a href={sdkBaseline.url} target="_blank" rel="noreferrer">
@@ -329,9 +325,7 @@ function App() {
                   }}
                 />
               </label>
-              <p className="note">
-                两列先分配宽度，文字在列内增长。图片下载只替换像素，不决定卡片大小。
-              </p>
+              <p className="note">两列共享宽度，图片保持占位尺寸。</p>
               <button
                 className="disclosure"
                 aria-expanded={code}
@@ -365,19 +359,9 @@ function App() {
               <section className="section system-subsection" id="scale">
                 <div className="split">
                   <div className="article-copy">
-                    <p className="eyebrow">
-                      2.1 / Foundations · Typography & Color
-                    </p>
-                    <h3>字体排印与语义颜色。</h3>
-                    <p>
-                      字体排印（Typography）统一字体、字号、字重与行高。字号阶梯（Type
-                      Scale）定义文字角色的相对尺度，形成排版层级（Typographic
-                      Hierarchy）。
-                    </p>
-                    <p>
-                      语义颜色（Semantic
-                      Color）按用途分配：标题与正文使用主文字色，规格与图注使用辅助色，状态色表达真实状态。文字较小，不意味着它应当变浅。
-                    </p>
+                    <p className="eyebrow">2.1</p>
+                    <h3>字体与颜色</h3>
+                    <p>按文字角色分配字号、字重与行高；字号与字色独立选择。</p>
                   </div>
                   <div className="type-lab specimen">
                     <div className="specimen-top">
@@ -489,22 +473,22 @@ function App() {
                     {
                       key: "textNeutralPrimary",
                       name: "主文字",
-                      desc: "标题与正文，共享清晰的阅读对比。",
+                      desc: "标题与正文。",
                     },
                     {
                       key: "textNeutralSecondary",
                       name: "辅助文字",
-                      desc: "规格、说明与图注，保持次序。",
+                      desc: "规格、说明与图注。",
                     },
                     {
                       key: "borderDefault",
                       name: "边界",
-                      desc: "用于对象或记录的边界。",
+                      desc: "对象与记录边界。",
                     },
                     {
                       key: "sunk",
                       name: "下沉表面",
-                      desc: "通过浅底分组，不叠加边框。",
+                      desc: "浅底分组，无边框。",
                     },
                   ].map((c) => (
                     <button
@@ -555,8 +539,8 @@ function App() {
                     ))}
                   </div>
                   <small>
-                    由 Swift SDK 实际导出；此处为 macOS 系统色。React
-                    预览选色顺序可能不同，原生呈现跟随所在平台。
+                    Swift SDK 导出的 macOS 系统色；iOS 与 React
+                    的选色顺序可能不同。
                   </small>
                 </div>
               </section>
@@ -564,19 +548,14 @@ function App() {
               <LayoutFoundations />
               <section className="section system-subsection" id="composition">
                 <div className="chapter-heading">
-                  <p className="eyebrow">
-                    2.3 / Components · Anatomy, Variants & States · Web
-                  </p>
-                  <h3>卡片、按钮与表单。</h3>
-                  <p>
-                    容器管理空间，卡片的表面表达边界，表单收集并提交选择。透明
-                    Card 也可分配横排宽度，组件名不等于一定出现一个边框。
-                  </p>
+                  <p className="eyebrow">2.3</p>
+                  <h3>组件结构与状态</h3>
+                  <p className="micro">Web 示意</p>
                 </div>
                 <div className="experiment-grid">
                   <div className="experiment">
                     <div className="experiment-head">
-                      <h4>同一个对象，三种表面</h4>
+                      <h4>Card</h4>
                       <div className="segmented">
                         {["card", "sunk", "clear"].map((v) => (
                           <button
@@ -592,9 +571,7 @@ function App() {
                     <div className={`object-sample ${variant}`}>
                       <h4>住在步行方便的地方</h4>
                       <p className="support">离主要目的地较近</p>
-                      <p>
-                        名称负责识别，短介绍提供判断依据。背景与边框表达分组，内容的职责保持一致。
-                      </p>
+                      <p>名称识别对象，短介绍提供判断依据。</p>
                       <div className="tags">
                         <span className="tag">步行友好</span>
                         <span className="tag">位置</span>
@@ -605,7 +582,7 @@ function App() {
                         ? "clear：无边框、零内边距，仍可共享横排宽度；列间距由父容器管理。"
                         : variant === "sunk"
                           ? "sunk：下沉背景与内边距，无分组边框。"
-                          : "card：背景、16pt 内边距与边框共同建立对象边界。"}
+                          : "card：背景、16pt 内边距、边框。"}
                     </p>
                   </div>
                   <div className="experiment">
@@ -615,7 +592,7 @@ function App() {
                 <div className="experiment-grid">
                   <div className="experiment">
                     <div className="experiment-head">
-                      <h4>表单围绕同一个任务分组</h4>
+                      <h4>Form</h4>
                       <span className="subtle-label">Form</span>
                     </div>
                     <form
@@ -626,9 +603,7 @@ function App() {
                       }}
                     >
                       <h4>喜欢哪种卧室氛围？</h4>
-                      <p className="support">
-                        可多选。选项与提交入口保持在同一边界内。
-                      </p>
+                      <p className="support">可多选。</p>
                       <div className="options">
                         {["自然松弛", "温暖复古", "清爽利落"].map((o) => (
                           <label
@@ -659,31 +634,13 @@ function App() {
                         生成布置建议
                       </button>
                     </form>
-                    <details open={submitted}>
-                      <summary>查看提交事件</summary>
-                      <pre className="payload">
-                        {JSON.stringify(
-                          {
-                            type: "continue_conversation",
-                            formName: "bedroom-style-exploration",
-                            formState: {
-                              "bedroom-style-exploration": {
-                                卧室氛围: {
-                                  value: chosen,
-                                  componentType: "OptionCards",
-                                },
-                              },
-                            },
-                          },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </details>
+                    <p className="micro" aria-live="polite">
+                      {submitted ? `已选择：${chosen.join("、")}` : ""}
+                    </p>
                   </div>
                   <div className="experiment">
                     <div className="experiment-head">
-                      <h4>说明，和真正的状态</h4>
+                      <h4>Callout</h4>
                       <select
                         aria-label="提示状态"
                         value={status}
@@ -732,9 +689,7 @@ function App() {
                         </p>
                       </div>
                     </div>
-                    <p>
-                      普通说明采用轻量竖线；成功、待确认、错误保留克制的状态识别。颜色用于表达事实，不因为出现一个图标，就给整块内容染色。
-                    </p>
+                    <p>普通说明使用中性色；成功、警告、错误使用状态色。</p>
                     <div className="icontext-sample">
                       <MessageCircle size={24} />
                       <div>
@@ -745,8 +700,7 @@ function App() {
                       </div>
                     </div>
                     <p className="micro">
-                      IconText
-                      的图标与整组标题和说明垂直居中；普通样式使用中性色。
+                      IconText：图标与整组文字居中，默认使用中性色。
                     </p>
                   </div>
                 </div>
@@ -755,12 +709,9 @@ function App() {
               <section className="section system-subsection" id="components">
                 <div className="catalog-heading">
                   <div>
-                    <p className="eyebrow">2.4 / Components · Catalog & API</p>
-                    <h3>组件 API 参考。</h3>
-                    <p>
-                      87 个已注册组件。定义从当前 Swift SDK
-                      导出，说明对应实际处理；数据记录随父级呈现，不为它们虚构独立界面。
-                    </p>
+                    <p className="eyebrow">2.4</p>
+                    <h3>组件 API</h3>
+                    <p>87 个注册定义，签名与参数来自 Swift SDK 导出。</p>
                   </div>
                   <label className="search">
                     <Search size={18} />
@@ -849,11 +800,11 @@ function App() {
                       </>
                     ) : (
                       <p className="note">
-                        这是由父级消费的记录或原生专属能力。请结合上方用途与参数使用；地图和图解可在下文交互查看。
+                        数据节点由父组件处理；地图与 SVG 见 2.5。
                       </p>
                     )}
                     <div className="parameter-reference">
-                      <h4>参数与位置顺序</h4>
+                      <h4>参数</h4>
                       <pre className="signature">{current.signature}</pre>
                       <p className="micro">{current.description}</p>
                       <CopyButton text={current.signature} />
@@ -864,17 +815,14 @@ function App() {
 
               <section className="section system-subsection" id="map-svg">
                 <div className="chapter-heading">
-                  <p className="eyebrow">2.5 / Components · Map & SVG</p>
-                  <h3>地图与 SVG。</h3>
-                  <p>
-                    Map 与 SVG 已进入 SDK
-                    默认注册库。沿用原有位置参数，客户端无需再维护一份同名渲染代码。
-                  </p>
+                  <p className="eyebrow">2.5</p>
+                  <h3>Map 与 SVG</h3>
+                  <p>Map、MapPoint、SVG 均已纳入 SDK 默认注册库。</p>
                 </div>
                 <div className="experiment-grid">
                   <div className="experiment">
                     <div className="experiment-head">
-                      <h4>地图：地点与对象彼此对应</h4>
+                      <h4>地点选择</h4>
                       <span className="subtle-label">Map · MapPoint</span>
                     </div>
                     <Suspense
@@ -890,26 +838,22 @@ function App() {
                         loading="lazy"
                       />
                       <p className="micro">
-                        迁入阶段的 iOS 模拟器实拍，SDK
-                        b93023f6。保留真实案例标题与上下文，用于对照
-                        MapKit；不代替 RC20 的完整验收。
+                        iOS 模拟器 · SDK b93023f6 · Case 01（历史截图）
                       </p>
                     </details>
                     <p>
-                      标记与地点卡联动，展开地图后保留选择。SDK 的原生实现使用
-                      MapKit；此处通过 OpenStreetMap
-                      呈现同一组坐标，供观察选择关系。
+                      点位与卡片联动选择，展开后保留状态。原生使用
+                      MapKit；此处为 OpenStreetMap 预览。
                     </p>
                     <p className="micro">
-                      原生地图要求 iOS 17／macOS 14。支持 WGS-84 与 GCJ-02
-                      输入，后者转换后交给
-                      MapKit。地点图不等于导航、路线或实时交通结果。
+                      原生要求 iOS 17／macOS 14。支持 WGS-84 与
+                      GCJ-02，后者转换后交给 MapKit；不提供导航与实时交通。
                     </p>
                   </div>
                   <div className="experiment">
                     <div className="experiment-head">
-                      <h4>图解：先有比例，再有图形</h4>
-                      <span className="subtle-label">SVG</span>
+                      <h4>SVG</h4>
+                      <span className="subtle-label">viewBox</span>
                     </div>
                     <SVGSpecimen />
                     <details className="native-proof">
@@ -920,18 +864,16 @@ function App() {
                         loading="lazy"
                       />
                       <p className="micro">
-                        迁入阶段的 iOS 模拟器实拍，SDK b93023f6。图解来自 Case
-                        03 的实际 SVG；不作为 RC20 渲染就绪反馈的证据。
+                        iOS 模拟器 · SDK b93023f6 · Case 03（历史截图）
                       </p>
                     </details>
                     <p>
-                      viewBox
-                      决定图形比例。内容需要完整、可解析，才能成为图解；远程资源、脚本与界面导航不属于图形内容。
+                      viewBox 定义宽高比例。inline content 与 HTTPS src
+                      二选一，内容上限 1MB。
                     </p>
                     <p className="micro">
-                      原生采用隔离 WKWebView 与限制性
-                      CSP，禁用脚本和外部引用；inline content 与 HTTPS src
-                      二选一，内容上限 1MB。Web 示例仅运行内置图形。
+                      原生使用隔离 WKWebView 与限制性
+                      CSP，禁用脚本和外部引用。Web 示例仅使用内置图形。
                     </p>
                   </div>
                 </div>
@@ -944,20 +886,15 @@ function App() {
         <section className="section" id="streaming">
           <div className="split streaming-heading">
             <div className="article-copy">
-              <p className="eyebrow">03 / 流式渲染</p>
-              <h2>控制重排，保留状态。</h2>
+              <p className="eyebrow">03</p>
+              <h2>流式渲染</h2>
               <p>
-                增量渲染（Incremental
-                Rendering）是在分片到达后更新已有界面。难点是内容还没完整时，用户已经开始阅读和操作。
-              </p>
-              <p>
-                RC20
-                通过布局约束、组件标识和异步资源管理，减少更新中的重排、闪动与状态丢失。
+                分片到达时增量更新已有界面；布局、数据与资源分别按就绪条件呈现。
               </p>
             </div>
             <div className="stream-lab specimen">
               <div className="specimen-top">
-                <span>逐步观察呈现顺序</span>
+                <span>呈现顺序</span>
                 <button
                   className="quiet"
                   onClick={() => {
@@ -1039,19 +976,19 @@ function App() {
                 n: "01",
                 title: "布局稳定性",
                 term: "Layout Stability",
-                text: "容器先分配宽度，文字在列内换行，图片不被后到的文字撑宽；关键布局参数未知时局部等待。",
+                text: "父级分配宽度；关键布局参数未知时局部等待。",
               },
               {
                 n: "02",
                 title: "组件标识与状态保留",
                 term: "Identity / State Preservation",
-                text: "普通增量更新保留组件与状态；主动重播、切换程序或客户端重建状态时可能重置。",
+                text: "增量更新保留组件标识与状态；重播或替换程序可能重置。",
               },
               {
                 n: "03",
-                title: "异步资源与数据管理",
+                title: "异步资源",
                 term: "Resource Lifecycle",
-                text: "下载不决定列宽；图表只使用已确认数据；旧请求不能覆盖新回答。",
+                text: "请求按消息隔离，过期结果不回写替换后的程序。",
               },
             ].map((item) => (
               <div key={item.n}>
@@ -1064,9 +1001,6 @@ function App() {
               </div>
             ))}
           </div>
-          <p className="micro">
-            内容自然增高属于正常布局变化；目标是减少无谓重排与重建。
-          </p>
           <ReadinessMatrix />
         </section>
         <DesignFrontiers />
@@ -1077,45 +1011,45 @@ function App() {
         >
           <div className="article-reference">
             <div className="reading">
-              <p className="eyebrow">参考 / 设计依据与版本</p>
-              <h3>规范来源与验证范围</h3>
+              <p className="eyebrow">附录</p>
+              <h3>参考资料</h3>
               <a
                 href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/README.md#整体设计`}
                 target="_blank"
                 rel="noreferrer"
               >
-                RC20 整体设计与实现规则 <ArrowUpRight size={16} />
+                整体设计 <ArrowUpRight size={16} />
               </a>
               <a
                 href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/UI-DESIGN.md`}
                 target="_blank"
                 rel="noreferrer"
               >
-                原生渲染与验证说明 <ArrowUpRight size={16} />
+                渲染与验收 <ArrowUpRight size={16} />
               </a>
               <a
                 href={`${github}/blob/${sdkBaseline.revision}/packages/swift-ui/SDK-REFERENCE.zh-CN.md`}
                 target="_blank"
                 rel="noreferrer"
               >
-                逐组件处理说明 <ArrowUpRight size={16} />
+                组件规范 <ArrowUpRight size={16} />
               </a>
               <a
                 href={`${github}/tree/${sdkBaseline.revision}/examples/agent-cases`}
                 target="_blank"
                 rel="noreferrer"
               >
-                核心用例的标准源码 <ArrowUpRight size={16} />
+                标准用例 <ArrowUpRight size={16} />
               </a>
               <a href="./generated/library.json" download>
-                下载组件规范（Spec / Schema） <ArrowUpRight size={16} />
+                组件定义（Spec / Schema） <ArrowUpRight size={16} />
               </a>
               <a href="./generated/tokens.json" download>
-                下载实际主题导出 <ArrowUpRight size={16} />
+                主题 Token <ArrowUpRight size={16} />
               </a>
             </div>
             <details className="traceability">
-              <summary>发布基线、历史截图与验证范围</summary>
+              <summary>版本与验证范围</summary>
               <p>
                 当前发布基线为{" "}
                 <a href={sdkBaseline.url} target="_blank" rel="noreferrer">
@@ -1134,12 +1068,8 @@ function App() {
                 SwiftUI 的原生度量、手势和平台行为分别验证。
               </p>
               <p>
-                展开区保留的 iOS
-                截图来自标明版本的历史迁入验证。当前记录覆盖代表性卡片、部分
-                Case02
-                区域、中英文预览和特定翻页／缩放动作；不扩展为全部设备、真机捏合或所有流式片段已经通过。01—07
-                为核心用例，08 保留原稿，未纳入这轮视觉验收。站点不会调用 Agent
-                或执行交易动作。
+                原生截图使用标注的历史版本，仅覆盖已有场景，未覆盖真机和全部流式分片。01—07
+                为核心用例，08 未纳入本轮视觉验收。
               </p>
             </details>
           </div>
@@ -1149,7 +1079,7 @@ function App() {
         <a className="wordmark" href="#">
           OpenUI
         </a>
-        <span>把复杂留给系统，把清晰留给阅读。</span>
+        <span>iOS · macOS</span>
         <a href={github} target="_blank" rel="noreferrer">
           Source <ArrowUpRight size={14} />
         </a>

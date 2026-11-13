@@ -3,15 +3,14 @@ import { LoaderCircle, ImageOff } from "lucide-react";
 import tokens from "../public/generated/tokens.json";
 export { default as WorkingPrinciple } from "./WorkingPrinciple";
 
-export const overview =
-  "OpenUI Swift SDK 将 Agent 输出的界面描述（OpenUI Lang）渲染为原生界面。设计系统统一排版、颜色与组件行为；流式渲染管理布局、状态和资源，减少重排、闪动与选择丢失。";
+export const overview = "将 OpenUI Lang 渲染为可交互的原生界面。";
 
 const systemSections = [
-  ["scale", "2.1", "排版与颜色"],
-  ["geometry", "2.2", "间距与形状"],
+  ["scale", "2.1", "字体与颜色"],
+  ["geometry", "2.2", "间距与圆角"],
   ["composition", "2.3", "组件结构与状态"],
-  ["components", "2.4", "组件目录与 API"],
-  ["map-svg", "2.5", "地图与 SVG"],
+  ["components", "2.4", "组件 API"],
+  ["map-svg", "2.5", "Map 与 SVG"],
   ["integration", "2.6", "组合模式"],
 ];
 export function SystemDesign({
@@ -38,15 +37,12 @@ export function SystemDesign({
       aria-labelledby="system-title"
     >
       <div className="chapter-heading">
-        <p className="eyebrow">02 / 设计系统</p>
-        <h2 id="system-title">从视觉基础，到完整的交互任务。</h2>
-        <p>
-          视觉基础定义设计规则，设计变量为设计值命名并供组件引用，组件落实结构与行为，组合模式把组件组织成任务。
-        </p>
+        <p className="eyebrow">02</p>
+        <h2 id="system-title">设计系统</h2>
       </div>
       <figure className="system-map" aria-labelledby="system-map-title">
         <figcaption id="system-map-title">
-          设计系统结构 <span>Design System Architecture · Web</span>
+          结构 <span>Web 示意</span>
         </figcaption>
         <ol className="system-layers">
           <li>
@@ -170,7 +166,6 @@ export function SystemDesign({
                     </button>
                   ))}
                 </div>
-                <p>同一内容结构，采用不同的容器表面。</p>
               </div>
               <div>
                 <b>
@@ -195,7 +190,7 @@ export function SystemDesign({
               <h3>组合模式</h3>
               <span>Patterns</span>
             </div>
-            <p className="pattern-summary">把组件组织为可复用的任务结构。</p>
+            <p className="pattern-summary">按任务组合组件。</p>
           </li>
         </ol>
         <div className="platform-foundation">
@@ -248,12 +243,9 @@ export function LayoutFoundations() {
       aria-labelledby="geometry-title"
     >
       <div className="chapter-heading">
-        <p className="eyebrow">2.2 / Foundations · Spacing & Shape</p>
-        <h3 id="geometry-title">间距表达关系，形状建立边界。</h3>
-        <p>
-          Padding 控制容器内边距，Gap 控制项目间距；Corner Radius
-          控制轮廓。选择现有 Token，预览中的尺寸同步变化。
-        </p>
+        <p className="eyebrow">2.2</p>
+        <h3 id="geometry-title">间距与圆角</h3>
+        <p>Padding：内边距；Gap：项目间距；Corner Radius：圆角。</p>
       </div>
       <div className="geometry-specimens">
         <div>
@@ -364,7 +356,7 @@ export function ReadinessMatrix() {
   return (
     <div className="readiness-explainer">
       <h3>
-        呈现就绪 <span className="standard-term">Rendering Readiness</span>
+        就绪条件 <span className="standard-term">Rendering Readiness</span>
       </h3>
       <div
         className="article-table-wrap"
@@ -386,7 +378,7 @@ export function ReadinessMatrix() {
             </tr>
             <tr>
               <th>图片与卡片</th>
-              <td>先确定宽度与排列，再显示媒体；下载不决定列宽。</td>
+              <td>布局字段确认后分配空间，下载独立进行。</td>
             </tr>
             <tr>
               <th>折线与柱形</th>
@@ -402,7 +394,10 @@ export function ReadinessMatrix() {
             </tr>
             <tr>
               <th>SVG</th>
-              <td>文档校验后交给 WebKit；完整渲染反馈尚未接入。</td>
+              <td>
+                文档校验后交给 WebKit；<a href="#frontier-svg">渲染反馈</a>
+                待补齐。
+              </td>
             </tr>
           </tbody>
         </table>
@@ -415,25 +410,21 @@ export function CompositionPatterns() {
   return (
     <section className="section system-subsection" id="integration">
       <div className="chapter-heading">
-        <p className="eyebrow">2.6 / Composition Patterns</p>
-        <h3>内容关系决定组件怎样组合。</h3>
+        <p className="eyebrow">2.6</p>
+        <h3>组合模式</h3>
       </div>
       <div className="composition-patterns">
         {[
           [
             "对象比较",
             "CompositeCardBlock",
-            "独立候选各自保持图片、规格、价格与操作；同类字段采用一致顺序，便于横向比较。",
+            "图片、规格、价格与操作归属同一对象，同类字段保持一致顺序。",
           ],
-          [
-            "条件填写",
-            "Form",
-            "同一任务的字段与提交入口放在同一边界内；普通商品卡或解释段落不承担表单职责。",
-          ],
+          ["条件填写", "Form", "同一任务的字段、校验与提交入口共享边界。"],
           [
             "地点浏览",
             "Map",
-            "地点标记与关联对象保持对应；地图表达位置，卡片承载对象的介绍与操作。",
+            "标记与卡片对应同一地点，位置、介绍与操作保持关联。",
           ],
         ].map(([title, component, text]) => (
           <div key={title}>

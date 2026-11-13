@@ -13,35 +13,31 @@ root = Stack([
 
 const processingSteps = [
   {
-    title: "接收描述",
+    title: "接收",
     api: "客户端 → OpenUIState",
-    description:
-      "客户端把收到的 Lang 分片送进同一个 OpenUIState，由它保持这块内容的运行状态。",
-    artifact: "OpenUI Lang · 输入文本",
+    description: "客户端将 Lang 分片送入同一个 OpenUIState。",
+    artifact: "Lang 源码",
     path: "packages/swift-ui/Sources/OpenUISwiftUI/OpenUIState.swift",
   },
   {
-    title: "解析程序",
+    title: "解析",
     api: "StreamParser → ParseResult",
-    description:
-      "解析器读出组件、参数、引用与状态声明，形成程序结构；变量表达式仍保留在结构中。",
-    artifact: "程序结构 · 示意",
+    description: "读出组件、参数、引用和状态声明，生成程序结构。",
+    artifact: "程序结构（示意）",
     path: "packages/swift-lang/Sources/OpenUILang/StreamingParser.swift",
   },
   {
-    title: "计算属性",
+    title: "求值",
     api: "Evaluator + Store → 组件树",
-    description:
-      "Store 保存变量当前值，求值器据此计算属性，得到这一次要显示的组件数据。",
-    artifact: "组件树 · 求值结果示意",
+    description: "读取 Store 当前值，计算组件属性。",
+    artifact: "组件树（示意）",
     path: "packages/swift-lang/Sources/OpenUILang/Evaluator.swift",
   },
   {
-    title: "生成视图",
+    title: "渲染",
     api: "渲染器 → 注册表 → 原生组件",
-    description:
-      "渲染器按组件名称找到原生实现。组件完成布局与显示，并接收用户的输入和点击。",
-    artifact: "界面与交互 · Web 示意",
+    description: "通过注册表调用原生组件，完成布局、显示与交互。",
+    artifact: "界面（Web 示意）",
     path: "packages/swift-ui/Sources/OpenUISwiftUI/RenderNode.swift",
   },
 ] as const;
@@ -66,7 +62,7 @@ function Architecture() {
           <h4>
             客户端 <span>Host App</span>
           </h4>
-          <p>接收消息、管理会话与历史，处理导航和业务请求。</p>
+          <p>接收消息、管理会话，处理导航和业务请求。</p>
         </div>
         <div className="ownership-sdk">
           <h5>OpenUI Swift SDK</h5>
@@ -95,7 +91,7 @@ function Architecture() {
               <dl>
                 <div>
                   <dt>OpenUIState</dt>
-                  <dd>协调一次次更新</dd>
+                  <dd>协调更新</dd>
                 </div>
                 <div>
                   <dt>渲染器</dt>
@@ -109,7 +105,7 @@ function Architecture() {
             </section>
           </div>
           <p className="ownership-theme">
-            Theme 与 Presentation 为原生组件提供视觉值和平台呈现规则。
+            Theme / Presentation：组件样式与平台呈现参数。
           </p>
         </div>
       </div>
@@ -139,7 +135,7 @@ Stack
    ├─ Button: "增加一件"
    └─ Button: "提交选择"
 
-组件树是带有类型与属性的数据，还不是屏幕上的视图。`;
+组件树：类型与属性数据。`;
   const event =
     submitted === null
       ? null
@@ -235,9 +231,9 @@ Stack
                 </button>
               </div>
               <div className="processing-submission">
-                <h4>交给客户端的上次提交</h4>
+                <h4>上次提交事件</h4>
                 {submitted === null ? (
-                  <p>点击“提交选择”，查看点击时读取的值。</p>
+                  <p>尚未提交。</p>
                 ) : (
                   <>
                     <p>
@@ -282,25 +278,21 @@ Stack
       </div>
       <div className="interaction-return-paths">
         <div>
-          <h4>本地修改，回到运行时</h4>
+          <h4>状态管理</h4>
           <p>
-            绑定把控件值关联到 Store 中的变量。控件写入或 <code>@Set</code>
-            修改变量后，运行时重新求值并更新界面，无需请求 Agent。
+            绑定关联控件与 Store 变量。写入或 <code>@Set</code>
+            修改后，重新求值并更新界面，无需请求 Agent。
           </p>
         </div>
         <div>
-          <h4>外部动作，交给客户端</h4>
+          <h4>动作处理</h4>
           <p>
-            <code>@ToAssistant</code> 读取点击时的值，发出
-            ActionEvent；客户端再发起 Agent
-            请求。链接导航与真正的业务执行也由客户端承接。
+            <code>@ToAssistant</code> 将点击时的值封装为
+            ActionEvent，客户端据此请求 Agent。
           </p>
         </div>
       </div>
-      <p className="micro processing-note">
-        以上是固定程序的 Web 机制示意，不运行 Swift
-        SDK或发送请求。流式分片下的布局、组件就绪与资源处理见第三章。
-      </p>
+      <p className="micro processing-note">Web 机制示意，不运行 Swift SDK。</p>
     </>
   );
 }
@@ -313,67 +305,49 @@ export default function WorkingPrinciple() {
       aria-labelledby="principle-title"
     >
       <div className="chapter-heading">
-        <p className="eyebrow">01 / 工作原理</p>
-        <h2 id="principle-title">OpenUI 在客户端的运行过程。</h2>
-        <p>
-          Agent 返回的是界面描述；实际的布局、显示和交互，由客户端中的 OpenUI
-          Swift SDK 完成。
-        </p>
+        <p className="eyebrow">01</p>
+        <h2 id="principle-title">工作原理</h2>
       </div>
       <section className="principle-part" aria-labelledby="architecture-title">
         <div className="principle-part-heading">
-          <p className="eyebrow">1.1 / Architecture</p>
-          <h3 id="architecture-title">SDK 随客户端运行，内部有两个模块。</h3>
+          <p className="eyebrow">1.1</p>
+          <h3 id="architecture-title">架构</h3>
         </div>
         <Architecture />
       </section>
       <section className="principle-part" aria-labelledby="processing-title">
         <div className="principle-part-heading">
-          <p className="eyebrow">1.2 / Parsing & Rendering</p>
-          <h3 id="processing-title">一段描述，经过解析、求值，成为视图。</h3>
-          <p>
-            用“已选数量”这段程序，观察文本、程序结构、组件数据与显示结果的区别。
-          </p>
+          <p className="eyebrow">1.2</p>
+          <h3 id="processing-title">解析与渲染</h3>
         </div>
         <ProcessingExample />
       </section>
       <section className="principle-part" aria-labelledby="contract-title">
         <div className="principle-part-heading">
-          <p className="eyebrow">1.3 / Component Contract</p>
-          <h3 id="contract-title">组件契约连接 Agent 与 SDK。</h3>
-          <p>
-            每个组件都有参数定义与原生实现。客户端通过 OpenUIComponentLibrary
-            把两者注册在一起，并导出供服务端使用的生成契约。
-          </p>
+          <p className="eyebrow">1.3</p>
+          <h3 id="contract-title">组件契约</h3>
+          <p>OpenUIComponentLibrary 注册组件定义与原生实现，导出生成契约。</p>
         </div>
         <div className="component-contract-outputs">
           <div>
             <b>Prompt</b>
-            <span>给 Agent 的生成说明</span>
-            <p>可用组件、参数顺序和组合规则。</p>
+            <p>供 Agent 使用的组件、参数与组合说明。</p>
           </div>
           <div>
             <b>Schema</b>
-            <span>给运行时的结构约束</span>
-            <p>组件类型、参数与绑定的合法范围。</p>
+            <p>供运行时使用的类型、参数与绑定约束。</p>
           </div>
           <div>
             <b>Registry</b>
-            <span>给渲染器的视图映射</span>
-            <p>组件名称所对应的原生构建器。</p>
+            <p>供渲染器使用的组件名称与原生视图映射。</p>
           </div>
         </div>
         <details className="implementation-note">
-          <summary>实现与接入说明</summary>
+          <summary>实现细节</summary>
+          <p>OpenUILang 通过 JavaScriptCore 执行随包提供的官方 lang-core。</p>
           <p>
-            语言运行时通过 JavaScriptCore 执行随包提供的官方
-            lang-core。OpenUIState 属于
-            OpenUISwiftUI，负责调用语言运行时并把结果交给原生渲染器。
-          </p>
-          <p>
-            客户端为每个 OpenUI 内容块保留独立状态。正常结束调用
-            complete()，用户停止调用
-            interrupt()；历史快照、资源访问策略和外部动作由客户端接入。
+            每个 OpenUI 内容块持有独立的 OpenUIState。complete()
+            正常结束；interrupt() 停止生成并保留已完成内容。
           </p>
           <a
             className="text-link"
@@ -381,7 +355,7 @@ export default function WorkingPrinciple() {
             target="_blank"
             rel="noreferrer"
           >
-            架构与实现依据 <ArrowRight size={13} />
+            源码 <ArrowRight size={13} />
           </a>
         </details>
       </section>

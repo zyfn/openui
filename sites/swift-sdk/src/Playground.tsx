@@ -39,8 +39,7 @@ export default function Playground({
   return (
     <div className="playground">
       <p className="micro">
-        实际 Lang · React 0.18.1 预览。地图与图解使用标明边界的 Web
-        适配器，原生行为见下方说明。动作仅显示事件，不跳转、不调用交易。
+        React 0.18.1 预览；Map / SVG 使用站点适配器。动作仅显示事件。
       </p>
       <div className="react-preview" key={revision}>
         <ThemeContext.Provider value={chartTheme}>
