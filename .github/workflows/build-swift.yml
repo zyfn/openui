@@ -2,7 +2,7 @@ name: Build Swift
 
 on:
   push:
-    branches: [main]
+    branches: [main, test/swift-main-integration-20261114]
     paths:
       - 'Package.swift'
       - 'packages/swift-lang/**'
