@@ -108,6 +108,14 @@ struct NativeMarkdownText: View {
       .onChange(of: streamActive) { active in streamText.receive(text, streaming: active) }
       .task(id: request) {
         let current = request
+        // Avoid starting a full rich-text preprocessing pass for every
+        // streamed suffix. During active generation, wait for a short idle
+        // window; completion still displays its exact source immediately.
+        if streamActive {
+          do { try await Task.sleep(nanoseconds: 160_000_000) }
+          catch { return }
+        }
+        guard !Task.isCancelled else { return }
         let worker = Task.detached(priority: .userInitiated) {
           try NativeRichTextEngine.shared.prepare(current.source.displayString, mode: current.mode,
             sources: current.sources, fontSize: current.fontSize, color: current.color)
