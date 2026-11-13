@@ -113,6 +113,38 @@ final class StreamingReplayTests: XCTestCase {
     XCTAssertEqual(PropValue.string(text, "text"), "AC")
   }
 
+
+  @MainActor func testFullBufferAppendUsesSameDocumentEpochAndRetainsDraft() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    let initial = "root=Stack([TextContent(\\\"First\\\")"
+    state.setSource(initial, streaming: true)
+    let generation = state.sourceRevision
+    let presentation = state.presentationRevision
+    state.setFieldValue(form: "draft", name: "note", value: .string("editing"))
+    let extended = initial + ",TextContent(\\\"Second\\\")])"
+    state.setSource(extended, streaming: true)
+    XCTAssertEqual(state.sourceRevision, generation)
+    XCTAssertEqual(state.presentationRevision, presentation)
+    XCTAssertEqual(state.fieldValue(form: "draft", name: "note"), .string("editing"))
+    state.setSource(extended)
+    XCTAssertTrue(state.isComplete)
+    XCTAssertEqual(state.sourceRevision, generation)
+    let root = try XCTUnwrap(state.root)
+    XCTAssertEqual(PropValue.children(root).count, 2)
+  }
+
+  @MainActor func testFullBufferReplacementStillCreatesNewPresentation() throws {
+    let library = try OpenUIStandardComponents.library()
+    let state = OpenUIState(schema: library.library.toSchema())
+    state.setSource("root=TextContent(\\\"First\\\")", streaming: true)
+    let generation = state.sourceRevision
+    let presentation = state.presentationRevision
+    state.setSource("root=TextContent(\\\"Changed\\\")", streaming: true)
+    XCTAssertGreaterThan(state.sourceRevision, generation)
+    XCTAssertGreaterThan(state.presentationRevision, presentation)
+  }
+
   @MainActor func testCanonicalStringEqualityDoesNotHideDifferentUTF16Source() throws {
     let library = try OpenUIStandardComponents.library()
     let state = OpenUIState(schema: library.library.toSchema())
