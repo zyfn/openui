@@ -31,7 +31,7 @@ import {
   SystemDesign,
   LayoutFoundations,
   ReadinessMatrix,
-  HostIntegration,
+  CompositionPatterns,
   overview,
 } from "./SystemArticle";
 import DesignFrontiers from "./DesignFrontiers";
@@ -615,7 +615,7 @@ function App() {
                 <div className="experiment-grid">
                   <div className="experiment">
                     <div className="experiment-head">
-                      <h4>一项选择，一次明确提交</h4>
+                      <h4>表单围绕同一个任务分组</h4>
                       <span className="subtle-label">Form</span>
                     </div>
                     <form
@@ -626,7 +626,9 @@ function App() {
                       }}
                     >
                       <h4>喜欢哪种卧室氛围？</h4>
-                      <p className="support">可以多选，提交时携带当前选择。</p>
+                      <p className="support">
+                        可多选。选项与提交入口保持在同一边界内。
+                      </p>
                       <div className="options">
                         {["自然松弛", "温暖复古", "清爽利落"].map((o) => (
                           <label
@@ -935,7 +937,7 @@ function App() {
                 </div>
               </section>
 
-              <HostIntegration />
+              <CompositionPatterns />
             </div>
           </div>
         </SystemDesign>

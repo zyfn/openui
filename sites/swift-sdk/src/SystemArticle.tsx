@@ -195,20 +195,7 @@ export function SystemDesign({
               <h3>组合模式</h3>
               <span>Patterns</span>
             </div>
-            <div className="pattern-examples">
-              <div>
-                <b>对象比较</b>
-                <span>集合布局 → 对象卡片 → 对应操作</span>
-              </div>
-              <div>
-                <b>填写与提交</b>
-                <span>字段 → 本地状态 → 校验 → 提交</span>
-              </div>
-              <div>
-                <b>地点浏览</b>
-                <span>地图点位 ↔ 对象卡片 → 详情</span>
-              </div>
-            </div>
+            <p className="pattern-summary">把组件组织为可复用的任务结构。</p>
           </li>
         </ol>
         <div className="platform-foundation">
@@ -424,34 +411,40 @@ export function ReadinessMatrix() {
   );
 }
 
-export function HostIntegration() {
+export function CompositionPatterns() {
   return (
     <section className="section system-subsection" id="integration">
       <div className="chapter-heading">
-        <p className="eyebrow">2.6 / Patterns · State & Event Flow</p>
-        <h3>组件围绕任务组合，事件携带当前状态。</h3>
-        <p>
-          表单模式（Form
-          Pattern）把同一任务的输入、选择、校验与提交组合在一起；即时筛选直接更新本地状态，单个导航动作直接关联当前对象。
-        </p>
+        <p className="eyebrow">2.6 / Composition Patterns</p>
+        <h3>内容关系决定组件怎样组合。</h3>
       </div>
-      <ol className="event-flow" aria-label="表单状态与事件流">
+      <div className="composition-patterns">
         {[
-          ["输入与选择", "Input / Selection", "字段写入当前表单状态。"],
-          ["校验与提交", "Validation / Submission", "读取提交时的最新值。"],
-          ["动作事件", "ActionEvent", "携带当前对象、字段和动作上下文。"],
-          ["宿主处理", "Host Handling", "导航、调用工具或交给 Agent。"],
-        ].map(([title, term, text]) => (
-          <li key={term}>
+          [
+            "对象比较",
+            "CompositeCardBlock",
+            "独立候选各自保持图片、规格、价格与操作；同类字段采用一致顺序，便于横向比较。",
+          ],
+          [
+            "条件填写",
+            "Form",
+            "同一任务的字段与提交入口放在同一边界内；普通商品卡或解释段落不承担表单职责。",
+          ],
+          [
+            "地点浏览",
+            "Map",
+            "地点标记与关联对象保持对应；地图表达位置，卡片承载对象的介绍与操作。",
+          ],
+        ].map(([title, component, text]) => (
+          <div key={title}>
             <h4>{title}</h4>
-            <span>{term}</span>
             <p>{text}</p>
-          </li>
+            <a className="text-link" href={`#component-${component}`}>
+              {component} →
+            </a>
+          </div>
         ))}
-      </ol>
-      <p className="pattern-boundary">
-        事件发出、Agent 收到选择、业务执行成功，是三个需要分别确认的结果。
-      </p>
+      </div>
     </section>
   );
 }

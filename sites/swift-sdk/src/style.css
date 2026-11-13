@@ -2527,23 +2527,7 @@ footer > a:last-child {
 .state-examples .disabled-state {
   opacity: 0.45;
 }
-.pattern-examples {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
-}
-.pattern-examples b {
-  display: block;
-  font-size: 12px;
-  font-weight: 550;
-  margin-bottom: 7px;
-}
-.pattern-examples span {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.8;
-}
+
 .platform-foundation {
   display: flex;
   flex-wrap: wrap;
@@ -2755,43 +2739,7 @@ footer > a:last-child {
   font-size: 12px;
   margin-bottom: 12px;
 }
-.event-flow {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  list-style: none;
-  padding: 0;
-  margin: 30px 0 0;
-  gap: 28px;
-}
-.event-flow li {
-  position: relative;
-  padding-top: 18px;
-}
-.event-flow li:not(:last-child)::after {
-  content: "→";
-  position: absolute;
-  right: -20px;
-  top: 15px;
-  color: var(--muted);
-}
-.event-flow h4 {
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-.event-flow li > span {
-  font-size: 10px;
-  color: var(--muted);
-}
-.event-flow p {
-  font-size: 12px;
-  margin: 12px 0 0;
-  color: var(--muted);
-}
-.pattern-boundary {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 28px 0 0;
-}
+
 .concise-mechanisms {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 35px;
@@ -2932,13 +2880,7 @@ footer > a:last-child {
   .anatomy-object {
     max-width: 240px;
   }
-  .pattern-examples {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  .pattern-examples b {
-    margin-bottom: 4px;
-  }
+
   .platform-foundation {
     padding: 16px 18px;
     line-height: 1.8;
@@ -3007,13 +2949,7 @@ footer > a:last-child {
   .radius-scale code {
     font-size: 9px;
   }
-  .event-flow {
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  .event-flow li:nth-child(2)::after {
-    content: none;
-  }
+
   .concise-mechanisms {
     grid-template-columns: 1fr;
     gap: 23px;
@@ -3294,463 +3230,434 @@ footer > a:last-child {
   padding-right: 0;
 }
 
-/* Runtime diagrams use boundaries for ownership and arrows for data flow. */
+/* System boundaries show code ownership; the example shows processing order. */
 .principle-part {
-  margin-top: 48px;
+  margin-top: 36px;
 }
 .principle-part-heading {
   max-width: 850px;
 }
 .principle-part-heading .eyebrow {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.principle-part-heading > p:last-child {
-  margin-top: 14px;
-  color: var(--muted);
+.principle-part-heading > p:last-child:not(.eyebrow) {
   font-size: 15px;
-}
-.runtime-architecture {
-  margin: 28px 0 0;
-}
-.runtime-architecture > figcaption {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: baseline;
-  font-size: 14px;
-  font-weight: 550;
-  margin-bottom: 18px;
-}
-.runtime-architecture > figcaption > span {
-  font-size: 12px;
   color: var(--muted);
-  font-weight: 400;
+  margin: 12px 0 0;
 }
-.runtime-architecture-columns {
+.ownership-map {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(250px, 1fr);
-  align-items: start;
-  gap: 28px;
-}
-.runtime-architecture-map,
-.runtime-architecture-columns > *,
-.runtime-lab-columns > * {
-  min-width: 0;
-}
-.runtime-agent {
-  padding: 6px 20px;
-  display: flex;
-  gap: 18px;
-  align-items: baseline;
-  font-size: 13px;
-}
-.runtime-agent > b {
-  flex-shrink: 0;
-  color: var(--ink);
-}
-.runtime-agent > span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-}
-.runtime-connector {
-  display: flex;
-  gap: 7px;
+  grid-template-columns: minmax(130px, 0.7fr) 30px minmax(0, 3fr);
   align-items: center;
-  justify-content: center;
-  padding: 12px 0;
-  font-size: 11px;
-  color: var(--muted);
+  gap: 20px;
+  margin: 24px 0 0;
 }
-.runtime-host-boundary {
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-}
-.runtime-node {
-  display: grid;
-  gap: 5px;
-  width: 100%;
+.ownership-server {
   min-width: 0;
-  padding: 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  text-align: left;
-  transition: background 0.15s;
+  padding: 15px 0;
 }
-.runtime-node:hover {
-  background: var(--wash);
-}
-.runtime-node[aria-pressed="true"] {
-  border-color: var(--ink);
-  background: var(--page);
-}
-.runtime-node b {
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 550;
-}
-.runtime-node code {
-  color: var(--text);
-  font-size: 11px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-.runtime-node > span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-}
-.runtime-sdk-boundary {
-  padding: 18px;
-  margin-top: 10px;
-  background: var(--panel);
-  border-radius: 10px;
-}
-.runtime-scope-heading,
-.runtime-area-label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 12px;
-  margin-bottom: 18px;
-}
-.runtime-scope-heading {
-  justify-content: space-between;
-}
-.runtime-scope-heading > span,
-.runtime-area-label > span {
-  font-size: 11px;
-  color: var(--muted);
-}
-.runtime-area-label {
-  margin: 4px 12px 10px;
-  color: var(--ink);
-  font-weight: 550;
-}
-.runtime-core-modules {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  margin-top: 5px;
-}
-.runtime-native-modules {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
-  align-items: center;
-  gap: 3px;
-}
-.runtime-native-arrow {
-  color: var(--muted);
-}
-.runtime-theme-rail,
-.runtime-execution-note,
-.runtime-return-path {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.8;
-  margin: 10px 12px 0;
-}
-.runtime-theme-rail {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 12px;
-}
-.runtime-return-path {
-  text-align: center;
-  margin: 14px 0 2px;
-}
-.runtime-module-detail {
-  position: sticky;
-  top: 100px;
-  background: var(--panel);
-  border-radius: 12px;
-  padding: 24px;
-  scroll-margin-top: 115px;
-}
-.runtime-return-button {
-  display: none;
-}
-.runtime-module-detail .eyebrow {
-  margin-bottom: 14px;
-}
-.runtime-module-detail h4 {
-  font-size: 19px;
-}
-.runtime-detail-api {
+.ownership-domain {
   display: block;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-  margin: 8px 0 18px;
-  color: var(--muted);
-}
-.runtime-module-detail > p:not(.eyebrow),
-.runtime-module-detail dd {
-  font-size: 13px;
-  line-height: 1.85;
-}
-.runtime-module-detail dl {
-  margin: 22px 0;
-}
-.runtime-module-detail dl > div + div {
-  margin-top: 15px;
-}
-.runtime-module-detail dt {
   font-size: 11px;
   color: var(--muted);
-  margin-bottom: 3px;
+  margin-bottom: 10px;
 }
-.runtime-module-detail dd {
+.ownership-server h4,
+.ownership-client-heading h4 {
+  font-size: 18px;
+}
+.ownership-server p,
+.ownership-client-heading p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 8px 0 14px;
+}
+.ownership-server code {
+  font-size: 12px;
+}
+.ownership-transfer {
+  color: var(--muted);
+  justify-self: center;
+}
+.ownership-client {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px;
+}
+.ownership-client-heading h4 > span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 10px;
+}
+.ownership-sdk {
+  background: var(--wash);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 18px;
+}
+.ownership-sdk > h5 {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 20px;
+}
+.ownership-packages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+.ownership-packages > section {
+  min-width: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+.ownership-packages h6 {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
   margin: 0;
 }
-.runtime-package-note,
-.runtime-closing-note {
-  font-size: 13px;
+.ownership-packages code {
+  display: block;
+  font-size: 11px;
   color: var(--muted);
-  line-height: 1.9;
-  margin: 22px 0 0;
+  margin-top: 5px;
 }
-.runtime-package-note b,
-.runtime-closing-note b {
-  color: var(--ink);
-  font-weight: 550;
-}
-.runtime-contract-origin {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  align-items: baseline;
-  padding: 17px 22px;
-  border-radius: 9px;
-  background: var(--wash);
-  font-size: 13px;
-  margin: 24px 0 20px;
-}
-.runtime-contract-origin > span {
-  color: var(--muted);
-}
-.runtime-contract-branches {
+.ownership-packages dl {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px;
+  gap: 9px;
+  margin: 18px 0 0;
 }
-.runtime-contract-branches b {
-  font-size: 14px;
-  font-weight: 550;
-  color: var(--ink);
+.ownership-packages dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  align-items: baseline;
 }
-.runtime-contract-branches p {
-  font-size: 13px;
-  margin: 8px 0 0;
+.ownership-packages dt,
+.ownership-packages dd {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0;
+}
+.ownership-packages dd {
   color: var(--muted);
 }
-.runtime-contract-note {
+.ownership-theme {
+  font-size: 11px;
+  color: var(--muted);
   margin: 20px 0 0;
 }
-.runtime-update-paths {
+.processing-example {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+  gap: 32px;
+  align-items: start;
+  margin-top: 26px;
+}
+.processing-mobile-tabs,
+.processing-mobile-description {
+  display: none;
+}
+.processing-steps {
   list-style: none;
   padding: 0;
-  margin: 24px 0;
-  gap: 10px;
+  margin: 0;
 }
-.runtime-update-paths li {
-  padding: 18px;
-  border-radius: 10px;
+.processing-steps li + li {
+  margin-top: 7px;
 }
-.runtime-update-paths li[data-active="true"] {
+.processing-steps button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 14px;
+  padding: 17px;
+  text-align: left;
+  border-radius: 8px;
+}
+.processing-steps button:hover,
+.processing-steps button[aria-pressed="true"] {
   background: var(--wash);
 }
-.runtime-update-paths h4 {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  font-size: 15px;
-}
-.runtime-update-paths h4 > span {
-  font-size: 11px;
-  color: var(--muted);
-}
-.runtime-update-paths p {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.85;
-  margin: 10px 0 0;
-}
-.runtime-path,
-.runtime-path > span {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-}
-.runtime-path > span {
-  color: var(--text);
-  font-size: 11px;
-}
-.runtime-path svg {
+.processing-number {
   flex-shrink: 0;
+  font-size: 11px;
   color: var(--muted);
 }
-.runtime-lab {
-  background: var(--panel);
-  border-radius: 14px;
-  padding: 24px;
+.processing-step-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
-.runtime-lab-heading,
-.runtime-state-heading {
+.processing-step-copy b {
+  font-size: 15px;
+  font-weight: 550;
+  color: var(--ink);
+}
+.processing-step-copy code {
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.processing-step-copy > span {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.processing-artifact {
+  min-width: 0;
+  min-height: 440px;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  padding: 24px;
+  background: var(--panel);
+  border-radius: 12px;
+}
+.processing-artifact-heading,
+.processing-artifact-footer,
+.processing-navigation {
+  display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 15px;
   flex-wrap: wrap;
 }
-.runtime-lab-heading {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 22px;
+.processing-artifact-heading h4,
+.processing-submission h4 {
+  font-size: 13px;
 }
-.runtime-lab-heading .quiet {
+.processing-artifact .quiet {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  padding: 5px 0;
   font-size: 12px;
-  padding: 4px 0;
 }
-.runtime-lab-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 32px;
-}
-.runtime-lab h4 {
-  font-size: 13px;
-}
-.runtime-program > p {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 7px 0 14px;
-}
-.runtime-lab pre {
+.processing-artifact pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 11px;
-  line-height: 1.9;
-  margin: 12px 0 0;
-  color: var(--text);
-}
-.runtime-state-heading code {
-  display: block;
   font-size: 12px;
-  margin-top: 8px;
+  line-height: 1.9;
+  margin: 22px 0;
 }
-.runtime-output {
-  display: grid;
-  gap: 6px;
-  margin: 24px 0 18px;
+.processing-artifact-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 12px;
 }
-.runtime-output > span {
-  font-size: 11px;
+.processing-view {
+  padding-top: 20px;
+}
+.processing-state {
+  font-size: 12px;
   color: var(--muted);
+  margin-bottom: 16px;
 }
-.runtime-output > strong {
-  font-size: 19px;
-  font-weight: 550;
+.processing-view > strong {
+  display: block;
+  font-size: 21px;
   color: var(--ink);
+  font-weight: 550;
 }
-.runtime-demo-actions {
+.processing-view-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-top: 20px;
 }
-.runtime-demo-actions .pill:not(.primary) {
+.processing-view-actions .pill:not(.primary) {
   border: 1px solid var(--line);
 }
-.runtime-event {
+.processing-submission > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 15px 0 0;
+}
+.processing-submission {
+  margin-top: 24px;
+}
+.processing-submission p > code {
+  display: inline-block;
+  margin-left: 10px;
+  color: var(--text);
+}
+.processing-submission details {
+  font-size: 12px;
+  margin-top: 12px;
+}
+.interaction-return-paths {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  margin: 26px 0 0;
+}
+.interaction-return-paths h4 {
+  font-size: 14px;
+}
+.interaction-return-paths p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+.processing-note {
+  margin: 20px 0 0;
+}
+.component-contract-outputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+  margin-top: 24px;
+}
+.component-contract-outputs b {
+  display: block;
+  font-size: 15px;
+  font-weight: 550;
+  color: var(--ink);
+}
+.component-contract-outputs span {
+  display: block;
+  font-size: 13px;
+  margin-top: 7px;
+}
+.component-contract-outputs p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 5px 0 0;
+}
+.implementation-note {
   margin-top: 26px;
+  font-size: 12px;
+  color: var(--muted);
 }
-.runtime-event pre {
-  min-height: 165px;
-}
-.runtime-lab > .micro {
-  margin: 22px 0 0;
+.implementation-note > p {
+  margin: 14px 0 0;
   max-width: 850px;
 }
+.implementation-note > a {
+  margin-top: 14px;
+}
+.pattern-summary {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+.composition-patterns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+  margin-top: 26px;
+}
+.composition-patterns h4 {
+  font-size: 15px;
+}
+.composition-patterns p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0;
+}
 @media (max-width: 1000px) {
-  .runtime-architecture-columns {
-    grid-template-columns: minmax(0, 1.85fr) minmax(225px, 1fr);
-    gap: 16px;
+  .ownership-map {
+    grid-template-columns: minmax(105px, 0.65fr) 20px minmax(0, 3fr);
+    gap: 12px;
   }
-  .runtime-core-modules {
-    grid-template-columns: 1fr;
+  .ownership-client {
+    padding: 16px;
   }
-  .runtime-agent {
-    flex-direction: column;
-    gap: 6px;
+  .ownership-sdk {
+    padding: 16px;
   }
-  .runtime-lab-columns {
-    grid-template-columns: 1fr 1fr;
-    gap: 22px;
+  .ownership-packages {
+    gap: 18px;
+  }
+  .processing-example {
+    grid-template-columns: 1fr 1.2fr;
+    gap: 20px;
   }
 }
 @media (max-width: 700px) {
   .principle-part {
-    margin-top: 35px;
+    margin-top: 30px;
   }
-  .principle-part-heading > p:last-child {
+  .principle-part-heading > p:last-child:not(.eyebrow) {
     font-size: 14px;
   }
-  .runtime-architecture-columns,
-  .runtime-lab-columns,
-  .runtime-contract-branches,
-  .runtime-update-paths {
+  .ownership-map,
+  .processing-example,
+  .interaction-return-paths,
+  .component-contract-outputs,
+  .composition-patterns {
     grid-template-columns: 1fr;
   }
-  .runtime-module-detail {
-    position: static;
-    padding: 20px;
+  .ownership-server {
+    padding: 0 16px;
   }
-  .runtime-return-button {
-    display: block;
-    font-size: 12px;
-    margin-top: 18px;
-    padding: 0;
+  .ownership-domain {
+    margin-bottom: 5px;
   }
-  .runtime-host-boundary {
-    padding: 10px;
+  .ownership-server p {
+    margin: 5px 0;
   }
-  .runtime-sdk-boundary {
-    padding: 12px 9px;
-  }
-  .runtime-node {
-    padding: 10px;
-  }
-  .runtime-native-modules {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-  .runtime-native-arrow {
+  .ownership-transfer {
     transform: rotate(90deg);
-    justify-self: center;
   }
-  .runtime-contract-origin {
-    padding: 16px 18px;
-    gap: 6px;
+  .ownership-packages {
+    grid-template-columns: 1fr;
+    gap: 23px;
   }
-  .runtime-contract-branches {
+  .processing-example {
     gap: 18px;
   }
-  .runtime-update-paths {
+  .processing-steps {
+    display: none;
+  }
+  .processing-mobile-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .processing-mobile-tabs button {
+    display: grid;
+    justify-items: center;
     gap: 5px;
+    border-radius: 8px;
+    padding: 10px 2px;
+    font-size: 12px;
   }
-  .runtime-update-paths li {
-    padding: 15px;
+  .processing-mobile-tabs button > span {
+    font-size: 10px;
+    color: var(--muted);
   }
-  .runtime-lab {
-    padding: 18px;
+  .processing-mobile-tabs button[aria-pressed="true"] {
+    background: var(--wash);
+    font-weight: 550;
   }
-  .runtime-lab-columns {
-    gap: 30px;
+  .processing-mobile-description {
+    display: block;
+    margin: 18px 0 0;
+    color: var(--muted);
+  }
+  .processing-mobile-description code {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .processing-mobile-description p {
+    font-size: 13px;
+    margin: 6px 0 0;
+  }
+  .processing-artifact {
+    min-height: 420px;
+    padding: 19px;
+  }
+  .processing-artifact pre {
+    font-size: 11px;
+  }
+  .interaction-return-paths,
+  .component-contract-outputs,
+  .composition-patterns {
+    gap: 20px;
   }
 }
