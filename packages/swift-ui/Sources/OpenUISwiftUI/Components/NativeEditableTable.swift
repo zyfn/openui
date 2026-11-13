@@ -159,9 +159,9 @@ struct NativeEditableTable: View {
         }.openUIFont(context.theme.textBodySm, role: .detail).disabled(!context.canInteract || saving)
       }
     }
-    .onAppear { editing.receive(source, revision: state.sourceRevision) }
-    .onChange(of: source) { value in editing.receive(value, revision: state.sourceRevision) }
-    .onChange(of: state.sourceRevision) { revision in editing.receive(source, revision: revision) }
+    .onAppear { editing.receive(source, revision: state.presentationRevision) }
+    .onChange(of: source) { value in editing.receive(value, revision: state.presentationRevision) }
+    .onChange(of: state.presentationRevision) { revision in editing.receive(source, revision: revision) }
   }
   private func width(_ index: Int) -> CGFloat {
     NativeEditableColumn.width(context.element.sourceReadiness["columns"][index]["width"].complete
