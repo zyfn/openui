@@ -120,6 +120,11 @@ final class NativeSliderDraft: ObservableObject {
     }
     return nil
   }
+  /// The field wrapper owns submitted/rule errors. Standalone and in-progress
+  /// numeric edits still get one local message before a wrapper has an error.
+  func inlineValidationError(presentedError: String?, configuration: NativeSliderConfiguration) -> String? {
+    presentedError == nil ? validationError(configuration: configuration) : nil
+  }
   func flush() {
     work?.cancel(); work = nil
     guard validationError() == nil else { pending = nil; return }
@@ -148,6 +153,7 @@ struct NativeSliderField: View {
   @Environment(\.openUIFormValidation) private var validation
   let context: OpenUIComponentContext
   @Environment(\.openUIFieldLabel) private var fieldLabel
+  @Environment(\.openUIFieldError) private var presentedError
   @Environment(\.dynamicTypeSize) private var typeSize
   @ScaledMetric(relativeTo: .body) private var valueWidth: CGFloat = 88
   @StateObject private var draft: NativeSliderDraft
@@ -188,12 +194,10 @@ struct NativeSliderField: View {
           showsDots: showsDots, label: label,
           select: { value, index in context.recordUserInteraction(); draft.select(value, at: index) },
           ended: { draft.flush() })
-        ForEach(Array(draft.values.indices.prefix(2)), id: \.self) { index in
-          if let error = draft.error(at: index, configuration: configuration) {
-            Text(NativeControlText.localized(error, locale: locale)).nativeTextStyle(context.theme.textStyle(.fieldError))
-              .fixedSize(horizontal: false, vertical: true)
-              .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString).\(index)")
-          }
+        if let error = draft.inlineValidationError(presentedError: presentedError, configuration: configuration) {
+          Text(NativeControlText.localized(error, locale: locale)).nativeTextStyle(context.theme.textStyle(.fieldError))
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("openui.slider.validation.\(field.name.displayString)")
         }
       } else {
         Text("Value unavailable", bundle: NativeControlResources.bundle).foregroundStyle(context.theme.textNeutralSecondary)
@@ -378,7 +382,32 @@ private struct NativeSliderPicker: View {
   }
 }
 
-private struct NativeSliderTrack: View {
+/// A single physical coordinate mapping is used for track, fill, dots, thumbs
+/// and hit testing. RTL reverses value progression, never the stored values.
+struct NativeSliderTrackGeometry {
+  let width: CGFloat
+  let minimum: Double
+  let maximum: Double
+  let rightToLeft: Bool
+  var span: CGFloat { max(1, width - 28) }
+  func x(for value: Double) -> CGFloat {
+    let fraction = min(1, max(0, (value - minimum) / (maximum - minimum)))
+    return 14 + span * CGFloat(rightToLeft ? 1 - fraction : fraction)
+  }
+  func value(at x: CGFloat) -> Double {
+    let fraction = min(1, max(0, Double((x - 14) / span)))
+    return minimum + (rightToLeft ? 1 - fraction : fraction) * (maximum - minimum)
+  }
+  func selection(from low: Double, to high: Double) -> ClosedRange<CGFloat> {
+    let a = x(for: low), b = x(for: high)
+    return min(a, b)...max(a, b)
+  }
+  func nearestIndex(to x: CGFloat, values: [Double]) -> Int? {
+    values.indices.min { abs(self.x(for: values[$0]) - x) < abs(self.x(for: values[$1]) - x) }
+  }
+}
+
+struct NativeSliderTrack: View {
   let values: [Double]
   let configuration: NativeSliderConfiguration
   let enabled: Bool
@@ -387,27 +416,28 @@ private struct NativeSliderTrack: View {
   let select: (Double, Int) -> Void
   var ended: () -> Void = {}
   @Environment(\.openUITheme) private var theme
+  @Environment(\.layoutDirection) private var direction
   @State private var dragging: Int?
-  private func fraction(_ value: Double) -> CGFloat {
-    CGFloat(min(1, max(0, (value - configuration.minimum) / (configuration.maximum - configuration.minimum))))
-  }
   var body: some View {
     GeometryReader { geometry in
-      let width = max(1, geometry.size.width - 28)
+      let track = NativeSliderTrackGeometry(width: geometry.size.width,
+        minimum: configuration.minimum, maximum: configuration.maximum,
+        rightToLeft: direction == .rightToLeft)
       ZStack(alignment: .leading) {
         Capsule().fill(theme.borderDefault).frame(height: 5).padding(.horizontal, 14)
         let low = values.count > 1 ? values.min() ?? configuration.minimum : configuration.minimum
         let high = values.max() ?? configuration.minimum
-        Capsule().fill(theme.interactiveAccentDefault).frame(width: max(0, width * (fraction(high) - fraction(low))), height: 5)
-          .offset(x: 14 + width * fraction(low))
+        let selection = track.selection(from: low, to: high)
+        Capsule().fill(theme.interactiveAccentDefault)
+          .frame(width: selection.upperBound - selection.lowerBound, height: 5)
+          .offset(x: selection.lowerBound)
         if showsDots {
           Canvas { canvas, size in
-            let available = max(1, size.width - 28)
             let count = configuration.lastIndex
-            let stride = max(1, ceil(count / max(1, floor(available / 6))))
+            let stride = max(1, ceil(count / max(1, floor(track.span / 6))))
             var index = 0.0
             while index <= count {
-              let x = 14 + available * fraction(configuration.value(at: index))
+              let x = track.x(for: configuration.value(at: index))
               canvas.fill(Path(ellipseIn: CGRect(x: x - 2, y: size.height / 2 - 2, width: 4, height: 4)), with: .color(theme.textNeutralSecondary))
               index += stride
             }
@@ -416,34 +446,37 @@ private struct NativeSliderTrack: View {
         ForEach(values.indices, id: \.self) { index in
           Circle().fill(theme.foreground).overlay(Circle().strokeBorder(theme.interactiveAccentDefault, lineWidth: 2))
             .frame(width: 28, height: 28).shadow(color: .black.opacity(0.08), radius: 2, y: 1)
-            .frame(width: 44, height: 44).offset(x: width * fraction(values[index]) - 8)
+            .frame(width: 44, height: 44).offset(x: track.x(for: values[index]) - 22)
             .accessibilityRepresentation {
               Slider(value: Binding(get: { min(configuration.maximum, max(configuration.minimum, values[index])) },
                 set: { if enabled { select(configuration.snapped($0), index) } }),
                 in: configuration.minimum...configuration.maximum, step: configuration.step)
                 .accessibilityLabel(label).accessibilityValue(jsNumberString(values[index]))
                 .accessibilityIdentifier("openui.slider.thumb.\(index)").disabled(!enabled)
+                .environment(\.layoutDirection, direction)
             }
         }
-      }.frame(maxHeight: .infinity).contentShape(Rectangle())
+      }.frame(maxWidth: .infinity, maxHeight: .infinity).contentShape(Rectangle())
         .modifier(NativeSliderPan(enabled: enabled,
           fallback: DragGesture(minimumDistance: 0).onChanged { gesture in
-            update(location: gesture.location, start: gesture.startLocation, width: width)
+            update(location: gesture.location, start: gesture.startLocation, track: track)
           }.onEnded { _ in dragging = nil; ended() },
-          changed: { location, start in update(location: location, start: start, width: width) },
+          changed: { location, start in update(location: location, start: start, track: track) },
           ended: { dragging = nil; ended() }))
+        // The mapping above already accounts for RTL. Do not let leading
+        // alignment mirror the physical offsets a second time.
+        .environment(\.layoutDirection, .leftToRight)
     }.frame(height: 44).opacity(enabled ? 1 : 0.5)
+      .onChange(of: direction) { _ in dragging = nil }
   }
-  private func update(location: CGPoint, start: CGPoint, width: CGFloat) {
+  private func update(location: CGPoint, start: CGPoint, track: NativeSliderTrackGeometry) {
     guard enabled, !values.isEmpty else { return }
-    let index = dragging ?? values.indices.min { abs(14 + width * fraction(values[$0]) - start.x) < abs(14 + width * fraction(values[$1]) - start.x) } ?? 0
-    let proposed = configuration.minimum + Double((location.x - 14) / width) * (configuration.maximum - configuration.minimum)
-    let value = configuration.snapped(proposed)
+    let index = dragging ?? track.nearestIndex(to: start.x, values: values) ?? 0
+    let value = configuration.snapped(track.value(at: location.x))
     var next = values; next[index] = value; next.sort()
     dragging = next.firstIndex(of: value) ?? index
     select(value, index)
   }
-
 }
 
 private extension View {

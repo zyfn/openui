@@ -248,3 +248,52 @@ extension StreamingFormCorrectnessTests {
     XCTAssertNotEqual(validation.focusRequest?.id, firstID, "Another rejected attempt can focus the same field again")
   }
 }
+
+
+extension StreamingFormCorrectnessTests {
+  func testSliderRTLGeometryUsesOneMappingForValuesFillAndHitTesting() {
+    for width: CGFloat in [80, 320, 600] {
+      let ltr = NativeSliderTrackGeometry(width: width, minimum: -20, maximum: 80, rightToLeft: false)
+      let rtl = NativeSliderTrackGeometry(width: width, minimum: -20, maximum: 80, rightToLeft: true)
+      for value in stride(from: -20.0, through: 80.0, by: 5) {
+        XCTAssertEqual(ltr.x(for: value) + rtl.x(for: value), width, accuracy: 0.0001)
+        XCTAssertEqual(ltr.value(at: ltr.x(for: value)), value, accuracy: 0.0001)
+        XCTAssertEqual(rtl.value(at: rtl.x(for: value)), value, accuracy: 0.0001)
+      }
+      let values = [-10.0, 60.0]
+      XCTAssertEqual(rtl.nearestIndex(to: rtl.x(for: -10), values: values), 0)
+      XCTAssertEqual(rtl.nearestIndex(to: rtl.x(for: 60), values: values), 1)
+      let a = ltr.selection(from: values[0], to: values[1])
+      let b = rtl.selection(from: values[0], to: values[1])
+      XCTAssertEqual(a.lowerBound, width - b.upperBound, accuracy: 0.0001)
+      XCTAssertEqual(a.upperBound, width - b.lowerBound, accuracy: 0.0001)
+      XCTAssertGreaterThan(b.upperBound - b.lowerBound, 0)
+      XCTAssertEqual(rtl.value(at: -100), 80)
+      XCTAssertEqual(rtl.value(at: width + 100), -20)
+    }
+  }
+
+  func testRTLSliderDragProgressesAndSnapsWithoutReorderingStoredRange() {
+    let config = NativeSliderConfiguration(minimum: 0, maximum: 100, step: 5, discrete: true)
+    let geometry = NativeSliderTrackGeometry(width: 320, minimum: 0, maximum: 100, rightToLeft: true)
+    let initial = [20.0, 80.0]
+    let index = geometry.nearestIndex(to: geometry.x(for: 20), values: initial)
+    XCTAssertEqual(index, 0)
+    let leftward = geometry.x(for: 20) - geometry.span * 0.1
+    XCTAssertEqual(config.snapped(geometry.value(at: leftward)), 30)
+    XCTAssertEqual(initial, [20, 80], "RTL is a coordinate convention, not an array reversal")
+  }
+
+  @MainActor func testSliderShowsOneDraftErrorUntilTheWrapperPresentsIt() {
+    let config = NativeSliderConfiguration(minimum: 0, maximum: 100, step: 1, discrete: false)
+    let draft = NativeSliderDraft(); draft.configuration = config; draft.receive([20, 80])
+    draft.edit("", at: 0); draft.edit("invalid", at: 1)
+    XCTAssertEqual(draft.inlineValidationError(presentedError: nil, configuration: config), "Invalid number")
+    XCTAssertNil(draft.inlineValidationError(presentedError: "Invalid number", configuration: config))
+    XCTAssertNil(draft.inlineValidationError(presentedError: "This field is required", configuration: config))
+    // Standalone fields have no inherited feedback; invalid edits stay visible.
+    XCTAssertNotNil(draft.inlineValidationError(presentedError: nil, configuration: config))
+    draft.edit("30", at: 0); draft.edit("70", at: 1); draft.flush()
+    XCTAssertNil(draft.inlineValidationError(presentedError: nil, configuration: config))
+  }
+}

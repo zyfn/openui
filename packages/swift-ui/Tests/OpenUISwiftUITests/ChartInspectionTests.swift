@@ -301,3 +301,25 @@ extension ChartInspectionTests {
     XCTAssertTrue(data.accessibilityRows.isEmpty)
   }
 }
+
+
+extension ChartInspectionTests {
+  func testCategoryLabelsAndInspectionKeepTheirValueAssociation() {
+    var data = NativeChartData()
+    data.labels = ["五月", "六月", "七月"]
+    data.series = [.init(name: "示例", values: [12, 0, -4])]
+    for family in ["BarChart", "LineChart", "AreaChart"] {
+      let drawing = NativeChartDrawing(data: data, name: family, variant: nil, semi: false,
+        palette: [.blue], secondary: .gray, border: .gray)
+      let size = CGSize(width: 320, height: 250)
+      let layout = drawing.layout(size)
+      for label in layout.categoryLabels(count: data.labels.count) {
+        let x = layout.rect.minX + layout.rect.width * (CGFloat(label.index) + 0.5) / 3
+        XCTAssertEqual(drawing.inspectionIndex(at: CGPoint(x: x, y: layout.rect.midY), size: size), label.index)
+        XCTAssertEqual(data.value(0, label.index), [12.0, 0.0, -4.0][label.index])
+        XCTAssertLessThanOrEqual(label.x - label.width * label.anchor.x, x)
+        XCTAssertGreaterThanOrEqual(label.x + label.width * (1 - label.anchor.x), x)
+      }
+    }
+  }
+}

@@ -241,3 +241,168 @@ private final class ResourceFixtureProtocol: URLProtocol {
   }
   override func stopLoading() { }
 }
+
+
+extension ResourceStoreTests {
+  @MainActor func testCancelledImageSubscriberFailsWhileOtherSubscriberGetsSharedResult() async throws {
+    let cache = NativeMediaCache()
+    let started = expectation(description: "one image transport")
+    let loader = ControlledImageLoader(started: started)
+    let key = NativeResourceRequestID(request: URLRequest(url: URL(string: "https://image.test/shared")!),
+      loader: ObjectIdentifier(loader), attempt: 0)
+    let first = Task { try await cache.resource(key, loader: loader) }
+    let second = Task { try await cache.resource(key, loader: loader) }
+    defer { first.cancel(); second.cancel(); cache.removeAll() }
+    await fulfillment(of: [started], timeout: 3)
+    let joined = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in cache.pendingSubscriberCount == 2 }, object: nil)
+    await fulfillment(of: [joined], timeout: 3)
+    first.cancel()
+    // The cancelled waiter must finish without waiting for bytes to arrive.
+    let cancelled = expectation(description: "cancelled waiter returned")
+    let observer = Task { @MainActor in
+      do { _ = try await first.value; XCTFail("A cancelled image subscriber returned success") }
+      catch { XCTAssertTrue(error is CancellationError) }
+      cancelled.fulfill()
+    }
+    await fulfillment(of: [cancelled], timeout: 2)
+    XCTAssertEqual(cache.pendingSubscriberCount, 1)
+    await loader.gate.release(id: 1)
+    let image = try await second.value
+    await observer.value
+    XCTAssertGreaterThan(image.cost, 0)
+    XCTAssertEqual(cache.pendingRequestCount, 0)
+    let counts = await loader.gate.counts
+    XCTAssertEqual(counts.started, 1)
+    XCTAssertEqual(counts.cancelled, 0, "A live subscriber still owns the shared transport")
+    XCTAssertNotNil(cache[key])
+  }
+
+  @MainActor func testLastImageSubscriberCancellationStopsTransport() async throws {
+    let cache = NativeMediaCache()
+    let started = expectation(description: "image transport started")
+    let cancelled = expectation(description: "last subscriber cancels transport")
+    let loader = ControlledImageLoader(started: started, cancelled: cancelled)
+    let key = NativeResourceRequestID(request: URLRequest(url: URL(string: "https://image.test/cancel")!),
+      loader: ObjectIdentifier(loader), attempt: 0)
+    let task = Task { try await cache.resource(key, loader: loader) }
+    defer { task.cancel(); cache.removeAll() }
+    await fulfillment(of: [started], timeout: 3)
+    task.cancel()
+    let returned = expectation(description: "last subscriber returned")
+    let observer = Task { @MainActor in
+      do { _ = try await task.value; XCTFail("Cancelled image returned success") }
+      catch { XCTAssertTrue(error is CancellationError) }
+      returned.fulfill()
+    }
+    await fulfillment(of: [cancelled, returned], timeout: 3)
+    await loader.gate.release(id: 1) // also drain the fixture if a regression failed the assertions
+    await observer.value
+    XCTAssertEqual(cache.pendingRequestCount, 0)
+    XCTAssertEqual(cache.pendingSubscriberCount, 0)
+    XCTAssertNil(cache[key])
+  }
+
+  @MainActor func testImageCacheResetCannotBeRefilledByUncooperativeOldTransport() async throws {
+    let cache = NativeMediaCache()
+    let started = expectation(description: "old and new requests started"); started.expectedFulfillmentCount = 2
+    let firstStarted = expectation(description: "old transport started")
+    let loader = ControlledImageLoader(started: started, firstStarted: firstStarted, honorsCancellation: false)
+    let key = NativeResourceRequestID(request: URLRequest(url: URL(string: "https://image.test/reset")!),
+      loader: ObjectIdentifier(loader), attempt: 0)
+    let first = Task { try await cache.resource(key, loader: loader) }
+    let oldJoined = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in cache.pendingSubscriberCount == 1 }, object: nil)
+    await fulfillment(of: [oldJoined], timeout: 3)
+    // Wait for transport registration, not just cache registration.
+    await fulfillment(of: [firstStarted], timeout: 3)
+    cache.removeAll()
+    let returned = expectation(description: "reset subscriber returned before old bytes")
+    let observer = Task { @MainActor in
+      do { _ = try await first.value; XCTFail("Reset must cancel old subscribers") }
+      catch { XCTAssertTrue(error is CancellationError) }
+      returned.fulfill()
+    }
+    await fulfillment(of: [returned], timeout: 2)
+    let next = Task { try await cache.resource(key, loader: loader) }
+    defer { next.cancel(); cache.removeAll() }
+    await fulfillment(of: [started], timeout: 3)
+    await loader.gate.release(id: 1)
+    await loader.gate.release(id: 2)
+    _ = try await next.value
+    await observer.value
+    XCTAssertEqual(cache.pendingRequestCount, 0)
+    XCTAssertNotNil(cache[key], "Only the current request may refill the cache")
+    let counts = await loader.gate.counts
+    XCTAssertEqual(counts.started, 2)
+  }
+
+  @MainActor func testAlreadyCancelledImageSubscriberCannotReadCompletedCache() async throws {
+    let cache = NativeMediaCache()
+    let started = expectation(description: "initial load")
+    let loader = ControlledImageLoader(started: started)
+    let key = NativeResourceRequestID(request: URLRequest(url: URL(string: "https://image.test/cached")!),
+      loader: ObjectIdentifier(loader), attempt: 0)
+    let initial = Task { try await cache.resource(key, loader: loader) }
+    await fulfillment(of: [started], timeout: 3)
+    await loader.gate.release(id: 1)
+    _ = try await initial.value
+    let cancelled = Task { @MainActor in
+      withUnsafeCurrentTask { $0?.cancel() }
+      return try await cache.resource(key, loader: loader)
+    }
+    do { _ = try await cancelled.value; XCTFail("A cache hit must still respect caller cancellation") }
+    catch { XCTAssertTrue(error is CancellationError) }
+    let counts = await loader.gate.counts
+    XCTAssertEqual(counts.started, 1)
+    cache.removeAll()
+  }
+}
+
+private final class ControlledImageLoader: OpenUIResourceLoading {
+  let gate: ControlledImageGate
+  init(started: XCTestExpectation, cancelled: XCTestExpectation? = nil,
+       firstStarted: XCTestExpectation? = nil, honorsCancellation: Bool = true) {
+    gate = ControlledImageGate(started: started, cancelled: cancelled,
+      firstStarted: firstStarted, honorsCancellation: honorsCancellation)
+  }
+  func request(for source: String, relativeTo baseURL: URL?) -> URLRequest? {
+    URL(string: source, relativeTo: baseURL).map { URLRequest(url: $0) }
+  }
+  func data(for request: URLRequest) async throws -> Data { try await gate.load() }
+}
+
+private actor ControlledImageGate {
+  let started: XCTestExpectation
+  let cancelled: XCTestExpectation?
+  let firstStarted: XCTestExpectation?
+  let honorsCancellation: Bool
+  private var sequence = 0
+  private var cancellationCount = 0
+  private var pending: [Int: CheckedContinuation<Data, Error>] = [:]
+  var counts: (started: Int, cancelled: Int) { (sequence, cancellationCount) }
+  init(started: XCTestExpectation, cancelled: XCTestExpectation?,
+       firstStarted: XCTestExpectation?, honorsCancellation: Bool) {
+    self.started = started; self.cancelled = cancelled
+    self.firstStarted = firstStarted; self.honorsCancellation = honorsCancellation
+  }
+  func load() async throws -> Data {
+    sequence += 1
+    let id = sequence
+    return try await withTaskCancellationHandler(operation: {
+      try await withCheckedThrowingContinuation { continuation in
+        pending[id] = continuation
+        started.fulfill()
+        if id == 1 { firstStarted?.fulfill() }
+      }
+    }, onCancel: { Task { await self.cancel(id: id) } })
+  }
+  private func cancel(id: Int) {
+    guard pending[id] != nil else { return }
+    cancellationCount += 1; cancelled?.fulfill()
+    if honorsCancellation { pending.removeValue(forKey: id)?.resume(throwing: CancellationError()) }
+  }
+  func release(id: Int) {
+    // Same valid 1x1 PNG used by native transport fixtures. No network is used.
+    let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=")!
+    pending.removeValue(forKey: id)?.resume(returning: png)
+  }
+}

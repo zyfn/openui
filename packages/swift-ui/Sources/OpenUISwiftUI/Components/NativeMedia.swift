@@ -63,7 +63,14 @@ struct NativeUnavailableMedia: View {
   private var entries: [NativeResourceRequestID: Entry] = [:]
   private var order: [NativeResourceRequestID] = []
   private struct DecodeKey: Hashable { let resource: NativeResourceRequestID; let pixelSize: Int }
-  private var pending: [DecodeKey: Task<Entry, Error>] = [:]
+  private final class Pending {
+    let id = UUID()
+    var task: Task<Void, Never>?
+    var waiters: [UUID: CheckedContinuation<Entry, Error>] = [:]
+  }
+  private var pending: [DecodeKey: Pending] = [:]
+  var pendingRequestCount: Int { pending.count }
+  var pendingSubscriberCount: Int { pending.values.reduce(0) { $0 + $1.waiters.count } }
   private let maximumCost = 32 * 1024 * 1024
   private(set) var generation = 0
   subscript(_ key: NativeResourceRequestID) -> Entry? { entries[key] }
@@ -79,25 +86,55 @@ struct NativeUnavailableMedia: View {
   }
   func resource(_ key: NativeResourceRequestID, loader: any OpenUIResourceLoading,
                 targetPixelSize: Int? = nil) async throws -> Entry {
+    try Task.checkCancellation()
     let target = max(1, min(targetPixelSize ?? loader.resourceLimits.maximumImagePixelSize,
                            loader.resourceLimits.maximumImagePixelSize, 2816))
     if let value = entries[key], value.satisfies(target) { return value }
-    let decodeKey = DecodeKey(resource: key, pixelSize: target)
-    if let task = pending[decodeKey] { return try await task.value }
     guard let request = key.request else { throw URLError(.badURL) }
-    let current = generation
+    let decodeKey = DecodeKey(resource: key, pixelSize: target)
+    let waiterID = UUID(), epoch = generation
     let scope = loader.authorizationScopeID
-    let task = Task { @MainActor [weak self] in
-      let entry = try await Self.load(request, loader: loader, targetPixelSize: target)
-      try Task.checkCancellation()
-      guard let self, self.generation == current,
-        loader.authorizationScopeID == scope else { throw CancellationError() }
-      self.insert(entry, for: key)
-      return entry
+    let entry: Entry = try await withTaskCancellationHandler(operation: {
+      try await withCheckedThrowingContinuation { continuation in
+        guard !Task.isCancelled else { continuation.resume(throwing: CancellationError()); return }
+        if let group = pending[decodeKey] { group.waiters[waiterID] = continuation; return }
+        let group = Pending()
+        group.waiters[waiterID] = continuation; pending[decodeKey] = group
+        let id = group.id
+        group.task = Task { @MainActor [weak self] in
+          let result: Result<Entry, Error>
+          do {
+            let value = try await Self.load(request, loader: loader, targetPixelSize: target)
+            try Task.checkCancellation()
+            guard loader.authorizationScopeID == scope else { throw CancellationError() }
+            result = .success(value)
+          } catch { result = .failure(error) }
+          self?.finish(decodeKey, id: id, epoch: epoch, result: result)
+        }
+      }
+    }, onCancel: { [weak self] in
+      Task { @MainActor in self?.cancelWaiter(decodeKey, id: waiterID) }
+    })
+    // Cancellation can race completion before the actor processes onCancel.
+    // Check the subscriber task, not only the shared transport task.
+    try Task.checkCancellation()
+    guard generation == epoch, loader.authorizationScopeID == scope else { throw CancellationError() }
+    return entry
+  }
+  private func cancelWaiter(_ key: DecodeKey, id: UUID) {
+    guard let group = pending[key], let waiter = group.waiters.removeValue(forKey: id) else { return }
+    waiter.resume(throwing: CancellationError())
+    if group.waiters.isEmpty {
+      pending.removeValue(forKey: key)
+      group.task?.cancel(); group.task = nil
     }
-    pending[decodeKey] = task
-    defer { if generation == current { pending[decodeKey] = nil } }
-    return try await task.value
+  }
+  private func finish(_ key: DecodeKey, id: UUID, epoch: Int, result: Result<Entry, Error>) {
+    guard generation == epoch, let group = pending[key], group.id == id else { return }
+    pending.removeValue(forKey: key); group.task = nil
+    if case .success(let entry) = result { insert(entry, for: key.resource) }
+    for waiter in group.waiters.values { waiter.resume(with: result) }
+    group.waiters.removeAll()
   }
   // Bound the complete image pipeline, not just the decode step: queued
   // compressed Data must not grow while a limited decoder is occupied.
@@ -109,6 +146,7 @@ struct NativeUnavailableMedia: View {
     try Task.checkCancellation()
     let scope = loader.authorizationScopeID
     let data = try await loader.data(for: request)
+    try Task.checkCancellation()
     let entry = try await prepare(data, loader: loader, targetPixelSize: targetPixelSize)
     guard loader.authorizationScopeID == scope else { throw CancellationError() }
     return entry
@@ -137,7 +175,12 @@ struct NativeUnavailableMedia: View {
   }
   func removeAll() {
     generation &+= 1
-    pending.values.forEach { $0.cancel() }; pending.removeAll()
+    let groups = Array(pending.values); pending.removeAll()
+    for group in groups {
+      group.task?.cancel(); group.task = nil
+      for waiter in group.waiters.values { waiter.resume(throwing: CancellationError()) }
+      group.waiters.removeAll()
+    }
     entries.removeAll(); order.removeAll()
   }
 }

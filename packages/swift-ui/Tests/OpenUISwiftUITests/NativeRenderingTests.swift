@@ -293,4 +293,123 @@ extension NativeRenderingTests {
     }
   }
 }
+
+extension NativeRenderingTests {
+  @MainActor func testChartCategoryAxisPhysicalPlacementIsIdenticalInLTRAndRTL() throws {
+    let layout = NativeChartLayout(size: CGSize(width: 320, height: 250))
+    func snapshot(_ direction: LayoutDirection) throws -> NSBitmapImageRep {
+      try repairBitmap(NativeChartCategoryAxis(labels: ["May", "June", "July"],
+        layout: layout, theme: OpenUIThemeValues()).environment(\.layoutDirection, direction),
+        size: CGSize(width: 320, height: 250), name: direction == .leftToRight ? "d1-axis-ltr" : "d1-axis-rtl")
+    }
+    let ltr = try snapshot(.leftToRight), rtl = try snapshot(.rightToLeft)
+    XCTAssertEqual(try repairPixelData(ltr), try repairPixelData(rtl),
+      "A writing-direction change must not move categories onto different physical bars")
+    let blank = try repairBitmap(Color.white, size: CGSize(width: 320, height: 250), name: "d1-background")
+    XCTAssertNotEqual(try repairPixelData(rtl), try repairPixelData(blank), "Both blank is not an axis rendering pass")
+  }
+
+  @MainActor func testSymmetricRangeSliderRemainsVisibleAtTheSamePositionsInRTL() throws {
+    let config = NativeSliderConfiguration(minimum: 0, maximum: 100, step: 1, discrete: false)
+    func snapshot(_ direction: LayoutDirection) throws -> NSBitmapImageRep {
+      try repairBitmap(NativeSliderTrack(values: [20, 80], configuration: config,
+        enabled: true, showsDots: false, label: "Budget", select: { _, _ in })
+        .environment(\.layoutDirection, direction), size: CGSize(width: 320, height: 44),
+        name: direction == .leftToRight ? "d2-slider-ltr" : "d2-slider-rtl")
+    }
+    let ltr = try snapshot(.leftToRight), rtl = try snapshot(.rightToLeft)
+    XCTAssertEqual(try repairPixelData(ltr), try repairPixelData(rtl),
+      "Symmetric range fill and thumbs must remain inside the RTL control")
+    let blank = try repairBitmap(Color.white, size: CGSize(width: 320, height: 44), name: "d2-background")
+    XCTAssertNotEqual(try repairPixelData(rtl), try repairPixelData(blank), "Passing because both tracks are blank is invalid")
+  }
+
+  @MainActor private func repairBitmap<V: View>(_ content: V, size: CGSize, name: String) throws -> NSBitmapImageRep {
+    _ = NSApplication.shared
+    let hosting = NSHostingView(rootView: content.frame(width: size.width, height: size.height)
+      .environment(\.colorScheme, .light).background(Color.white))
+    let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
+      styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false; window.contentView = hosting
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000)); window.orderFront(nil)
+    defer { window.close() }
+    hosting.layoutSubtreeIfNeeded()
+    RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+    hosting.layoutSubtreeIfNeeded()
+    let bitmap = try XCTUnwrap(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+    hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+    if let path = ProcessInfo.processInfo.environment["OPENUI_SNAPSHOT_DIR"] {
+      try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+      try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        .write(to: URL(fileURLWithPath: path).appendingPathComponent(name + ".png"))
+    }
+    return bitmap
+  }
+  private func repairPixelData(_ image: NSBitmapImageRep) throws -> Data {
+    let cgImage = try XCTUnwrap(image.cgImage)
+    let context = try XCTUnwrap(CGContext(data: nil, width: image.pixelsWide, height: image.pixelsHigh,
+      bitsPerComponent: 8, bytesPerRow: image.pixelsWide * 4,
+      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: image.pixelsWide, height: image.pixelsHigh))
+    return Data(bytes: try XCTUnwrap(context.data), count: image.pixelsWide * image.pixelsHigh * 4)
+  }
+
+  @MainActor func testValidBlockMathRendersInClippedHostsAcrossPageReentry() async throws {
+    _ = NSApplication.shared
+    let renderer = NativeMathRenderer()
+    defer { renderer.cancel() }
+    for index in 1...3 {
+      let hosting = NSHostingView(rootView: NativeMathHost(renderer: renderer)
+        .frame(width: 1, height: 1).clipped().opacity(0.001))
+      let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 100),
+        styleMask: [.borderless], backing: .buffered, defer: false)
+      window.isReleasedWhenClosed = false; window.contentView = hosting
+      window.setFrameOrigin(NSPoint(x: -10000, y: -10000)); window.orderFront(nil)
+      defer { window.contentView = nil; window.close() }
+      hosting.layoutSubtreeIfNeeded()
+      let descriptor = NativeMathDescriptor(tex: "\\frac{1}{2} + \(index)", display: true)
+      let image = try await renderer.image(for: descriptor, fontSize: 16, color: "#303036ff")
+      XCTAssertGreaterThan(image.size.width, 0); XCTAssertGreaterThan(image.size.height, 0)
+      XCTAssertTrue(image.baseline.isFinite)
+      XCTAssertEqual(renderer.lastJobPhases, [.waitingForHost, .loading, .awaitingFonts, .measuring, .snapshotting, .completed])
+      XCTAssertNil(renderer.lastFailurePhase)
+      XCTAssertEqual(renderer.rasterizationCount, index, "Each reentry must rasterize a fresh equation, not just hit cache")
+      let bitmap = try XCTUnwrap(NSBitmapImageRep(data: try XCTUnwrap(image.image.tiffRepresentation)))
+      var hasInk = false
+      for y in stride(from: 0, to: bitmap.pixelsHigh, by: max(1, bitmap.pixelsHigh / 64)) {
+        for x in stride(from: 0, to: bitmap.pixelsWide, by: max(1, bitmap.pixelsWide / 256)) {
+          if (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.05 { hasInk = true }
+        }
+      }
+      XCTAssertTrue(hasInk, "Snapshot completion with a transparent bitmap is not successful formula rendering")
+      if let path = ProcessInfo.processInfo.environment["OPENUI_SNAPSHOT_DIR"] {
+        try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+        try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+          .write(to: URL(fileURLWithPath: path).appendingPathComponent("d4-math-reentry-\(index).png"))
+      }
+      renderer.cancel()
+      window.contentView = nil
+    }
+  }
+
+  @MainActor func testOldMathHostDetachDoesNotCancelTheReplacementHost() async throws {
+    _ = NSApplication.shared
+    let renderer = NativeMathRenderer()
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 100),
+      styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    let root = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 100))
+    let old = NSView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+    let next = NSView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+    root.addSubview(old); root.addSubview(next); window.contentView = root
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000)); window.orderFront(nil)
+    defer { renderer.cancel(); window.close() }
+    renderer.attach(old); renderer.attach(next)
+    old.removeFromSuperview(); renderer.attach(old); renderer.detach(old)
+    let image = try await renderer.image(for: .init(tex: "x^{2} + 1", display: true), fontSize: 16, color: "#303036ff")
+    XCTAssertGreaterThan(image.size.width, 0)
+    XCTAssertEqual(renderer.pendingRequestCount, 0)
+    XCTAssertNil(renderer.lastFailurePhase)
+  }
+}
 #endif

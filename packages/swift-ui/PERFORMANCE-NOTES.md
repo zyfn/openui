@@ -45,3 +45,27 @@ The existing Build Swift pull-request workflow also runs language AddressSanitiz
 ## Verified checkpoint before batch three
 
 At head `4803d11e53323d45f8a173726c7bf5efba56435c`, Build Swift run `43395100837` succeeded: 493 SDK XCTest methods, 100 language XCTest methods under AddressSanitizer, the authoring validator, the standalone macOS example and the iOS Simulator compile. Build JS and Changeset check also succeeded. Artifact `14023312235` (`swift-diagnostics-43395100837-1`) was downloaded and its SHA-256 verified as `e12628378920e5319f133b7963d8593f91b5a895943a03ce96a860c360d96ab3`; its four logs support the test counts and platform builds. This checkpoint is not proof that a later head passes. The historical earlier sanitizer-step failure was not reproduced at this checkpoint; its cause is not claimed fixed or identified from the mismatched log.
+
+
+## Independent acceptance repairs D1–D5
+
+Input: integration candidate `2308c31367c55cefc4f36bff3bebd11e08537823` and the user's independent macOS acceptance report. That report passed 571 SDK tests, 3 Release fitting tests, 102 language ASan tests and platform builds, but failed complete acceptance on D1–D5. Those are baseline results, not results for the repaired tree.
+
+- **D1 — chart/category coordinates:** the category-label container explicitly uses the physical left-to-right coordinates already used by Canvas and inspection. Label text retains the caller's writing direction. Source labels and series are not reversed. The surrounding chart legend and UI retain RTL behavior.
+- **D2 — RTL range slider:** one geometry mapping converts value to physical x and x back to value. Fill, dots, thumb placement, nearest-thumb selection and drag use that mapping. A narrowly scoped LTR layout prevents SwiftUI from mirroring physical offsets again. RTL value progression is reversed; stored range values are not. Accessibility keeps the external direction.
+- **D3 — image subscribers:** each waiter owns a continuation, independent cancellation and a final caller cancellation check. Shared work survives one cancellation but stops when the last waiter leaves. Reset drains waiters, and generation/group identity prevents obsolete completion from refilling or removing a replacement request. Cache hits also reject cancelled callers. Existing image budgets and resource scopes remain unchanged.
+- **D4 — formula rasterization:** remove the hidden host's requestAnimationFrame dependency. A native navigation completion starts trusted code in WKContentWorld.defaultClient; font readiness and forced DOM layout precede a snapshot that does not wait for a visible-screen refresh. No longer timeout or retries are introduced. Host replacement/dismantling is identity-checked, and WebContent termination completes the job. Internal bounded phase history and content-free `dev.openui.swift / Math` failure logs identify waiting-for-host, loading, fonts, layout or snapshot failures. This addresses code-level starvation/lifecycle hazards; the original intermittent symptom still requires the same native reentry replay to confirm closure.
+- **D5 — error feedback:** a slider displays one draft message only until the common field wrapper presents an error. Both invalid range inputs still produce one message. Standalone/unsubmitted fields keep immediate feedback; validation and action blocking are unchanged.
+
+Regression tests were added to the existing ChartInspectionTests, StreamingFormCorrectnessTests, ResourceStoreTests and NativeRenderingTests; no new public component, target, dependency or production source file is introduced. Hosted RTL tests compare actual NSHostingView bitmaps and also reject blank output. Native formula tests rasterize three distinct formulas across clipped/near-transparent host reentries, check nontransparent pixels and exercise old-host teardown after replacement. They export `d1-*`, `d2-*` and `d4-*` PNGs under OPENUI_SNAPSHOT_DIR.
+
+Run on macOS at the exact repair commit (keep failures and exit codes):
+
+```sh
+export OPENUI_SNAPSHOT_DIR="$(mktemp -d /tmp/openui-d1-d5.XXXXXX)"
+swift test --filter 'ChartInspectionTests|StreamingFormCorrectnessTests|ResourceStoreTests|NativeRenderingTests|StreamingTextPresentationTests'
+swift test
+swift test -c release --filter HostSizingIsolationTests
+```
+
+Local Linux validation of the repair checks syntax and the unchanged extracted cache/subscriber and slider-geometry code. Its image/platform types are test stand-ins; it is not ImageIO, SwiftUI, WebKit, Apple SDK or client UI acceptance. Client follow-up should rerun RTL value/tooltip/drag association, one-visible-error feedback, one-cancelled/one-live image requests, and repeated formula page reentry on iOS as well as macOS. No FPS or zero-bug claim is made from these tests.

@@ -479,7 +479,8 @@ struct NativeRadarCategoryKey: View {
 /// Category text uses native text layout rather than Canvas's inherited
 /// one-line environment. The plot and inspection share the same geometry.
 struct NativeChartCategoryAxis: View {
-    @Environment(\.openUIPresentation) private var nativePresentation
+  @Environment(\.layoutDirection) private var textDirection
+  @Environment(\.openUIPresentation) private var nativePresentation
 
   let labels: [String]
   let layout: NativeChartLayout
@@ -489,7 +490,8 @@ struct NativeChartCategoryAxis: View {
       ForEach(layout.categoryLabels(count: labels.count), id: \.index) { label in
         Text(labels[label.index]).openUIFont(theme.textBodySm, role: .detail).monospacedDigit()
           .foregroundStyle(nativePresentation.chartAxis).lineLimit(layout.categoryLabelLines).truncationMode(.tail)
-          .multilineTextAlignment(label.anchor.x == 0 ? .leading : label.anchor.x == 1 ? .trailing : .center)
+          .multilineTextAlignment(textAlignment(for: label.anchor))
+          .environment(\.layoutDirection, textDirection)
           .frame(width: label.width, alignment: Alignment(horizontal:
             label.anchor.x == 0 ? .leading : label.anchor.x == 1 ? .trailing : .center, vertical: .top))
           .fixedSize(horizontal: false, vertical: true)
@@ -497,6 +499,15 @@ struct NativeChartCategoryAxis: View {
             y: layout.rect.maxY + (layout.categoryLabelLines > 1 ? 6 * layout.scale : layout.tickOffset - layout.lineHeight / 2))
       }
     }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+      // Canvas and inspection use physical x coordinates. Only the label
+      // container is LTR; text shaping keeps the caller's writing direction.
+      // Mirroring just this overlay associates categories with the wrong data.
+      .environment(\.layoutDirection, .leftToRight)
+  }
+  private func textAlignment(for anchor: UnitPoint) -> TextAlignment {
+    guard anchor.x != 0.5 else { return .center }
+    let physicalLeft = anchor.x == 0
+    return physicalLeft == (textDirection == .leftToRight) ? .leading : .trailing
   }
 }
 
