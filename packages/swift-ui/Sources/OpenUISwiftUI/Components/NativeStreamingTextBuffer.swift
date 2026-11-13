@@ -24,7 +24,9 @@ final class NativeStreamingTextBuffer: ObservableObject {
       return
     }
     if visible.utf16.elementsEqual(source.utf16) {
-      // An earlier pending suffix may still be newer; do not discard it.
+      // A correction can revert to the last visible prefix while a newer
+      // suffix is pending. Discard that obsolete suffix.
+      scheduled?.cancel(); scheduled = nil; pending = nil
       return
     }
     // Replacement, correction and document changes must never display a
