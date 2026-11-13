@@ -11,15 +11,24 @@ struct NativeSVGDocument {
               !source.localizedCaseInsensitiveContains("<!ENTITY") else { return nil }
         let reader = SVGReader()
         let parser = XMLParser(data: Data(source.utf8)); parser.shouldResolveExternalEntities = false; parser.delegate = reader
-        guard parser.parse(), reader.valid, let ratio = reader.ratio else { return nil }
+        guard parser.parse(), reader.valid, let ratio = reader.ratio, ratio.isFinite, ratio > 0 else { return nil }
         return NativeSVGDocument(markup: source, ratio: ratio)
+    }
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        depth = max(0, depth - 1)
     }
 }
 private final class SVGReader: NSObject, XMLParserDelegate {
     var valid = true
     var ratio: CGFloat?
     private var root = false
+    private var depth = 0
+    private var elements = 0
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes: [String: String]) {
+        depth += 1
+        elements += 1
+        // Bound SVG structural complexity independently of markup byte size.
+        if depth > 128 || elements > 10_000 { valid = false; parser.abortParsing(); return }
         let name = elementName.lowercased().split(separator: ":").last.map(String.init) ?? ""
         if !root {
             root = true
@@ -29,8 +38,12 @@ private final class SVGReader: NSObject, XMLParserDelegate {
             guard tokens.count == 4, values.count == 4, values.allSatisfy(\.isFinite), values[2] > 0, values[3] > 0 else { valid = false; return }
             if let mode = attributes["preserveAspectRatio"], mode.contains("slice") || mode.contains("none") { valid = false }
             let aspect = values[2] / values[3]
-            guard aspect.isFinite, aspect > 0 else { valid = false; return }
-            ratio = CGFloat(aspect)
+            // Prevent extreme aspect ratios from creating unbounded fitting
+            // dimensions in the native layout host.
+            guard aspect.isFinite, aspect >= 0.0001, aspect <= 10_000 else { valid = false; return }
+            let nativeRatio = CGFloat(aspect)
+            guard nativeRatio.isFinite, nativeRatio > 0 else { valid = false; return }
+            ratio = nativeRatio
         }
         if name.hasPrefix("animate") || ["script", "foreignobject", "iframe", "object", "embed", "audio", "video", "set", "discard"].contains(name) { valid = false }
         for (key, value) in attributes {
